@@ -32,12 +32,12 @@ class ReferenceStatistics:
     gender_distribution: dict[str, float] = field(
         default_factory=lambda: {"male": 0.48, "female": 0.52}
     )
-    employment_rate: float = 0.65
+    employment_rate: float = 0.78
 
     # Academic
-    gpa_mean: float = 2.4
+    gpa_mean: float = 2.3
     gpa_std: float = 0.8
-    dropout_rate: float = 0.35
+    dropout_rate: float = 0.80
 
     # Engagement (if available)
     avg_weekly_logins: float | None = None

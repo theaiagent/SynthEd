@@ -80,27 +80,32 @@ class PersonaConfig:
     )
 
     # Bean & Metzner: External/environmental factors
-    employment_rate: float = 0.65
-    has_family_rate: float = 0.40
-    financial_stress_mean: float = 0.45  # 0-1 scale
+    # ODL students are predominantly non-traditional: higher employment,
+    # more family responsibilities, greater financial pressure
+    employment_rate: float = 0.78
+    has_family_rate: float = 0.52
+    financial_stress_mean: float = 0.55  # 0-1 scale
 
     # Academic background
-    prior_gpa_mean: float = 2.5
-    prior_gpa_std: float = 0.7
+    prior_gpa_mean: float = 2.3
+    prior_gpa_std: float = 0.8
 
     # Rovai: Student skills
-    digital_literacy_mean: float = 0.6
-    digital_literacy_std: float = 0.2
-    self_regulation_mean: float = 0.5
-    self_regulation_std: float = 0.18
+    # ODL students tend to have lower self-regulation and digital skills
+    digital_literacy_mean: float = 0.50
+    digital_literacy_std: float = 0.22
+    self_regulation_mean: float = 0.42
+    self_regulation_std: float = 0.20
 
     # Bäulke et al.: Motivation (SDT)
+    # Higher amotivation rate in ODL (many enroll without strong intrinsic drive)
     motivation_levels: dict[str, float] = field(
-        default_factory=lambda: {"intrinsic": 0.35, "extrinsic": 0.45, "amotivation": 0.20}
+        default_factory=lambda: {"intrinsic": 0.25, "extrinsic": 0.45, "amotivation": 0.30}
     )
 
-    # Target outcome
-    dropout_base_rate: float = 0.35
+    # Target outcome — ODL dropout rates range 40-80% in literature
+    # (Bağrıacık Yılmaz & Karataş, 2022; Shaikh & Asif, 2022)
+    dropout_base_rate: float = 0.80
 
 
 # ─────────────────────────────────────────────

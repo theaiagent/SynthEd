@@ -148,7 +148,7 @@ SynthEd's persona attributes and simulation mechanics are grounded in nine estab
 | **Community of Inquiry** (Garrison et al., 2000) | Online learning | Three presences (`social_presence`, `cognitive_presence`, `teaching_presence`) emerge from weekly interactions and co-evolve with Tinto's integration constructs. |
 | **Rovai's Composite Persistence Model** (2003) | Online/distance learning | `digital_literacy`, `self_regulation`, `time_management`, and `institutional_support_access` as persistence factors specific to ODE. |
 | **Bäulke et al. Phase-Oriented Dropout Model** | Psychology | Dropout modeled as a **phased process**: non-fit perception → thoughts of quitting → deliberation → information search → final decision. Tracked via `dropout_phase`. (Originally developed for general HE; adapted to ODE context in SynthEd.) |
-| **Agent-Based Social Simulation** (Epstein & Axtell, 1996) | Computational social science | Students form peer networks through forum co-activity; peer influence creates engagement contagion and dropout cascades as emergent phenomena. |
+| **Agent-Based Social Simulation** (Epstein & Axtell, 1996) | Computational social science | Methodological framework for bottom-up emergent social behavior. Students form peer networks through forum co-activity; peer influence creates engagement contagion and dropout cascades. Network metrics follow Barabási & Albert (1999) and Watts & Strogatz (1998). |
 
 ### Factor Clusters (Rovai, 2003)
 
@@ -158,7 +158,8 @@ SynthEd's persona attributes and simulation mechanics are grounded in nine estab
 | **Student Skills / Needs** | `self_regulation`, `digital_literacy`, `time_management`, `learner_autonomy`, `academic_reading_writing`, `institutional_support_access` | Rovai (2003), Moore (1993), Bäulke et al. |
 | **External Factors** | `is_employed`, `weekly_work_hours`, `financial_stress`, `has_family_responsibilities` | Bean & Metzner (1985), Economic Rationality |
 | **Internal Factors** | `academic_integration`, `social_integration`, `self_efficacy` | Tinto (1975), Bandura (1997) |
-| **Emergent Properties** | `social_presence`, `cognitive_presence`, `teaching_presence`, `network_degree` | Garrison et al. (2000), Epstein & Axtell (1996) |
+| **Emergent Properties** | `social_presence`, `cognitive_presence`, `teaching_presence` | Garrison et al. (2000) |
+| **Network Properties** | `network_degree`, peer influence, dropout contagion | Epstein & Axtell (1996) for emergent agent behavior; Barabási & Albert (1999), Watts & Strogatz (1998) for network metrics |
 
 ### Key Design Decision: ODE ≠ Campus
 

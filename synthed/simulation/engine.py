@@ -356,18 +356,19 @@ class SimulationEngine:
         integration_effect = (
             state.academic_integration * 0.06
             + state.social_integration * 0.02
-            - 0.04  # Baseline decay (requires active maintenance)
+            - 0.05  # Baseline decay — ODL requires more active maintenance
         )
         engagement += integration_effect
 
         # ── Bean & Metzner: Environmental pressure ──
+        # ODL students face heavier external burdens (employment, family, finances)
         env_pressure = 0.0
-        if student.is_employed and student.weekly_work_hours > 35:
-            env_pressure -= 0.02  # Overwork erodes engagement
+        if student.is_employed and student.weekly_work_hours > 30:
+            env_pressure -= 0.025  # Overwork erodes engagement
         if student.has_family_responsibilities:
+            env_pressure -= 0.02
+        if student.financial_stress > 0.5:
             env_pressure -= 0.015
-        if student.financial_stress > 0.6:
-            env_pressure -= 0.01
         engagement += env_pressure
 
         # ── Rovai: Self-regulation buffer ──
@@ -448,25 +449,24 @@ class SimulationEngine:
 
         if state.dropout_phase == 0:
             # Phase 0 → 1: Non-fit perception
-            if (eng < 0.35
-                    or (eng < 0.40 and state.coi_state.cognitive_presence < 0.20)
-                    or (eng < 0.40 and avg_td > 0.60)):
+            if (eng < 0.40
+                    or (eng < 0.45 and state.coi_state.cognitive_presence < 0.25)
+                    or (eng < 0.45 and avg_td > 0.55)):
                 state.dropout_phase = 1
                 state.memory.append({"week": week, "event_type": "dropout_phase",
                                     "details": "Non-fit perception: questioning fit with program",
                                     "impact": -0.2})
 
         elif state.dropout_phase == 1:
-            # Recovery back to 0
-            if eng > 0.45:
+            # Recovery back to 0 (harder in ODL — fewer re-engagement mechanisms)
+            if eng > 0.50:
                 state.dropout_phase = 0
                 state.memory.append({"week": week, "event_type": "recovery",
                                     "details": "Re-engaged with program", "impact": 0.2})
-            # Phase 1 → 2: Thoughts of quitting (Bäulke: unsystematic alternative-seeking
-            # reinforced by concrete negative events or social isolation)
-            elif (eng < 0.33
+            # Phase 1 → 2: Thoughts of quitting
+            elif (eng < 0.36
                   and (state.missed_assignments_streak >= 1
-                       or state.social_integration < 0.15)):
+                       or state.social_integration < 0.20)):
                 state.dropout_phase = 2
                 state.memory.append({"week": week, "event_type": "dropout_phase",
                                     "details": "Thoughts of quitting: considering alternatives "
@@ -475,13 +475,13 @@ class SimulationEngine:
 
         elif state.dropout_phase == 2:
             # Recovery back to 1
-            if eng > 0.42:
+            if eng > 0.45:
                 state.dropout_phase = 1
                 state.memory.append({"week": week, "event_type": "recovery",
                                     "details": "Renewed commitment, thoughts of quitting subsided",
                                     "impact": 0.15})
             # Phase 2 → 3: Deliberation (requires sustained decline)
-            elif eng < 0.30 and len(history) >= 3 and history[-1] < history[-3]:
+            elif eng < 0.32 and len(history) >= 2 and history[-1] < history[-2]:
                 state.dropout_phase = 3
                 state.memory.append({"week": week, "event_type": "dropout_phase",
                                     "details": "Deliberation: actively weighing whether to continue",
@@ -489,10 +489,10 @@ class SimulationEngine:
 
         elif state.dropout_phase == 3:
             # Recovery back to 2
-            if eng > 0.38:
+            if eng > 0.40:
                 state.dropout_phase = 2
             # Phase 3 → 4: Information search
-            elif eng < 0.20 and state.perceived_cost_benefit < 0.32:
+            elif eng < 0.25 and state.perceived_cost_benefit < 0.40:
                 state.dropout_phase = 4
                 state.memory.append({"week": week, "event_type": "dropout_phase",
                                     "details": "Information search: exploring alternatives "
@@ -517,8 +517,8 @@ class SimulationEngine:
                 if week == 10:
                     triggers += 1  # Withdrawal deadline (Kember)
 
-                if triggers >= 2:
-                    decision_prob = student.base_dropout_risk * triggers * 0.18
+                if triggers >= 1:
+                    decision_prob = student.base_dropout_risk * triggers * 0.28
                     if self.rng.random() < decision_prob:
                         state.dropout_phase = 5
                         state.memory.append({"week": week, "event_type": "dropout",
