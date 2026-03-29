@@ -45,6 +45,12 @@ class DataExporter:
         return paths
 
     def export_students(self, students: list[StudentPersona]) -> str:
+        """Export initial/baseline persona attributes (pre-simulation values).
+
+        Note: Values like academic_integration, social_integration, and
+        perceived_cost_benefit reflect the student's initial state before
+        simulation. For evolved/final values, see outcomes.csv.
+        """
         filepath = self.output_dir / "students.csv"
         fieldnames = [
             # Identity

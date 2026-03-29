@@ -392,7 +392,7 @@ class SyntheticDataValidator:
                 details=f"Cost-benefit-engagement: r={corr:.3f} (Kember 1989: expected positive)",
             ))
 
-        # ── SDT (Deci & Ryan, 2000): Intrinsic motivation → higher engagement ──
+        # ── SDT (Deci & Ryan, 1985): Intrinsic motivation → higher engagement ──
         intrinsic_eng = [
             outcome_map[s["student_id"]]["final_engagement"]
             for s in students if s.get("motivation_type") == "intrinsic"
@@ -418,7 +418,7 @@ class SyntheticDataValidator:
                 p_value=float(t_p),
                 passed=intrinsic_mean > amotivation_mean,
                 details=f"Intrinsic eng={intrinsic_mean:.3f} vs amotivation={amotivation_mean:.3f} "
-                        f"(Deci & Ryan 2000: intrinsic > amotivation)",
+                        f"(Deci & Ryan 1985: intrinsic > amotivation)",
             ))
 
         # ── Bäulke et al.: Dropout phase distribution ──
@@ -441,7 +441,7 @@ class SyntheticDataValidator:
             # In ODL context, many students experience non-fit (Bäulke model
             # was developed for campus universities). We check that the terminal
             # phase (decided) is a minority.
-            decided_rate = phase_counts.get(5, phase_counts.get(4, 0)) / total
+            decided_rate = phase_counts.get(5, 0) / total
             results.append(ValidationResult(
                 test_name="baulke_phase_distribution",
                 metric="Decided phase proportion",

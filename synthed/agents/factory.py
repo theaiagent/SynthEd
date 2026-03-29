@@ -38,7 +38,7 @@ class StudentFactory:
     - Conscientiousness ↔ self-regulation (r ≈ 0.5, Bidjerano & Dai, 2007)
     - Financial stress ↔ employment hours (positive)
     - Self-efficacy ↔ prior GPA + conscientiousness (Bandura, 1997)
-    - Goal commitment ↔ motivation type (SDT; Deci & Ryan, 2000)
+    - Goal commitment ↔ motivation type (SDT; Deci & Ryan, 1985)
     - Perceived cost-benefit ↔ financial stress (inverse; Kember, 1989)
     """
 
@@ -110,7 +110,7 @@ class StudentFactory:
         years_since = max(0, int(self.rng.exponential(4)))
         enrolled_courses = max(1, min(6, int(self.rng.normal(3.5, 1.2))))
 
-        # Motivation (SDT — Deci & Ryan, 2000)
+        # Motivation (SDT — Deci & Ryan, 1985)
         motivation_type = self.rng.choice(
             list(cfg.motivation_levels.keys()),
             p=list(cfg.motivation_levels.values()),
@@ -287,7 +287,7 @@ Return JSON: {{"backstory": "...", "primary_challenge": "..."}}
                 {"role": "system", "content": "Synthetic persona generator for educational research. Return valid JSON."},
                 {"role": "user", "content": prompt},
             ], temperature=0.9)
-            persona.add_memory(0, "backstory", result.get("backstory", ""), 0.0)
+            persona.backstory = result.get("backstory", "")
         except Exception as e:
             print(f"[SynthEd] LLM enrichment failed for {persona.name}: {e}")
         return persona

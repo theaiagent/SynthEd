@@ -116,20 +116,27 @@ SynthEd validates generated data across four levels:
 3. **Temporal Coherence** — Dropout students should show declining engagement trajectories
 4. **Privacy Assessment** — k-anonymity check on quasi-identifiers
 
-Example validation output:
+Example validation output (17 tests across 9 theories):
 ```
-Quality: A (Excellent) — 12/13 tests passed
-  ✓ age_distribution (KS-test, p=0.34)
-  ✓ gender_distribution (Chi-squared, p=0.89)
-  ✓ dropout_rate (Z-test, p=0.57)
-  ✓ tinto_conscientiousness_dropout (r=-0.31, expected negative)
-  ✓ bandura_self_efficacy_engagement (r=0.42, expected positive)
-  ✓ rovai_self_regulation_engagement (r=0.35, expected positive)
-  ✓ bean_metzner_financial_stress_dropout (r=0.18, expected positive)
-  ✓ tinto_goal_commitment_engagement (r=0.28, expected positive)
+Quality: B (Good) — 15/17 tests passed
+  ✓ age_distribution (KS-test)
+  ✓ gender_distribution (Chi-squared)
+  ✓ employment_rate (Z-test)
+  ✓ dropout_rate (Z-test)
+  ✓ tinto_conscientiousness_dropout (expected negative)
+  ✓ bandura_self_efficacy_engagement (expected positive)
+  ✓ rovai_self_regulation_engagement (expected positive)
+  ✓ bean_metzner_financial_stress_dropout (expected positive)
+  ✓ tinto_goal_commitment_engagement (expected positive)
+  ✓ moore_autonomy_engagement (expected positive)
+  ✓ kember_cost_benefit_engagement (expected positive)
+  ✓ garrison_coi_engagement (expected positive)
+  ✓ epstein_network_degree_engagement (expected positive)
+  ✓ sdt_intrinsic_vs_amotivation (intrinsic > amotivation)
+  ✓ baulke_phase_distribution (decided phase proportion)
   ✓ engagement_trajectory_divergence (retained > dropout)
-  ✓ dropout_negative_trend_rate (82% show decline)
-  ✓ k_anonymity (avg k=4.2)
+  ✓ dropout_negative_trend_rate (decline before dropout)
+  ✓ k_anonymity
 ```
 
 ## Theoretical Foundations
@@ -144,22 +151,22 @@ SynthEd's persona attributes and simulation mechanics are grounded in nine estab
 | **Bean & Metzner's Non-Traditional Student Attrition Model** (1985) | Non-traditional students | Environmental factors (`financial_stress`, `weekly_work_hours`, `has_family_responsibilities`) are the **dominant** dropout predictors, outweighing social integration. |
 | **Kember's Longitudinal Process Model** (1989) | Distance education | Centers social/academic integration and cost-benefit evaluation for distance learners. SynthEd operationalizes this as a dynamic `perceived_cost_benefit` that updates weekly based on academic outcomes — a simulation design decision extending Kember's conceptual framework. |
 | **Transactional Distance Theory** (Moore, 1993) | Distance education | Course-level `structure_level` and `dialogue_frequency` interact with student `learner_autonomy` to produce transactional distance, which modulates engagement and feeds Kember's cost-benefit calculation. |
-| **Self-Determination Theory** (Deci & Ryan, 2000) | Psychology | Intrinsic/extrinsic motivation and amotivation (`motivation_type`) as predictors of persistence and goal commitment. |
+| **Self-Determination Theory** (Deci & Ryan, 1985) | Psychology | Intrinsic/extrinsic motivation and amotivation (`motivation_type`) as predictors of persistence and goal commitment. |
 | **Community of Inquiry** (Garrison et al., 2000) | Online learning | Three presences (`social_presence`, `cognitive_presence`, `teaching_presence`) emerge from weekly interactions and co-evolve with Tinto's integration constructs. |
 | **Rovai's Composite Persistence Model** (2003) | Online/distance learning | `digital_literacy`, `self_regulation`, `time_management`, and `institutional_support_access` as persistence factors specific to ODE. |
 | **Bäulke et al. Phase-Oriented Dropout Model** | Psychology | Dropout modeled as a **phased process**: non-fit perception → thoughts of quitting → deliberation → information search → final decision. Tracked via `dropout_phase`. (Originally developed for general HE; adapted to ODE context in SynthEd.) |
-| **Agent-Based Social Simulation** (Epstein & Axtell, 1996) | Computational social science | Methodological framework for bottom-up emergent social behavior. Students form peer networks through forum co-activity; peer influence creates engagement contagion and dropout cascades. Network metrics follow Barabási & Albert (1999) and Watts & Strogatz (1998). |
+| **Agent-Based Social Simulation** (Epstein & Axtell, 1996) | Computational social science | Methodological framework for bottom-up emergent social behavior. Students form peer networks through forum co-activity; peer influence creates engagement contagion and dropout cascades as emergent phenomena. |
 
 ### Factor Clusters (Rovai, 2003)
 
 | Cluster | Attributes | Theoretical Source |
 |---------|------------|-------------------|
-| **Student Characteristics** | `personality` (Big Five), `goal_commitment`, `ode_beliefs`, `motivation_type` | Tinto, Kember, Costa & McCrae, Deci & Ryan |
+| **Student Characteristics** | `personality` (Big Five), `goal_commitment`, `ode_beliefs`, `motivation_type` | Tinto, Kember, Costa & McCrae (1992), Deci & Ryan (1985) |
 | **Student Skills / Needs** | `self_regulation`, `digital_literacy`, `time_management`, `learner_autonomy`, `academic_reading_writing`, `institutional_support_access` | Rovai (2003), Moore (1993), Bäulke et al. |
 | **External Factors** | `is_employed`, `weekly_work_hours`, `financial_stress`, `has_family_responsibilities` | Bean & Metzner (1985), Economic Rationality |
 | **Internal Factors** | `academic_integration`, `social_integration`, `self_efficacy` | Tinto (1975), Bandura (1997) |
 | **Emergent Properties** | `social_presence`, `cognitive_presence`, `teaching_presence` | Garrison et al. (2000) |
-| **Network Properties** | `network_degree`, peer influence, dropout contagion | Epstein & Axtell (1996) for emergent agent behavior; Barabási & Albert (1999), Watts & Strogatz (1998) for network metrics |
+| **Network Properties** | `network_degree`, peer influence, dropout contagion | Epstein & Axtell (1996) — emergent from agent co-activity |
 
 ### Key Design Decision: ODE ≠ Campus
 

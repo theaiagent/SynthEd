@@ -182,15 +182,15 @@ class StudentPersona:
     goal_orientation: str = "mastery"  # mastery, performance, avoidance
 
     # ── PROCESS MODEL: Dropout Phase (Bäulke et al. — Phase-Oriented) ──
-    # 0=baseline, 1=non_fit_perception, 2=deliberation, 3=info_search, 4=decided
+    # 0=baseline, 1=non_fit_perception, 2=thoughts_of_quitting, 3=deliberation, 4=info_search, 5=decided
     dropout_phase: int = 0
 
     # ── Derived Behavioral Probabilities ──
     base_engagement_probability: float = 0.0
     base_dropout_risk: float = 0.0
 
-    # ── Temporal Memory (MiroFish-inspired) ──
-    memory: list[dict[str, Any]] = field(default_factory=list)
+    # ── LLM-generated backstory (optional) ──
+    backstory: str = ""
 
     def __post_init__(self):
         self._calculate_derived_attributes()
@@ -312,22 +312,6 @@ class StudentPersona:
             f"Perceived cost-benefit of ODE: {'favorable' if self.perceived_cost_benefit > 0.6 else 'neutral' if self.perceived_cost_benefit > 0.3 else 'unfavorable'}. "
             f"Personality: {personality_desc}."
         )
-
-    def add_memory(self, week: int, event_type: str, details: str, impact: float = 0.0):
-        """Add a temporal memory entry (MiroFish-inspired)."""
-        self.memory.append({
-            "week": week,
-            "event_type": event_type,
-            "details": details,
-            "impact": impact,
-        })
-
-    def recent_memory_summary(self, last_n: int = 5) -> str:
-        if not self.memory:
-            return "No prior interactions recorded."
-        recent = self.memory[-last_n:]
-        lines = [f"Week {m['week']}: {m['details']} (impact: {m['impact']:+.1f})" for m in recent]
-        return "\n".join(lines)
 
     def to_dict(self) -> dict:
         d = asdict(self)

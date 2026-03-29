@@ -62,7 +62,6 @@ class SimulationState:
     dropout_phase: int = 0  # Bäulke: 0–5
     cumulative_gpa: float = 0.0
     courses_active: list[str] = field(default_factory=list)
-    courses_dropped: list[str] = field(default_factory=list)
     has_dropped_out: bool = False
     dropout_week: int | None = None
     weekly_engagement_history: list[float] = field(default_factory=list)
@@ -439,7 +438,7 @@ class SimulationEngine:
             + student.goal_commitment * 0.12
             + student.self_efficacy * 0.10
             + student.learner_autonomy * 0.08  # Moore: autonomous learners persist
-        ) * 0.50  # Scale to 0–0.12 range
+        ) * 0.50  # Scale: max ~0.22 for high-resilience students
         engagement = max(engagement, personal_floor)
 
         state.current_engagement = float(np.clip(engagement, 0.01, 0.99))
@@ -509,6 +508,9 @@ class SimulationEngine:
             # Recovery back to 2
             if eng > 0.40:
                 state.dropout_phase = 2
+                state.memory.append({"week": week, "event_type": "recovery",
+                                    "details": "Stepped back from deliberation to thoughts of quitting",
+                                    "impact": 0.1})
             # Phase 3 → 4: Information search
             elif eng < 0.25 and state.perceived_cost_benefit < 0.40:
                 state.dropout_phase = 4
@@ -521,7 +523,7 @@ class SimulationEngine:
             # Recovery still possible but unlikely
             if eng > 0.35 and state.perceived_cost_benefit > 0.45:
                 state.dropout_phase = 3
-            # Phase 4 → 5: Final decision — requires multiple concurrent triggers
+            # Phase 4 → 5: Final decision — probabilistic, scaled by triggers
             else:
                 triggers = 0
                 if eng < 0.10:
@@ -532,8 +534,10 @@ class SimulationEngine:
                     triggers += 1  # Economic rationality: not worth it
                 if student.financial_stress > 0.7:
                     triggers += 1  # Bean & Metzner: environmental crisis
-                if week == 10:
-                    triggers += 1  # Withdrawal deadline (Kember)
+                # Withdrawal deadline at ~70% of semester (Kember)
+                withdrawal_week = int(self.env.total_weeks * 0.70)
+                if week == withdrawal_week:
+                    triggers += 1
 
                 if triggers >= 1:
                     decision_prob = student.base_dropout_risk * triggers * 0.28
