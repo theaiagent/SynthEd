@@ -1,0 +1,172 @@
+"""
+SynthEd Pipeline: End-to-end orchestrator for synthetic educational data generation.
+
+Usage:
+    from synthed.pipeline import SynthEdPipeline
+    pipeline = SynthEdPipeline()
+    report = pipeline.run(n_students=200)
+"""
+
+from __future__ import annotations
+
+import json
+import time
+from dataclasses import asdict
+from pathlib import Path
+from typing import Any
+
+from .agents.persona import PersonaConfig, StudentPersona
+from .agents.factory import StudentFactory
+from .simulation.environment import ODLEnvironment
+from .simulation.engine import SimulationEngine
+from .data_output.exporter import DataExporter
+from .validation.validator import SyntheticDataValidator, ReferenceStatistics
+from .utils.llm import LLMClient
+
+
+class SynthEdPipeline:
+    """
+    End-to-end pipeline for generating and validating synthetic ODL data.
+
+    Pipeline stages:
+    1. Configure → Set persona distributions, environment, and validation targets
+    2. Generate  → Create student population using StudentFactory
+    3. Simulate  → Run week-by-week behavioral simulation
+    4. Export    → Write CSV datasets
+    5. Validate  → Statistical comparison against reference data
+    6. Report    → Produce quality assessment report
+    """
+
+    def __init__(
+        self,
+        persona_config: PersonaConfig | None = None,
+        environment: ODLEnvironment | None = None,
+        reference_stats: ReferenceStatistics | None = None,
+        output_dir: str = "./output",
+        llm_model: str = "gpt-4o-mini",
+        use_llm: bool = False,
+        seed: int = 42,
+    ):
+        self.persona_config = persona_config or PersonaConfig()
+        self.environment = environment or ODLEnvironment()
+        self.reference = reference_stats or ReferenceStatistics()
+        self.output_dir = Path(output_dir)
+        self.use_llm = use_llm
+        self.seed = seed
+
+        # Initialize components
+        self.llm = LLMClient(model=llm_model) if use_llm else None
+        self.factory = StudentFactory(config=self.persona_config, llm_client=self.llm, seed=seed)
+        self.engine = SimulationEngine(environment=self.environment, llm_client=self.llm, seed=seed)
+        self.exporter = DataExporter(output_dir=str(self.output_dir))
+        self.validator = SyntheticDataValidator(reference=self.reference)
+
+    def run(
+        self,
+        n_students: int = 200,
+        enrich_personas: bool = False,
+    ) -> dict[str, Any]:
+        """
+        Execute the full pipeline.
+
+        Args:
+            n_students: Number of synthetic students to generate.
+            enrich_personas: Whether to use LLM for persona backstories.
+
+        Returns:
+            Comprehensive pipeline report including file paths and validation.
+        """
+        report: dict[str, Any] = {
+            "pipeline": "SynthEd v0.1.0",
+            "config": {
+                "n_students": n_students,
+                "seed": self.seed,
+                "llm_enabled": self.use_llm,
+                "semester_weeks": self.environment.total_weeks,
+                "courses": len(self.environment.courses),
+            },
+            "timing": {},
+        }
+
+        # Stage 1: Generate Population
+        print(f"[1/4] Generating {n_students} student personas...")
+        t0 = time.time()
+        students = self.factory.generate_population(
+            n=n_students, enrich_with_llm=enrich_personas and self.use_llm
+        )
+        report["timing"]["generation_sec"] = round(time.time() - t0, 2)
+        report["population_summary"] = self.factory.population_summary(students)
+        print(f"      Done. Mean age: {report['population_summary']['age_mean']:.1f}, "
+              f"Dropout risk: {report['population_summary']['base_dropout_risk_mean']:.2%}")
+
+        # Stage 2: Run Simulation
+        print(f"[2/4] Simulating {self.environment.total_weeks} weeks of ODL interactions...")
+        t0 = time.time()
+        records, states = self.engine.run(students)
+        report["timing"]["simulation_sec"] = round(time.time() - t0, 2)
+        report["simulation_summary"] = self.engine.summary_statistics(states)
+        print(f"      Done. {len(records)} interaction records generated. "
+              f"Dropout rate: {report['simulation_summary']['dropout_rate']:.2%}")
+
+        # Stage 3: Export Data
+        print(f"[3/4] Exporting datasets to {self.output_dir}/...")
+        t0 = time.time()
+        file_paths = self.exporter.export_all(students, records, states)
+        report["timing"]["export_sec"] = round(time.time() - t0, 2)
+        report["exported_files"] = file_paths
+        print(f"      Done. Files: {', '.join(Path(p).name for p in file_paths.values())}")
+
+        # Stage 4: Validate
+        print("[4/4] Running validation suite...")
+        t0 = time.time()
+
+        # Prepare validation data
+        students_data = []
+        for s in students:
+            d = {
+                "student_id": s.id,
+                "age": s.age,
+                "gender": s.gender,
+                "is_employed": s.is_employed,
+                "prior_gpa": s.prior_gpa,
+                "socioeconomic_level": s.socioeconomic_level,
+                "conscientiousness": s.personality.conscientiousness,
+                "self_efficacy": s.self_efficacy,
+            }
+            students_data.append(d)
+
+        outcomes_data = []
+        for s in students:
+            state = states.get(s.id)
+            if state:
+                outcomes_data.append({
+                    "student_id": s.id,
+                    "has_dropped_out": state.has_dropped_out,
+                    "dropout_week": state.dropout_week,
+                    "final_engagement": state.weekly_engagement_history[-1] if state.weekly_engagement_history else None,
+                })
+
+        weekly_eng = {
+            sid: st.weekly_engagement_history
+            for sid, st in states.items()
+        }
+
+        validation_report = self.validator.validate_all(
+            students_data, outcomes_data, weekly_eng
+        )
+        report["timing"]["validation_sec"] = round(time.time() - t0, 2)
+        report["validation"] = validation_report
+        print(f"      Done. Quality: {validation_report['summary']['overall_quality']} "
+              f"({validation_report['summary']['passed']}/{validation_report['summary']['total_tests']} tests passed)")
+
+        # Save full report
+        report_path = self.output_dir / "pipeline_report.json"
+        report_path.write_text(json.dumps(report, indent=2, default=str))
+        report["report_path"] = str(report_path)
+
+        # LLM cost report
+        if self.llm:
+            report["llm_costs"] = self.llm.cost_report()
+
+        print(f"\nPipeline complete. Report saved to {report_path}")
+        return report

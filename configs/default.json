@@ -1,0 +1,30 @@
+{
+  "persona_config": {
+    "age_range": [18, 55],
+    "gender_distribution": {"male": 0.45, "female": 0.50, "other": 0.05},
+    "employment_rate": 0.65,
+    "has_family_rate": 0.40,
+    "prior_gpa_mean": 2.5,
+    "prior_gpa_std": 0.7,
+    "digital_literacy_mean": 0.6,
+    "digital_literacy_std": 0.2,
+    "motivation_levels": {"intrinsic": 0.35, "extrinsic": 0.45, "amotivation": 0.20},
+    "dropout_base_rate": 0.35
+  },
+  "reference_statistics": {
+    "age_mean": 28.0,
+    "age_std": 8.0,
+    "gender_distribution": {"male": 0.45, "female": 0.50, "other": 0.05},
+    "employment_rate": 0.65,
+    "gpa_mean": 2.4,
+    "gpa_std": 0.8,
+    "dropout_rate": 0.35
+  },
+  "simulation": {
+    "n_students": 200,
+    "seed": 42,
+    "semester_weeks": 14,
+    "use_llm": false,
+    "llm_model": "gpt-4o-mini"
+  }
+}
