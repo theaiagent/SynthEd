@@ -118,25 +118,47 @@ SynthEd validates generated data across four levels:
 
 Example validation output:
 ```
-Quality: B (Good) — 7/9 tests passed
-  ✓ age_distribution (KS-test, p=0.342)
-  ✓ gender_distribution (Chi-squared, p=0.891)
-  ✓ dropout_rate (Z-test, p=0.156)
-  ✓ conscientiousness_dropout_correlation (r=-0.31)
+Quality: A (Excellent) — 12/13 tests passed
+  ✓ age_distribution (KS-test, p=0.34)
+  ✓ gender_distribution (Chi-squared, p=0.89)
+  ✓ dropout_rate (Z-test, p=0.57)
+  ✓ tinto_conscientiousness_dropout (r=-0.31, expected negative)
+  ✓ bandura_self_efficacy_engagement (r=0.42, expected positive)
+  ✓ rovai_self_regulation_engagement (r=0.35, expected positive)
+  ✓ bean_metzner_financial_stress_dropout (r=0.18, expected positive)
+  ✓ tinto_goal_commitment_engagement (r=0.28, expected positive)
   ✓ engagement_trajectory_divergence (retained > dropout)
-  ✓ dropout_negative_trend_rate (78% show decline)
-  ✓ k_anonymity (min k=3)
+  ✓ dropout_negative_trend_rate (82% show decline)
+  ✓ k_anonymity (avg k=4.2)
 ```
 
 ## Theoretical Foundations
 
-SynthEd draws on established frameworks from educational psychology and distance learning research:
+SynthEd's persona attributes and simulation mechanics are grounded in six established theoretical anchors from ODE dropout research, organized into four factor clusters following Yıldız et al. (2022):
 
-- **Self-Determination Theory** (Deci & Ryan, 2000) — Intrinsic/extrinsic motivation and amotivation as predictors of persistence
-- **Big Five Personality Model** (Costa & McCrae, 1992) — Conscientiousness as the strongest personality predictor of academic outcomes
-- **Transactional Distance Theory** (Moore, 1993) — Structure, dialogue, and learner autonomy in distance education
-- **Community of Inquiry** (Garrison et al., 2000) — Social, cognitive, and teaching presence in online learning
-- **Agent-Based Social Simulation** (Epstein & Axtell, 1996) — Bottom-up emergence of collective patterns from individual agent behaviors
+### Core Theoretical Anchors
+
+| Anchor | Origin | Role in SynthEd |
+|--------|--------|-----------------|
+| **Tinto's Student Integration Model** (1975) | Sociology (Durkheim) | Academic & social integration drive `institutional_commitment` → `engagement`. Social integration is deliberately weighted lower in ODE context. |
+| **Bean & Metzner's Non-Traditional Student Attrition Model** (1985) | Non-traditional students | Environmental factors (`financial_stress`, `weekly_work_hours`, `has_family_responsibilities`) are the **dominant** dropout predictors, outweighing social integration. |
+| **Kember's Longitudinal Process Model** (1989) | Distance education | `perceived_cost_benefit` is dynamically updated: students perform ongoing cost-benefit analysis each week. |
+| **Rovai's Composite Persistence Model** (2003) | Online/distance learning | `digital_literacy`, `self_regulation`, `time_management`, and `institutional_support_access` as persistence factors specific to ODE. |
+| **Bäulke et al. Self-Regulation Model** | Psychology | Dropout modeled as a **phased process**: committed → perceived misfit → rumination → info seeking → decision. Tracked via `dropout_phase`. |
+| **Economic Rationality** | Economics | `perceived_cost_benefit` captures rational cost-benefit decision-making; `financial_stress` triggers dropout when costs outweigh anticipated benefits. |
+
+### Factor Clusters (Yıldız et al., 2022)
+
+| Cluster | Attributes | Theoretical Source |
+|---------|------------|-------------------|
+| **Student Characteristics** | `personality` (Big Five), `goal_commitment`, `ode_beliefs`, `motivation_type` | Tinto, Kember, Costa & McCrae |
+| **Student Skills** | `self_regulation`, `digital_literacy`, `time_management`, `academic_reading_writing` | Rovai (2003), Bäulke et al. |
+| **External Factors** | `is_employed`, `weekly_work_hours`, `financial_stress`, `has_family_responsibilities` | Bean & Metzner (1985), Economic Rationality |
+| **Internal Factors** | `academic_integration`, `social_integration`, `self_efficacy`, `institutional_support_access` | Tinto (1975), Bandura (1997), Rovai |
+
+### Key Design Decision: ODE ≠ Campus
+
+Following Bean & Metzner's central insight, SynthEd explicitly **weights external/environmental factors higher than social integration** in the dropout risk formula. Social integration is capped at 0.80 and contributes only 4% to the engagement composite — reflecting the empirical reality that distance learners rarely build campus-based social bonds.
 
 ## Project Structure
 
@@ -144,15 +166,15 @@ SynthEd draws on established frameworks from educational psychology and distance
 SynthEd/
 ├── synthed/
 │   ├── agents/
-│   │   ├── persona.py      # StudentPersona with Big Five traits
-│   │   └── factory.py      # Calibrated population generation
+│   │   ├── persona.py      # StudentPersona (4 factor clusters + Big Five)
+│   │   └── factory.py      # Calibrated population with inter-attribute correlations
 │   ├── simulation/
-│   │   ├── environment.py   # ODL course structure & events
-│   │   └── engine.py        # Week-by-week behavioral simulation
+│   │   ├── environment.py   # ODL course structure & academic events
+│   │   └── engine.py        # Theory-grounded week-by-week simulation
 │   ├── data_output/
 │   │   └── exporter.py      # CSV dataset generation
 │   ├── validation/
-│   │   └── validator.py     # Multi-level statistical validation
+│   │   └── validator.py     # Theory-grounded statistical validation
 │   ├── utils/
 │   │   └── llm.py           # OpenAI wrapper with caching & cost tracking
 │   └── pipeline.py          # End-to-end orchestrator

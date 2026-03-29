@@ -1,9 +1,21 @@
 """
-StudentPersona: TinyTroupe-inspired persona model for ODL student agents.
+StudentPersona: Theory-grounded persona model for ODL student agents.
 
-Each persona encapsulates Big Five personality traits, demographic attributes,
-academic background, motivation factors, and behavioral tendencies that
-drive realistic simulation of student interactions in distance learning.
+Attribute structure is organized around six established theoretical anchors
+from the ODL dropout literature:
+
+1. Tinto (1975) — Academic & social integration
+2. Bean & Metzner (1985) — Environmental factors for non-traditional students
+3. Kember (1989) — Cost-benefit analysis in distance education
+4. Rovai (2003) — Accessibility & digital skills in online learning
+5. Bäulke et al. — Psychological self-regulation & dropout as process
+6. Economic rationality — Cost-benefit decision-making
+
+Factor clusters follow Yıldız et al. (2022):
+- Internal factors (academic/social integration, course design, accessibility)
+- External factors (finances, family, employment)
+- Student characteristics (personality, goal commitment, beliefs about ODE)
+- Student skills (digital literacy, self-regulation, time management)
 """
 
 from __future__ import annotations
@@ -13,9 +25,13 @@ from dataclasses import dataclass, field, asdict
 from typing import Any
 
 
+# ─────────────────────────────────────────────
+# Personality: Big Five (Costa & McCrae, 1992)
+# ─────────────────────────────────────────────
+
 @dataclass
 class BigFiveTraits:
-    """Big Five personality model (OCEAN). Each dimension is 0.0-1.0."""
+    """Big Five personality model (OCEAN). Each dimension is 0.0–1.0."""
     openness: float = 0.5
     conscientiousness: float = 0.5
     extraversion: float = 0.5
@@ -30,7 +46,6 @@ class BigFiveTraits:
                 raise ValueError(f"{trait_name} must be between 0.0 and 1.0, got {val}")
 
     def to_description(self) -> str:
-        """Convert traits to natural language for LLM prompting."""
         descriptions = []
         trait_map = {
             "openness": ("curious and open to new ideas", "prefers routine and familiar approaches"),
@@ -48,100 +63,223 @@ class BigFiveTraits:
         return "; ".join(descriptions) if descriptions else "balanced personality"
 
 
+# ─────────────────────────────────────────────
+# Population Configuration
+# ─────────────────────────────────────────────
+
 @dataclass
 class PersonaConfig:
     """Configuration for population-level persona generation."""
+    # Demographics
     age_range: tuple[int, int] = (18, 55)
     gender_distribution: dict[str, float] = field(
-        default_factory=lambda: {"male": 0.45, "female": 0.50, "other": 0.05}
+        default_factory=lambda: {"male": 0.48, "female": 0.52}
     )
-    employment_rate: float = 0.65  # ODL students often work
+
+    # Bean & Metzner: External/environmental factors
+    employment_rate: float = 0.65
     has_family_rate: float = 0.40
+    financial_stress_mean: float = 0.45  # 0-1 scale
+
+    # Academic background
     prior_gpa_mean: float = 2.5
     prior_gpa_std: float = 0.7
-    digital_literacy_mean: float = 0.6  # 0-1 scale
+
+    # Rovai: Student skills
+    digital_literacy_mean: float = 0.6
     digital_literacy_std: float = 0.2
+    self_regulation_mean: float = 0.5
+    self_regulation_std: float = 0.18
+
+    # Bäulke et al.: Motivation (SDT)
     motivation_levels: dict[str, float] = field(
         default_factory=lambda: {"intrinsic": 0.35, "extrinsic": 0.45, "amotivation": 0.20}
     )
-    dropout_base_rate: float = 0.35  # Target population dropout rate
 
+    # Target outcome
+    dropout_base_rate: float = 0.35
+
+
+# ─────────────────────────────────────────────
+# StudentPersona
+# ─────────────────────────────────────────────
 
 @dataclass
 class StudentPersona:
     """
-    A fully specified student persona for ODL simulation.
+    A fully specified ODL student persona grounded in dropout theory.
 
-    Inspired by TinyTroupe's TinyPerson abstraction, extended with
-    educational attributes relevant to distance learning research.
+    Attributes are organized into four factor clusters (Yıldız et al., 2022):
+
+    CLUSTER 1 — Student Characteristics (Tinto, Kember)
+        personality, age, gender, prior_education_level, prior_gpa,
+        goal_commitment, ode_beliefs, years_since_last_education
+
+    CLUSTER 2 — Student Skills (Rovai)
+        digital_literacy, self_regulation, time_management,
+        academic_reading_writing, has_reliable_internet, device_type
+
+    CLUSTER 3 — External Factors (Bean & Metzner, Economic Rationality)
+        is_employed, weekly_work_hours, has_family_responsibilities,
+        financial_stress, socioeconomic_level, perceived_cost_benefit
+
+    CLUSTER 4 — Internal Factors (Tinto, Rovai)
+        academic_integration, social_integration, institutional_support_access,
+        course_satisfaction, self_efficacy, motivation_type, goal_orientation
+
+    PROCESS MODEL (Bäulke et al.)
+        dropout_phase: tracks the student's position in the dropout process
+        (0=committed, 1=perceived_misfit, 2=rumination, 3=info_seeking, 4=decided)
     """
-    # Identity
+
+    # ── Identity ──
     id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
     age: int = 25
     gender: str = "female"
 
-    # Big Five Personality
+    # ── CLUSTER 1: Student Characteristics (Tinto, Kember) ──
     personality: BigFiveTraits = field(default_factory=BigFiveTraits)
-
-    # Socioeconomic Context
-    is_employed: bool = True
-    weekly_work_hours: int = 40
-    has_family_responsibilities: bool = False
-    socioeconomic_level: str = "middle"  # low, middle, high
-
-    # Academic Background
-    prior_gpa: float = 2.5  # 0.0-4.0
+    prior_gpa: float = 2.5  # 0.0–4.0
     prior_education_level: str = "high_school"  # high_school, associate, bachelor
     years_since_last_education: int = 3
     enrolled_courses: int = 4
+    goal_commitment: float = 0.6  # 0-1; Tinto: strength of degree completion goal
+    ode_beliefs: float = 0.5  # 0-1; belief that ODE can deliver quality education
 
-    # Digital & Learning
-    digital_literacy: float = 0.6  # 0-1
-    preferred_learning_style: str = "visual"  # visual, auditory, reading, kinesthetic
+    # ── CLUSTER 2: Student Skills (Rovai) ──
+    digital_literacy: float = 0.6  # 0-1; Rovai: ability to use LMS & digital tools
+    self_regulation: float = 0.5  # 0-1; Rovai/Bäulke: autonomous learning ability
+    time_management: float = 0.5  # 0-1; distinct from self-regulation
+    academic_reading_writing: float = 0.6  # 0-1; readiness for academic work
     has_reliable_internet: bool = True
     device_type: str = "laptop"  # laptop, desktop, mobile, tablet
+    preferred_learning_style: str = "visual"
 
-    # Motivation (Self-Determination Theory)
-    motivation_type: str = "extrinsic"  # intrinsic, extrinsic, amotivation
+    # ── CLUSTER 3: External Factors (Bean & Metzner, Economic Rationality) ──
+    is_employed: bool = True
+    weekly_work_hours: int = 40
+    has_family_responsibilities: bool = False
+    financial_stress: float = 0.3  # 0-1; Bean & Metzner: financial pressure
+    socioeconomic_level: str = "middle"  # low, middle, high
+    perceived_cost_benefit: float = 0.6  # 0-1; Kember/Economic: "is this worth it?"
+
+    # ── CLUSTER 4: Internal Factors (Tinto, Rovai) ──
+    academic_integration: float = 0.5  # 0-1; Tinto: intellectual connection to program
+    social_integration: float = 0.3  # 0-1; Tinto: peer/community bonds (lower in ODE)
+    institutional_support_access: float = 0.5  # 0-1; Rovai: ability to reach support
+    self_efficacy: float = 0.6  # 0-1; Bandura: belief in own academic capability
+    motivation_type: str = "extrinsic"  # SDT: intrinsic, extrinsic, amotivation
     goal_orientation: str = "mastery"  # mastery, performance, avoidance
-    self_efficacy: float = 0.6  # 0-1
 
-    # Behavioral Tendencies (derived, used in simulation)
-    base_engagement_probability: float = 0.0  # Calculated post-init
-    base_dropout_risk: float = 0.0  # Calculated post-init
+    # ── PROCESS MODEL: Dropout Phase (Bäulke et al.) ──
+    # 0=committed, 1=perceived_misfit, 2=rumination, 3=info_seeking, 4=decided
+    dropout_phase: int = 0
 
-    # Memory (temporal state, updated during simulation)
+    # ── Derived Behavioral Probabilities ──
+    base_engagement_probability: float = 0.0
+    base_dropout_risk: float = 0.0
+
+    # ── Temporal Memory (MiroFish-inspired) ──
     memory: list[dict[str, Any]] = field(default_factory=list)
 
     def __post_init__(self):
         self._calculate_derived_attributes()
 
     def _calculate_derived_attributes(self):
-        """Derive behavioral probabilities from persona attributes."""
-        # Engagement probability: driven by conscientiousness, motivation, self-efficacy
-        engagement_factors = [
-            self.personality.conscientiousness * 0.30,
-            (1.0 if self.motivation_type == "intrinsic" else
-             0.6 if self.motivation_type == "extrinsic" else 0.2) * 0.25,
-            self.self_efficacy * 0.20,
-            self.digital_literacy * 0.15,
-            (1.0 if self.has_reliable_internet else 0.4) * 0.10,
-        ]
-        self.base_engagement_probability = min(max(sum(engagement_factors), 0.05), 0.95)
+        """
+        Derive behavioral probabilities from persona attributes.
 
-        # Dropout risk: inverse relationship with protective factors
-        risk_factors = [
-            (1 - self.personality.conscientiousness) * 0.20,
-            (1 - self.self_efficacy) * 0.20,
-            (0.8 if self.motivation_type == "amotivation" else
-             0.3 if self.motivation_type == "extrinsic" else 0.1) * 0.20,
-            min(self.weekly_work_hours / 50, 1.0) * 0.15,
-            (0.7 if self.has_family_responsibilities else 0.2) * 0.10,
-            self.personality.neuroticism * 0.10,
-            (1 - self.digital_literacy) * 0.05,
-        ]
-        self.base_dropout_risk = min(max(sum(risk_factors), 0.02), 0.90)
+        Engagement formula weights reflect theoretical importance:
+        - Internal factors (Tinto/Rovai): 40% of engagement
+        - Student skills (Rovai): 25% of engagement
+        - Student characteristics: 20% of engagement
+        - External factors (Bean & Metzner): 15% of engagement
+          (Note: in ODE, external factors affect dropout MORE than engagement)
+
+        Dropout risk formula:
+        - External factors (Bean & Metzner): 30% — dominant in ODE
+        - Internal factors (Tinto): 25%
+        - Student characteristics: 20%
+        - Student skills (Rovai): 15%
+        - Economic rationality (Kember): 10%
+        """
+
+        # ── Engagement Probability ──
+        # Internal factors (Tinto/Rovai) — 40%
+        internal = (
+            self.self_efficacy * 0.12
+            + self.academic_integration * 0.10
+            + (1.0 if self.motivation_type == "intrinsic" else
+               0.5 if self.motivation_type == "extrinsic" else 0.1) * 0.10
+            + self.social_integration * 0.04
+            + self.institutional_support_access * 0.04
+        )
+
+        # Student skills (Rovai) — 25%
+        skills = (
+            self.self_regulation * 0.10
+            + self.digital_literacy * 0.07
+            + self.time_management * 0.05
+            + (1.0 if self.has_reliable_internet else 0.3) * 0.03
+        )
+
+        # Student characteristics — 20%
+        characteristics = (
+            self.personality.conscientiousness * 0.10
+            + self.goal_commitment * 0.06
+            + self.ode_beliefs * 0.04
+        )
+
+        # External factors (Bean & Metzner) — 15%
+        external = (
+            (1 - min(self.weekly_work_hours / 50, 1.0)) * 0.06
+            + (0.3 if self.has_family_responsibilities else 0.7) * 0.05
+            + (1 - self.financial_stress) * 0.04
+        )
+
+        self.base_engagement_probability = min(max(
+            internal + skills + characteristics + external, 0.05
+        ), 0.95)
+
+        # ── Dropout Risk ──
+        # External factors (Bean & Metzner) — 30% (DOMINANT in ODE)
+        ext_risk = (
+            min(self.weekly_work_hours / 50, 1.0) * 0.10
+            + (0.8 if self.has_family_responsibilities else 0.2) * 0.08
+            + self.financial_stress * 0.07
+            + (0.6 if not self.has_reliable_internet else 0.1) * 0.05
+        )
+
+        # Internal factors (Tinto) — 25%
+        int_risk = (
+            (1 - self.self_efficacy) * 0.08
+            + (1 - self.academic_integration) * 0.07
+            + (0.8 if self.motivation_type == "amotivation" else
+               0.3 if self.motivation_type == "extrinsic" else 0.05) * 0.06
+            + (1 - self.social_integration) * 0.04
+        )
+
+        # Student characteristics — 20%
+        char_risk = (
+            (1 - self.personality.conscientiousness) * 0.08
+            + (1 - self.goal_commitment) * 0.07
+            + self.personality.neuroticism * 0.05
+        )
+
+        # Student skills (Rovai) — 15%
+        skill_risk = (
+            (1 - self.self_regulation) * 0.06
+            + (1 - self.digital_literacy) * 0.05
+            + (1 - self.time_management) * 0.04
+        )
+
+        # Economic rationality (Kember) — 10%
+        econ_risk = (1 - self.perceived_cost_benefit) * 0.10
+
+        self.base_dropout_risk = min(max(
+            ext_risk + int_risk + char_risk + skill_risk + econ_risk, 0.02
+        ), 0.90)
 
     def to_prompt_description(self) -> str:
         """Generate a natural language description for LLM-based simulation."""
@@ -149,15 +287,17 @@ class StudentPersona:
         return (
             f"{self.name} is a {self.age}-year-old {self.gender} student enrolled in "
             f"{self.enrolled_courses} courses in an open and distance learning program. "
-            f"Education level: {self.prior_education_level} (GPA: {self.prior_gpa:.1f}/4.0). "
-            f"{'Currently employed' if self.is_employed else 'Not currently employed'}"
-            f"{f', working {self.weekly_work_hours} hours/week' if self.is_employed else ''}. "
+            f"Education: {self.prior_education_level} (GPA: {self.prior_gpa:.1f}/4.0), "
+            f"{self.years_since_last_education} years since last formal education. "
+            f"{'Employed' if self.is_employed else 'Unemployed'}"
+            f"{f', {self.weekly_work_hours}h/week' if self.is_employed else ''}. "
             f"{'Has family responsibilities. ' if self.has_family_responsibilities else ''}"
+            f"Financial stress: {'high' if self.financial_stress > 0.7 else 'moderate' if self.financial_stress > 0.4 else 'low'}. "
+            f"Self-regulation: {'strong' if self.self_regulation > 0.7 else 'moderate' if self.self_regulation > 0.4 else 'weak'}. "
             f"Digital literacy: {'high' if self.digital_literacy > 0.7 else 'moderate' if self.digital_literacy > 0.4 else 'low'}. "
-            f"Accesses courses via {self.device_type}"
-            f"{'' if self.has_reliable_internet else ' with unreliable internet'}. "
-            f"Motivation: primarily {self.motivation_type}. "
-            f"Self-efficacy: {'high' if self.self_efficacy > 0.7 else 'moderate' if self.self_efficacy > 0.4 else 'low'}. "
+            f"Goal commitment: {'strong' if self.goal_commitment > 0.7 else 'moderate' if self.goal_commitment > 0.4 else 'weak'}. "
+            f"Motivation: {self.motivation_type}. "
+            f"Perceived cost-benefit of ODE: {'favorable' if self.perceived_cost_benefit > 0.6 else 'neutral' if self.perceived_cost_benefit > 0.3 else 'unfavorable'}. "
             f"Personality: {personality_desc}."
         )
 
@@ -167,11 +307,10 @@ class StudentPersona:
             "week": week,
             "event_type": event_type,
             "details": details,
-            "impact": impact,  # -1.0 (negative) to 1.0 (positive)
+            "impact": impact,
         })
 
     def recent_memory_summary(self, last_n: int = 5) -> str:
-        """Summarize recent memories for LLM context."""
         if not self.memory:
             return "No prior interactions recorded."
         recent = self.memory[-last_n:]
@@ -179,14 +318,12 @@ class StudentPersona:
         return "\n".join(lines)
 
     def to_dict(self) -> dict:
-        """Serialize persona to dictionary."""
         d = asdict(self)
         d["personality"] = asdict(self.personality)
         return d
 
     @classmethod
     def from_dict(cls, data: dict) -> StudentPersona:
-        """Deserialize persona from dictionary."""
         personality_data = data.pop("personality", {})
         data["personality"] = BigFiveTraits(**personality_data)
         return cls(**data)

@@ -30,7 +30,7 @@ class ReferenceStatistics:
     age_mean: float = 28.0
     age_std: float = 8.0
     gender_distribution: dict[str, float] = field(
-        default_factory=lambda: {"male": 0.45, "female": 0.50, "other": 0.05}
+        default_factory=lambda: {"male": 0.48, "female": 0.52}
     )
     employment_rate: float = 0.65
 
@@ -248,57 +248,94 @@ class SyntheticDataValidator:
     def _validate_correlations(
         self, students: list[dict], outcomes: list[dict]
     ) -> list[ValidationResult]:
-        """Level 2: Check that expected correlations exist in synthetic data."""
-        results = []
+        """
+        Level 2: Validate theory-grounded correlations in synthetic data.
 
-        # Build outcome lookup
+        Expected relationships from literature:
+        - Conscientiousness → dropout (negative) [Poropat, 2009]
+        - Self-efficacy → engagement (positive) [Bandura, 1997]
+        - Self-regulation → engagement (positive) [Rovai, 2003]
+        - Financial stress → dropout (positive) [Bean & Metzner, 1985]
+        - Goal commitment → engagement (positive) [Tinto, 1975]
+        """
+        results = []
         outcome_map = {o["student_id"]: o for o in outcomes}
 
-        # Expected: conscientiousness should negatively correlate with dropout
-        conscientiousness = []
-        dropout = []
-        for s in students:
-            sid = s.get("student_id")
-            if sid in outcome_map and "conscientiousness" in s:
-                conscientiousness.append(s["conscientiousness"])
-                dropout.append(int(outcome_map[sid].get("has_dropped_out", 0)))
+        # Helper to extract paired data
+        def _get_pairs(attr_key, outcome_key, continuous=True):
+            xs, ys = [], []
+            for s in students:
+                sid = s.get("student_id")
+                if sid in outcome_map and attr_key in s:
+                    val = outcome_map[sid].get(outcome_key)
+                    if val is not None and val != "":
+                        xs.append(s[attr_key])
+                        ys.append(float(val) if continuous else int(val))
+            return xs, ys
 
-        if len(conscientiousness) > 10:
-            corr, p_val = stats.pointbiserialr(dropout, conscientiousness)
-            # We expect negative correlation
+        # ── Tinto: Conscientiousness → dropout (negative) ──
+        xs, ys = _get_pairs("conscientiousness", "has_dropped_out", continuous=False)
+        if len(xs) > 10:
+            corr, p_val = stats.pointbiserialr(ys, xs)
             results.append(ValidationResult(
-                test_name="conscientiousness_dropout_correlation",
+                test_name="tinto_conscientiousness_dropout",
                 metric="Point-biserial r",
-                synthetic_value=float(corr),
-                reference_value=-0.2,  # Expected direction
-                statistic=float(corr),
-                p_value=float(p_val),
-                passed=corr < 0,  # Should be negative
-                details=f"Conscientiousness-dropout correlation: r={corr:.3f} (expected negative)",
+                synthetic_value=float(corr), reference_value=-0.2,
+                statistic=float(corr), p_value=float(p_val),
+                passed=corr < 0,
+                details=f"Conscientiousness-dropout: r={corr:.3f} (Poropat 2009: expected negative)",
             ))
 
-        # Expected: self-efficacy should positively correlate with engagement
-        self_efficacy = []
-        engagement = []
-        for s in students:
-            sid = s.get("student_id")
-            if sid in outcome_map and "self_efficacy" in s:
-                final_eng = outcome_map[sid].get("final_engagement")
-                if final_eng is not None and final_eng != "":
-                    self_efficacy.append(s["self_efficacy"])
-                    engagement.append(float(final_eng))
-
-        if len(self_efficacy) > 10:
-            corr, p_val = stats.pearsonr(self_efficacy, engagement)
+        # ── Bandura: Self-efficacy → engagement (positive) ──
+        xs, ys = _get_pairs("self_efficacy", "final_engagement")
+        if len(xs) > 10:
+            corr, p_val = stats.pearsonr(xs, ys)
             results.append(ValidationResult(
-                test_name="self_efficacy_engagement_correlation",
+                test_name="bandura_self_efficacy_engagement",
                 metric="Pearson r",
-                synthetic_value=float(corr),
-                reference_value=0.3,  # Expected positive
-                statistic=float(corr),
-                p_value=float(p_val),
+                synthetic_value=float(corr), reference_value=0.3,
+                statistic=float(corr), p_value=float(p_val),
                 passed=corr > 0,
-                details=f"Self-efficacy-engagement correlation: r={corr:.3f} (expected positive)",
+                details=f"Self-efficacy-engagement: r={corr:.3f} (Bandura 1997: expected positive)",
+            ))
+
+        # ── Rovai: Self-regulation → engagement (positive) ──
+        xs, ys = _get_pairs("self_regulation", "final_engagement")
+        if len(xs) > 10:
+            corr, p_val = stats.pearsonr(xs, ys)
+            results.append(ValidationResult(
+                test_name="rovai_self_regulation_engagement",
+                metric="Pearson r",
+                synthetic_value=float(corr), reference_value=0.25,
+                statistic=float(corr), p_value=float(p_val),
+                passed=corr > 0,
+                details=f"Self-regulation-engagement: r={corr:.3f} (Rovai 2003: expected positive)",
+            ))
+
+        # ── Bean & Metzner: Financial stress → dropout (positive) ──
+        xs, ys = _get_pairs("financial_stress", "has_dropped_out", continuous=False)
+        if len(xs) > 10:
+            corr, p_val = stats.pointbiserialr(ys, xs)
+            results.append(ValidationResult(
+                test_name="bean_metzner_financial_stress_dropout",
+                metric="Point-biserial r",
+                synthetic_value=float(corr), reference_value=0.15,
+                statistic=float(corr), p_value=float(p_val),
+                passed=corr > 0,
+                details=f"Financial stress-dropout: r={corr:.3f} (Bean & Metzner 1985: expected positive)",
+            ))
+
+        # ── Tinto: Goal commitment → engagement (positive) ──
+        xs, ys = _get_pairs("goal_commitment", "final_engagement")
+        if len(xs) > 10:
+            corr, p_val = stats.pearsonr(xs, ys)
+            results.append(ValidationResult(
+                test_name="tinto_goal_commitment_engagement",
+                metric="Pearson r",
+                synthetic_value=float(corr), reference_value=0.2,
+                statistic=float(corr), p_value=float(p_val),
+                passed=corr > 0,
+                details=f"Goal commitment-engagement: r={corr:.3f} (Tinto 1975: expected positive)",
             ))
 
         return results

@@ -120,7 +120,7 @@ class SynthEdPipeline:
         print("[4/4] Running validation suite...")
         t0 = time.time()
 
-        # Prepare validation data
+        # Prepare validation data (all four factor clusters)
         students_data = []
         for s in students:
             d = {
@@ -130,7 +130,15 @@ class SynthEdPipeline:
                 "is_employed": s.is_employed,
                 "prior_gpa": s.prior_gpa,
                 "socioeconomic_level": s.socioeconomic_level,
+                # Cluster 1: Student Characteristics
                 "conscientiousness": s.personality.conscientiousness,
+                "goal_commitment": s.goal_commitment,
+                # Cluster 2: Student Skills (Rovai)
+                "self_regulation": s.self_regulation,
+                "digital_literacy": s.digital_literacy,
+                # Cluster 3: External Factors (Bean & Metzner)
+                "financial_stress": s.financial_stress,
+                # Cluster 4: Internal Factors (Tinto)
                 "self_efficacy": s.self_efficacy,
             }
             students_data.append(d)

@@ -1,7 +1,7 @@
 {
   "persona_config": {
     "age_range": [18, 55],
-    "gender_distribution": {"male": 0.45, "female": 0.50, "other": 0.05},
+    "gender_distribution": {"male": 0.48, "female": 0.52},
     "employment_rate": 0.65,
     "has_family_rate": 0.40,
     "prior_gpa_mean": 2.5,
@@ -14,7 +14,7 @@
   "reference_statistics": {
     "age_mean": 28.0,
     "age_std": 8.0,
-    "gender_distribution": {"male": 0.45, "female": 0.50, "other": 0.05},
+    "gender_distribution": {"male": 0.48, "female": 0.52},
     "employment_rate": 0.65,
     "gpa_mean": 2.4,
     "gpa_std": 0.8,
