@@ -338,6 +338,13 @@ SynthEd is designed to **address** ethical challenges in educational data mining
 
 MIT License. See [LICENSE](LICENSE) for details.
 
+## Contributors
+
+| Contributor | Role |
+|-------------|------|
+| [Halis Aykut Cosgun](https://github.com/theaiagent) | Project lead, theoretical framework design, research |
+| [Claude](https://claude.ai) (Anthropic) | AI pair programmer — architecture, implementation, testing, code review |
+
 ## Acknowledgments
 
 This project is conceptually inspired by:
