@@ -1,7 +1,7 @@
 """
 StudentPersona: Theory-grounded persona model for ODL student agents.
 
-Attribute structure is organized around six established theoretical anchors
+Attribute structure is organized around nine established theoretical anchors
 from the ODL dropout literature:
 
 1. Tinto (1975) — Academic & social integration
@@ -10,6 +10,9 @@ from the ODL dropout literature:
 4. Rovai (2003) — Accessibility & digital skills in online learning
 5. Bäulke et al. — Psychological self-regulation & dropout as process
 6. Economic rationality — Cost-benefit decision-making
+7. Moore (1993) — Transactional distance (structure, dialogue, autonomy)
+8. Garrison et al. (2000) — Community of Inquiry (social, cognitive, teaching presence)
+9. Epstein & Axtell (1996) — Agent-based social simulation (peer influence)
 
 Factor clusters follow Yıldız et al. (2022):
 - Internal factors (academic/social integration, course design, accessibility)
@@ -125,7 +128,7 @@ class StudentPersona:
 
     CLUSTER 4 — Internal Factors (Tinto, Rovai)
         academic_integration, social_integration, institutional_support_access,
-        course_satisfaction, self_efficacy, motivation_type, goal_orientation
+        self_efficacy, motivation_type, goal_orientation
 
     PROCESS MODEL (Bäulke et al.)
         dropout_phase: tracks the student's position in the dropout process
@@ -147,11 +150,12 @@ class StudentPersona:
     goal_commitment: float = 0.6  # 0-1; Tinto: strength of degree completion goal
     ode_beliefs: float = 0.5  # 0-1; belief that ODE can deliver quality education
 
-    # ── CLUSTER 2: Student Skills (Rovai) ──
+    # ── CLUSTER 2: Student Skills (Rovai, Moore) ──
     digital_literacy: float = 0.6  # 0-1; Rovai: ability to use LMS & digital tools
     self_regulation: float = 0.5  # 0-1; Rovai/Bäulke: autonomous learning ability
     time_management: float = 0.5  # 0-1; distinct from self-regulation
     academic_reading_writing: float = 0.6  # 0-1; readiness for academic work
+    learner_autonomy: float = 0.5  # 0-1; Moore (1993): self-direction in learning
     has_reliable_internet: bool = True
     device_type: str = "laptop"  # laptop, desktop, mobile, tablet
     preferred_learning_style: str = "visual"
@@ -216,11 +220,12 @@ class StudentPersona:
             + self.institutional_support_access * 0.04
         )
 
-        # Student skills (Rovai) — 25%
+        # Student skills (Rovai, Moore) — 25%
         skills = (
-            self.self_regulation * 0.10
-            + self.digital_literacy * 0.07
-            + self.time_management * 0.05
+            self.self_regulation * 0.08
+            + self.digital_literacy * 0.06
+            + self.time_management * 0.04
+            + self.learner_autonomy * 0.04  # Moore (1993)
             + (1.0 if self.has_reliable_internet else 0.3) * 0.03
         )
 
@@ -267,11 +272,12 @@ class StudentPersona:
             + self.personality.neuroticism * 0.05
         )
 
-        # Student skills (Rovai) — 15%
+        # Student skills (Rovai, Moore) — 15%
         skill_risk = (
-            (1 - self.self_regulation) * 0.06
-            + (1 - self.digital_literacy) * 0.05
-            + (1 - self.time_management) * 0.04
+            (1 - self.self_regulation) * 0.05
+            + (1 - self.digital_literacy) * 0.04
+            + (1 - self.time_management) * 0.03
+            + (1 - self.learner_autonomy) * 0.03  # Moore (1993)
         )
 
         # Economic rationality (Kember) — 10%
@@ -295,6 +301,7 @@ class StudentPersona:
             f"Financial stress: {'high' if self.financial_stress > 0.7 else 'moderate' if self.financial_stress > 0.4 else 'low'}. "
             f"Self-regulation: {'strong' if self.self_regulation > 0.7 else 'moderate' if self.self_regulation > 0.4 else 'weak'}. "
             f"Digital literacy: {'high' if self.digital_literacy > 0.7 else 'moderate' if self.digital_literacy > 0.4 else 'low'}. "
+            f"Learner autonomy: {'high' if self.learner_autonomy > 0.7 else 'moderate' if self.learner_autonomy > 0.4 else 'low'}. "
             f"Goal commitment: {'strong' if self.goal_commitment > 0.7 else 'moderate' if self.goal_commitment > 0.4 else 'weak'}. "
             f"Motivation: {self.motivation_type}. "
             f"Perceived cost-benefit of ODE: {'favorable' if self.perceived_cost_benefit > 0.6 else 'neutral' if self.perceived_cost_benefit > 0.3 else 'unfavorable'}. "
@@ -324,6 +331,7 @@ class StudentPersona:
 
     @classmethod
     def from_dict(cls, data: dict) -> StudentPersona:
-        personality_data = data.pop("personality", {})
-        data["personality"] = BigFiveTraits(**personality_data)
-        return cls(**data)
+        clean = {k: v for k, v in data.items() if k != "personality"}
+        personality_data = data.get("personality", {})
+        clean["personality"] = BigFiveTraits(**personality_data)
+        return cls(**clean)

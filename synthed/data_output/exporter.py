@@ -13,13 +13,14 @@ from typing import Any
 
 from ..agents.persona import StudentPersona
 from ..simulation.engine import InteractionRecord, SimulationState
+from ..simulation.social_network import SocialNetwork
 
 
 class DataExporter:
     """
     Export simulation outputs to research-ready CSV files.
 
-    Generates five datasets:
+    Generates four datasets:
     1. students.csv — Full persona attributes organized by factor cluster
     2. interactions.csv — Timestamped LMS interaction logs
     3. outcomes.csv — Per-student outcome (dropout phase, engagement trend)
@@ -34,11 +35,12 @@ class DataExporter:
         self, students: list[StudentPersona],
         records: list[InteractionRecord],
         states: dict[str, SimulationState],
+        network: SocialNetwork | None = None,
     ) -> dict[str, str]:
         paths = {}
         paths["students"] = self.export_students(students)
         paths["interactions"] = self.export_interactions(records)
-        paths["outcomes"] = self.export_outcomes(students, states)
+        paths["outcomes"] = self.export_outcomes(students, states, network)
         paths["weekly_engagement"] = self.export_weekly_engagement(students, states)
         return paths
 
@@ -53,8 +55,9 @@ class DataExporter:
             "prior_gpa", "prior_education_level", "years_since_last_education",
             "enrolled_courses", "goal_commitment", "ode_beliefs",
             "motivation_type", "goal_orientation",
-            # Cluster 2: Student Skills (Rovai)
+            # Cluster 2: Student Skills (Rovai, Moore)
             "digital_literacy", "self_regulation", "time_management",
+            "learner_autonomy",
             "academic_reading_writing", "has_reliable_internet", "device_type",
             "preferred_learning_style",
             # Cluster 3: External Factors (Bean & Metzner)
@@ -85,6 +88,7 @@ class DataExporter:
                     "motivation_type": s.motivation_type, "goal_orientation": s.goal_orientation,
                     "digital_literacy": s.digital_literacy, "self_regulation": s.self_regulation,
                     "time_management": s.time_management,
+                    "learner_autonomy": round(s.learner_autonomy, 3),
                     "academic_reading_writing": s.academic_reading_writing,
                     "has_reliable_internet": int(s.has_reliable_internet),
                     "device_type": s.device_type,
@@ -131,6 +135,7 @@ class DataExporter:
 
     def export_outcomes(
         self, students: list[StudentPersona], states: dict[str, SimulationState],
+        network: SocialNetwork | None = None,
     ) -> str:
         filepath = self.output_dir / "outcomes.csv"
         fieldnames = [
@@ -138,6 +143,10 @@ class DataExporter:
             "final_engagement", "final_academic_integration", "final_social_integration",
             "final_perceived_cost_benefit", "courses_active_count",
             "engagement_trend",
+            # Garrison et al. (2000): Community of Inquiry
+            "final_social_presence", "final_cognitive_presence", "final_teaching_presence",
+            # Epstein & Axtell (1996): Network properties
+            "network_degree",
         ]
         with open(filepath, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -164,6 +173,12 @@ class DataExporter:
                     "final_perceived_cost_benefit": round(state.perceived_cost_benefit, 3),
                     "courses_active_count": len(state.courses_active),
                     "engagement_trend": trend,
+                    # CoI (Garrison et al., 2000)
+                    "final_social_presence": round(state.coi_state.social_presence, 3),
+                    "final_cognitive_presence": round(state.coi_state.cognitive_presence, 3),
+                    "final_teaching_presence": round(state.coi_state.teaching_presence, 3),
+                    # Network (Epstein & Axtell, 1996)
+                    "network_degree": network.get_degree(student.id) if network else 0,
                 })
         return str(filepath)
 

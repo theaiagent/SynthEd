@@ -102,16 +102,17 @@ class SynthEdPipeline:
         # Stage 2: Run Simulation
         print(f"[2/4] Simulating {self.environment.total_weeks} weeks of ODL interactions...")
         t0 = time.time()
-        records, states = self.engine.run(students)
+        records, states, network = self.engine.run(students)
         report["timing"]["simulation_sec"] = round(time.time() - t0, 2)
         report["simulation_summary"] = self.engine.summary_statistics(states)
+        report["network_summary"] = network.network_statistics(states)
         print(f"      Done. {len(records)} interaction records generated. "
               f"Dropout rate: {report['simulation_summary']['dropout_rate']:.2%}")
 
         # Stage 3: Export Data
         print(f"[3/4] Exporting datasets to {self.output_dir}/...")
         t0 = time.time()
-        file_paths = self.exporter.export_all(students, records, states)
+        file_paths = self.exporter.export_all(students, records, states, network)
         report["timing"]["export_sec"] = round(time.time() - t0, 2)
         report["exported_files"] = file_paths
         print(f"      Done. Files: {', '.join(Path(p).name for p in file_paths.values())}")
@@ -133,13 +134,17 @@ class SynthEdPipeline:
                 # Cluster 1: Student Characteristics
                 "conscientiousness": s.personality.conscientiousness,
                 "goal_commitment": s.goal_commitment,
-                # Cluster 2: Student Skills (Rovai)
+                # Cluster 2: Student Skills (Rovai, Moore)
                 "self_regulation": s.self_regulation,
                 "digital_literacy": s.digital_literacy,
+                "learner_autonomy": s.learner_autonomy,
                 # Cluster 3: External Factors (Bean & Metzner)
                 "financial_stress": s.financial_stress,
+                # Cluster 3 extra
+                "perceived_cost_benefit": s.perceived_cost_benefit,
                 # Cluster 4: Internal Factors (Tinto)
                 "self_efficacy": s.self_efficacy,
+                "motivation_type": s.motivation_type,
             }
             students_data.append(d)
 
@@ -147,11 +152,18 @@ class SynthEdPipeline:
         for s in students:
             state = states.get(s.id)
             if state:
+                coi = state.coi_state
+                coi_composite = (coi.social_presence + coi.cognitive_presence + coi.teaching_presence) / 3
                 outcomes_data.append({
                     "student_id": s.id,
                     "has_dropped_out": state.has_dropped_out,
                     "dropout_week": state.dropout_week,
+                    "final_dropout_phase": state.dropout_phase,
                     "final_engagement": state.weekly_engagement_history[-1] if state.weekly_engagement_history else None,
+                    # Garrison et al. (2000)
+                    "coi_composite": round(coi_composite, 3),
+                    # Epstein & Axtell (1996)
+                    "network_degree": network.get_degree(s.id),
                 })
 
         weekly_eng = {

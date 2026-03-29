@@ -134,7 +134,7 @@ Quality: A (Excellent) — 12/13 tests passed
 
 ## Theoretical Foundations
 
-SynthEd's persona attributes and simulation mechanics are grounded in six established theoretical anchors from ODE dropout research, organized into four factor clusters following Yıldız et al. (2022):
+SynthEd's persona attributes and simulation mechanics are grounded in nine established theoretical anchors from ODE dropout research, organized into four factor clusters following Yıldız et al. (2022):
 
 ### Core Theoretical Anchors
 
@@ -143,22 +143,34 @@ SynthEd's persona attributes and simulation mechanics are grounded in six establ
 | **Tinto's Student Integration Model** (1975) | Sociology (Durkheim) | Academic & social integration drive `institutional_commitment` → `engagement`. Social integration is deliberately weighted lower in ODE context. |
 | **Bean & Metzner's Non-Traditional Student Attrition Model** (1985) | Non-traditional students | Environmental factors (`financial_stress`, `weekly_work_hours`, `has_family_responsibilities`) are the **dominant** dropout predictors, outweighing social integration. |
 | **Kember's Longitudinal Process Model** (1989) | Distance education | `perceived_cost_benefit` is dynamically updated: students perform ongoing cost-benefit analysis each week. |
+| **Transactional Distance Theory** (Moore, 1993) | Distance education | Course-level `structure_level` and `dialogue_frequency` interact with student `learner_autonomy` to produce transactional distance, which modulates engagement and feeds Kember's cost-benefit calculation. |
+| **Self-Determination Theory** (Deci & Ryan, 2000) | Psychology | Intrinsic/extrinsic motivation and amotivation (`motivation_type`) as predictors of persistence and goal commitment. |
+| **Community of Inquiry** (Garrison et al., 2000) | Online learning | Three presences (`social_presence`, `cognitive_presence`, `teaching_presence`) emerge from weekly interactions and co-evolve with Tinto's integration constructs. |
 | **Rovai's Composite Persistence Model** (2003) | Online/distance learning | `digital_literacy`, `self_regulation`, `time_management`, and `institutional_support_access` as persistence factors specific to ODE. |
 | **Bäulke et al. Self-Regulation Model** | Psychology | Dropout modeled as a **phased process**: committed → perceived misfit → rumination → info seeking → decision. Tracked via `dropout_phase`. |
-| **Economic Rationality** | Economics | `perceived_cost_benefit` captures rational cost-benefit decision-making; `financial_stress` triggers dropout when costs outweigh anticipated benefits. |
+| **Agent-Based Social Simulation** (Epstein & Axtell, 1996) | Computational social science | Students form peer networks through forum co-activity; peer influence creates engagement contagion and dropout cascades as emergent phenomena. |
 
 ### Factor Clusters (Yıldız et al., 2022)
 
 | Cluster | Attributes | Theoretical Source |
 |---------|------------|-------------------|
-| **Student Characteristics** | `personality` (Big Five), `goal_commitment`, `ode_beliefs`, `motivation_type` | Tinto, Kember, Costa & McCrae |
-| **Student Skills** | `self_regulation`, `digital_literacy`, `time_management`, `academic_reading_writing` | Rovai (2003), Bäulke et al. |
+| **Student Characteristics** | `personality` (Big Five), `goal_commitment`, `ode_beliefs`, `motivation_type` | Tinto, Kember, Costa & McCrae, Deci & Ryan |
+| **Student Skills** | `self_regulation`, `digital_literacy`, `time_management`, `learner_autonomy`, `academic_reading_writing` | Rovai (2003), Moore (1993), Bäulke et al. |
 | **External Factors** | `is_employed`, `weekly_work_hours`, `financial_stress`, `has_family_responsibilities` | Bean & Metzner (1985), Economic Rationality |
 | **Internal Factors** | `academic_integration`, `social_integration`, `self_efficacy`, `institutional_support_access` | Tinto (1975), Bandura (1997), Rovai |
+| **Emergent Properties** | `social_presence`, `cognitive_presence`, `teaching_presence`, `network_degree` | Garrison et al. (2000), Epstein & Axtell (1996) |
 
 ### Key Design Decision: ODE ≠ Campus
 
 Following Bean & Metzner's central insight, SynthEd explicitly **weights external/environmental factors higher than social integration** in the dropout risk formula. Social integration is capped at 0.80 and contributes only 4% to the engagement composite — reflecting the empirical reality that distance learners rarely build campus-based social bonds.
+
+### Emergent Properties (ABSS)
+
+Unlike the other theories which map to static persona attributes or individual simulation mechanics, Epstein & Axtell's ABSS framework produces **emergent collective phenomena**:
+
+- **Dropout clustering**: Students connected by forum activity influence each other's engagement; when one begins withdrawing, neighbors are more likely to follow.
+- **Social stratification**: Employed students with family responsibilities form fewer connections (Bean & Metzner prediction) and thus receive less peer support, creating a reinforcing disadvantage loop.
+- **Teaching presence amplification**: In courses with high instructor dialogue, peer networks amplify the effect as students discuss instructor feedback.
 
 ## Project Structure
 
@@ -166,11 +178,12 @@ Following Bean & Metzner's central insight, SynthEd explicitly **weights externa
 SynthEd/
 ├── synthed/
 │   ├── agents/
-│   │   ├── persona.py      # StudentPersona (4 factor clusters + Big Five)
+│   │   ├── persona.py      # StudentPersona (4 factor clusters + Big Five + Moore autonomy)
 │   │   └── factory.py      # Calibrated population with inter-attribute correlations
 │   ├── simulation/
-│   │   ├── environment.py   # ODL course structure & academic events
-│   │   └── engine.py        # Theory-grounded week-by-week simulation
+│   │   ├── environment.py   # ODL course structure with transactional distance params
+│   │   ├── engine.py        # Theory-grounded week-by-week simulation (9 theories)
+│   │   └── social_network.py # Peer network formation & influence (Epstein & Axtell)
 │   ├── data_output/
 │   │   └── exporter.py      # CSV dataset generation
 │   ├── validation/

@@ -25,6 +25,11 @@ class Course:
     final_week: int = 14
     assignment_weeks: list[int] = field(default_factory=lambda: [3, 6, 10, 13])
 
+    # Moore (1993): Transactional Distance Theory
+    structure_level: float = 0.5  # 0-1; rigidity of course pacing/requirements
+    dialogue_frequency: float = 0.3  # 0-1; instructor-initiated communication rate
+    instructor_responsiveness: float = 0.5  # 0-1; speed/quality of instructor replies
+
 
 @dataclass
 class ODLEnvironment:
@@ -43,6 +48,9 @@ class ODLEnvironment:
     support_responsiveness: float = 0.7  # How quickly support responds (0-1)
     peer_interaction_density: float = 0.5  # How active the student community is
 
+    # Moore (1993): Institutional dialogue capacity
+    institutional_dialogue_norm: float = 0.4  # 0-1; baseline dialogue culture
+
     # Events that occur at specific weeks (week -> event description)
     scheduled_events: dict[int, str] = field(default_factory=dict)
 
@@ -59,23 +67,27 @@ class ODLEnvironment:
                 id="CS101", name="Introduction to Computer Science",
                 difficulty=0.4, weekly_workload_hours=5, has_forum=True,
                 has_live_sessions=True, num_assignments=4,
+                structure_level=0.6, dialogue_frequency=0.5, instructor_responsiveness=0.6,
             ),
             Course(
                 id="MATH201", name="Statistics for Social Sciences",
                 difficulty=0.6, weekly_workload_hours=6, has_forum=True,
                 has_live_sessions=False, num_assignments=5,
                 assignment_weeks=[2, 5, 8, 11, 13],
+                structure_level=0.7, dialogue_frequency=0.2, instructor_responsiveness=0.4,
             ),
             Course(
                 id="EDU301", name="Foundations of Distance Education",
                 difficulty=0.3, weekly_workload_hours=4, has_forum=True,
                 has_live_sessions=True, num_assignments=3,
                 assignment_weeks=[4, 9, 13],
+                structure_level=0.3, dialogue_frequency=0.6, instructor_responsiveness=0.7,
             ),
             Course(
                 id="PSY202", name="Educational Psychology",
                 difficulty=0.5, weekly_workload_hours=5, has_forum=True,
                 has_live_sessions=False, num_assignments=4,
+                structure_level=0.5, dialogue_frequency=0.3, instructor_responsiveness=0.5,
             ),
         ]
 

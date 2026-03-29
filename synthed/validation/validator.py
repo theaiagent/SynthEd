@@ -77,9 +77,11 @@ class SyntheticDataValidator:
         self,
         reference: ReferenceStatistics | None = None,
         significance_level: float = 0.05,
+        seed: int = 42,
     ):
         self.reference = reference or ReferenceStatistics()
         self.alpha = significance_level
+        self._rng = np.random.default_rng(seed)
 
     def validate_all(
         self,
@@ -147,7 +149,7 @@ class SyntheticDataValidator:
 
         # Age distribution (KS-test against normal with reference params)
         ages = [s["age"] for s in students]
-        ref_samples = np.random.normal(self.reference.age_mean, self.reference.age_std, len(ages))
+        ref_samples = self._rng.normal(self.reference.age_mean, self.reference.age_std, len(ages))
         ks_stat, ks_p = stats.ks_2samp(ages, ref_samples)
         results.append(ValidationResult(
             test_name="age_distribution",
@@ -212,7 +214,7 @@ class SyntheticDataValidator:
         # GPA distribution
         gpas = [s["prior_gpa"] for s in students if "prior_gpa" in s]
         if gpas:
-            ref_samples = np.random.normal(self.reference.gpa_mean, self.reference.gpa_std, len(gpas))
+            ref_samples = self._rng.normal(self.reference.gpa_mean, self.reference.gpa_std, len(gpas))
             ref_samples = np.clip(ref_samples, 0, 4)
             ks_stat, ks_p = stats.ks_2samp(gpas, ref_samples)
             results.append(ValidationResult(
@@ -336,6 +338,107 @@ class SyntheticDataValidator:
                 statistic=float(corr), p_value=float(p_val),
                 passed=corr > 0,
                 details=f"Goal commitment-engagement: r={corr:.3f} (Tinto 1975: expected positive)",
+            ))
+
+        # ── Moore (1993): Learner autonomy → engagement (positive) ──
+        xs, ys = _get_pairs("learner_autonomy", "final_engagement")
+        if len(xs) > 10:
+            corr, p_val = stats.pearsonr(xs, ys)
+            results.append(ValidationResult(
+                test_name="moore_autonomy_engagement",
+                metric="Pearson r",
+                synthetic_value=float(corr), reference_value=0.2,
+                statistic=float(corr), p_value=float(p_val),
+                passed=corr > 0,
+                details=f"Learner autonomy-engagement: r={corr:.3f} (Moore 1993: expected positive)",
+            ))
+
+        # ── Garrison (2000): CoI composite → engagement (positive) ──
+        xs, ys = _get_pairs("coi_composite", "final_engagement")
+        if len(xs) > 10:
+            corr, p_val = stats.pearsonr(xs, ys)
+            results.append(ValidationResult(
+                test_name="garrison_coi_engagement",
+                metric="Pearson r",
+                synthetic_value=float(corr), reference_value=0.3,
+                statistic=float(corr), p_value=float(p_val),
+                passed=corr > 0,
+                details=f"CoI composite-engagement: r={corr:.3f} (Garrison 2000: expected positive)",
+            ))
+
+        # ── Epstein & Axtell (1996): Network degree → engagement (positive) ──
+        xs, ys = _get_pairs("network_degree", "final_engagement")
+        if len(xs) > 10:
+            corr, p_val = stats.pearsonr(xs, ys)
+            results.append(ValidationResult(
+                test_name="epstein_network_degree_engagement",
+                metric="Pearson r",
+                synthetic_value=float(corr), reference_value=0.2,
+                statistic=float(corr), p_value=float(p_val),
+                passed=corr > 0,
+                details=f"Network degree-engagement: r={corr:.3f} (Epstein & Axtell 1996: expected positive)",
+            ))
+
+        # ── Kember (1989): Perceived cost-benefit → engagement (positive) ──
+        xs, ys = _get_pairs("perceived_cost_benefit", "final_engagement")
+        if len(xs) > 10:
+            corr, p_val = stats.pearsonr(xs, ys)
+            results.append(ValidationResult(
+                test_name="kember_cost_benefit_engagement",
+                metric="Pearson r",
+                synthetic_value=float(corr), reference_value=0.25,
+                statistic=float(corr), p_value=float(p_val),
+                passed=corr > 0,
+                details=f"Cost-benefit-engagement: r={corr:.3f} (Kember 1989: expected positive)",
+            ))
+
+        # ── SDT (Deci & Ryan, 2000): Intrinsic motivation → higher engagement ──
+        intrinsic_eng = [
+            outcome_map[s["student_id"]]["final_engagement"]
+            for s in students if s.get("motivation_type") == "intrinsic"
+            and s["student_id"] in outcome_map
+            and outcome_map[s["student_id"]].get("final_engagement") is not None
+        ]
+        amotivation_eng = [
+            outcome_map[s["student_id"]]["final_engagement"]
+            for s in students if s.get("motivation_type") == "amotivation"
+            and s["student_id"] in outcome_map
+            and outcome_map[s["student_id"]].get("final_engagement") is not None
+        ]
+        if len(intrinsic_eng) >= 5 and len(amotivation_eng) >= 5:
+            intrinsic_mean = float(np.mean(intrinsic_eng))
+            amotivation_mean = float(np.mean(amotivation_eng))
+            t_stat, t_p = stats.ttest_ind(intrinsic_eng, amotivation_eng)
+            results.append(ValidationResult(
+                test_name="sdt_intrinsic_vs_amotivation",
+                metric="Independent t-test",
+                synthetic_value=intrinsic_mean,
+                reference_value=amotivation_mean,
+                statistic=float(t_stat),
+                p_value=float(t_p),
+                passed=intrinsic_mean > amotivation_mean,
+                details=f"Intrinsic eng={intrinsic_mean:.3f} vs amotivation={amotivation_mean:.3f} "
+                        f"(Deci & Ryan 2000: intrinsic > amotivation)",
+            ))
+
+        # ── Bäulke et al.: Dropout phase distribution ──
+        phase_counts: dict[int, int] = {}
+        for o in outcomes:
+            phase = o.get("final_dropout_phase")
+            if phase is not None:
+                phase_counts[phase] = phase_counts.get(phase, 0) + 1
+        if phase_counts:
+            total = sum(phase_counts.values())
+            phase_0_rate = phase_counts.get(0, 0) / total
+            # Most students should remain committed (phase 0)
+            results.append(ValidationResult(
+                test_name="baulke_phase_distribution",
+                metric="Phase 0 proportion",
+                synthetic_value=phase_0_rate,
+                reference_value=0.40,
+                passed=phase_0_rate >= 0.30,
+                details=f"Phase 0 (committed): {phase_0_rate:.0%} of students "
+                        f"(Bäulke: majority should remain committed)",
             ))
 
         return results

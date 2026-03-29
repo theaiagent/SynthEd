@@ -152,6 +152,16 @@ class StudentFactory:
             0.05, 0.95
         ))
 
+        # Learner autonomy (Moore, 1993): correlated with self-regulation, openness, age
+        age_factor = 0.05 if age > 30 else 0.0
+        learner_autonomy = float(np.clip(
+            0.4 * self_regulation
+            + 0.2 * big_five.openness
+            + 0.4 * self.rng.normal(0.5, 0.15)
+            + age_factor,
+            0.05, 0.95
+        ))
+
         # Academic reading/writing: correlated with prior education
         edu_boost = {"high_school": 0.0, "associate": 0.08, "bachelor": 0.15}[prior_education]
         academic_rw = float(np.clip(
@@ -223,6 +233,7 @@ class StudentFactory:
             digital_literacy=round(digital_literacy, 2),
             self_regulation=round(self_regulation, 2),
             time_management=round(time_management, 2),
+            learner_autonomy=round(learner_autonomy, 2),
             academic_reading_writing=round(academic_rw, 2),
             has_reliable_internet=has_internet,
             device_type=device,
@@ -277,8 +288,8 @@ Return JSON: {{"backstory": "...", "primary_challenge": "..."}}
                 {"role": "user", "content": prompt},
             ], temperature=0.9)
             persona.add_memory(0, "backstory", result.get("backstory", ""), 0.0)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[SynthEd] LLM enrichment failed for {persona.name}: {e}")
         return persona
 
     def population_summary(self, personas: list[StudentPersona]) -> dict[str, Any]:
@@ -307,6 +318,7 @@ Return JSON: {{"backstory": "...", "primary_challenge": "..."}}
             # Student skills (Rovai)
             "digital_literacy_mean": float(np.mean([p.digital_literacy for p in personas])),
             "self_regulation_mean": float(np.mean([p.self_regulation for p in personas])),
+            "learner_autonomy_mean": float(np.mean([p.learner_autonomy for p in personas])),
             # Internal factors
             "academic_integration_mean": float(np.mean([p.academic_integration for p in personas])),
             "social_integration_mean": float(np.mean([p.social_integration for p in personas])),
