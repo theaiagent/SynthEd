@@ -351,12 +351,18 @@ class SimulationEngine:
         """
         engagement = state.current_engagement
 
+        # ── Adaptive baseline decay ──
+        # Early weeks have higher decay (adaptation shock); decay diminishes
+        # as the student settles in. Modeled as inverse-sqrt attenuation.
+        # Week 1: full decay (1.0x), Week 14: ~0.27x, Week 28: ~0.19x
+        decay_attenuation = 1.0 / (1.0 + 0.5 * (week - 1) ** 0.5)
+
         # ── Tinto: Integration effect ──
         # Academic integration is the stronger factor in ODE
         integration_effect = (
             state.academic_integration * 0.06
             + state.social_integration * 0.02
-            - 0.05  # Baseline decay — ODL requires more active maintenance
+            - 0.05 * decay_attenuation  # Attenuated baseline decay
         )
         engagement += integration_effect
 
@@ -423,6 +429,18 @@ class SimulationEngine:
             state.perceived_cost_benefit = float(np.clip(state.perceived_cost_benefit, 0.05, 0.95))
             # Cost-benefit feeds back into engagement
             engagement += (state.perceived_cost_benefit - 0.5) * 0.02
+
+        # ── Persona-based engagement floor ──
+        # Students with strong self-regulation, goal commitment, and self-efficacy
+        # have a personal floor below which engagement does not drop.
+        # This models resilience: some students persist despite adversity.
+        personal_floor = (
+            student.self_regulation * 0.15
+            + student.goal_commitment * 0.12
+            + student.self_efficacy * 0.10
+            + student.learner_autonomy * 0.08  # Moore: autonomous learners persist
+        ) * 0.50  # Scale to 0–0.12 range
+        engagement = max(engagement, personal_floor)
 
         state.current_engagement = float(np.clip(engagement, 0.01, 0.99))
 
