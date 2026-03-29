@@ -134,7 +134,7 @@ Quality: A (Excellent) — 12/13 tests passed
 
 ## Theoretical Foundations
 
-SynthEd's persona attributes and simulation mechanics are grounded in nine established theoretical anchors from ODE dropout research, organized into four factor clusters following Yıldız et al. (2022):
+SynthEd's persona attributes and simulation mechanics are grounded in nine established theoretical anchors from ODE dropout research, organized into four factor clusters based on Rovai's (2003) composite persistence model:
 
 ### Core Theoretical Anchors
 
@@ -142,22 +142,22 @@ SynthEd's persona attributes and simulation mechanics are grounded in nine estab
 |--------|--------|-----------------|
 | **Tinto's Student Integration Model** (1975) | Sociology (Durkheim) | Academic & social integration drive `institutional_commitment` → `engagement`. Social integration is deliberately weighted lower in ODE context. |
 | **Bean & Metzner's Non-Traditional Student Attrition Model** (1985) | Non-traditional students | Environmental factors (`financial_stress`, `weekly_work_hours`, `has_family_responsibilities`) are the **dominant** dropout predictors, outweighing social integration. |
-| **Kember's Longitudinal Process Model** (1989) | Distance education | `perceived_cost_benefit` is dynamically updated: students perform ongoing cost-benefit analysis each week. |
+| **Kember's Longitudinal Process Model** (1989) | Distance education | Centers social/academic integration and cost-benefit evaluation for distance learners. SynthEd operationalizes this as a dynamic `perceived_cost_benefit` that updates weekly based on academic outcomes — a simulation design decision extending Kember's conceptual framework. |
 | **Transactional Distance Theory** (Moore, 1993) | Distance education | Course-level `structure_level` and `dialogue_frequency` interact with student `learner_autonomy` to produce transactional distance, which modulates engagement and feeds Kember's cost-benefit calculation. |
 | **Self-Determination Theory** (Deci & Ryan, 2000) | Psychology | Intrinsic/extrinsic motivation and amotivation (`motivation_type`) as predictors of persistence and goal commitment. |
 | **Community of Inquiry** (Garrison et al., 2000) | Online learning | Three presences (`social_presence`, `cognitive_presence`, `teaching_presence`) emerge from weekly interactions and co-evolve with Tinto's integration constructs. |
 | **Rovai's Composite Persistence Model** (2003) | Online/distance learning | `digital_literacy`, `self_regulation`, `time_management`, and `institutional_support_access` as persistence factors specific to ODE. |
-| **Bäulke et al. Self-Regulation Model** | Psychology | Dropout modeled as a **phased process**: committed → perceived misfit → rumination → info seeking → decision. Tracked via `dropout_phase`. |
+| **Bäulke et al. Phase-Oriented Dropout Model** | Psychology | Dropout modeled as a **phased process**: non-fit perception → thoughts of quitting → deliberation → information search → final decision. Tracked via `dropout_phase`. (Originally developed for general HE; adapted to ODE context in SynthEd.) |
 | **Agent-Based Social Simulation** (Epstein & Axtell, 1996) | Computational social science | Students form peer networks through forum co-activity; peer influence creates engagement contagion and dropout cascades as emergent phenomena. |
 
-### Factor Clusters (Yıldız et al., 2022)
+### Factor Clusters (Rovai, 2003)
 
 | Cluster | Attributes | Theoretical Source |
 |---------|------------|-------------------|
 | **Student Characteristics** | `personality` (Big Five), `goal_commitment`, `ode_beliefs`, `motivation_type` | Tinto, Kember, Costa & McCrae, Deci & Ryan |
-| **Student Skills** | `self_regulation`, `digital_literacy`, `time_management`, `learner_autonomy`, `academic_reading_writing` | Rovai (2003), Moore (1993), Bäulke et al. |
+| **Student Skills / Needs** | `self_regulation`, `digital_literacy`, `time_management`, `learner_autonomy`, `academic_reading_writing`, `institutional_support_access` | Rovai (2003), Moore (1993), Bäulke et al. |
 | **External Factors** | `is_employed`, `weekly_work_hours`, `financial_stress`, `has_family_responsibilities` | Bean & Metzner (1985), Economic Rationality |
-| **Internal Factors** | `academic_integration`, `social_integration`, `self_efficacy`, `institutional_support_access` | Tinto (1975), Bandura (1997), Rovai |
+| **Internal Factors** | `academic_integration`, `social_integration`, `self_efficacy` | Tinto (1975), Bandura (1997) |
 | **Emergent Properties** | `social_presence`, `cognitive_presence`, `teaching_presence`, `network_degree` | Garrison et al. (2000), Epstein & Axtell (1996) |
 
 ### Key Design Decision: ODE ≠ Campus

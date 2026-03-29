@@ -8,13 +8,13 @@ from the ODL dropout literature:
 2. Bean & Metzner (1985) — Environmental factors for non-traditional students
 3. Kember (1989) — Cost-benefit analysis in distance education
 4. Rovai (2003) — Accessibility & digital skills in online learning
-5. Bäulke et al. — Psychological self-regulation & dropout as process
+5. Bäulke et al. — Phase-oriented view of dropout
 6. Economic rationality — Cost-benefit decision-making
 7. Moore (1993) — Transactional distance (structure, dialogue, autonomy)
 8. Garrison et al. (2000) — Community of Inquiry (social, cognitive, teaching presence)
 9. Epstein & Axtell (1996) — Agent-based social simulation (peer influence)
 
-Factor clusters follow Yıldız et al. (2022):
+Factor clusters follow Rovai's (2003) composite persistence model:
 - Internal factors (academic/social integration, course design, accessibility)
 - External factors (finances, family, employment)
 - Student characteristics (personality, goal commitment, beliefs about ODE)
@@ -112,7 +112,7 @@ class StudentPersona:
     """
     A fully specified ODL student persona grounded in dropout theory.
 
-    Attributes are organized into four factor clusters (Yıldız et al., 2022):
+    Attributes are organized into four factor clusters (Rovai, 2003):
 
     CLUSTER 1 — Student Characteristics (Tinto, Kember)
         personality, age, gender, prior_education_level, prior_gpa,
@@ -130,9 +130,9 @@ class StudentPersona:
         academic_integration, social_integration, institutional_support_access,
         self_efficacy, motivation_type, goal_orientation
 
-    PROCESS MODEL (Bäulke et al.)
+    PROCESS MODEL (Bäulke et al. — Phase-Oriented Dropout Model)
         dropout_phase: tracks the student's position in the dropout process
-        (0=committed, 1=perceived_misfit, 2=rumination, 3=info_seeking, 4=decided)
+        (0=baseline, 1=non_fit_perception, 2=deliberation, 3=info_search, 4=decided)
     """
 
     # ── Identity ──
@@ -176,8 +176,8 @@ class StudentPersona:
     motivation_type: str = "extrinsic"  # SDT: intrinsic, extrinsic, amotivation
     goal_orientation: str = "mastery"  # mastery, performance, avoidance
 
-    # ── PROCESS MODEL: Dropout Phase (Bäulke et al.) ──
-    # 0=committed, 1=perceived_misfit, 2=rumination, 3=info_seeking, 4=decided
+    # ── PROCESS MODEL: Dropout Phase (Bäulke et al. — Phase-Oriented) ──
+    # 0=baseline, 1=non_fit_perception, 2=deliberation, 3=info_search, 4=decided
     dropout_phase: int = 0
 
     # ── Derived Behavioral Probabilities ──

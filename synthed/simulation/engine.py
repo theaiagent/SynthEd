@@ -8,8 +8,8 @@ Engagement and dropout mechanics map to established theoretical frameworks:
   outweigh social integration for non-traditional/ODE students
 - Kember (1989): Students perform ongoing cost-benefit analysis
 - Rovai (2003): Accessibility and digital skills as persistence factors
-- Bäulke et al.: Dropout as a phased self-regulatory process
-  (committed → perceived misfit → rumination → info seeking → decision)
+- Bäulke et al.: Phase-oriented view of dropout
+  (non-fit perception → thoughts of quitting → deliberation → info search → decision)
 - Durkheim/Tinto: Social disconnection increases dropout risk
 - Moore (1993): Transactional distance = f(structure, dialogue, autonomy)
 - Garrison et al. (2000): Community of Inquiry — social, cognitive, teaching presence
@@ -85,11 +85,11 @@ class SimulationEngine:
     - Cost-benefit recalculation (Kember) — updated after significant events
 
     Dropout follows Bäulke et al.'s phase model:
-    - Phase 0 (Committed): No dropout risk
-    - Phase 1 (Perceived Misfit): Low engagement triggers doubt
-    - Phase 2 (Rumination): Declining trajectory, considering leaving
-    - Phase 3 (Info Seeking): Very low engagement, actively considering exit
-    - Phase 4 (Decision): Dropout occurs
+    - Phase 0 (Baseline): Student enrolled, no dropout indicators
+    - Phase 1 (Non-Fit Perception): Low engagement triggers doubt
+    - Phase 2 (Deliberation): Declining trajectory, weighing options
+    - Phase 3 (Information Search): Very low engagement, actively exploring alternatives
+    - Phase 4 (Final Decision): Dropout occurs
     """
 
     def __init__(
@@ -424,19 +424,19 @@ class SimulationEngine:
 
         state.current_engagement = float(np.clip(engagement, 0.01, 0.99))
 
-    # ── BÄULKE ET AL.: Dropout Phase Progression ──
+    # ── BÄULKE ET AL.: Phase-Oriented Dropout Progression ──
 
     def _advance_dropout_phase(
         self, student: StudentPersona, state: SimulationState, week: int,
     ):
         """
-        Advance the dropout phase based on Bäulke et al.'s process model.
+        Advance the dropout phase based on Bäulke et al.'s phase-oriented model.
 
         Phase transitions:
-        0 → 1: Engagement drops below threshold (perceived misfit)
-        1 → 2: Sustained low engagement + declining trajectory (rumination)
-        2 → 3: Very low engagement + low cost-benefit (info seeking)
-        3 → 4: Dropout decision — triggered by critical event or sustained phase 3
+        0 → 1: Non-fit perception — engagement drops below threshold
+        1 → 2: Deliberation — sustained low engagement + declining trajectory
+        2 → 3: Information search — very low engagement + low cost-benefit
+        3 → 4: Final decision — triggered by multiple concurrent factors
         """
         eng = state.current_engagement
         history = state.weekly_engagement_history
@@ -445,7 +445,7 @@ class SimulationEngine:
         avg_td = self._avg_transactional_distance(student, state)
 
         if state.dropout_phase == 0:
-            # Phase 0 → 1: Perceived misfit
+            # Phase 0 → 1: Non-fit perception
             # Triggers: low engagement, low cognitive presence (Garrison),
             # or high transactional distance (Moore)
             if (eng < 0.38
@@ -453,7 +453,7 @@ class SimulationEngine:
                     or (eng < 0.45 and avg_td > 0.60)):
                 state.dropout_phase = 1
                 state.memory.append({"week": week, "event_type": "dropout_phase",
-                                    "details": "Beginning to question fit with program", "impact": -0.2})
+                                    "details": "Non-fit perception: questioning fit with program", "impact": -0.2})
 
         elif state.dropout_phase == 1:
             # Can recover back to 0
@@ -461,11 +461,11 @@ class SimulationEngine:
                 state.dropout_phase = 0
                 state.memory.append({"week": week, "event_type": "recovery",
                                     "details": "Re-engaged with program", "impact": 0.2})
-            # Phase 1 → 2: Rumination (requires sustained decline)
+            # Phase 1 → 2: Deliberation (requires sustained decline)
             elif eng < 0.30 and len(history) >= 3 and history[-1] < history[-3]:
                 state.dropout_phase = 2
                 state.memory.append({"week": week, "event_type": "dropout_phase",
-                                    "details": "Actively considering whether to continue", "impact": -0.3})
+                                    "details": "Deliberation: actively weighing whether to continue", "impact": -0.3})
 
         elif state.dropout_phase == 2:
             # Can still recover
@@ -475,7 +475,7 @@ class SimulationEngine:
             elif eng < 0.20 and state.perceived_cost_benefit < 0.32:
                 state.dropout_phase = 3
                 state.memory.append({"week": week, "event_type": "dropout_phase",
-                                    "details": "Exploring alternatives to current program", "impact": -0.4})
+                                    "details": "Information search: exploring alternatives to current program", "impact": -0.4})
 
         elif state.dropout_phase == 3:
             # Recovery still possible but unlikely

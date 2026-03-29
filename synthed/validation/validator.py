@@ -437,8 +437,8 @@ class SyntheticDataValidator:
                 synthetic_value=phase_0_rate,
                 reference_value=0.40,
                 passed=phase_0_rate >= 0.30,
-                details=f"Phase 0 (committed): {phase_0_rate:.0%} of students "
-                        f"(Bäulke: majority should remain committed)",
+                details=f"Phase 0 (baseline): {phase_0_rate:.0%} of students "
+                        f"(Bäulke: majority should remain in baseline phase)",
             ))
 
         return results

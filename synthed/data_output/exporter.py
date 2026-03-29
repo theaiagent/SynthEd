@@ -1,7 +1,7 @@
 """
 DataExporter: Converts simulation records into research-ready datasets.
 
-Exports are structured around four theoretical factor clusters (Yıldız et al., 2022)
+Exports are structured around four theoretical factor clusters (Rovai, 2003)
 plus Bäulke et al.'s dropout phase model for outcome tracking.
 """
 
