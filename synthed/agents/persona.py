@@ -132,7 +132,7 @@ class StudentPersona:
 
     PROCESS MODEL (Bäulke et al. — Phase-Oriented Dropout Model)
         dropout_phase: tracks the student's position in the dropout process
-        (0=baseline, 1=non_fit_perception, 2=deliberation, 3=info_search, 4=decided)
+        (0=baseline, 1=non_fit_perception, 2=thoughts_of_quitting, 3=deliberation, 4=info_search, 5=decided)
     """
 
     # ── Identity ──

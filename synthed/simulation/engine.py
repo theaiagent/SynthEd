@@ -59,7 +59,7 @@ class SimulationState:
     academic_integration: float = 0.5  # Tinto: evolves with performance
     social_integration: float = 0.3  # Tinto: evolves with interaction
     perceived_cost_benefit: float = 0.6  # Kember: evolves with experience
-    dropout_phase: int = 0  # Bäulke: 0–4
+    dropout_phase: int = 0  # Bäulke: 0–5
     cumulative_gpa: float = 0.0
     courses_active: list[str] = field(default_factory=list)
     courses_dropped: list[str] = field(default_factory=list)
@@ -86,10 +86,11 @@ class SimulationEngine:
 
     Dropout follows Bäulke et al.'s phase model:
     - Phase 0 (Baseline): Student enrolled, no dropout indicators
-    - Phase 1 (Non-Fit Perception): Low engagement triggers doubt
-    - Phase 2 (Deliberation): Declining trajectory, weighing options
-    - Phase 3 (Information Search): Very low engagement, actively exploring alternatives
-    - Phase 4 (Final Decision): Dropout occurs
+    - Phase 1 (Non-Fit Perception): Sensing incongruence with program
+    - Phase 2 (Thoughts of Quitting): Unsystematic consideration of alternatives
+    - Phase 3 (Deliberation): Consciously weighing pros/cons of staying vs leaving
+    - Phase 4 (Information Search): Targeted search for alternative options
+    - Phase 5 (Final Decision): Dropout occurs
     """
 
     def __init__(
@@ -169,7 +170,7 @@ class SimulationEngine:
                 state.weekly_engagement_history.append(state.current_engagement)
                 self._advance_dropout_phase(student, state, week)
 
-                if state.dropout_phase >= 4:
+                if state.dropout_phase >= 5:
                     state.has_dropped_out = True
                     state.dropout_week = week
 
@@ -430,58 +431,79 @@ class SimulationEngine:
         self, student: StudentPersona, state: SimulationState, week: int,
     ):
         """
-        Advance the dropout phase based on Bäulke et al.'s phase-oriented model.
+        Advance the dropout phase based on Bäulke, Grunschel & Dresel (2022).
 
-        Phase transitions:
-        0 → 1: Non-fit perception — engagement drops below threshold
-        1 → 2: Deliberation — sustained low engagement + declining trajectory
-        2 → 3: Information search — very low engagement + low cost-benefit
-        3 → 4: Final decision — triggered by multiple concurrent factors
+        Six-phase model integrating Betsch (2005) decision-making and
+        Rubicon action-phase model (Achtziger & Gollwitzer, 2010):
+
+        0 → 1: Non-fit perception — sensing incongruence with program
+        1 → 2: Thoughts of quitting — unsystematic consideration of alternatives
+        2 → 3: Deliberation — consciously weighing pros/cons of staying vs leaving
+        3 → 4: Information search — targeted search for alternative options
+        4 → 5: Final decision — committed to withdraw
         """
         eng = state.current_engagement
         history = state.weekly_engagement_history
-
-        # Moore (1993): Transactional distance for dropout phase checks
         avg_td = self._avg_transactional_distance(student, state)
 
         if state.dropout_phase == 0:
             # Phase 0 → 1: Non-fit perception
-            # Triggers: low engagement, low cognitive presence (Garrison),
-            # or high transactional distance (Moore)
-            if (eng < 0.38
-                    or (eng < 0.45 and state.coi_state.cognitive_presence < 0.20)
-                    or (eng < 0.45 and avg_td > 0.60)):
+            if (eng < 0.35
+                    or (eng < 0.40 and state.coi_state.cognitive_presence < 0.20)
+                    or (eng < 0.40 and avg_td > 0.60)):
                 state.dropout_phase = 1
                 state.memory.append({"week": week, "event_type": "dropout_phase",
-                                    "details": "Non-fit perception: questioning fit with program", "impact": -0.2})
+                                    "details": "Non-fit perception: questioning fit with program",
+                                    "impact": -0.2})
 
         elif state.dropout_phase == 1:
-            # Can recover back to 0
+            # Recovery back to 0
             if eng > 0.45:
                 state.dropout_phase = 0
                 state.memory.append({"week": week, "event_type": "recovery",
                                     "details": "Re-engaged with program", "impact": 0.2})
-            # Phase 1 → 2: Deliberation (requires sustained decline)
-            elif eng < 0.30 and len(history) >= 3 and history[-1] < history[-3]:
+            # Phase 1 → 2: Thoughts of quitting (Bäulke: unsystematic alternative-seeking
+            # reinforced by concrete negative events or social isolation)
+            elif (eng < 0.33
+                  and (state.missed_assignments_streak >= 1
+                       or state.social_integration < 0.15)):
                 state.dropout_phase = 2
                 state.memory.append({"week": week, "event_type": "dropout_phase",
-                                    "details": "Deliberation: actively weighing whether to continue", "impact": -0.3})
+                                    "details": "Thoughts of quitting: considering alternatives "
+                                               "after experiencing difficulties",
+                                    "impact": -0.25})
 
         elif state.dropout_phase == 2:
-            # Can still recover
-            if eng > 0.40:
+            # Recovery back to 1
+            if eng > 0.42:
                 state.dropout_phase = 1
-            # Phase 2 → 3: Info seeking (requires very low engagement + poor cost-benefit)
-            elif eng < 0.20 and state.perceived_cost_benefit < 0.32:
+                state.memory.append({"week": week, "event_type": "recovery",
+                                    "details": "Renewed commitment, thoughts of quitting subsided",
+                                    "impact": 0.15})
+            # Phase 2 → 3: Deliberation (requires sustained decline)
+            elif eng < 0.30 and len(history) >= 3 and history[-1] < history[-3]:
                 state.dropout_phase = 3
                 state.memory.append({"week": week, "event_type": "dropout_phase",
-                                    "details": "Information search: exploring alternatives to current program", "impact": -0.4})
+                                    "details": "Deliberation: actively weighing whether to continue",
+                                    "impact": -0.3})
 
         elif state.dropout_phase == 3:
+            # Recovery back to 2
+            if eng > 0.38:
+                state.dropout_phase = 2
+            # Phase 3 → 4: Information search
+            elif eng < 0.20 and state.perceived_cost_benefit < 0.32:
+                state.dropout_phase = 4
+                state.memory.append({"week": week, "event_type": "dropout_phase",
+                                    "details": "Information search: exploring alternatives "
+                                               "to current program",
+                                    "impact": -0.4})
+
+        elif state.dropout_phase == 4:
             # Recovery still possible but unlikely
             if eng > 0.35 and state.perceived_cost_benefit > 0.45:
-                state.dropout_phase = 2
-            # Phase 3 → 4: Decision — requires multiple concurrent triggers
+                state.dropout_phase = 3
+            # Phase 4 → 5: Final decision — requires multiple concurrent triggers
             else:
                 triggers = 0
                 if eng < 0.10:
@@ -495,13 +517,13 @@ class SimulationEngine:
                 if week == 10:
                     triggers += 1  # Withdrawal deadline (Kember)
 
-                # Need at least 2 triggers; probability scaled by base risk
                 if triggers >= 2:
                     decision_prob = student.base_dropout_risk * triggers * 0.18
                     if self.rng.random() < decision_prob:
-                        state.dropout_phase = 4
+                        state.dropout_phase = 5
                         state.memory.append({"week": week, "event_type": "dropout",
-                                            "details": "Decided to withdraw from program", "impact": -0.8})
+                                            "details": "Decided to withdraw from program",
+                                            "impact": -0.8})
 
     # ── GARRISON ET AL. (2000): Community of Inquiry ──
 
@@ -663,7 +685,7 @@ class SimulationEngine:
         ]
         phase_dist = {}
         for s in states.values():
-            p = s.dropout_phase if not s.has_dropped_out else 4
+            p = s.dropout_phase if not s.has_dropped_out else 5
             phase_dist[p] = phase_dist.get(p, 0) + 1
 
         return {

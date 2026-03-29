@@ -120,7 +120,7 @@ class SocialNetwork:
 
         dropout_neighbors = sum(
             1 for nid in neighbors
-            if nid in states and getattr(states[nid], "dropout_phase", 0) >= 3
+            if nid in states and getattr(states[nid], "dropout_phase", 0) >= 4
         )
         if dropout_neighbors == 0:
             return 0.0
