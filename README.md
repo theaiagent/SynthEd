@@ -61,7 +61,7 @@ Educational data mining research faces three persistent challenges:
 ## Key Features
 
 - **Persona-Driven Agents**: Each student has Big Five personality traits, motivation type (SDT), self-efficacy, employment status, family responsibilities, and digital literacy — all influencing simulated behavior.
-- **Temporal Memory**: Agents accumulate experiences across weeks, creating realistic engagement trajectories (e.g., a failed midterm reduces subsequent engagement).
+- **Simulation Memory**: Each student's simulation state accumulates events across weeks (assignments, exams, phase transitions), creating realistic engagement trajectories (e.g., a failed midterm reduces subsequent engagement).
 - **Configurable Populations**: Calibrate to your institution's demographics using aggregate statistics only (no individual data needed).
 - **Multi-Level Validation**: Automatic statistical comparison against reference data using KS-tests, chi-squared tests, correlation checks, and temporal coherence analysis.
 - **Optional LLM Enrichment**: Use GPT-4o-mini to generate narrative backstories and richer behavioral nuance (off by default — zero API cost in rule-based mode).
@@ -113,9 +113,9 @@ print(f"Validation: {report['validation']['summary']['overall_quality']}")
 
 | File | Description | Rows | Use Case |
 |------|-------------|------|----------|
-| `students.csv` | Demographics, Big Five, motivation, self-efficacy | 1 per student | Feature engineering, clustering |
+| `students.csv` | Initial/baseline persona attributes (Big Five, motivation, self-efficacy, etc.) | 1 per student | Feature engineering, clustering |
 | `interactions.csv` | Timestamped LMS events (logins, posts, submissions) | ~50-100 per student/week | Sequence modeling, engagement analysis |
-| `outcomes.csv` | Dropout status, final engagement, trend | 1 per student | Classification, survival analysis |
+| `outcomes.csv` | Dropout status, final engagement, trend, CoI presences, network degree | 1 per student | Classification, survival analysis |
 | `weekly_engagement.csv` | Week-by-week engagement scores | 1 per student | Time series, early warning systems |
 | `pipeline_report.json` | Full validation report and pipeline metadata | 1 | Quality assurance |
 
@@ -166,7 +166,7 @@ SynthEd's persona attributes and simulation mechanics are grounded in nine estab
 | **Self-Determination Theory** (Deci & Ryan, 1985) | Psychology | Intrinsic/extrinsic motivation and amotivation (`motivation_type`) as predictors of persistence and goal commitment. |
 | **Community of Inquiry** (Garrison et al., 2000) | Online learning | Three presences (`social_presence`, `cognitive_presence`, `teaching_presence`) emerge from weekly interactions and co-evolve with Tinto's integration constructs. |
 | **Rovai's Composite Persistence Model** (2003) | Online/distance learning | `digital_literacy`, `self_regulation`, `time_management`, and `institutional_support_access` as persistence factors specific to ODE. |
-| **Bäulke et al. Phase-Oriented Dropout Model** | Psychology | Dropout modeled as a **phased process**: non-fit perception → thoughts of quitting → deliberation → information search → final decision. Tracked via `dropout_phase`. (Originally developed for general HE; adapted to ODE context in SynthEd.) |
+| **Bäulke et al. Phase-Oriented Dropout Model** (2022) | Psychology | Dropout modeled as a **phased process**: non-fit perception → thoughts of quitting → deliberation → information search → final decision. Tracked via `dropout_phase`. (Originally developed for general HE; adapted to ODE context in SynthEd.) |
 | **Agent-Based Social Simulation** (Epstein & Axtell, 1996) | Computational social science | Methodological framework for bottom-up emergent social behavior. Students form peer networks through forum co-activity; peer influence creates engagement contagion and dropout cascades as emergent phenomena. |
 
 ### Factor Clusters (Rovai, 2003)
@@ -229,11 +229,11 @@ Create a JSON config matching your institution's demographics:
   "persona_config": {
     "age_range": [22, 60],
     "employment_rate": 0.80,
-    "dropout_base_rate": 0.45
+    "dropout_base_rate": 0.80
   },
   "reference_statistics": {
     "age_mean": 32.0,
-    "dropout_rate": 0.45
+    "dropout_rate": 0.75
   }
 }
 ```
