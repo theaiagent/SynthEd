@@ -116,6 +116,9 @@ class SyntheticDataValidator:
         # Level 4: Privacy
         results.extend(self._validate_privacy(students_data))
 
+        # Level 5: Backstory consistency (optional — only when backstories are present)
+        results.extend(self._validate_backstories(students_data))
+
         # Compile report
         passed = sum(1 for r in results if r.passed)
         total = len(results)
@@ -528,6 +531,71 @@ class SyntheticDataValidator:
             passed=min_k >= k_threshold or avg_k >= 2.0,
             details=f"Min k={min_k}, Avg k={avg_k:.1f} (N={n}). "
                     f"Synthetic data has no real individuals — privacy risk is inherently zero.",
+        ))
+
+        return results
+
+    def _validate_backstories(self, students: list[dict]) -> list[ValidationResult]:
+        """Level 5 (optional): Validate backstory consistency with persona attributes.
+
+        Only runs when backstory data is present in at least one student record.
+        Checks that backstories are not empty and mention relevant persona attributes.
+        """
+        results: list[ValidationResult] = []
+
+        backstories = [
+            s for s in students
+            if s.get("backstory") and isinstance(s["backstory"], str) and s["backstory"].strip()
+        ]
+        if not backstories:
+            # No backstories present — skip validation silently
+            return results
+
+        # Check 1: No empty backstories when LLM enrichment was used
+        total_with_field = sum(1 for s in students if "backstory" in s)
+        non_empty = len(backstories)
+        empty_rate = 1 - (non_empty / total_with_field) if total_with_field > 0 else 0
+
+        results.append(ValidationResult(
+            test_name="backstory_non_empty_rate",
+            metric="Proportion non-empty",
+            synthetic_value=1 - empty_rate,
+            reference_value=0.8,
+            passed=empty_rate <= 0.5,
+            details=f"{non_empty}/{total_with_field} backstories are non-empty "
+                    f"({1 - empty_rate:.0%})",
+        ))
+
+        # Check 2: Backstories should mention relevant persona attributes
+        relevance_hits = 0
+        for s in backstories:
+            text = s["backstory"].lower()
+            # Look for mentions of key persona attributes
+            attribute_keywords = []
+            if s.get("is_employed"):
+                attribute_keywords.extend(["work", "job", "employ", "career"])
+            if s.get("has_family_responsibilities"):
+                attribute_keywords.extend(["family", "child", "parent", "care"])
+            motivation = s.get("motivation_type", "")
+            if motivation == "intrinsic":
+                attribute_keywords.extend(["passion", "interest", "curious", "love"])
+            elif motivation == "extrinsic":
+                attribute_keywords.extend(["career", "salary", "promotion", "certificate"])
+            elif motivation == "amotivation":
+                attribute_keywords.extend(["uncertain", "unsure", "pressure", "expect"])
+
+            if any(kw in text for kw in attribute_keywords):
+                relevance_hits += 1
+
+        relevance_rate = relevance_hits / len(backstories) if backstories else 0
+        results.append(ValidationResult(
+            test_name="backstory_attribute_relevance",
+            metric="Relevance rate",
+            synthetic_value=relevance_rate,
+            reference_value=0.5,
+            passed=relevance_rate >= 0.3,
+            details=f"{relevance_hits}/{len(backstories)} backstories mention "
+                    f"relevant persona attributes ({relevance_rate:.0%})",
         ))
 
         return results

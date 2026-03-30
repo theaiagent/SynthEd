@@ -15,7 +15,7 @@ from typing import Any
 import numpy as np
 
 from .persona import StudentPersona, BigFiveTraits, PersonaConfig
-from ..utils.llm import LLMClient
+from ..utils.llm import LLMClient, LLMError, LLMResponseError
 
 logger = logging.getLogger(__name__)
 
@@ -267,7 +267,15 @@ class StudentFactory:
             neuroticism=float(np.clip(n, 0.05, 0.95)),
         )
 
+    _MIN_BACKSTORY_LENGTH = 20
+
     def _enrich_with_llm(self, persona: StudentPersona) -> StudentPersona:
+        """Enrich a persona with an LLM-generated backstory.
+
+        Validates the LLM response for expected keys and content quality.
+        On any failure, logs a warning and returns the persona unchanged
+        (empty backstory) so the pipeline continues without crashing.
+        """
         prompt = f"""You are generating a backstory for a synthetic ODL student persona.
 Based on these attributes, write 2-3 sentences explaining WHY this student
 chose distance learning and what challenges they face.
@@ -289,9 +297,38 @@ Return JSON: {{"backstory": "...", "primary_challenge": "..."}}
                 {"role": "system", "content": "Synthetic persona generator for educational research. Return valid JSON."},
                 {"role": "user", "content": prompt},
             ], temperature=0.9)
-            persona.backstory = result.get("backstory", "")
-        except Exception as e:
-            logger.warning("LLM enrichment failed for %s: %s", persona.name, e)
+        except (LLMError, LLMResponseError) as exc:
+            logger.warning("LLM enrichment failed for %s: %s", persona.name, exc)
+            return persona
+        except Exception as exc:
+            logger.warning("Unexpected LLM error for %s: %s", persona.name, exc)
+            return persona
+
+        # Validate response contains expected key
+        if not isinstance(result, dict):
+            logger.warning(
+                "LLM returned non-dict for %s: %s", persona.name, type(result).__name__
+            )
+            return persona
+
+        backstory = result.get("backstory")
+        if not isinstance(backstory, str) or not backstory.strip():
+            logger.warning(
+                "LLM returned missing/empty backstory for %s", persona.name
+            )
+            return persona
+
+        backstory = backstory.strip()
+
+        # Validate backstory is not garbage (too short or placeholder)
+        if len(backstory) < self._MIN_BACKSTORY_LENGTH:
+            logger.warning(
+                "LLM backstory too short for %s (%d chars): %s",
+                persona.name, len(backstory), backstory,
+            )
+            return persona
+
+        persona.backstory = backstory
         return persona
 
     def population_summary(self, personas: list[StudentPersona]) -> dict[str, Any]:
