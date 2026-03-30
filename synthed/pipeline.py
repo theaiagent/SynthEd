@@ -174,6 +174,8 @@ class SynthEdPipeline:
                     "final_autonomy_need": round(state.sdt_needs.autonomy, 3),
                     "final_competence_need": round(state.sdt_needs.competence, 3),
                     "final_relatedness_need": round(state.sdt_needs.relatedness, 3),
+                    # Gonzalez et al. (2025)
+                    "final_exhaustion_level": round(state.exhaustion.exhaustion_level, 3),
                     # Epstein & Axtell (1996)
                     "network_degree": network.get_degree(s.id),
                 })

@@ -154,6 +154,8 @@ class DataExporter:
             # Deci & Ryan (1985): Self-Determination Theory
             "final_motivation_type",
             "final_autonomy_need", "final_competence_need", "final_relatedness_need",
+            # Gonzalez et al. (2025): Academic exhaustion
+            "final_exhaustion_level",
             # Epstein & Axtell (1996): Network properties
             "network_degree",
         ]
@@ -191,6 +193,8 @@ class DataExporter:
                     "final_autonomy_need": round(state.sdt_needs.autonomy, 3),
                     "final_competence_need": round(state.sdt_needs.competence, 3),
                     "final_relatedness_need": round(state.sdt_needs.relatedness, 3),
+                    # Gonzalez et al. (2025)
+                    "final_exhaustion_level": round(state.exhaustion.exhaustion_level, 3),
                     # Network (Epstein & Axtell, 1996)
                     "network_degree": network.get_degree(student.id) if network else 0,
                 })

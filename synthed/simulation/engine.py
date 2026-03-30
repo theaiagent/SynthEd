@@ -40,6 +40,8 @@ from .theories import (
     SDTMotivationDynamics,
     SDTNeedSatisfaction,
     PositiveEventHandler,
+    GonzalezExhaustion,
+    ExhaustionState,
 )
 
 
@@ -84,6 +86,8 @@ class SimulationState:
     # Deci & Ryan (1985): Self-Determination Theory
     sdt_needs: SDTNeedSatisfaction = field(default_factory=SDTNeedSatisfaction)
     current_motivation_type: str = "extrinsic"
+    # Gonzalez et al. (2025): Academic exhaustion as mediator
+    exhaustion: ExhaustionState = field(default_factory=ExhaustionState)
     # Temporal memory (moved from StudentPersona to avoid mutating input)
     memory: list[dict[str, Any]] = field(default_factory=list)
 
@@ -132,6 +136,7 @@ class SimulationEngine:
         self.rovai = RovaiPersistence()
         self.sdt = SDTMotivationDynamics()
         self.positive_events = PositiveEventHandler()
+        self.gonzalez = GonzalezExhaustion()
 
     def run(
         self,
@@ -188,6 +193,7 @@ class SimulationEngine:
                 self.garrison.update_presences(student, state, week, week_records, active_courses)
                 self.sdt.update_needs(student, state, week, week_records)
                 state.current_motivation_type = self.sdt.evaluate_motivation_shift(state)
+                self.gonzalez.update_exhaustion(student, state, week, week_context, week_records)
                 self._update_engagement(student, state, week, week_context, week_records)
 
             # ── Phase 2: Social network + peer influence (Epstein & Axtell) ──
@@ -394,6 +400,9 @@ class SimulationEngine:
             - 0.02
         )
         engagement += coi_effect
+
+        # ── Gonzalez et al. (2025): Academic exhaustion drag ──
+        engagement += self.gonzalez.exhaustion_engagement_effect(state)
 
         # ── Academic outcomes this week ──
         for r in records:
