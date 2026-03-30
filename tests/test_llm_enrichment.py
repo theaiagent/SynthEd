@@ -94,3 +94,52 @@ class TestLLMEnrichment:
 
         for persona in population:
             assert persona.backstory == ""
+
+    def test_llm_client_cost_report(self):
+        """LLMClient.cost_report() returns expected structure with zero usage."""
+        mock_openai = MagicMock()
+        client = LLMClient.__new__(LLMClient)
+        client.model = "gpt-4o-mini"
+        client.client = mock_openai
+        client.cache_dir = None
+        client.temperature = 0.8
+        client.max_retries = 3
+        client.retry_base_delay = 1.0
+        client.pricing = {"gpt-4o-mini": {"input": 0.15, "output": 0.60}}
+        client.total_input_tokens = 0
+        client.total_output_tokens = 0
+        client.total_calls = 0
+        client.total_retries = 0
+        client.total_failures = 0
+
+        report = client.cost_report()
+        assert report["model"] == "gpt-4o-mini"
+        assert report["total_calls"] == 0
+        assert report["total_input_tokens"] == 0
+        assert report["total_output_tokens"] == 0
+        assert report["estimated_cost_usd"] == 0.0
+        assert report["total_retries"] == 0
+        assert report["total_failures"] == 0
+
+    def test_llm_client_custom_pricing(self):
+        """LLMClient with custom pricing uses those rates in cost_report."""
+        mock_openai = MagicMock()
+        client = LLMClient.__new__(LLMClient)
+        client.model = "custom-model"
+        client.client = mock_openai
+        client.cache_dir = None
+        client.temperature = 0.8
+        client.max_retries = 3
+        client.retry_base_delay = 1.0
+        client.pricing = {"custom-model": {"input": 1.0, "output": 2.0}}
+        client.total_input_tokens = 1_000_000
+        client.total_output_tokens = 500_000
+        client.total_calls = 10
+        client.total_retries = 0
+        client.total_failures = 0
+
+        report = client.cost_report()
+        assert report["model"] == "custom-model"
+        # 1M input tokens * $1.0/1M = $1.0
+        # 500K output tokens * $2.0/1M = $1.0
+        assert report["estimated_cost_usd"] == 2.0
