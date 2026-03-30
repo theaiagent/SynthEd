@@ -41,8 +41,8 @@ jobs:
           file: ./coverage.xml
           fail_ci_if_error: false
 
-      - name: Generate dynamic test badge
-        if: matrix.python-version == '3.12' && always()
+      - name: Generate and deploy test badge
+        if: matrix.python-version == '3.12' && github.ref == 'refs/heads/main'
         run: |
           TOTAL=$(python -c "import xml.etree.ElementTree as ET; t=ET.parse('test-results.xml').getroot(); print(t.attrib['tests'])")
           FAILURES=$(python -c "import xml.etree.ElementTree as ET; t=ET.parse('test-results.xml').getroot(); print(t.attrib.get('failures','0'))")
@@ -55,19 +55,12 @@ jobs:
             COLOR="red"
             STATUS="${PASSED}/${TOTAL} passed (${FAILURES} failed)"
           fi
-          echo "{\"schemaVersion\":1,\"label\":\"pytest\",\"message\":\"${STATUS}\",\"color\":\"${COLOR}\"}" > badge.json
-          echo "BADGE_STATUS=${STATUS}" >> $GITHUB_ENV
-          echo "BADGE_COLOR=${COLOR}" >> $GITHUB_ENV
-
-      - name: Publish test badge to GitHub Pages branch
-        if: matrix.python-version == '3.12' && github.ref == 'refs/heads/main' && always()
-        run: |
           mkdir -p badges
-          cp badge.json badges/tests.json
+          echo "{\"schemaVersion\":1,\"label\":\"pytest\",\"message\":\"${STATUS}\",\"color\":\"${COLOR}\"}" > badges/tests.json
           echo "Badge: $(cat badges/tests.json)"
 
-      - name: Deploy badge
-        if: matrix.python-version == '3.12' && github.ref == 'refs/heads/main' && always()
+      - name: Deploy badge to gh-pages
+        if: matrix.python-version == '3.12' && github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
