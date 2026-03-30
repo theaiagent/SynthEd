@@ -26,6 +26,9 @@ output/
 # LLM cache
 .llm_cache/
 
+# Claude Code
+.claude/
+
 # OS
 .DS_Store
 Thumbs.db
