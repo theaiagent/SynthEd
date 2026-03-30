@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest-cov
+
+      - name: Run tests with coverage
+        run: |
+          python -m pytest tests/ -v --tb=short --cov=synthed --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.12'
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff
+
+      - name: Lint with ruff
+        run: ruff check synthed/ tests/ --select E,F,W --ignore E501
+
+  pipeline-smoke:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run pipeline smoke test (single semester)
+        run: |
+          python -c "
+          from synthed.utils.log_config import configure_logging
+          configure_logging()
+          from synthed.pipeline import SynthEdPipeline
+          p = SynthEdPipeline(output_dir='./ci_output', seed=42)
+          r = p.run(n_students=50)
+          quality = r['validation']['summary']['overall_quality']
+          passed = r['validation']['summary']['passed']
+          total = r['validation']['summary']['total_tests']
+          dropout = r['simulation_summary']['dropout_rate']
+          print(f'Quality: {quality} ({passed}/{total}), Dropout: {dropout:.1%}')
+          assert passed >= total * 0.75, f'Too many validation failures: {passed}/{total}'
+          "
+
+      - name: Run pipeline smoke test (multi-semester)
+        run: |
+          python -c "
+          from synthed.utils.log_config import configure_logging
+          configure_logging()
+          from synthed.pipeline import SynthEdPipeline
+          p = SynthEdPipeline(output_dir='./ci_output_ms', seed=42, n_semesters=2)
+          r = p.run(n_students=50)
+          dropout = r['simulation_summary']['dropout_rate']
+          print(f'2-semester dropout: {dropout:.1%}')
+          assert dropout > 0.30, f'Multi-semester dropout too low: {dropout:.1%}'
+          "

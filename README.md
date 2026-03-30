@@ -1,5 +1,7 @@
 # SynthEd
 
+[![CI](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml/badge.svg)](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml)
+
 **Agent-Based Synthetic Educational Data Generation for Open & Distance Learning Research**
 
 SynthEd generates behaviorally coherent synthetic student data by combining **persona-driven agent modeling** (inspired by [TinyTroupe](https://github.com/microsoft/tinytroupe)) with **scalable multi-agent simulation** (inspired by [MiroFish](https://github.com/666ghj/MiroFish)). Unlike traditional synthetic data methods (GANs, VAEs), SynthEd produces temporally consistent interaction traces where each data point is grounded in a simulated student's personality, motivation, and life context.
