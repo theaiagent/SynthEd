@@ -72,7 +72,7 @@ Educational data mining research faces three persistent challenges:
 - **Simulation Memory**: Each student's simulation state accumulates events across weeks (assignments, exams, phase transitions), creating realistic engagement trajectories (e.g., a failed midterm reduces subsequent engagement).
 - **Configurable Populations**: Calibrate to your institution's demographics using aggregate statistics only (no individual data needed).
 - **Multi-Level Validation**: Automatic statistical comparison against reference data using KS-tests, chi-squared tests, correlation checks, and temporal coherence analysis.
-- **Optional LLM Enrichment**: Use GPT-4o-mini to generate narrative backstories with automatic retry, validation, and persona-attribute consistency checks (off by default — zero API cost in rule-based mode).
+- **Optional LLM Enrichment**: Use GPT-4o-mini to generate narrative backstories with automatic retry, validation, and persona-attribute consistency checks (off by default — zero API cost in rule-based mode). Backstories provide researchers with human-readable explanations of *why* each synthetic student behaves the way they do, making datasets more interpretable for presentations, publications, and qualitative analysis. In future versions, backstories will serve as agent context for LLM-driven behavioral simulation (realistic forum posts, assignment text).
 - **Privacy by Design**: Synthetic agents are fictional constructs with no mapping to real individuals.
 
 ## Quick Start
