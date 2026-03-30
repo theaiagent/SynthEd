@@ -298,6 +298,8 @@ class StudentFactory:
                 {"role": "system", "content": (
                     "Generate a 5-6 sentence backstory for a synthetic ODL student. "
                     "Explain WHY they chose distance learning and their main challenge. "
+                    "Keep content professional and appropriate. No violence, sexual content, "
+                    "discrimination, or illegal activities. "
                     "Respond with JSON: {\"backstory\": \"<string>\", \"primary_challenge\": \"<string>\"}"
                 )},
                 {"role": "user", "content": prompt},
