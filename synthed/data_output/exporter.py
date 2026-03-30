@@ -73,6 +73,8 @@ class DataExporter:
             "institutional_support_access", "self_efficacy",
             # Derived
             "base_engagement_probability", "base_dropout_risk",
+            # LLM-generated (optional)
+            "backstory",
         ]
 
         with open(filepath, "w", newline="", encoding="utf-8") as f:
@@ -110,6 +112,7 @@ class DataExporter:
                     "self_efficacy": s.self_efficacy,
                     "base_engagement_probability": round(s.base_engagement_probability, 3),
                     "base_dropout_risk": round(s.base_dropout_risk, 3),
+                    "backstory": s.backstory or "",
                 }
                 writer.writerow(row)
         return str(filepath)
