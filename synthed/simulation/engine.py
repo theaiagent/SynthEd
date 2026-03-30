@@ -28,6 +28,16 @@ from ..agents.persona import StudentPersona
 from .environment import ODLEnvironment, Course
 from .social_network import SocialNetwork
 from ..utils.llm import LLMClient
+from .theories import (
+    TintoIntegration,
+    BeanMetznerPressure,
+    KemberCostBenefit,
+    BaulkeDropoutPhase,
+    GarrisonCoI,
+    MooreTransactionalDistance,
+    EpsteinAxtellPeerInfluence,
+    RovaiPersistence,
+)
 
 
 @dataclass
@@ -105,6 +115,16 @@ class SimulationEngine:
         self.mode = mode
         random.seed(seed)
 
+        # Theory-specific delegates
+        self.tinto = TintoIntegration()
+        self.bean_metzner = BeanMetznerPressure()
+        self.kember = KemberCostBenefit()
+        self.baulke = BaulkeDropoutPhase()
+        self.garrison = GarrisonCoI()
+        self.moore = MooreTransactionalDistance()
+        self.epstein_axtell = EpsteinAxtellPeerInfluence()
+        self.rovai = RovaiPersistence()
+
     def run(
         self,
         students: list[StudentPersona],
@@ -148,17 +168,19 @@ class SimulationEngine:
                 week_records = self._simulate_student_week(student, state, week, week_context)
                 all_records.extend(week_records)
                 week_records_by_student[student.id] = week_records
-                self._update_integration(student, state, week, week_context, week_records)
-                self._update_coi_presences(student, state, week, week_records)
+
+                active_courses = [c for c in self.env.courses if c.id in state.courses_active]
+                self.tinto.update_integration(student, state, week, week_context, week_records)
+                self.garrison.update_presences(student, state, week, week_records, active_courses)
                 self._update_engagement(student, state, week, week_context, week_records)
 
             # ── Phase 2: Social network + peer influence (Epstein & Axtell) ──
-            self._update_social_network(week, week_records_by_student)
+            self.epstein_axtell.update_network(week, week_records_by_student, self.network)
             for student in students:
                 state = states[student.id]
                 if state.has_dropped_out:
                     continue
-                self._apply_peer_influence(student, state, states)
+                self.epstein_axtell.apply_peer_influence(student, state, states, self.network)
                 # CoI social_presence boosted by network degree
                 degree = self.network.get_degree(student.id)
                 state.coi_state.social_presence += min(degree * 0.005, 0.03)
@@ -167,7 +189,11 @@ class SimulationEngine:
                 )
                 # Record engagement AFTER peer influence (data integrity)
                 state.weekly_engagement_history.append(state.current_engagement)
-                self._advance_dropout_phase(student, state, week)
+                self.baulke.advance_phase(
+                    student, state, week, self.env,
+                    lambda s, st: self.moore.average(s, st, self.env),
+                    self.rng,
+                )
 
                 if state.dropout_phase >= 5:
                     state.has_dropped_out = True
@@ -299,42 +325,7 @@ class SimulationEngine:
 
         return records
 
-    # ── TINTO: Academic & Social Integration Updates ──
-
-    def _update_integration(
-        self, student: StudentPersona, state: SimulationState,
-        week: int, context: dict, records: list[InteractionRecord],
-    ):
-        """Update Tinto's academic and social integration based on week's events."""
-
-        # Academic integration: driven by assignment/exam performance
-        academic_events = [r for r in records if r.interaction_type in ("assignment_submit", "exam")]
-        if academic_events:
-            avg_quality = np.mean([r.quality_score for r in academic_events])
-            # Good performance strengthens academic integration
-            state.academic_integration += (avg_quality - 0.5) * 0.05
-        else:
-            # No academic activity → slight erosion
-            state.academic_integration -= 0.02
-
-        # Social integration: driven by forum posts (Tinto + Durkheim)
-        forum_posts = sum(1 for r in records if r.interaction_type == "forum_post")
-        forum_reads = sum(1 for r in records if r.interaction_type == "forum_read")
-        live_sessions = sum(1 for r in records if r.interaction_type == "live_session")
-
-        if forum_posts > 0:
-            state.social_integration += 0.03 * min(forum_posts, 3)
-        if live_sessions > 0:
-            state.social_integration += 0.02
-        if forum_reads > 0 and forum_posts == 0:
-            state.social_integration += 0.005  # Lurking helps minimally
-        if forum_posts == 0 and forum_reads == 0 and live_sessions == 0:
-            state.social_integration -= 0.03  # Durkheim: isolation erodes connection
-
-        state.academic_integration = float(np.clip(state.academic_integration, 0.01, 0.95))
-        state.social_integration = float(np.clip(state.social_integration, 0.01, 0.80))
-
-    # ── ENGAGEMENT UPDATE (Multi-theory) ──
+    # ── ENGAGEMENT UPDATE (Multi-theory composer) ──
 
     def _update_engagement(
         self, student: StudentPersona, state: SimulationState,
@@ -351,39 +342,25 @@ class SimulationEngine:
         engagement = state.current_engagement
 
         # ── Adaptive baseline decay ──
-        # Early weeks have higher decay (adaptation shock); decay diminishes
-        # as the student settles in. Modeled as inverse-sqrt attenuation.
-        # Week 1: full decay (1.0x), Week 14: ~0.27x, Week 28: ~0.19x
         decay_attenuation = 1.0 / (1.0 + 0.5 * (week - 1) ** 0.5)
 
         # ── Tinto: Integration effect ──
-        # Academic integration is the stronger factor in ODE
         integration_effect = (
             state.academic_integration * 0.06
             + state.social_integration * 0.02
-            - 0.05 * decay_attenuation  # Attenuated baseline decay
+            - 0.05 * decay_attenuation
         )
         engagement += integration_effect
 
         # ── Bean & Metzner: Environmental pressure ──
-        # ODL students face heavier external burdens (employment, family, finances)
-        env_pressure = 0.0
-        if student.is_employed and student.weekly_work_hours > 30:
-            env_pressure -= 0.025  # Overwork erodes engagement
-        if student.has_family_responsibilities:
-            env_pressure -= 0.02
-        if student.financial_stress > 0.5:
-            env_pressure -= 0.015
-        engagement += env_pressure
+        engagement += self.bean_metzner.calculate_environmental_pressure(student)
 
         # ── Rovai: Self-regulation buffer ──
-        # High self-regulation students resist engagement decay
-        regulation_buffer = (student.self_regulation - 0.5) * 0.03
-        engagement += regulation_buffer
+        engagement += self.rovai.regulation_buffer(student)
 
         # ── Moore (1993): Transactional distance effect ──
-        avg_td = self._avg_transactional_distance(student, state)
-        td_effect = -(avg_td - 0.5) * 0.03  # High TD erodes engagement
+        avg_td = self.moore.average(student, state, self.env)
+        td_effect = -(avg_td - 0.5) * 0.03
         engagement += td_effect
 
         # ── Garrison et al. (2000): Community of Inquiry effect ──
@@ -392,7 +369,7 @@ class SimulationEngine:
             coi.social_presence * 0.01
             + coi.cognitive_presence * 0.02
             + coi.teaching_presence * 0.01
-            - 0.02  # baseline offset
+            - 0.02
         )
         engagement += coi_effect
 
@@ -414,288 +391,14 @@ class SimulationEngine:
 
         # ── Kember: Cost-benefit recalculation after major events ──
         if context.get("is_exam_week") or state.missed_assignments_streak >= 2:
-            # Poor performance reduces perceived cost-benefit
-            recent_quality = [r.quality_score for r in records
-                              if r.interaction_type in ("assignment_submit", "exam") and r.quality_score > 0]
-            if recent_quality:
-                avg_q = np.mean(recent_quality)
-                state.perceived_cost_benefit += (avg_q - 0.5) * 0.04
-            elif state.missed_assignments_streak >= 2:
-                state.perceived_cost_benefit -= 0.03
-
-            # Moore → Kember: high transactional distance reduces perceived value
-            state.perceived_cost_benefit -= (avg_td - 0.5) * 0.02
-            state.perceived_cost_benefit = float(np.clip(state.perceived_cost_benefit, 0.05, 0.95))
+            self.kember.recalculate(student, state, context, records, avg_td)
             # Cost-benefit feeds back into engagement
             engagement += (state.perceived_cost_benefit - 0.5) * 0.02
 
-        # ── Persona-based engagement floor ──
-        # Students with strong self-regulation, goal commitment, and self-efficacy
-        # have a personal floor below which engagement does not drop.
-        # This models resilience: some students persist despite adversity.
-        personal_floor = (
-            student.self_regulation * 0.15
-            + student.goal_commitment * 0.12
-            + student.self_efficacy * 0.10
-            + student.learner_autonomy * 0.08  # Moore: autonomous learners persist
-        ) * 0.50  # Scale: max ~0.22 for high-resilience students
-        engagement = max(engagement, personal_floor)
+        # ── Persona-based engagement floor (Rovai) ──
+        engagement = max(engagement, self.rovai.engagement_floor(student))
 
         state.current_engagement = float(np.clip(engagement, 0.01, 0.99))
-
-    # ── BÄULKE ET AL.: Phase-Oriented Dropout Progression ──
-
-    def _advance_dropout_phase(
-        self, student: StudentPersona, state: SimulationState, week: int,
-    ):
-        """
-        Advance the dropout phase based on Bäulke, Grunschel & Dresel (2022).
-
-        Six-phase model integrating Betsch (2005) decision-making and
-        Rubicon action-phase model (Achtziger & Gollwitzer, 2010):
-
-        0 → 1: Non-fit perception — sensing incongruence with program
-        1 → 2: Thoughts of quitting — unsystematic consideration of alternatives
-        2 → 3: Deliberation — consciously weighing pros/cons of staying vs leaving
-        3 → 4: Information search — targeted search for alternative options
-        4 → 5: Final decision — committed to withdraw
-        """
-        eng = state.current_engagement
-        history = state.weekly_engagement_history
-        avg_td = self._avg_transactional_distance(student, state)
-
-        if state.dropout_phase == 0:
-            # Phase 0 → 1: Non-fit perception
-            if (eng < 0.40
-                    or (eng < 0.45 and state.coi_state.cognitive_presence < 0.25)
-                    or (eng < 0.45 and avg_td > 0.55)):
-                state.dropout_phase = 1
-                state.memory.append({"week": week, "event_type": "dropout_phase",
-                                    "details": "Non-fit perception: questioning fit with program",
-                                    "impact": -0.2})
-
-        elif state.dropout_phase == 1:
-            # Recovery back to 0 (harder in ODL — fewer re-engagement mechanisms)
-            if eng > 0.50:
-                state.dropout_phase = 0
-                state.memory.append({"week": week, "event_type": "recovery",
-                                    "details": "Re-engaged with program", "impact": 0.2})
-            # Phase 1 → 2: Thoughts of quitting
-            elif (eng < 0.36
-                  and (state.missed_assignments_streak >= 1
-                       or state.social_integration < 0.20)):
-                state.dropout_phase = 2
-                state.memory.append({"week": week, "event_type": "dropout_phase",
-                                    "details": "Thoughts of quitting: considering alternatives "
-                                               "after experiencing difficulties",
-                                    "impact": -0.25})
-
-        elif state.dropout_phase == 2:
-            # Recovery back to 1
-            if eng > 0.45:
-                state.dropout_phase = 1
-                state.memory.append({"week": week, "event_type": "recovery",
-                                    "details": "Renewed commitment, thoughts of quitting subsided",
-                                    "impact": 0.15})
-            # Phase 2 → 3: Deliberation (requires sustained decline)
-            elif eng < 0.32 and len(history) >= 2 and history[-1] < history[-2]:
-                state.dropout_phase = 3
-                state.memory.append({"week": week, "event_type": "dropout_phase",
-                                    "details": "Deliberation: actively weighing whether to continue",
-                                    "impact": -0.3})
-
-        elif state.dropout_phase == 3:
-            # Recovery back to 2
-            if eng > 0.40:
-                state.dropout_phase = 2
-                state.memory.append({"week": week, "event_type": "recovery",
-                                    "details": "Stepped back from deliberation to thoughts of quitting",
-                                    "impact": 0.1})
-            # Phase 3 → 4: Information search
-            elif eng < 0.25 and state.perceived_cost_benefit < 0.40:
-                state.dropout_phase = 4
-                state.memory.append({"week": week, "event_type": "dropout_phase",
-                                    "details": "Information search: exploring alternatives "
-                                               "to current program",
-                                    "impact": -0.4})
-
-        elif state.dropout_phase == 4:
-            # Recovery still possible but unlikely
-            if eng > 0.35 and state.perceived_cost_benefit > 0.45:
-                state.dropout_phase = 3
-            # Phase 4 → 5: Final decision — probabilistic, scaled by triggers
-            else:
-                triggers = 0
-                if eng < 0.10:
-                    triggers += 1  # Near-zero engagement
-                if state.missed_assignments_streak >= 3:
-                    triggers += 1  # Academic failure cascade
-                if state.perceived_cost_benefit < 0.15:
-                    triggers += 1  # Economic rationality: not worth it
-                if student.financial_stress > 0.7:
-                    triggers += 1  # Bean & Metzner: environmental crisis
-                # Withdrawal deadline at ~70% of semester (Kember)
-                withdrawal_week = int(self.env.total_weeks * 0.70)
-                if week == withdrawal_week:
-                    triggers += 1
-
-                if triggers >= 1:
-                    decision_prob = student.base_dropout_risk * triggers * 0.28
-                    if self.rng.random() < decision_prob:
-                        state.dropout_phase = 5
-                        state.memory.append({"week": week, "event_type": "dropout",
-                                            "details": "Decided to withdraw from program",
-                                            "impact": -0.8})
-
-    # ── GARRISON ET AL. (2000): Community of Inquiry ──
-
-    def _update_coi_presences(
-        self, student: StudentPersona, state: SimulationState,
-        week: int, records: list[InteractionRecord],
-    ):
-        """
-        Update Community of Inquiry presences based on weekly activity.
-
-        Social presence: driven by forum posts, live sessions, extraversion.
-        Cognitive presence: driven by assignment quality, forum depth, openness.
-        Teaching presence: driven by course dialogue, instructor responsiveness.
-        """
-        coi = state.coi_state
-
-        # Social presence
-        forum_posts = sum(1 for r in records if r.interaction_type == "forum_post")
-        live_sessions = sum(1 for r in records if r.interaction_type == "live_session")
-        coi.social_presence += (
-            forum_posts * 0.03
-            + live_sessions * 0.02
-            + (student.personality.extraversion - 0.5) * 0.01
-            - 0.02  # decay without activity
-        )
-
-        # Cognitive presence
-        academic_events = [r for r in records
-                          if r.interaction_type in ("assignment_submit", "exam")]
-        if academic_events:
-            avg_quality = float(np.mean([r.quality_score for r in academic_events]))
-            coi.cognitive_presence += (avg_quality - 0.5) * 0.04
-        deep_posts = sum(1 for r in records
-                        if r.interaction_type == "forum_post"
-                        and r.metadata.get("post_length", 0) > 100)
-        coi.cognitive_presence += deep_posts * 0.02 - 0.01
-
-        # Teaching presence (environment-driven, modulated by student perception)
-        active_courses = [
-            c for c in self.env.courses if c.id in state.courses_active
-        ]
-        if active_courses:
-            avg_dialogue = float(np.mean([c.dialogue_frequency for c in active_courses]))
-            avg_responsiveness = float(np.mean([c.instructor_responsiveness for c in active_courses]))
-            coi.teaching_presence += (avg_dialogue - 0.4) * 0.02
-            coi.teaching_presence += (avg_responsiveness - 0.5) * 0.01
-        coi.teaching_presence += (student.institutional_support_access - 0.5) * 0.01
-
-        # Clamp all presences
-        coi.social_presence = float(np.clip(coi.social_presence, 0.01, 0.95))
-        coi.cognitive_presence = float(np.clip(coi.cognitive_presence, 0.01, 0.95))
-        coi.teaching_presence = float(np.clip(coi.teaching_presence, 0.01, 0.95))
-
-    # ── MOORE (1993): Transactional Distance ──
-
-    def _calculate_transactional_distance(
-        self, student: StudentPersona, course: Course,
-    ) -> float:
-        """
-        Moore (1993): Transactional distance = f(structure, dialogue, autonomy).
-        High structure + low dialogue + low autonomy = high transactional distance.
-        Returns 0-1 where higher = more distant (worse for engagement).
-        """
-        td = (
-            course.structure_level * 0.35
-            - course.dialogue_frequency * 0.30
-            - student.learner_autonomy * 0.25
-            - course.instructor_responsiveness * 0.10
-        )
-        return float(np.clip(td + 0.30, 0.0, 1.0))
-
-    # ── EPSTEIN & AXTELL (1996): Agent-Based Social Simulation ──
-
-    def _update_social_network(
-        self, week: int, week_records: dict[str, list[InteractionRecord]],
-    ) -> None:
-        """
-        Epstein & Axtell (1996): Form/strengthen links based on co-activity.
-        Students who post in the same forum in the same week form weak ties.
-        """
-        # Group forum posters by course
-        course_posters: dict[str, list[str]] = {}
-        for sid, records in week_records.items():
-            for r in records:
-                if r.interaction_type == "forum_post":
-                    course_posters.setdefault(r.course_id, []).append(sid)
-
-        for _course_id, posters in course_posters.items():
-            unique_posters = list(set(posters))
-            for i, p1 in enumerate(unique_posters):
-                for p2 in unique_posters[i + 1:]:
-                    self.network.add_link(p1, p2, 0.05, "forum")
-                    self.network.add_link(p2, p1, 0.05, "forum")
-
-        # Live session co-attendance also forms ties
-        course_live: dict[str, list[str]] = {}
-        for sid, records in week_records.items():
-            for r in records:
-                if r.interaction_type == "live_session":
-                    course_live.setdefault(r.course_id, []).append(sid)
-
-        for _course_id, attendees in course_live.items():
-            unique_attendees = list(set(attendees))
-            for i, a1 in enumerate(unique_attendees):
-                for a2 in unique_attendees[i + 1:]:
-                    self.network.add_link(a1, a2, 0.03, "live_session")
-                    self.network.add_link(a2, a1, 0.03, "live_session")
-
-    def _apply_peer_influence(
-        self, student: StudentPersona, state: SimulationState,
-        states: dict[str, SimulationState],
-    ) -> None:
-        """
-        Epstein & Axtell (1996): Peer contagion effects.
-
-        Three influence channels:
-        1. Engagement contagion: peers pull engagement toward local mean
-        2. Dropout contagion: peers in dropout phases increase risk
-        3. Social integration reinforcement via peer connection
-        """
-        # Engagement contagion
-        eng_influence = self.network.peer_influence(student.id, states, "current_engagement")
-        state.current_engagement = float(np.clip(
-            state.current_engagement + eng_influence, 0.01, 0.99
-        ))
-
-        # Dropout contagion
-        contagion_penalty = self.network.dropout_contagion(student.id, states)
-        if contagion_penalty > 0:
-            state.current_engagement = float(np.clip(
-                state.current_engagement - contagion_penalty, 0.01, 0.99
-            ))
-
-        # Peer connection reinforces social integration (Tinto via ABSS)
-        degree = self.network.get_degree(student.id)
-        if degree > 0:
-            state.social_integration = float(np.clip(
-                state.social_integration + min(degree * 0.003, 0.02), 0.01, 0.80
-            ))
-
-    def _avg_transactional_distance(
-        self, student: StudentPersona, state: SimulationState,
-    ) -> float:
-        """Average transactional distance across active courses."""
-        distances = []
-        for cid in state.courses_active:
-            course = self.env.get_course_by_id(cid)
-            if course:
-                distances.append(self._calculate_transactional_distance(student, course))
-        return float(np.mean(distances)) if distances else 0.5
 
     def summary_statistics(self, states: dict[str, SimulationState]) -> dict[str, Any]:
         total = len(states)
