@@ -2,7 +2,11 @@ from setuptools import setup, find_packages
 
 setup(
     name="synthed",
-    use_scm_version=True,
+    use_scm_version={
+        "fallback_version": "0.0.0-dev",
+        "version_scheme": "guess-next-dev",
+        "local_scheme": "node-and-date",
+    },
     setup_requires=["setuptools_scm"],
     description="Agent-Based Synthetic Educational Data Generation for ODL Research",
     long_description=open("README.md", encoding="utf-8").read(),
