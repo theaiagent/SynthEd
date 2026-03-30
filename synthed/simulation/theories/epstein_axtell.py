@@ -22,12 +22,42 @@ class EpsteinAxtellPeerInfluence:
     _ENGAGEMENT_CLIP_LO: float = 0.01        # engagement lower bound
     _ENGAGEMENT_CLIP_HI: float = 0.99        # engagement upper bound
     _SOCIAL_CLIP_HI: float = 0.80            # social integration upper bound
+    _SAMPLING_THRESHOLD: int = 40            # group size above which we sample peers
+    _DEGREE_CAP_PER_ACTIVITY: int = 20       # max peers sampled per activity type
+
+    def _link_group(
+        self,
+        members: list[str],
+        network: SocialNetwork,
+        weight: float,
+        link_type: str,
+        rng: np.random.Generator | None,
+    ) -> None:
+        """Link members of a co-activity group, sampling for large groups."""
+        unique = list(set(members))
+        n = len(unique)
+        if n < self._SAMPLING_THRESHOLD or rng is None:
+            # All-pairs linking (existing behaviour)
+            for i, m1 in enumerate(unique):
+                for m2 in unique[i + 1:]:
+                    network.add_link(m1, m2, weight, link_type)
+                    network.add_link(m2, m1, weight, link_type)
+        else:
+            # Each member samples a bounded subset of random peers
+            k = min(self._DEGREE_CAP_PER_ACTIVITY, n - 1)
+            for m in unique:
+                others = [o for o in unique if o != m]
+                sampled = rng.choice(others, size=k, replace=False)
+                for peer in sampled:
+                    network.add_link(m, peer, weight, link_type)
+                    network.add_link(peer, m, weight, link_type)
 
     def update_network(
         self,
         week: int,
         week_records: dict[str, list[InteractionRecord]],
         network: SocialNetwork,
+        rng: np.random.Generator | None = None,
     ) -> None:
         """
         Epstein & Axtell (1996): Form/strengthen links based on co-activity.
@@ -41,11 +71,7 @@ class EpsteinAxtellPeerInfluence:
                     course_posters.setdefault(r.course_id, []).append(sid)
 
         for _course_id, posters in course_posters.items():
-            unique_posters = list(set(posters))
-            for i, p1 in enumerate(unique_posters):
-                for p2 in unique_posters[i + 1:]:
-                    network.add_link(p1, p2, self._FORUM_LINK_WEIGHT, "forum")
-                    network.add_link(p2, p1, self._FORUM_LINK_WEIGHT, "forum")
+            self._link_group(posters, network, self._FORUM_LINK_WEIGHT, "forum", rng)
 
         # Live session co-attendance also forms ties
         course_live: dict[str, list[str]] = {}
@@ -55,11 +81,7 @@ class EpsteinAxtellPeerInfluence:
                     course_live.setdefault(r.course_id, []).append(sid)
 
         for _course_id, attendees in course_live.items():
-            unique_attendees = list(set(attendees))
-            for i, a1 in enumerate(unique_attendees):
-                for a2 in unique_attendees[i + 1:]:
-                    network.add_link(a1, a2, self._LIVE_LINK_WEIGHT, "live_session")
-                    network.add_link(a2, a1, self._LIVE_LINK_WEIGHT, "live_session")
+            self._link_group(attendees, network, self._LIVE_LINK_WEIGHT, "live_session", rng)
 
     def apply_peer_influence(
         self,

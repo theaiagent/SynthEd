@@ -4,6 +4,9 @@ from synthed.validation.validator import SyntheticDataValidator
 
 
 class TestSyntheticDataValidator:
+    def setup_method(self):
+        self.validator = SyntheticDataValidator()
+
     def test_validate_all_returns_report_structure(self):
         validator = SyntheticDataValidator()
         students = [
@@ -38,3 +41,15 @@ class TestSyntheticDataValidator:
         assert "C" in SyntheticDataValidator._quality_grade(0.65)
         assert "D" in SyntheticDataValidator._quality_grade(0.45)
         assert "F" in SyntheticDataValidator._quality_grade(0.20)
+
+    def test_effective_alpha_small_n_unchanged(self):
+        assert self.validator._effective_alpha(200) == 0.05
+        assert self.validator._effective_alpha(500) == 0.05
+
+    def test_effective_alpha_large_n_decreases(self):
+        alpha_10k = self.validator._effective_alpha(10000)
+        assert alpha_10k < 0.05
+        assert abs(alpha_10k - 0.01) < 0.005  # approximately 0.01
+
+    def test_effective_alpha_minimum_bound(self):
+        assert self.validator._effective_alpha(10_000_000) >= 0.001

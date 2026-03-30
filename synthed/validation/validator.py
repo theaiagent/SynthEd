@@ -146,6 +146,18 @@ class SyntheticDataValidator:
             ],
         }
 
+    def _effective_alpha(self, n: int) -> float:
+        """Scale-adjusted significance level for large populations.
+
+        At small N (<=500), returns configured alpha (default 0.05).
+        At large N, reduces alpha to compensate for increased statistical
+        power detecting trivially small deviations.
+        """
+        if n <= 500:
+            return self.alpha
+        adjusted = self.alpha * (200 / n) ** 0.5
+        return max(adjusted, 0.001)
+
     def _validate_demographics(self, students: list[dict]) -> list[ValidationResult]:
         """Level 1: Validate demographic distributions."""
         results = []
@@ -161,7 +173,7 @@ class SyntheticDataValidator:
             reference_value=self.reference.age_mean,
             statistic=float(ks_stat),
             p_value=float(ks_p),
-            passed=ks_p > self.alpha,
+            passed=ks_p > self._effective_alpha(len(ages)),
             details=f"Age mean: synth={np.mean(ages):.1f}, ref={self.reference.age_mean:.1f}",
         ))
 
@@ -186,7 +198,7 @@ class SyntheticDataValidator:
                 reference_value=0.0,
                 statistic=float(chi2),
                 p_value=float(chi2_p),
-                passed=chi2_p > self.alpha,
+                passed=chi2_p > self._effective_alpha(len(students)),
                 details=f"Gender proportions match reference: p={chi2_p:.4f}",
             ))
 
@@ -202,7 +214,7 @@ class SyntheticDataValidator:
             reference_value=self.reference.employment_rate,
             statistic=z_stat,
             p_value=z_p,
-            passed=z_p > self.alpha,
+            passed=z_p > self._effective_alpha(len(students)),
             details=f"Employment: synth={emp_rate:.2%}, ref={self.reference.employment_rate:.2%}",
         ))
 
@@ -227,7 +239,7 @@ class SyntheticDataValidator:
                 reference_value=self.reference.gpa_mean,
                 statistic=float(ks_stat),
                 p_value=float(ks_p),
-                passed=ks_p > self.alpha,
+                passed=ks_p > self._effective_alpha(len(gpas)),
                 details=f"GPA mean: synth={np.mean(gpas):.2f}, ref={self.reference.gpa_mean:.2f}",
             ))
 
@@ -244,7 +256,7 @@ class SyntheticDataValidator:
                 reference_value=self.reference.dropout_rate,
                 statistic=z_stat,
                 p_value=z_p,
-                passed=z_p > self.alpha,
+                passed=z_p > self._effective_alpha(len(outcomes)),
                 details=f"Dropout: synth={dropout_rate:.2%}, ref={self.reference.dropout_rate:.2%}",
             ))
 

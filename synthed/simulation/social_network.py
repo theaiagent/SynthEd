@@ -35,6 +35,8 @@ class SocialNetwork:
     tracks aggregated strength and the set of link types that formed the bond.
     """
 
+    _MAX_DEGREE: int = 25  # hard cap on unique neighbors per node
+
     def __init__(self) -> None:
         self._link_count: int = 0
         self._adjacency: dict[str, dict[str, PeerLink]] = {}
@@ -48,11 +50,15 @@ class SocialNetwork:
         neighbors = self._adjacency.setdefault(source_id, {})
         existing = neighbors.get(target_id)
         if existing is not None:
+            # Strengthening existing links is always allowed
             neighbors[target_id] = PeerLink(
                 strength=min(existing.strength + strength, 1.0),
                 link_types=existing.link_types | {link_type},
             )
         else:
+            # New link: enforce hard degree cap
+            if len(neighbors) >= self._MAX_DEGREE:
+                return
             neighbors[target_id] = PeerLink(
                 strength=strength,
                 link_types=frozenset({link_type}),

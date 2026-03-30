@@ -301,7 +301,7 @@ class SimulationEngine:
 
             # ── Phase 2: Social network + peer influence (Epstein & Axtell) ──
             self.network.decay_links(decay_rate=self._NETWORK_DECAY_RATE)
-            self.epstein_axtell.update_network(week, week_records_by_student, self.network)
+            self.epstein_axtell.update_network(week, week_records_by_student, self.network, rng=self.rng)
             for student in students:
                 state = states[student.id]
                 if state.has_dropped_out:
