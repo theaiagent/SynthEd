@@ -346,6 +346,23 @@ SynthEd is designed to **address** ethical challenges in educational data mining
 - **Transparency**: All theoretical frameworks, formulas, and calibration decisions are documented in the source code and this README. The simulation is fully auditable.
 - **No surveillance**: SynthEd is not designed for, and should not be used for, monitoring or evaluating real students.
 
+## Contributing
+
+Contributions are welcome! Whether you are a researcher, developer, or educator:
+
+- **Report bugs** or suggest features via [GitHub Issues](https://github.com/theaiagent/SynthEd/issues)
+- **Submit pull requests** for bug fixes, new theory modules, or benchmark profiles
+- **Share feedback** on calibration results or theoretical accuracy
+- **Add new theories** by creating a module in `synthed/simulation/theories/` following the existing delegate pattern
+- **Add benchmark profiles** for your institution or country in `synthed/benchmarks/profiles.py`
+
+Please ensure all tests pass before submitting:
+
+```bash
+ruff check synthed/ tests/ --select E,F,W --ignore E501
+python -m pytest tests/ -v --tb=short
+```
+
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
