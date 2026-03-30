@@ -296,7 +296,7 @@ class StudentFactory:
         try:
             result = self.llm.chat_json([
                 {"role": "system", "content": (
-                    "Generate a 2-3 sentence backstory for a synthetic ODL student. "
+                    "Generate a 5-6 sentence backstory for a synthetic ODL student. "
                     "Explain WHY they chose distance learning and their main challenge. "
                     "Respond with JSON: {\"backstory\": \"<string>\", \"primary_challenge\": \"<string>\"}"
                 )},
