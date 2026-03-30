@@ -278,27 +278,30 @@ class StudentFactory:
         On any failure, logs a warning and returns the persona unchanged
         (empty backstory) so the pipeline continues without crashing.
         """
-        prompt = f"""You are generating a backstory for a synthetic ODL student persona.
-Based on these attributes, write 2-3 sentences explaining WHY this student
-chose distance learning and what challenges they face.
+        # Sanitize persona attributes to prevent prompt injection
+        age = int(persona.age)
+        gender = str(persona.gender)[:10]
+        education = str(persona.prior_education_level)[:20]
+        motivation = str(persona.motivation_type)[:15]
 
-Profile:
-- {persona.name}, {persona.age}yo, {persona.gender}
-- Employment: {'Employed ' + str(persona.weekly_work_hours) + 'h/wk' if persona.is_employed else 'Unemployed'}
-- Family: {'Has family responsibilities' if persona.has_family_responsibilities else 'No family duties'}
-- Financial stress: {persona.financial_stress:.0%}
-- Prior: {persona.prior_education_level} (GPA {persona.prior_gpa:.1f}), {persona.years_since_last_education}y gap
-- Motivation: {persona.motivation_type}, Goal commitment: {persona.goal_commitment:.0%}
-- Self-regulation: {persona.self_regulation:.0%}, Digital literacy: {persona.digital_literacy:.0%}
-- Personality: {persona.personality.to_description()}
-
-Return JSON: {{"backstory": "...", "primary_challenge": "..."}}
-"""
+        prompt = (
+            f"Age: {age}, Gender: {gender}, "
+            f"Employment: {'employed ' + str(persona.weekly_work_hours) + 'h/wk' if persona.is_employed else 'unemployed'}, "
+            f"Family: {'has dependents' if persona.has_family_responsibilities else 'no dependents'}, "
+            f"Financial stress: {persona.financial_stress:.0%}, "
+            f"Education: {education} (GPA {persona.prior_gpa:.1f}), {persona.years_since_last_education}y gap, "
+            f"Motivation: {motivation}, Goal commitment: {persona.goal_commitment:.0%}, "
+            f"Self-regulation: {persona.self_regulation:.0%}, Digital literacy: {persona.digital_literacy:.0%}"
+        )
         try:
             result = self.llm.chat_json([
-                {"role": "system", "content": "Synthetic persona generator for educational research. Return valid JSON."},
+                {"role": "system", "content": (
+                    "Generate a 2-3 sentence backstory for a synthetic ODL student. "
+                    "Explain WHY they chose distance learning and their main challenge. "
+                    "Respond with JSON: {\"backstory\": \"<string>\", \"primary_challenge\": \"<string>\"}"
+                )},
                 {"role": "user", "content": prompt},
-            ], temperature=0.9)
+            ], temperature=0.7)
         except (LLMError, LLMResponseError) as exc:
             logger.warning("LLM enrichment failed for %s: %s", persona.name, exc)
             return persona
