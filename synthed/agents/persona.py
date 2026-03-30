@@ -25,7 +25,6 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field, asdict
-from typing import Any
 
 
 # ─────────────────────────────────────────────

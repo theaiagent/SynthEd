@@ -25,7 +25,7 @@ from typing import Any
 import numpy as np
 
 from ..agents.persona import StudentPersona
-from .environment import ODLEnvironment, Course
+from .environment import ODLEnvironment
 from .social_network import SocialNetwork
 from ..utils.llm import LLMClient
 from .theories import (

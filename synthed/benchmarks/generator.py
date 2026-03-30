@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 from typing import Any
 
 from ..pipeline import SynthEdPipeline
-from .profiles import PROFILES, BenchmarkProfile
+from .profiles import PROFILES
 
 logger = logging.getLogger(__name__)
 

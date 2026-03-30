@@ -1,6 +1,6 @@
 """Tests for SyntheticDataValidator."""
 
-from synthed.validation.validator import SyntheticDataValidator, ReferenceStatistics
+from synthed.validation.validator import SyntheticDataValidator
 
 
 class TestSyntheticDataValidator:

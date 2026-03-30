@@ -16,7 +16,7 @@ Carry-over mechanics reflect established theoretical anchors:
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, replace
 from typing import Any
 
 import numpy as np
@@ -27,7 +27,7 @@ from .engine import (
     CommunityOfInquiryState,
 )
 from .social_network import SocialNetwork
-from .theories import ExhaustionState, SDTNeedSatisfaction
+from .theories import ExhaustionState
 
 logger = logging.getLogger(__name__)
 

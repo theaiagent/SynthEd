@@ -8,17 +8,16 @@ origin (Tinto, Bean & Metzner, Kember, Rovai, Bäulke et al.).
 
 from __future__ import annotations
 
-import json
 import logging
 import random
 from typing import Any
-
-logger = logging.getLogger(__name__)
 
 import numpy as np
 
 from .persona import StudentPersona, BigFiveTraits, PersonaConfig
 from ..utils.llm import LLMClient
+
+logger = logging.getLogger(__name__)
 
 
 FIRST_NAMES = {

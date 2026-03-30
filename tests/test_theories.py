@@ -65,8 +65,6 @@ class TestMoore:
     def test_high_structure_high_td(self):
         moore = MooreTransactionalDistance()
         student = StudentPersona(learner_autonomy=0.3)
-        env = ODLEnvironment()
-        course = env.courses[0]
         # Higher structure should produce higher TD
         from synthed.simulation.environment import Course
         high_structure = Course(id="T1", name="T1", structure_level=0.9,

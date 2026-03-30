@@ -7,16 +7,13 @@ PersonaConfig and ODLEnvironment parameters most affect dropout rate.
 
 from __future__ import annotations
 
-import copy
 import logging
 import shutil
 import tempfile
 from dataclasses import dataclass
-from typing import Any
 
 from ..agents.persona import PersonaConfig
 from ..pipeline import SynthEdPipeline
-from ..validation.validator import ReferenceStatistics
 
 logger = logging.getLogger(__name__)
 

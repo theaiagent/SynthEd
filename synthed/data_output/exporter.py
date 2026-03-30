@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import csv
 from pathlib import Path
-from typing import Any
 
 from ..agents.persona import StudentPersona
 from ..simulation.engine import InteractionRecord, SimulationState

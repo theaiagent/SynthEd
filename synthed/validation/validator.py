@@ -429,14 +429,6 @@ class SyntheticDataValidator:
                 phase_counts[phase] = phase_counts.get(phase, 0) + 1
         if phase_counts:
             total = sum(phase_counts.values())
-            phase_0_rate = phase_counts.get(0, 0) / total
-            # Phase distribution should show monotonic decrease across phases
-            # (more students in early phases than late phases)
-            phase_values = sorted(phase_counts.keys())
-            monotonic = all(
-                phase_counts.get(phase_values[i], 0) >= phase_counts.get(phase_values[i + 1], 0)
-                for i in range(len(phase_values) - 1)
-            ) if len(phase_values) >= 2 else True
 
             # In ODL context, many students experience non-fit (Bäulke model
             # was developed for campus universities). We check that the terminal

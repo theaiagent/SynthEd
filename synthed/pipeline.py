@@ -12,19 +12,18 @@ from __future__ import annotations
 import json
 import logging
 import time
-from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
-logger = logging.getLogger(__name__)
-
-from .agents.persona import PersonaConfig, StudentPersona
+from .agents.persona import PersonaConfig
 from .agents.factory import StudentFactory
 from .simulation.environment import ODLEnvironment
 from .simulation.engine import SimulationEngine
 from .data_output.exporter import DataExporter
 from .validation.validator import SyntheticDataValidator, ReferenceStatistics
 from .utils.llm import LLMClient
+
+logger = logging.getLogger(__name__)
 
 
 class SynthEdPipeline:
