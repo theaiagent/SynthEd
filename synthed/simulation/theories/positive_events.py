@@ -28,7 +28,7 @@ EVENT_EFFECTS: dict[str, dict[str, float]] = {
     },
     "semester_break": {
         "engagement_boost": 0.01,
-        "exhaustion_recovery": 0.03,
+        # Note: exhaustion recovery handled by GonzalezExhaustion via context["positive_event"]
     },
     "holiday_boost": {
         "engagement_boost": 0.015,

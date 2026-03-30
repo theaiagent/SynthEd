@@ -386,6 +386,12 @@ class SimulationEngine:
         # ── Rovai: Self-regulation buffer ──
         engagement += self.rovai.regulation_buffer(student)
 
+        # ── SDT (Deci & Ryan, 1985): Motivation type effect ──
+        motivation_effect = {
+            "intrinsic": 0.02, "extrinsic": 0.0, "amotivation": -0.025
+        }.get(state.current_motivation_type, 0.0)
+        engagement += motivation_effect
+
         # ── Moore (1993): Transactional distance effect ──
         avg_td = self.moore.average(student, state, self.env)
         td_effect = -(avg_td - 0.5) * 0.03

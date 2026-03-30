@@ -107,6 +107,18 @@ class PersonaConfig:
     # (Bağrıacık Yılmaz & Karataş, 2022; Shaikh & Asif, 2022)
     dropout_base_rate: float = 0.80
 
+    def __post_init__(self):
+        from ..utils.validation import validate_range, validate_probability_distribution
+        validate_range(self.employment_rate, 0.0, 1.0, "employment_rate")
+        validate_range(self.has_family_rate, 0.0, 1.0, "has_family_rate")
+        validate_range(self.financial_stress_mean, 0.0, 1.0, "financial_stress_mean")
+        validate_range(self.prior_gpa_mean, 0.0, 4.0, "prior_gpa_mean")
+        validate_range(self.digital_literacy_mean, 0.0, 1.0, "digital_literacy_mean")
+        validate_range(self.self_regulation_mean, 0.0, 1.0, "self_regulation_mean")
+        validate_range(self.dropout_base_rate, 0.0, 1.0, "dropout_base_rate")
+        validate_probability_distribution(self.gender_distribution, "gender_distribution")
+        validate_probability_distribution(self.motivation_levels, "motivation_levels")
+
 
 # ─────────────────────────────────────────────
 # StudentPersona

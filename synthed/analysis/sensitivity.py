@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import copy
 import logging
+import shutil
+import tempfile
 from dataclasses import dataclass
 from typing import Any
 
@@ -128,30 +130,21 @@ class SensitivityAnalyzer:
 
     def _perturb(self, param_name: str, value: float) -> PersonaConfig:
         """Create a new PersonaConfig with one parameter changed."""
-        config_dict = {
-            "age_range": self.base_config.age_range,
-            "employment_rate": self.base_config.employment_rate,
-            "has_family_rate": self.base_config.has_family_rate,
-            "financial_stress_mean": self.base_config.financial_stress_mean,
-            "prior_gpa_mean": self.base_config.prior_gpa_mean,
-            "prior_gpa_std": self.base_config.prior_gpa_std,
-            "digital_literacy_mean": self.base_config.digital_literacy_mean,
-            "digital_literacy_std": self.base_config.digital_literacy_std,
-            "self_regulation_mean": self.base_config.self_regulation_mean,
-            "self_regulation_std": self.base_config.self_regulation_std,
-            "dropout_base_rate": self.base_config.dropout_base_rate,
-        }
+        from dataclasses import fields
+        config_dict = {f.name: getattr(self.base_config, f.name) for f in fields(self.base_config)}
         config_dict[param_name] = value
         return PersonaConfig(**config_dict)
 
     def _run_single(self, config: PersonaConfig) -> float:
         """Run a single pipeline and return dropout rate."""
-        pipeline = SynthEdPipeline(
-            persona_config=config,
-            output_dir="./sensitivity_tmp",
-            seed=self.seed,
-        )
-        report = pipeline.run(n_students=self.n_students)
-        import shutil
-        shutil.rmtree("./sensitivity_tmp", ignore_errors=True)
-        return report["simulation_summary"]["dropout_rate"]
+        tmp_dir = tempfile.mkdtemp(prefix="synthed_sens_")
+        try:
+            pipeline = SynthEdPipeline(
+                persona_config=config,
+                output_dir=tmp_dir,
+                seed=self.seed,
+            )
+            report = pipeline.run(n_students=self.n_students)
+            return report["simulation_summary"]["dropout_rate"]
+        finally:
+            shutil.rmtree(tmp_dir, ignore_errors=True)

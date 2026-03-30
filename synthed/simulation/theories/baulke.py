@@ -41,11 +41,15 @@ class BaulkeDropoutPhase:
         history = state.weekly_engagement_history
         avg_td = avg_td_fn(student, state)
 
+        exhausted = hasattr(state, 'exhaustion') and state.exhaustion.exhaustion_level > 0.70
+
         if state.dropout_phase == 0:
             # Phase 0 -> 1: Non-fit perception
+            # Gonzalez: high exhaustion accelerates non-fit perception
             if (eng < 0.40
                     or (eng < 0.45 and state.coi_state.cognitive_presence < 0.25)
-                    or (eng < 0.45 and avg_td > 0.55)):
+                    or (eng < 0.45 and avg_td > 0.55)
+                    or (eng < 0.45 and exhausted)):
                 state.dropout_phase = 1
                 state.memory.append({"week": week, "event_type": "dropout_phase",
                                     "details": "Non-fit perception: questioning fit with program",
@@ -111,6 +115,8 @@ class BaulkeDropoutPhase:
                     triggers += 1  # Economic rationality: not worth it
                 if student.financial_stress > 0.7:
                     triggers += 1  # Bean & Metzner: environmental crisis
+                if exhausted:
+                    triggers += 1  # Gonzalez: academic exhaustion crisis
                 # Withdrawal deadline at ~70% of semester (Kember)
                 withdrawal_week = int(env.total_weeks * 0.70)
                 if week == withdrawal_week:

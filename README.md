@@ -198,22 +198,42 @@ Unlike the other theories which map to static persona attributes or individual s
 SynthEd/
 ├── synthed/
 │   ├── agents/
-│   │   ├── persona.py      # StudentPersona (4 factor clusters + Big Five + Moore autonomy)
-│   │   └── factory.py      # Calibrated population with inter-attribute correlations
+│   │   ├── persona.py          # StudentPersona, PersonaConfig, BigFiveTraits
+│   │   └── factory.py          # Calibrated population generation
 │   ├── simulation/
-│   │   ├── environment.py   # ODL course structure with transactional distance params
-│   │   ├── engine.py        # Theory-grounded week-by-week simulation (9 theories)
-│   │   └── social_network.py # Peer network formation & influence (Epstein & Axtell)
+│   │   ├── engine.py            # Simulation orchestrator (delegates to theories/)
+│   │   ├── environment.py       # ODL course structure + positive events
+│   │   ├── social_network.py    # Peer network with link decay (Epstein & Axtell)
+│   │   └── theories/            # One module per theoretical framework
+│   │       ├── tinto.py         # Academic/social integration (Tinto, 1975)
+│   │       ├── bean_metzner.py  # Environmental pressure (Bean & Metzner, 1985)
+│   │       ├── kember.py        # Cost-benefit + CoI link (Kember, 1989)
+│   │       ├── moore_td.py      # Transactional distance (Moore, 1993)
+│   │       ├── sdt_motivation.py # Dynamic motivation (Deci & Ryan, 1985)
+│   │       ├── garrison_coi.py  # Community of Inquiry (Garrison et al., 2000)
+│   │       ├── rovai.py         # Self-regulation + engagement floor (Rovai, 2003)
+│   │       ├── baulke.py        # 6-phase dropout model (Bäulke et al., 2022)
+│   │       ├── epstein_axtell.py # Peer influence + contagion
+│   │       ├── positive_events.py # Positive environmental events
+│   │       └── gonzalez_exhaustion.py # Academic exhaustion mediator
 │   ├── data_output/
-│   │   └── exporter.py      # CSV dataset generation
+│   │   └── exporter.py          # CSV dataset generation
 │   ├── validation/
-│   │   └── validator.py     # Theory-grounded statistical validation
+│   │   └── validator.py         # 17+ statistical validation tests
+│   ├── analysis/
+│   │   └── sensitivity.py       # OAT parameter sensitivity analysis
+│   ├── benchmarks/
+│   │   ├── profiles.py          # Pre-defined ODL institutional profiles
+│   │   └── generator.py         # Benchmark dataset generator
 │   ├── utils/
-│   │   └── llm.py           # OpenAI wrapper with caching & cost tracking
-│   └── pipeline.py          # End-to-end orchestrator
+│   │   ├── llm.py               # OpenAI wrapper with caching
+│   │   ├── log_config.py        # Logging configuration
+│   │   └── validation.py        # Input validation utilities
+│   └── pipeline.py              # End-to-end orchestrator
+├── tests/                        # 46 pytest tests across 9 files
 ├── configs/
-│   └── default.json         # Default configuration
-├── run_pipeline.py           # CLI entry point
+│   └── default.json
+├── run_pipeline.py               # CLI entry point
 ├── requirements.txt
 └── README.md
 ```
