@@ -325,25 +325,38 @@ class StudentPersona:
             ext_risk + int_risk + char_risk + skill_risk + econ_risk, 0.02
         ), 0.90)
 
+    @staticmethod
+    def _level(value: float) -> str:
+        """Map a 0-1 float to a human-readable level."""
+        if value > 0.7:
+            return "high"
+        if value > 0.4:
+            return "moderate"
+        return "low"
+
     def to_prompt_description(self) -> str:
-        """Generate a natural language description for LLM-based simulation."""
-        personality_desc = self.personality.to_description()
+        """Generate a structured description for LLM-based simulation.
+
+        Used as agent context in LLM-augmented mode. Designed to be
+        token-efficient and injection-safe (no raw user strings).
+        """
+        lv = self._level
         return (
-            f"{self.name} is a {self.age}-year-old {self.gender} student enrolled in "
-            f"{self.enrolled_courses} courses in an open and distance learning program. "
-            f"Education: {self.prior_education_level} (GPA: {self.prior_gpa:.1f}/4.0), "
-            f"{self.years_since_last_education} years since last formal education. "
-            f"{'Employed' if self.is_employed else 'Unemployed'}"
-            f"{f', {self.weekly_work_hours}h/week' if self.is_employed else ''}. "
-            f"{'Has family responsibilities. ' if self.has_family_responsibilities else ''}"
-            f"Financial stress: {'high' if self.financial_stress > 0.7 else 'moderate' if self.financial_stress > 0.4 else 'low'}. "
-            f"Self-regulation: {'strong' if self.self_regulation > 0.7 else 'moderate' if self.self_regulation > 0.4 else 'weak'}. "
-            f"Digital literacy: {'high' if self.digital_literacy > 0.7 else 'moderate' if self.digital_literacy > 0.4 else 'low'}. "
-            f"Learner autonomy: {'high' if self.learner_autonomy > 0.7 else 'moderate' if self.learner_autonomy > 0.4 else 'low'}. "
-            f"Goal commitment: {'strong' if self.goal_commitment > 0.7 else 'moderate' if self.goal_commitment > 0.4 else 'weak'}. "
-            f"Motivation: {self.motivation_type}. "
-            f"Perceived cost-benefit of ODE: {'favorable' if self.perceived_cost_benefit > 0.6 else 'neutral' if self.perceived_cost_benefit > 0.3 else 'unfavorable'}. "
-            f"Personality: {personality_desc}."
+            f"Student ID: {self.id}. "
+            f"Age: {int(self.age)}, Gender: {str(self.gender)[:10]}, "
+            f"Courses: {self.enrolled_courses}, "
+            f"Education: {str(self.prior_education_level)[:20]} (GPA {self.prior_gpa:.1f}/4.0), "
+            f"{self.years_since_last_education}y since last education. "
+            f"Employment: {'employed ' + str(self.weekly_work_hours) + 'h/wk' if self.is_employed else 'unemployed'}. "
+            f"Family responsibilities: {'yes' if self.has_family_responsibilities else 'no'}. "
+            f"Financial stress: {lv(self.financial_stress)}, "
+            f"Self-regulation: {lv(self.self_regulation)}, "
+            f"Digital literacy: {lv(self.digital_literacy)}, "
+            f"Learner autonomy: {lv(self.learner_autonomy)}, "
+            f"Goal commitment: {lv(self.goal_commitment)}. "
+            f"Motivation: {str(self.motivation_type)[:15]}. "
+            f"Cost-benefit perception: {lv(self.perceived_cost_benefit)}. "
+            f"Personality: {self.personality.to_description()}."
         )
 
     def to_dict(self) -> dict:
