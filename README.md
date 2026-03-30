@@ -311,7 +311,7 @@ If you use SynthEd in your research, please cite:
 
 ## Legal Disclaimer
 
-> **SynthEd is for research and simulation purposes only.**
+> **SynthEd is under active development and is for research and simulation purposes only.**
 
 SynthEd generates **entirely fictional synthetic data**. No real individuals are represented, modeled, or identifiable in any output. The generated personas, interaction logs, and behavioral trajectories are computational artifacts produced by agent-based simulation grounded in published educational theories.
 
@@ -321,6 +321,7 @@ SynthEd generates **entirely fictional synthetic data**. No real individuals are
 - Synthetic data should **not** be presented as real student data without clear disclosure.
 - The simulation reflects theoretical models, not empirical observations of specific institutions or populations.
 - Outputs are intended for **research, development, and educational purposes** — not for making decisions about real individuals.
+- SynthEd is **under active development** (pre-release). APIs, default parameters, and output formats may change between versions without prior notice.
 - If using the optional LLM enrichment feature, you are responsible for compliance with the LLM provider's terms of service and content policies.
 
 ## Responsible Use
