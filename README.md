@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml/badge.svg)](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
-[![Tests: 46 passed](https://img.shields.io/badge/tests-46%20passed-brightgreen.svg)](#test-suite)
+[![Tests: 52 passed](https://img.shields.io/badge/tests-52%20passed-brightgreen.svg)](#test-suite)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![Status: Active Development](https://img.shields.io/badge/status-active%20development-orange.svg)](https://github.com/theaiagent/SynthEd/releases)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19334118.svg)](https://doi.org/10.5281/zenodo.19334118)
@@ -72,7 +72,7 @@ Educational data mining research faces three persistent challenges:
 - **Simulation Memory**: Each student's simulation state accumulates events across weeks (assignments, exams, phase transitions), creating realistic engagement trajectories (e.g., a failed midterm reduces subsequent engagement).
 - **Configurable Populations**: Calibrate to your institution's demographics using aggregate statistics only (no individual data needed).
 - **Multi-Level Validation**: Automatic statistical comparison against reference data using KS-tests, chi-squared tests, correlation checks, and temporal coherence analysis.
-- **Optional LLM Enrichment**: Use GPT-4o-mini to generate narrative backstories and richer behavioral nuance (off by default — zero API cost in rule-based mode).
+- **Optional LLM Enrichment**: Use GPT-4o-mini to generate narrative backstories with automatic retry, validation, and persona-attribute consistency checks (off by default — zero API cost in rule-based mode).
 - **Privacy by Design**: Synthetic agents are fictional constructs with no mapping to real individuals.
 
 ## Quick Start
@@ -143,12 +143,13 @@ report = pipeline.run(n_students=300)
 
 ## Validation Suite
 
-SynthEd validates generated data across four levels:
+SynthEd validates generated data across five levels:
 
 1. **Marginal Distributions** — KS-test for continuous variables, chi-squared for categorical
 2. **Correlation Structure** — Verifies expected relationships (e.g., conscientiousness ↔ dropout)
 3. **Temporal Coherence** — Dropout students should show declining engagement trajectories
 4. **Privacy Assessment** — k-anonymity check on quasi-identifiers
+5. **Backstory Consistency** (optional) — LLM-generated backstories checked for non-empty rate and persona-attribute relevance
 
 Example validation output (17 tests across 9 theoretical anchors):
 ```
@@ -249,11 +250,11 @@ SynthEd/
 │   │   ├── profiles.py          # Pre-defined ODL institutional profiles
 │   │   └── generator.py         # Benchmark dataset generator
 │   ├── utils/
-│   │   ├── llm.py               # OpenAI wrapper with caching
+│   │   ├── llm.py               # OpenAI wrapper with caching, retries & cost tracking
 │   │   ├── log_config.py        # Logging configuration
 │   │   └── validation.py        # Input validation utilities
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                        # 46 pytest tests across 9 files
+├── tests/                        # 52 pytest tests across 10 files
 ├── configs/
 │   └── default.json
 ├── run_pipeline.py               # CLI entry point
@@ -300,7 +301,7 @@ Extend `SimulationEngine._simulate_student_week()` to add new behavioral channel
 
 ## Test Suite
 
-SynthEd includes 46 pytest tests across 9 test files, covering all theory modules, simulation mechanics, and the full pipeline.
+SynthEd includes 52 pytest tests across 10 test files, covering all theory modules, simulation mechanics, LLM enrichment, and the full pipeline.
 
 ```bash
 python -m pytest tests/ -v --tb=short
@@ -316,6 +317,7 @@ python -m pytest tests/ -v --tb=short
 | `test_validator.py` | 3 | Report structure, z-test symmetry, quality grade thresholds |
 | `test_pipeline_integration.py` | 4 | Full pipeline run, output file creation, validation results, input rejection |
 | `test_theories.py` | 9 | One test per theory module (Tinto, Bean-Metzner, Moore, Rovai, Garrison, Bäulke, Kember, SDT, Gonzalez) |
+| `test_llm_enrichment.py` | 6 | Mock LLM enrichment, backstory export, error handling, invalid JSON, empty backstory rejection |
 
 CI runs tests across **Python 3.10, 3.11, and 3.12** on every push and pull request via [GitHub Actions](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml).
 
@@ -362,7 +364,7 @@ If you use SynthEd in your research, please cite:
 
 ```bibtex
 @software{synthed2026,
-  author = {Halis Aykut Cosgun and Evrim Genc Kumtepe },
+  author = {Cosgun, Halis Aykut and Kumtepe Genc, Evrim},
   title = {SynthEd: Agent-Based Synthetic Educational Data Generation for ODL Research},
   year = {2026},
   url = {https://github.com/theaiagent/SynthEd},
