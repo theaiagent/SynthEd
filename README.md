@@ -288,6 +288,7 @@ Extend `SimulationEngine._simulate_student_week()` to add new behavioral channel
 - [x] **Sensitivity Analysis** — OAT parameter sweeps to identify most impactful dropout predictors
 - [x] **Benchmark Datasets** — Pre-generated profiles for different ODL contexts (developing, western, corporate, mega university)
 - [x] **Academic Exhaustion** — Gonzalez et al. (2025) exhaustion mediator between stressors and dropout
+- [ ] **OULAD-Compatible Export** — Generate data in Open University Learning Analytics Dataset format (7 tables) for drop-in compatibility with existing EDM research
 - [ ] **GraphRAG Integration** — Knowledge graph-based curriculum modeling (MiroFish-inspired)
 - [ ] **LLM-Augmented Mode** — Generate realistic forum posts, assignment text
 - [ ] **RL Calibration** — Use [Agent Lightning](https://github.com/microsoft/agent-lightning) to optimize agent parameters against real data
