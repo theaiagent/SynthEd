@@ -10,10 +10,13 @@ Usage:
 from __future__ import annotations
 
 import json
+import logging
 import time
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 from .agents.persona import PersonaConfig, StudentPersona
 from .agents.factory import StudentFactory
@@ -76,6 +79,9 @@ class SynthEdPipeline:
         Returns:
             Comprehensive pipeline report including file paths and validation.
         """
+        if not isinstance(n_students, int) or n_students <= 0:
+            raise ValueError(f"n_students must be a positive integer, got {n_students}")
+
         report: dict[str, Any] = {
             "pipeline": "SynthEd v0.1.0",
             "config": {
@@ -89,36 +95,37 @@ class SynthEdPipeline:
         }
 
         # Stage 1: Generate Population
-        print(f"[1/4] Generating {n_students} student personas...")
+        logger.info("[1/4] Generating %d student personas...", n_students)
         t0 = time.time()
         students = self.factory.generate_population(
             n=n_students, enrich_with_llm=enrich_personas and self.use_llm
         )
         report["timing"]["generation_sec"] = round(time.time() - t0, 2)
         report["population_summary"] = self.factory.population_summary(students)
-        print(f"      Done. Mean age: {report['population_summary']['age_mean']:.1f}, "
-              f"Dropout risk: {report['population_summary']['base_dropout_risk_mean']:.2%}")
+        logger.info("      Done. Mean age: %.1f, Dropout risk: %.2f%%",
+                    report['population_summary']['age_mean'],
+                    report['population_summary']['base_dropout_risk_mean'] * 100)
 
         # Stage 2: Run Simulation
-        print(f"[2/4] Simulating {self.environment.total_weeks} weeks of ODL interactions...")
+        logger.info("[2/4] Simulating %d weeks of ODL interactions...", self.environment.total_weeks)
         t0 = time.time()
         records, states, network = self.engine.run(students)
         report["timing"]["simulation_sec"] = round(time.time() - t0, 2)
         report["simulation_summary"] = self.engine.summary_statistics(states)
         report["network_summary"] = network.network_statistics(states)
-        print(f"      Done. {len(records)} interaction records generated. "
-              f"Dropout rate: {report['simulation_summary']['dropout_rate']:.2%}")
+        logger.info("      Done. %d interaction records generated. Dropout rate: %.2f%%",
+                    len(records), report['simulation_summary']['dropout_rate'] * 100)
 
         # Stage 3: Export Data
-        print(f"[3/4] Exporting datasets to {self.output_dir}/...")
+        logger.info("[3/4] Exporting datasets to %s/...", self.output_dir)
         t0 = time.time()
         file_paths = self.exporter.export_all(students, records, states, network)
         report["timing"]["export_sec"] = round(time.time() - t0, 2)
         report["exported_files"] = file_paths
-        print(f"      Done. Files: {', '.join(Path(p).name for p in file_paths.values())}")
+        logger.info("      Done. Files: %s", ', '.join(Path(p).name for p in file_paths.values()))
 
         # Stage 4: Validate
-        print("[4/4] Running validation suite...")
+        logger.info("[4/4] Running validation suite...")
         t0 = time.time()
 
         # Prepare validation data (all four factor clusters)
@@ -176,8 +183,10 @@ class SynthEdPipeline:
         )
         report["timing"]["validation_sec"] = round(time.time() - t0, 2)
         report["validation"] = validation_report
-        print(f"      Done. Quality: {validation_report['summary']['overall_quality']} "
-              f"({validation_report['summary']['passed']}/{validation_report['summary']['total_tests']} tests passed)")
+        logger.info("      Done. Quality: %s (%d/%d tests passed)",
+                    validation_report['summary']['overall_quality'],
+                    validation_report['summary']['passed'],
+                    validation_report['summary']['total_tests'])
 
         # Save full report
         report_path = self.output_dir / "pipeline_report.json"
@@ -188,5 +197,5 @@ class SynthEdPipeline:
         if self.llm:
             report["llm_costs"] = self.llm.cost_report()
 
-        print(f"\nPipeline complete. Report saved to {report_path}")
+        logger.info("Pipeline complete. Report saved to %s", report_path)
         return report

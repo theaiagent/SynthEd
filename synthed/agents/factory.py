@@ -9,8 +9,11 @@ origin (Tinto, Bean & Metzner, Kember, Rovai, Bäulke et al.).
 from __future__ import annotations
 
 import json
+import logging
 import random
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 import numpy as np
 
@@ -289,7 +292,7 @@ Return JSON: {{"backstory": "...", "primary_challenge": "..."}}
             ], temperature=0.9)
             persona.backstory = result.get("backstory", "")
         except Exception as e:
-            print(f"[SynthEd] LLM enrichment failed for {persona.name}: {e}")
+            logger.warning("LLM enrichment failed for %s: %s", persona.name, e)
         return persona
 
     def population_summary(self, personas: list[StudentPersona]) -> dict[str, Any]:

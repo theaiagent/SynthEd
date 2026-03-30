@@ -13,6 +13,8 @@ import argparse
 import json
 from pathlib import Path
 
+from synthed.utils.log_config import configure_logging
+
 from synthed.agents.persona import PersonaConfig
 from synthed.simulation.environment import ODLEnvironment
 from synthed.validation.validator import ReferenceStatistics
@@ -27,7 +29,10 @@ def main():
     parser.add_argument("--llm", action="store_true", help="Enable LLM enrichment (requires OPENAI_API_KEY)")
     parser.add_argument("--model", type=str, default="gpt-4o-mini", help="LLM model (default: gpt-4o-mini)")
     parser.add_argument("--config", type=str, default=None, help="Path to JSON config file")
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose/debug logging")
     args = parser.parse_args()
+
+    configure_logging(verbose=args.verbose)
 
     # Load config if provided
     if args.config:
