@@ -102,11 +102,25 @@ python run_pipeline.py --n 100 --llm --model gpt-4o-mini
 ```python
 from synthed.pipeline import SynthEdPipeline
 
+# Single semester (default)
 pipeline = SynthEdPipeline(output_dir="./my_output", seed=42)
 report = pipeline.run(n_students=300)
 
 print(f"Dropout rate: {report['simulation_summary']['dropout_rate']:.1%}")
 print(f"Validation: {report['validation']['summary']['overall_quality']}")
+```
+
+### Multi-Semester Simulation
+
+```python
+from synthed.pipeline import SynthEdPipeline
+
+# 4 semesters with inter-semester carry-over
+pipeline = SynthEdPipeline(output_dir="./multi_sem", seed=42, n_semesters=4)
+report = pipeline.run(n_students=300)
+
+# Carry-over between semesters: engagement recovery, social decay,
+# dropout phase regression, exhaustion relief, network reset
 ```
 
 ## Output Datasets
@@ -264,12 +278,15 @@ Extend `SimulationEngine._simulate_student_week()` to add new behavioral channel
 
 ## Roadmap
 
+- [x] **Multi-Semester Simulation** — Carry-over mechanics between semesters (engagement recovery, social decay, fresh start effect)
+- [x] **Sensitivity Analysis** — OAT parameter sweeps to identify most impactful dropout predictors
+- [x] **Benchmark Datasets** — Pre-generated profiles for different ODL contexts (developing, western, corporate, mega university)
+- [x] **Academic Exhaustion** — Gonzalez et al. (2025) exhaustion mediator between stressors and dropout
 - [ ] **GraphRAG Integration** — Knowledge graph-based curriculum modeling (MiroFish-inspired)
 - [ ] **LLM-Augmented Mode** — Generate realistic forum posts, assignment text
 - [ ] **RL Calibration** — Use [Agent Lightning](https://github.com/microsoft/agent-lightning) to optimize agent parameters against real data
 - [ ] **Interactive Dashboard** — Vue.js frontend for scenario exploration
 - [ ] **Parquet/Arrow Export** — For large-scale data processing
-- [ ] **Benchmark Datasets** — Pre-generated datasets for research community
 
 ## Citation
 
