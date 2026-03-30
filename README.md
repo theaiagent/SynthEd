@@ -18,7 +18,7 @@ Educational data mining research faces three persistent challenges:
 | Challenge | Traditional Approach | SynthEd Approach |
 |-----------|---------------------|-----------------|
 | **Privacy regulations** (GDPR/KVKK) restrict access to real student data | Anonymization (risk of re-identification) | Agents are fictional — no real individuals involved |
-| **Class imbalance** — dropout events are rare | Oversampling (SMOTE) — loses behavioral context | Parameter-level control of dropout rates |
+| **Class imbalance** — real dropout data is sensitive and often skewed | Oversampling (SMOTE) — loses behavioral context | Parameter-level control of dropout rates and population characteristics |
 | **Temporal incoherence** — GAN/VAE outputs lack behavioral consistency | Post-hoc smoothing | Persona + memory system produces coherent trajectories |
 
 ## Architecture
@@ -55,8 +55,8 @@ Educational data mining research faces three persistent challenges:
 │                                                        │        │
 │              ┌──────────────────┐                       │        │
 │              │  Validation Suite│◀──────────────────────┘        │
-│              │  17 tests across │                                │
-│              │  9 theories      │                                │
+│              │  17+ validation  │                                │
+│              │  tests           │                                │
 │              │  ├ Distributions │                                │
 │              │  ├ Correlations  │                                │
 │              │  ├ Temporal      │                                │
@@ -149,9 +149,9 @@ SynthEd validates generated data across four levels:
 3. **Temporal Coherence** — Dropout students should show declining engagement trajectories
 4. **Privacy Assessment** — k-anonymity check on quasi-identifiers
 
-Example validation output (17 tests across 9 theories):
+Example validation output (17 tests across 9 theoretical anchors):
 ```
-Quality: B (Good) — 15/17 tests passed
+Quality: A (Excellent) — 17/17 tests passed
   ✓ age_distribution (KS-test)
   ✓ gender_distribution (Chi-squared)
   ✓ employment_rate (Z-test)
@@ -225,6 +225,7 @@ SynthEd/
 │   │   ├── engine.py            # Simulation orchestrator (delegates to theories/)
 │   │   ├── environment.py       # ODL course structure + positive events
 │   │   ├── social_network.py    # Peer network with link decay (Epstein & Axtell)
+│   │   ├── semester.py          # Multi-semester runner with carry-over mechanics
 │   │   └── theories/            # One module per theoretical framework
 │   │       ├── tinto.py         # Academic/social integration (Tinto, 1975)
 │   │       ├── bean_metzner.py  # Environmental pressure (Bean & Metzner, 1985)
@@ -270,11 +271,11 @@ Create a JSON config matching your institution's demographics:
   "persona_config": {
     "age_range": [22, 60],
     "employment_rate": 0.80,
-    "dropout_base_rate": 0.80
+    "dropout_base_rate": 0.75
   },
   "reference_statistics": {
     "age_mean": 32.0,
-    "dropout_rate": 0.75
+    "dropout_rate": 0.50
   }
 }
 ```
@@ -295,20 +296,6 @@ Extend `SimulationEngine._simulate_student_week()` to add new behavioral channel
 - [ ] **RL Calibration** — Use [Agent Lightning](https://github.com/microsoft/agent-lightning) to optimize agent parameters against real data
 - [ ] **Interactive Dashboard** — Vue.js frontend for scenario exploration
 - [ ] **Parquet/Arrow Export** — For large-scale data processing
-
-## Citation
-
-If you use SynthEd in your research, please cite:
-
-```bibtex
-@software{synthed2026,
-  author = {Cosgun, Halis Aykut and Kumtepe Genc, Evrim},
-  title = {SynthEd: Agent-Based Synthetic Educational Data Generation for ODL Research},
-  year = {2026},
-  url = {https://github.com/theaiagent/SynthEd},
-  note = {GitHub repository: \url{https://github.com/theaiagent/SynthEd}}
-}
-```
 
 ## Test Suite
 
@@ -365,6 +352,20 @@ MIT License. See [LICENSE](LICENSE) for details.
 |-------------|------|
 | [Halis Aykut Cosgun](https://github.com/theaiagent) | Project lead, theoretical framework design, research |
 | [Claude](https://claude.ai) (Anthropic) | AI pair programmer — architecture, implementation, testing, code review |
+
+## Citation
+
+If you use SynthEd in your research, please cite:
+
+```bibtex
+@software{synthed2026,
+  author = {Cosgun, Halis Aykut and Kumtepe Genc, Evrim},
+  title = {SynthEd: Agent-Based Synthetic Educational Data Generation for ODL Research},
+  year = {2026},
+  url = {https://github.com/theaiagent/SynthEd},
+  note = {GitHub repository: \url{https://github.com/theaiagent/SynthEd}}
+}
+```
 
 ## Acknowledgments
 
