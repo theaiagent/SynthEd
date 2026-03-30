@@ -332,6 +332,7 @@ SynthEd generates **entirely fictional synthetic data**. No real individuals are
 - The simulation reflects theoretical models, not empirical observations of specific institutions or populations.
 - Outputs are intended for **research, development, and educational purposes** — not for making decisions about real individuals.
 - SynthEd is **under active development** (pre-release). APIs, default parameters, and output formats may change between versions without prior notice.
+- As with any actively developed software, **bugs, inaccuracies, or incomplete features may exist**. Generated data should be independently validated before use in publications or critical research decisions.
 - If using the optional LLM enrichment feature, you are responsible for compliance with the LLM provider's terms of service and content policies.
 
 ## Responsible Use
