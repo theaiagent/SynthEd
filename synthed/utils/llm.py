@@ -10,12 +10,9 @@ import logging
 import os
 import time
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from openai import OpenAI
 
-if TYPE_CHECKING:
-    pass
 
 logger = logging.getLogger(__name__)
 
@@ -166,7 +163,7 @@ class LLMClient:
         """Send a chat completion request with optional caching and retry."""
         kwargs = {
             "model": self.model,
-            "temperature": temperature or self.temperature,
+            "temperature": temperature if temperature is not None else self.temperature,
         }
         if response_format:
             kwargs["response_format"] = response_format
