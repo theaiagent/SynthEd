@@ -102,6 +102,23 @@ class PersonaConfig:
         default_factory=lambda: {"intrinsic": 0.25, "extrinsic": 0.45, "amotivation": 0.30}
     )
 
+    # Population distributions for categorical attributes
+    socioeconomic_distribution: dict[str, float] = field(
+        default_factory=lambda: {"low": 0.30, "middle": 0.50, "high": 0.20}
+    )
+    prior_education_distribution: dict[str, float] = field(
+        default_factory=lambda: {"high_school": 0.50, "associate": 0.30, "bachelor": 0.20}
+    )
+    device_distribution: dict[str, float] = field(
+        default_factory=lambda: {"laptop": 0.40, "desktop": 0.15, "mobile": 0.35, "tablet": 0.10}
+    )
+    goal_orientation_distribution: dict[str, float] = field(
+        default_factory=lambda: {"mastery": 0.35, "performance": 0.40, "avoidance": 0.25}
+    )
+    learning_style_distribution: dict[str, float] = field(
+        default_factory=lambda: {"visual": 0.35, "auditory": 0.20, "reading": 0.30, "kinesthetic": 0.15}
+    )
+
     # Target outcome — ODL dropout rates range 40-80% in literature
     # (Bağrıacık Yılmaz & Karataş, 2022; Shaikh & Asif, 2022)
     dropout_base_rate: float = 0.80
@@ -117,6 +134,11 @@ class PersonaConfig:
         validate_range(self.dropout_base_rate, 0.0, 1.0, "dropout_base_rate")
         validate_probability_distribution(self.gender_distribution, "gender_distribution")
         validate_probability_distribution(self.motivation_levels, "motivation_levels")
+        validate_probability_distribution(self.socioeconomic_distribution, "socioeconomic_distribution")
+        validate_probability_distribution(self.prior_education_distribution, "prior_education_distribution")
+        validate_probability_distribution(self.device_distribution, "device_distribution")
+        validate_probability_distribution(self.goal_orientation_distribution, "goal_orientation_distribution")
+        validate_probability_distribution(self.learning_style_distribution, "learning_style_distribution")
 
 
 # ─────────────────────────────────────────────

@@ -16,6 +16,14 @@ class MooreTransactionalDistance:
     Moore (1993): Transactional distance = f(structure, dialogue, autonomy).
     """
 
+    # ── tuneable constants ──
+    _STRUCTURE_WEIGHT: float = 0.35      # weight of course structure (raises TD)
+    _DIALOGUE_WEIGHT: float = 0.30       # weight of dialogue frequency (lowers TD)
+    _AUTONOMY_WEIGHT: float = 0.25       # weight of learner autonomy (lowers TD)
+    _RESPONSIVENESS_WEIGHT: float = 0.10 # weight of instructor responsiveness (lowers TD)
+    _OFFSET: float = 0.30               # baseline offset to centre TD distribution
+    _DEFAULT_TD: float = 0.5            # fallback when no active courses
+
     def calculate(self, student: StudentPersona, course: Course) -> float:
         """
         Calculate transactional distance for a student-course pair.
@@ -24,12 +32,12 @@ class MooreTransactionalDistance:
         Returns 0-1 where higher = more distant (worse for engagement).
         """
         td = (
-            course.structure_level * 0.35
-            - course.dialogue_frequency * 0.30
-            - student.learner_autonomy * 0.25
-            - course.instructor_responsiveness * 0.10
+            course.structure_level * self._STRUCTURE_WEIGHT
+            - course.dialogue_frequency * self._DIALOGUE_WEIGHT
+            - student.learner_autonomy * self._AUTONOMY_WEIGHT
+            - course.instructor_responsiveness * self._RESPONSIVENESS_WEIGHT
         )
-        return float(np.clip(td + 0.30, 0.0, 1.0))
+        return float(np.clip(td + self._OFFSET, 0.0, 1.0))
 
     def average(
         self,
@@ -43,4 +51,4 @@ class MooreTransactionalDistance:
             course = env.get_course_by_id(cid)
             if course:
                 distances.append(self.calculate(student, course))
-        return float(np.mean(distances)) if distances else 0.5
+        return float(np.mean(distances)) if distances else self._DEFAULT_TD

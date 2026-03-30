@@ -8,7 +8,20 @@ This is the "TinyWorld" equivalent for educational simulation.
 
 from __future__ import annotations
 
+import datetime
 from dataclasses import dataclass, field
+
+
+def _default_semester_name() -> str:
+    now = datetime.date.today()
+    month = now.month
+    year = now.year
+    if month >= 8:
+        return f"Fall {year}"
+    elif month >= 6:
+        return f"Summer {year}"
+    else:
+        return f"Spring {year}"
 
 
 @dataclass
@@ -39,7 +52,7 @@ class ODLEnvironment:
     Defines the temporal structure (weeks), available courses,
     interaction channels, and event schedule.
     """
-    semester_name: str = "Fall 2025"
+    semester_name: str = field(default_factory=_default_semester_name)
     total_weeks: int = 14
     courses: list[Course] = field(default_factory=list)
 

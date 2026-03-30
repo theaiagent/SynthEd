@@ -14,6 +14,15 @@ if TYPE_CHECKING:
 class EpsteinAxtellPeerInfluence:
     """Agent-based social simulation with peer influence and contagion."""
 
+    # ── tuneable constants ──
+    _FORUM_LINK_WEIGHT: float = 0.05         # tie strength from co-posting in a forum
+    _LIVE_LINK_WEIGHT: float = 0.03          # tie strength from co-attending live session
+    _SOCIAL_DEGREE_FACTOR: float = 0.003     # social integration boost per network degree
+    _SOCIAL_DEGREE_CAP: float = 0.02         # max social integration boost from peers
+    _ENGAGEMENT_CLIP_LO: float = 0.01        # engagement lower bound
+    _ENGAGEMENT_CLIP_HI: float = 0.99        # engagement upper bound
+    _SOCIAL_CLIP_HI: float = 0.80            # social integration upper bound
+
     def update_network(
         self,
         week: int,
@@ -35,8 +44,8 @@ class EpsteinAxtellPeerInfluence:
             unique_posters = list(set(posters))
             for i, p1 in enumerate(unique_posters):
                 for p2 in unique_posters[i + 1:]:
-                    network.add_link(p1, p2, 0.05, "forum")
-                    network.add_link(p2, p1, 0.05, "forum")
+                    network.add_link(p1, p2, self._FORUM_LINK_WEIGHT, "forum")
+                    network.add_link(p2, p1, self._FORUM_LINK_WEIGHT, "forum")
 
         # Live session co-attendance also forms ties
         course_live: dict[str, list[str]] = {}
@@ -49,8 +58,8 @@ class EpsteinAxtellPeerInfluence:
             unique_attendees = list(set(attendees))
             for i, a1 in enumerate(unique_attendees):
                 for a2 in unique_attendees[i + 1:]:
-                    network.add_link(a1, a2, 0.03, "live_session")
-                    network.add_link(a2, a1, 0.03, "live_session")
+                    network.add_link(a1, a2, self._LIVE_LINK_WEIGHT, "live_session")
+                    network.add_link(a2, a1, self._LIVE_LINK_WEIGHT, "live_session")
 
     def apply_peer_influence(
         self,
@@ -70,19 +79,20 @@ class EpsteinAxtellPeerInfluence:
         # Engagement contagion
         eng_influence = network.peer_influence(student.id, states, "current_engagement")
         state.current_engagement = float(np.clip(
-            state.current_engagement + eng_influence, 0.01, 0.99
+            state.current_engagement + eng_influence, self._ENGAGEMENT_CLIP_LO, self._ENGAGEMENT_CLIP_HI
         ))
 
         # Dropout contagion
         contagion_penalty = network.dropout_contagion(student.id, states)
         if contagion_penalty > 0:
             state.current_engagement = float(np.clip(
-                state.current_engagement - contagion_penalty, 0.01, 0.99
+                state.current_engagement - contagion_penalty, self._ENGAGEMENT_CLIP_LO, self._ENGAGEMENT_CLIP_HI
             ))
 
         # Peer connection reinforces social integration (Tinto via ABSS)
         degree = network.get_degree(student.id)
         if degree > 0:
             state.social_integration = float(np.clip(
-                state.social_integration + min(degree * 0.003, 0.02), 0.01, 0.80
+                state.social_integration + min(degree * self._SOCIAL_DEGREE_FACTOR, self._SOCIAL_DEGREE_CAP),
+                self._ENGAGEMENT_CLIP_LO, self._SOCIAL_CLIP_HI
             ))

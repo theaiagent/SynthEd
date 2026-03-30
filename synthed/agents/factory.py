@@ -91,7 +91,8 @@ class StudentFactory:
         has_family = self.rng.random() < cfg.has_family_rate
 
         socioeconomic_level = self.rng.choice(
-            ["low", "middle", "high"], p=[0.30, 0.50, 0.20]
+            list(cfg.socioeconomic_distribution.keys()),
+            p=list(cfg.socioeconomic_distribution.values()),
         )
 
         # Financial stress: correlated with SES and employment (Bean & Metzner)
@@ -107,7 +108,8 @@ class StudentFactory:
             self.rng.normal(cfg.prior_gpa_mean, cfg.prior_gpa_std), 0.0, 4.0
         ))
         prior_education = self.rng.choice(
-            ["high_school", "associate", "bachelor"], p=[0.50, 0.30, 0.20]
+            list(cfg.prior_education_distribution.keys()),
+            p=list(cfg.prior_education_distribution.values()),
         )
         years_since = max(0, int(self.rng.exponential(4)))
         enrolled_courses = max(1, min(6, int(self.rng.normal(3.5, 1.2))))
@@ -130,8 +132,8 @@ class StudentFactory:
         ))
 
         goal_orientation = self.rng.choice(
-            ["mastery", "performance", "avoidance"],
-            p=[0.35, 0.40, 0.25],
+            list(cfg.goal_orientation_distribution.keys()),
+            p=list(cfg.goal_orientation_distribution.values()),
         )
 
         # ── CLUSTER 2: Student Skills (Rovai) ──
@@ -172,12 +174,12 @@ class StudentFactory:
 
         has_internet = self.rng.random() < (0.95 if socioeconomic_level != "low" else 0.75)
         device = self.rng.choice(
-            ["laptop", "desktop", "mobile", "tablet"],
-            p=[0.40, 0.15, 0.35, 0.10],
+            list(cfg.device_distribution.keys()),
+            p=list(cfg.device_distribution.values()),
         )
         learning_style = self.rng.choice(
-            ["visual", "auditory", "reading", "kinesthetic"],
-            p=[0.35, 0.20, 0.30, 0.15],
+            list(cfg.learning_style_distribution.keys()),
+            p=list(cfg.learning_style_distribution.values()),
         )
 
         # ── CLUSTER 4: Internal Factors (Tinto, Rovai) ──

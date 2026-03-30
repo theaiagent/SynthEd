@@ -36,14 +36,19 @@ class LLMResponseError(LLMError):
     """Raised when the API response is malformed or empty."""
 
 
+# Approximate pricing per 1M tokens (USD)
+# Last verified: 2025-06-01 — https://openai.com/api/pricing/
+_DEFAULT_PRICING: dict[str, dict[str, float]] = {
+    "gpt-4o-mini": {"input": 0.15, "output": 0.60},
+    "gpt-4o": {"input": 2.50, "output": 10.00},
+}
+
+
 class LLMClient:
     """Thin wrapper around OpenAI API with caching, retry, and cost tracking."""
 
-    # Approximate pricing per 1M tokens (USD) - GPT-4o-mini
-    PRICING = {
-        "gpt-4o-mini": {"input": 0.15, "output": 0.60},
-        "gpt-4o": {"input": 2.50, "output": 10.00},
-    }
+    # Kept for backward compatibility; prefer _DEFAULT_PRICING / self.pricing
+    PRICING = _DEFAULT_PRICING
 
     DEFAULT_MAX_RETRIES = 3
     DEFAULT_RETRY_BASE_DELAY = 1.0  # seconds
@@ -56,6 +61,7 @@ class LLMClient:
         temperature: float = 0.8,
         max_retries: int = DEFAULT_MAX_RETRIES,
         retry_base_delay: float = DEFAULT_RETRY_BASE_DELAY,
+        pricing: dict | None = None,
     ):
         self.model = model
         self.temperature = temperature
@@ -66,6 +72,7 @@ class LLMClient:
 
         self.max_retries = max_retries
         self.retry_base_delay = retry_base_delay
+        self.pricing = pricing or dict(_DEFAULT_PRICING)
 
         # Cost tracking
         self.total_input_tokens = 0
@@ -211,7 +218,7 @@ class LLMClient:
 
     @property
     def estimated_cost_usd(self) -> float:
-        pricing = self.PRICING.get(self.model, {"input": 2.50, "output": 10.00})
+        pricing = self.pricing.get(self.model, {"input": 2.50, "output": 10.00})
         input_cost = (self.total_input_tokens / 1_000_000) * pricing["input"]
         output_cost = (self.total_output_tokens / 1_000_000) * pricing["output"]
         return input_cost + output_cost

@@ -19,6 +19,47 @@ class BaulkeDropoutPhase:
     Rubicon action-phase model (Achtziger & Gollwitzer, 2010).
     """
 
+    # ── phase 0 → 1: non-fit perception ──
+    _NONFIT_ENG_THRESHOLD: float = 0.40          # engagement below this triggers non-fit
+    _NONFIT_ENG_SOFT: float = 0.45               # softer threshold when combined with other factors
+    _NONFIT_COG_THRESHOLD: float = 0.25           # cognitive presence threshold for soft trigger
+    _NONFIT_TD_THRESHOLD: float = 0.55            # transactional distance threshold for soft trigger
+    _EXHAUSTION_THRESHOLD: float = 0.70           # exhaustion level that accelerates dropout
+
+    # ── phase 1 → 0 / 1 → 2 ──
+    _RECOVERY_1_TO_0: float = 0.50               # engagement above this recovers to phase 0
+    _PHASE_1_TO_2_ENG: float = 0.36              # engagement below this advances to phase 2
+    _PHASE_1_SOCIAL_THRESHOLD: float = 0.20       # social integration threshold for phase 2
+
+    # ── phase 2 → 1 / 2 → 3 ──
+    _RECOVERY_2_TO_1: float = 0.45               # engagement above this recovers to phase 1
+    _PHASE_2_TO_3_ENG: float = 0.32              # engagement below this advances to phase 3
+
+    # ── phase 3 → 2 / 3 → 4 ──
+    _RECOVERY_3_TO_2: float = 0.40               # engagement above this recovers to phase 2
+    _PHASE_3_TO_4_ENG: float = 0.25              # engagement below this advances to phase 4
+    _PHASE_3_TO_4_CB: float = 0.40               # cost-benefit threshold for phase 4
+
+    # ── phase 4 → 3 / 4 → 5 ──
+    _RECOVERY_4_TO_3_ENG: float = 0.35           # engagement above this recovers to phase 3
+    _RECOVERY_4_TO_3_CB: float = 0.45            # cost-benefit above this recovers to phase 3
+    _TRIGGER_ENG_THRESHOLD: float = 0.10          # near-zero engagement trigger
+    _TRIGGER_MISSED_STREAK: int = 3               # missed assignment streak trigger
+    _TRIGGER_CB_THRESHOLD: float = 0.15           # cost-benefit "not worth it" trigger
+    _TRIGGER_FINANCIAL_THRESHOLD: float = 0.7     # financial stress crisis trigger
+    _WITHDRAWAL_WEEK_FRACTION: float = 0.70       # fraction of semester for withdrawal deadline
+    _DECISION_RISK_MULTIPLIER: float = 0.28       # scales base_dropout_risk per trigger
+
+    # ── memory impact values ──
+    _IMPACT_NONFIT: float = -0.2
+    _IMPACT_RECOVERY_1_TO_0: float = 0.2
+    _IMPACT_PHASE_2: float = -0.25
+    _IMPACT_RECOVERY_2_TO_1: float = 0.15
+    _IMPACT_PHASE_3: float = -0.3
+    _IMPACT_RECOVERY_3_TO_2: float = 0.1
+    _IMPACT_PHASE_4: float = -0.4
+    _IMPACT_DROPOUT: float = -0.8
+
     def advance_phase(
         self,
         student: StudentPersona,
@@ -41,91 +82,91 @@ class BaulkeDropoutPhase:
         history = state.weekly_engagement_history
         avg_td = avg_td_fn(student, state)
 
-        exhausted = hasattr(state, 'exhaustion') and state.exhaustion.exhaustion_level > 0.70
+        exhausted = hasattr(state, 'exhaustion') and state.exhaustion.exhaustion_level > self._EXHAUSTION_THRESHOLD
 
         if state.dropout_phase == 0:
             # Phase 0 -> 1: Non-fit perception
             # Gonzalez: high exhaustion accelerates non-fit perception
-            if (eng < 0.40
-                    or (eng < 0.45 and state.coi_state.cognitive_presence < 0.25)
-                    or (eng < 0.45 and avg_td > 0.55)
-                    or (eng < 0.45 and exhausted)):
+            if (eng < self._NONFIT_ENG_THRESHOLD
+                    or (eng < self._NONFIT_ENG_SOFT and state.coi_state.cognitive_presence < self._NONFIT_COG_THRESHOLD)
+                    or (eng < self._NONFIT_ENG_SOFT and avg_td > self._NONFIT_TD_THRESHOLD)
+                    or (eng < self._NONFIT_ENG_SOFT and exhausted)):
                 state.dropout_phase = 1
                 state.memory.append({"week": week, "event_type": "dropout_phase",
                                     "details": "Non-fit perception: questioning fit with program",
-                                    "impact": -0.2})
+                                    "impact": self._IMPACT_NONFIT})
 
         elif state.dropout_phase == 1:
             # Recovery back to 0 (harder in ODL -- fewer re-engagement mechanisms)
-            if eng > 0.50:
+            if eng > self._RECOVERY_1_TO_0:
                 state.dropout_phase = 0
                 state.memory.append({"week": week, "event_type": "recovery",
-                                    "details": "Re-engaged with program", "impact": 0.2})
+                                    "details": "Re-engaged with program", "impact": self._IMPACT_RECOVERY_1_TO_0})
             # Phase 1 -> 2: Thoughts of quitting
-            elif (eng < 0.36
+            elif (eng < self._PHASE_1_TO_2_ENG
                   and (state.missed_assignments_streak >= 1
-                       or state.social_integration < 0.20)):
+                       or state.social_integration < self._PHASE_1_SOCIAL_THRESHOLD)):
                 state.dropout_phase = 2
                 state.memory.append({"week": week, "event_type": "dropout_phase",
                                     "details": "Thoughts of quitting: considering alternatives "
                                                "after experiencing difficulties",
-                                    "impact": -0.25})
+                                    "impact": self._IMPACT_PHASE_2})
 
         elif state.dropout_phase == 2:
             # Recovery back to 1
-            if eng > 0.45:
+            if eng > self._RECOVERY_2_TO_1:
                 state.dropout_phase = 1
                 state.memory.append({"week": week, "event_type": "recovery",
                                     "details": "Renewed commitment, thoughts of quitting subsided",
-                                    "impact": 0.15})
+                                    "impact": self._IMPACT_RECOVERY_2_TO_1})
             # Phase 2 -> 3: Deliberation (requires sustained decline)
-            elif eng < 0.32 and len(history) >= 2 and history[-1] < history[-2]:
+            elif eng < self._PHASE_2_TO_3_ENG and len(history) >= 2 and history[-1] < history[-2]:
                 state.dropout_phase = 3
                 state.memory.append({"week": week, "event_type": "dropout_phase",
                                     "details": "Deliberation: actively weighing whether to continue",
-                                    "impact": -0.3})
+                                    "impact": self._IMPACT_PHASE_3})
 
         elif state.dropout_phase == 3:
             # Recovery back to 2
-            if eng > 0.40:
+            if eng > self._RECOVERY_3_TO_2:
                 state.dropout_phase = 2
                 state.memory.append({"week": week, "event_type": "recovery",
                                     "details": "Stepped back from deliberation to thoughts of quitting",
-                                    "impact": 0.1})
+                                    "impact": self._IMPACT_RECOVERY_3_TO_2})
             # Phase 3 -> 4: Information search
-            elif eng < 0.25 and state.perceived_cost_benefit < 0.40:
+            elif eng < self._PHASE_3_TO_4_ENG and state.perceived_cost_benefit < self._PHASE_3_TO_4_CB:
                 state.dropout_phase = 4
                 state.memory.append({"week": week, "event_type": "dropout_phase",
                                     "details": "Information search: exploring alternatives "
                                                "to current program",
-                                    "impact": -0.4})
+                                    "impact": self._IMPACT_PHASE_4})
 
         elif state.dropout_phase == 4:
             # Recovery still possible but unlikely
-            if eng > 0.35 and state.perceived_cost_benefit > 0.45:
+            if eng > self._RECOVERY_4_TO_3_ENG and state.perceived_cost_benefit > self._RECOVERY_4_TO_3_CB:
                 state.dropout_phase = 3
             # Phase 4 -> 5: Final decision -- probabilistic, scaled by triggers
             else:
                 triggers = 0
-                if eng < 0.10:
+                if eng < self._TRIGGER_ENG_THRESHOLD:
                     triggers += 1  # Near-zero engagement
-                if state.missed_assignments_streak >= 3:
+                if state.missed_assignments_streak >= self._TRIGGER_MISSED_STREAK:
                     triggers += 1  # Academic failure cascade
-                if state.perceived_cost_benefit < 0.15:
+                if state.perceived_cost_benefit < self._TRIGGER_CB_THRESHOLD:
                     triggers += 1  # Economic rationality: not worth it
-                if student.financial_stress > 0.7:
+                if student.financial_stress > self._TRIGGER_FINANCIAL_THRESHOLD:
                     triggers += 1  # Bean & Metzner: environmental crisis
                 if exhausted:
                     triggers += 1  # Gonzalez: academic exhaustion crisis
                 # Withdrawal deadline at ~70% of semester (Kember)
-                withdrawal_week = int(env.total_weeks * 0.70)
+                withdrawal_week = int(env.total_weeks * self._WITHDRAWAL_WEEK_FRACTION)
                 if week == withdrawal_week:
                     triggers += 1
 
                 if triggers >= 1:
-                    decision_prob = student.base_dropout_risk * triggers * 0.28
+                    decision_prob = student.base_dropout_risk * triggers * self._DECISION_RISK_MULTIPLIER
                     if rng.random() < decision_prob:
                         state.dropout_phase = 5
                         state.memory.append({"week": week, "event_type": "dropout",
                                             "details": "Decided to withdraw from program",
-                                            "impact": -0.8})
+                                            "impact": self._IMPACT_DROPOUT})
