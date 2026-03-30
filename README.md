@@ -254,7 +254,7 @@ SynthEd/
 │   │   ├── log_config.py        # Logging configuration
 │   │   └── validation.py        # Input validation utilities
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                        # 52 pytest tests across 10 files
+├── tests/                        # 52 pytest tests across 9 files
 ├── configs/
 │   └── default.json
 ├── run_pipeline.py               # CLI entry point
@@ -301,7 +301,7 @@ Extend `SimulationEngine._simulate_student_week()` to add new behavioral channel
 
 ## Test Suite
 
-SynthEd includes 52 pytest tests across 10 test files, covering all theory modules, simulation mechanics, LLM enrichment, and the full pipeline.
+SynthEd includes 52 pytest tests across 9 test files, covering all theory modules, simulation mechanics, LLM enrichment, and the full pipeline.
 
 ```bash
 python -m pytest tests/ -v --tb=short
@@ -309,7 +309,7 @@ python -m pytest tests/ -v --tb=short
 
 | Test File | Tests | Coverage |
 |-----------|-------|----------|
-| `test_persona.py` | 7 | BigFive validation, engagement/dropout bounds, motivation comparison, dict roundtrip |
+| `test_persona.py` | 8 | BigFive validation, engagement/dropout bounds, motivation comparison, dict roundtrip |
 | `test_factory.py` | 4 | Population count, seed determinism, attribute ranges, summary keys |
 | `test_engine.py` | 8 | Return types, state completeness, engagement bounds, dropout phases, risk cohort differentiation |
 | `test_social_network.py` | 6 | Link creation/strengthening, degree counting, peer influence, link decay, statistics |

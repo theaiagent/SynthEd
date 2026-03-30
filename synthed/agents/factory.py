@@ -328,8 +328,8 @@ Return JSON: {{"backstory": "...", "primary_challenge": "..."}}
             )
             return persona
 
-        persona.backstory = backstory
-        return persona
+        from dataclasses import replace
+        return replace(persona, backstory=backstory)
 
     def population_summary(self, personas: list[StudentPersona]) -> dict[str, Any]:
         n = len(personas)
