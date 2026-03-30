@@ -133,6 +133,26 @@ report = pipeline.run(n_students=300)
 # dropout phase regression, exhaustion relief, network reset
 ```
 
+### Benchmark Profiles
+
+Generate data matching different institutional contexts:
+
+```python
+from synthed.benchmarks.generator import BenchmarkGenerator
+
+gen = BenchmarkGenerator()
+report = gen.generate("mega_university", output_dir="./mega_output")
+```
+
+| Profile | Scenario | Expected Dropout |
+|---------|----------|-----------------|
+| `high_dropout_developing` | Developing country ODL, high employment, low digital literacy | 60-90% |
+| `moderate_dropout_western` | Western university, mixed employment | 30-60% |
+| `low_dropout_corporate` | Corporate training, employer-sponsored | 5-30% |
+| `mega_university` | Mega university scale (Anadolu, IGNOU) | 55-85% |
+
+Custom profiles can be added to `synthed/benchmarks/profiles.py`.
+
 ## Output Datasets
 
 | File | Description | Rows | Use Case |
