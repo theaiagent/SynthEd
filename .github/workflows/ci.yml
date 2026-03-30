@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [main]
 
-permissions:
-  contents: write
-
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -41,37 +38,36 @@ jobs:
           file: ./coverage.xml
           fail_ci_if_error: false
 
-      - name: Generate and deploy test badge
+      - name: Parse test results for badge
         if: matrix.python-version == '3.12' && github.ref == 'refs/heads/main'
+        id: badge
         run: |
           python -c "
-          import xml.etree.ElementTree as ET, json, pathlib
+          import xml.etree.ElementTree as ET, os
           root = ET.parse('test-results.xml').getroot()
-          # Handle both <testsuites> and <testsuite> root elements
-          if root.tag == 'testsuites':
-              ts = root.find('testsuite')
-          else:
-              ts = root
+          ts = root.find('testsuite') if root.tag == 'testsuites' else root
           total = int(ts.attrib.get('tests', 0))
           failures = int(ts.attrib.get('failures', 0))
           errors = int(ts.attrib.get('errors', 0))
           passed = total - failures - errors
           color = 'brightgreen' if failures == 0 and errors == 0 else 'red'
           msg = f'{passed}/{total} passed' if color == 'brightgreen' else f'{passed}/{total} passed ({failures} failed)'
-          badge = {'schemaVersion': 1, 'label': 'pytest', 'message': msg, 'color': color}
-          pathlib.Path('badges').mkdir(exist_ok=True)
-          pathlib.Path('badges/tests.json').write_text(json.dumps(badge))
-          print(f'Badge: {badge}')
+          with open(os.environ['GITHUB_ENV'], 'a') as f:
+              f.write(f'BADGE_MSG={msg}\n')
+              f.write(f'BADGE_COLOR={color}\n')
+          print(f'Badge: {msg} ({color})')
           "
 
-      - name: Deploy badge to gh-pages
+      - name: Push badge to Gist
         if: matrix.python-version == '3.12' && github.ref == 'refs/heads/main'
-        uses: peaceiris/actions-gh-pages@v4
+        uses: schneegans/dynamic-badges-action@v1.7.0
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./badges
-          destination_dir: badges
-          keep_files: true
+          auth: ${{ secrets.GIST_TOKEN }}
+          gistID: cbf1abd6cdc2134e7e26374de286f2c9
+          filename: synthed-test-badge.json
+          label: pytest
+          message: ${{ env.BADGE_MSG }}
+          color: ${{ env.BADGE_COLOR }}
 
   lint:
     runs-on: ubuntu-latest
