@@ -309,6 +309,29 @@ If you use SynthEd in your research, please cite:
 }
 ```
 
+## Legal Disclaimer
+
+> **SynthEd is for research and simulation purposes only.**
+
+SynthEd generates **entirely fictional synthetic data**. No real individuals are represented, modeled, or identifiable in any output. The generated personas, interaction logs, and behavioral trajectories are computational artifacts produced by agent-based simulation grounded in published educational theories.
+
+**By using SynthEd, you acknowledge that:**
+
+- You are **fully responsible** for any use you make of the generated outputs.
+- Synthetic data should **not** be presented as real student data without clear disclosure.
+- The simulation reflects theoretical models, not empirical observations of specific institutions or populations.
+- Outputs are intended for **research, development, and educational purposes** — not for making decisions about real individuals.
+- If using the optional LLM enrichment feature, you are responsible for compliance with the LLM provider's terms of service and content policies.
+
+## Responsible Use
+
+SynthEd is designed to **address** ethical challenges in educational data mining, not create them:
+
+- **Privacy by design**: Synthetic agents have no mapping to real individuals, eliminating re-identification risk.
+- **Bias awareness**: The simulation parameters (demographics, employment rates, dropout thresholds) reflect configurable assumptions. Users should critically evaluate whether default parameters are appropriate for their research context.
+- **Transparency**: All theoretical frameworks, formulas, and calibration decisions are documented in the source code and this README. The simulation is fully auditable.
+- **No surveillance**: SynthEd is not designed for, and should not be used for, monitoring or evaluating real students.
+
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
