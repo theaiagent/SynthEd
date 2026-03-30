@@ -151,6 +151,9 @@ class DataExporter:
             "engagement_trend",
             # Garrison et al. (2000): Community of Inquiry
             "final_social_presence", "final_cognitive_presence", "final_teaching_presence",
+            # Deci & Ryan (1985): Self-Determination Theory
+            "final_motivation_type",
+            "final_autonomy_need", "final_competence_need", "final_relatedness_need",
             # Epstein & Axtell (1996): Network properties
             "network_degree",
         ]
@@ -183,6 +186,11 @@ class DataExporter:
                     "final_social_presence": round(state.coi_state.social_presence, 3),
                     "final_cognitive_presence": round(state.coi_state.cognitive_presence, 3),
                     "final_teaching_presence": round(state.coi_state.teaching_presence, 3),
+                    # SDT (Deci & Ryan, 1985)
+                    "final_motivation_type": state.current_motivation_type,
+                    "final_autonomy_need": round(state.sdt_needs.autonomy, 3),
+                    "final_competence_need": round(state.sdt_needs.competence, 3),
+                    "final_relatedness_need": round(state.sdt_needs.relatedness, 3),
                     # Network (Epstein & Axtell, 1996)
                     "network_degree": network.get_degree(student.id) if network else 0,
                 })

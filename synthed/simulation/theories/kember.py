@@ -38,4 +38,16 @@ class KemberCostBenefit:
 
         # Moore -> Kember: high transactional distance reduces perceived value
         state.perceived_cost_benefit -= (avg_td - 0.5) * 0.02
+
+        # Garrison -> Kember: teaching presence modulates perceived value
+        state.perceived_cost_benefit += (state.coi_state.teaching_presence - 0.5) * 0.03
+
+        # CoI composite: engaged learning community = higher perceived value
+        coi_composite = (
+            state.coi_state.social_presence
+            + state.coi_state.cognitive_presence
+            + state.coi_state.teaching_presence
+        ) / 3
+        state.perceived_cost_benefit += (coi_composite - 0.4) * 0.02
+
         state.perceived_cost_benefit = float(np.clip(state.perceived_cost_benefit, 0.05, 0.95))

@@ -58,6 +58,31 @@ class SocialNetwork:
                 link_types=frozenset({link_type}),
             )
 
+    def decay_links(self, decay_rate: float = 0.02, min_strength: float = 0.01) -> int:
+        """
+        Decay all link strengths by decay_rate. Remove links below min_strength.
+        Returns count of removed links.
+        """
+        removed = 0
+        for source_id in list(self._adjacency.keys()):
+            neighbors = self._adjacency[source_id]
+            to_remove = []
+            for target_id, link in neighbors.items():
+                new_strength = link.strength - decay_rate
+                if new_strength < min_strength:
+                    to_remove.append(target_id)
+                    removed += 1
+                else:
+                    neighbors[target_id] = PeerLink(
+                        strength=new_strength,
+                        link_types=link.link_types,
+                    )
+            for tid in to_remove:
+                del neighbors[tid]
+            if not neighbors:
+                del self._adjacency[source_id]
+        return removed
+
     def get_neighbors(self, student_id: str) -> list[str]:
         """Return IDs of all peers connected to this student."""
         return list(self._adjacency.get(student_id, {}).keys())

@@ -54,11 +54,16 @@ class ODLEnvironment:
     # Events that occur at specific weeks (week -> event description)
     scheduled_events: dict[int, str] = field(default_factory=dict)
 
+    # Positive events that counter negative environmental pressure
+    positive_events: dict[int, str] = field(default_factory=dict)
+
     def __post_init__(self):
         if not self.courses:
             self.courses = self._default_courses()
         if not self.scheduled_events:
             self.scheduled_events = self._default_events()
+        if not self.positive_events:
+            self.positive_events = self._default_positive_events()
 
     def _default_courses(self) -> list[Course]:
         """Generate a default set of ODL courses."""
@@ -101,6 +106,16 @@ class ODLEnvironment:
             14: "final_exams",
         }
 
+    def _default_positive_events(self) -> dict[int, str]:
+        """Positive events scaled to semester length."""
+        w = self.total_weeks
+        return {
+            1: "orientation_welcome",
+            max(1, int(w * 0.25)): "financial_aid_disbursement",
+            max(1, int(w * 0.50)): "semester_break",
+            max(1, int(w * 0.75)): "peer_study_group",
+        }
+
     def get_week_context(self, week: int) -> dict:
         """Get the environmental context for a given week."""
         active_assignments = []
@@ -121,6 +136,7 @@ class ODLEnvironment:
             "is_exam_week": is_exam_week,
             "total_workload_hours": sum(c.weekly_workload_hours for c in self.courses),
             "lms_available": True,  # Simplified; could model outages
+            "positive_event": self.positive_events.get(week),
         }
 
     def get_course_by_id(self, course_id: str) -> Course | None:

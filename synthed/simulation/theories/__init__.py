@@ -9,6 +9,8 @@ from .garrison_coi import GarrisonCoI
 from .moore_td import MooreTransactionalDistance
 from .epstein_axtell import EpsteinAxtellPeerInfluence
 from .rovai import RovaiPersistence
+from .sdt_motivation import SDTMotivationDynamics, SDTNeedSatisfaction
+from .positive_events import PositiveEventHandler
 
 __all__ = [
     "TintoIntegration",
@@ -19,4 +21,7 @@ __all__ = [
     "MooreTransactionalDistance",
     "EpsteinAxtellPeerInfluence",
     "RovaiPersistence",
+    "SDTMotivationDynamics",
+    "SDTNeedSatisfaction",
+    "PositiveEventHandler",
 ]

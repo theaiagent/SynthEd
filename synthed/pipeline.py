@@ -169,6 +169,11 @@ class SynthEdPipeline:
                     "final_engagement": state.weekly_engagement_history[-1] if state.weekly_engagement_history else None,
                     # Garrison et al. (2000)
                     "coi_composite": round(coi_composite, 3),
+                    # Deci & Ryan (1985)
+                    "final_motivation_type": state.current_motivation_type,
+                    "final_autonomy_need": round(state.sdt_needs.autonomy, 3),
+                    "final_competence_need": round(state.sdt_needs.competence, 3),
+                    "final_relatedness_need": round(state.sdt_needs.relatedness, 3),
                     # Epstein & Axtell (1996)
                     "network_degree": network.get_degree(s.id),
                 })

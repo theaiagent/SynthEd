@@ -37,6 +37,9 @@ from .theories import (
     MooreTransactionalDistance,
     EpsteinAxtellPeerInfluence,
     RovaiPersistence,
+    SDTMotivationDynamics,
+    SDTNeedSatisfaction,
+    PositiveEventHandler,
 )
 
 
@@ -78,6 +81,9 @@ class SimulationState:
     missed_assignments_streak: int = 0  # Consecutive missed assignments
     # Garrison et al. (2000): Community of Inquiry
     coi_state: CommunityOfInquiryState = field(default_factory=CommunityOfInquiryState)
+    # Deci & Ryan (1985): Self-Determination Theory
+    sdt_needs: SDTNeedSatisfaction = field(default_factory=SDTNeedSatisfaction)
+    current_motivation_type: str = "extrinsic"
     # Temporal memory (moved from StudentPersona to avoid mutating input)
     memory: list[dict[str, Any]] = field(default_factory=list)
 
@@ -124,6 +130,8 @@ class SimulationEngine:
         self.moore = MooreTransactionalDistance()
         self.epstein_axtell = EpsteinAxtellPeerInfluence()
         self.rovai = RovaiPersistence()
+        self.sdt = SDTMotivationDynamics()
+        self.positive_events = PositiveEventHandler()
 
     def run(
         self,
@@ -153,6 +161,12 @@ class SimulationEngine:
                 social_integration=student.social_integration,
                 perceived_cost_benefit=student.perceived_cost_benefit,
                 courses_active=course_ids,
+                sdt_needs=SDTNeedSatisfaction(
+                    autonomy=student.learner_autonomy,
+                    competence=student.self_efficacy,
+                    relatedness=student.social_integration,
+                ),
+                current_motivation_type=student.motivation_type,
             )
 
         for week in range(1, weeks + 1):
@@ -172,9 +186,12 @@ class SimulationEngine:
                 active_courses = [c for c in self.env.courses if c.id in state.courses_active]
                 self.tinto.update_integration(student, state, week, week_context, week_records)
                 self.garrison.update_presences(student, state, week, week_records, active_courses)
+                self.sdt.update_needs(student, state, week, week_records)
+                state.current_motivation_type = self.sdt.evaluate_motivation_shift(state)
                 self._update_engagement(student, state, week, week_context, week_records)
 
             # ── Phase 2: Social network + peer influence (Epstein & Axtell) ──
+            self.network.decay_links(decay_rate=0.02)
             self.epstein_axtell.update_network(week, week_records_by_student, self.network)
             for student in students:
                 state = states[student.id]
@@ -354,6 +371,11 @@ class SimulationEngine:
 
         # ── Bean & Metzner: Environmental pressure ──
         engagement += self.bean_metzner.calculate_environmental_pressure(student)
+
+        # ── Positive environmental events (counter-pressure) ──
+        engagement += self.positive_events.apply(
+            context.get("positive_event"), student, state
+        )
 
         # ── Rovai: Self-regulation buffer ──
         engagement += self.rovai.regulation_buffer(student)
