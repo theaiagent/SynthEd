@@ -149,7 +149,7 @@ report = gen.generate("mega_university", output_dir="./mega_output")
 | `high_dropout_developing` | Developing country ODL, high employment, low digital literacy | 60-90% |
 | `moderate_dropout_western` | Western university, mixed employment | 30-60% |
 | `low_dropout_corporate` | Corporate training, employer-sponsored | 5-30% |
-| `mega_university` | Mega university scale (Anadolu, IGNOU) | 55-85% |
+| `mega_university` | Mega university: very high enrollment, high dropout | 55-85% |
 
 Custom profiles can be added to `synthed/benchmarks/profiles.py`.
 
