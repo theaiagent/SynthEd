@@ -62,7 +62,7 @@ jobs:
 
       - name: Push badge to Gist
         if: matrix.python-version == '3.12' && github.ref == 'refs/heads/main'
-        uses: schneegans/dynamic-badges-action@v1.7.0
+        uses: schneegans/dynamic-badges-action@v1.8.0
         with:
           auth: ${{ secrets.GIST_TOKEN }}
           gistID: cbf1abd6cdc2134e7e26374de286f2c9
