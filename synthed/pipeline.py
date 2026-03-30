@@ -15,6 +15,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+from . import __version__
 from .agents.persona import PersonaConfig
 from .agents.factory import StudentFactory
 from .simulation.environment import ODLEnvironment
@@ -86,7 +87,7 @@ class SynthEdPipeline:
             raise ValueError(f"n_students must be a positive integer, got {n_students}")
 
         report: dict[str, Any] = {
-            "pipeline": "SynthEd v0.1.0",
+            "pipeline": f"SynthEd v{__version__}",
             "config": {
                 "n_students": n_students,
                 "seed": self.seed,
