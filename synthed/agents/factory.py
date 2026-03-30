@@ -280,7 +280,7 @@ class StudentFactory:
         """
         # Sanitize persona attributes to prevent prompt injection
         age = int(persona.age)
-        gender = persona.gender if persona.gender in ("male", "female") else "female"
+        gender = str(persona.gender)[:10]
         education = str(persona.prior_education_level)[:20]
         motivation = str(persona.motivation_type)[:15]
 
