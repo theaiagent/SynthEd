@@ -6,5 +6,5 @@ scalable simulation to generate behaviorally coherent synthetic
 educational data for Open and Distance Learning (ODL) research.
 """
 
-__version__ = "0.2.0"
+__version__ = "0.2.2"
 __author__ = "Halis Aykut Cosgun"
