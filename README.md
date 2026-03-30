@@ -361,7 +361,7 @@ If you use SynthEd in your research, please cite:
 
 ```bibtex
 @software{synthed2026,
-  author = {Cosgun, Halis Aykut and Kumtepe Genc, Evrim},
+  author = {Halis Aykut Cosgun and Evrim Genc Kumtepe },
   title = {SynthEd: Agent-Based Synthetic Educational Data Generation for ODL Research},
   year = {2026},
   url = {https://github.com/theaiagent/SynthEd},
