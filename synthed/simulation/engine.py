@@ -142,6 +142,8 @@ class SimulationEngine:
         self,
         students: list[StudentPersona],
         weeks: int | None = None,
+        initial_state_overrides: dict[str, dict[str, Any]] | None = None,
+        initial_network: SocialNetwork | None = None,
     ) -> tuple[list[InteractionRecord], dict[str, SimulationState], SocialNetwork]:
         """
         Run the simulation with two-phase weekly loop (Epstein & Axtell, 1996).
@@ -149,13 +151,22 @@ class SimulationEngine:
         Phase 1: Individual behavior — each student acts independently.
         Phase 2: Social network formation + peer influence — agents affect each other.
 
+        Args:
+            students: List of student personas to simulate.
+            weeks: Number of weeks to simulate (defaults to environment total).
+            initial_state_overrides: Per-student state attribute overrides, keyed
+                by student ID.  Applied after default state initialization to
+                carry forward evolved values from a previous semester.
+            initial_network: Pre-existing social network to continue from
+                (e.g., carried over from a previous semester).
+
         Returns:
             Tuple of (interaction records, final states, social network).
         """
         weeks = weeks or self.env.total_weeks
         all_records: list[InteractionRecord] = []
         states: dict[str, SimulationState] = {}
-        self.network = SocialNetwork()
+        self.network = initial_network or SocialNetwork()
 
         for student in students:
             course_ids = [c.id for c in self.env.courses[:student.enrolled_courses]]
@@ -173,6 +184,13 @@ class SimulationEngine:
                 ),
                 current_motivation_type=student.motivation_type,
             )
+
+        # Apply per-student state overrides (multi-semester carry-over)
+        if initial_state_overrides:
+            for sid, overrides in initial_state_overrides.items():
+                if sid in states:
+                    for key, value in overrides.items():
+                        setattr(states[sid], key, value)
 
         for week in range(1, weeks + 1):
             week_context = self.env.get_week_context(week)

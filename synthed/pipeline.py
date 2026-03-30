@@ -49,6 +49,8 @@ class SynthEdPipeline:
         llm_model: str = "gpt-4o-mini",
         use_llm: bool = False,
         seed: int = 42,
+        n_semesters: int = 1,
+        carry_over_config: Any | None = None,
     ):
         self.persona_config = persona_config or PersonaConfig()
         self.environment = environment or ODLEnvironment()
@@ -56,6 +58,8 @@ class SynthEdPipeline:
         self.output_dir = Path(output_dir)
         self.use_llm = use_llm
         self.seed = seed
+        self.n_semesters = n_semesters
+        self.carry_over_config = carry_over_config
 
         # Initialize components
         self.llm = LLMClient(model=llm_model) if use_llm else None
@@ -107,9 +111,22 @@ class SynthEdPipeline:
                     report['population_summary']['base_dropout_risk_mean'] * 100)
 
         # Stage 2: Run Simulation
-        logger.info("[2/4] Simulating %d weeks of ODL interactions...", self.environment.total_weeks)
+        total_weeks = self.environment.total_weeks * self.n_semesters
+        logger.info("[2/4] Simulating %d weeks of ODL interactions (%d semester(s))...",
+                     total_weeks, self.n_semesters)
         t0 = time.time()
-        records, states, network = self.engine.run(students)
+        if self.n_semesters <= 1:
+            records, states, network = self.engine.run(students)
+        else:
+            from .simulation.semester import MultiSemesterRunner
+            runner = MultiSemesterRunner(
+                self.engine, self.n_semesters,
+                carry_over=self.carry_over_config,
+            )
+            result = runner.run(students)
+            records, states, network = (
+                result.all_records, result.final_states, result.final_network,
+            )
         report["timing"]["simulation_sec"] = round(time.time() - t0, 2)
         report["simulation_summary"] = self.engine.summary_statistics(states)
         report["network_summary"] = network.network_statistics(states)
