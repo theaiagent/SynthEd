@@ -1,16 +1,9 @@
 from setuptools import setup, find_packages
 
-# Read version from single source of truth (no exec)
-import re
-with open("synthed/__init__.py") as f:
-    version_match = re.search(r'^__version__\s*=\s*["\']([^"\']+)["\']', f.read(), re.M)
-    if not version_match:
-        raise RuntimeError("Unable to find __version__ in synthed/__init__.py")
-version = {"__version__": version_match.group(1)}
-
 setup(
     name="synthed",
-    version=version["__version__"],
+    use_scm_version=True,
+    setup_requires=["setuptools_scm"],
     description="Agent-Based Synthetic Educational Data Generation for ODL Research",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
