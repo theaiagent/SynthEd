@@ -300,11 +300,11 @@ If you use SynthEd in your research, please cite:
 
 ```bibtex
 @software{synthed2026,
-  author = {Cosgun, Halis Aykut},
+  author = {Cosgun, Halis Aykut and Kumtepe Genc, Evrim},
   title = {SynthEd: Agent-Based Synthetic Educational Data Generation for ODL Research},
   year = {2026},
   url = {https://github.com/theaiagent/SynthEd},
-  orcid = {0000-0003-0166-6237}
+  orcid = {0000-0003-0166-6237; 0000-0002-2568-8054}
 }
 ```
 
