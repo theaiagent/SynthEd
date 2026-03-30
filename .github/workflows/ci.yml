@@ -44,20 +44,25 @@ jobs:
       - name: Generate and deploy test badge
         if: matrix.python-version == '3.12' && github.ref == 'refs/heads/main'
         run: |
-          TOTAL=$(python -c "import xml.etree.ElementTree as ET; t=ET.parse('test-results.xml').getroot(); print(t.attrib['tests'])")
-          FAILURES=$(python -c "import xml.etree.ElementTree as ET; t=ET.parse('test-results.xml').getroot(); print(t.attrib.get('failures','0'))")
-          ERRORS=$(python -c "import xml.etree.ElementTree as ET; t=ET.parse('test-results.xml').getroot(); print(t.attrib.get('errors','0'))")
-          PASSED=$((TOTAL - FAILURES - ERRORS))
-          if [ "$FAILURES" = "0" ] && [ "$ERRORS" = "0" ]; then
-            COLOR="brightgreen"
-            STATUS="${PASSED}/${TOTAL} passed"
-          else
-            COLOR="red"
-            STATUS="${PASSED}/${TOTAL} passed (${FAILURES} failed)"
-          fi
-          mkdir -p badges
-          echo "{\"schemaVersion\":1,\"label\":\"pytest\",\"message\":\"${STATUS}\",\"color\":\"${COLOR}\"}" > badges/tests.json
-          echo "Badge: $(cat badges/tests.json)"
+          python -c "
+          import xml.etree.ElementTree as ET, json, pathlib
+          root = ET.parse('test-results.xml').getroot()
+          # Handle both <testsuites> and <testsuite> root elements
+          if root.tag == 'testsuites':
+              ts = root.find('testsuite')
+          else:
+              ts = root
+          total = int(ts.attrib.get('tests', 0))
+          failures = int(ts.attrib.get('failures', 0))
+          errors = int(ts.attrib.get('errors', 0))
+          passed = total - failures - errors
+          color = 'brightgreen' if failures == 0 and errors == 0 else 'red'
+          msg = f'{passed}/{total} passed' if color == 'brightgreen' else f'{passed}/{total} passed ({failures} failed)'
+          badge = {'schemaVersion': 1, 'label': 'pytest', 'message': msg, 'color': color}
+          pathlib.Path('badges').mkdir(exist_ok=True)
+          pathlib.Path('badges/tests.json').write_text(json.dumps(badge))
+          print(f'Badge: {badge}')
+          "
 
       - name: Deploy badge to gh-pages
         if: matrix.python-version == '3.12' && github.ref == 'refs/heads/main'
