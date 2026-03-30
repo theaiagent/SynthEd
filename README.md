@@ -6,6 +6,7 @@
 [![Tests: 46 passed](https://img.shields.io/badge/tests-46%20passed-brightgreen.svg)](#test-suite)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![Status: Active Development](https://img.shields.io/badge/status-active%20development-orange.svg)](https://github.com/theaiagent/SynthEd/releases)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19334118.svg)](https://doi.org/10.5281/zenodo.19334118)
 
 **Agent-Based Synthetic Educational Data Generation for Open & Distance Learning Research**
 
@@ -363,7 +364,7 @@ If you use SynthEd in your research, please cite:
   title = {SynthEd: Agent-Based Synthetic Educational Data Generation for ODL Research},
   year = {2026},
   url = {https://github.com/theaiagent/SynthEd},
-  note = {GitHub repository: \url{https://github.com/theaiagent/SynthEd}}
+  doi = {10.5281/zenodo.19334118}
 }
 ```
 
