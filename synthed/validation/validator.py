@@ -38,10 +38,20 @@ class ReferenceStatistics:
     gpa_mean: float = 2.3
     gpa_std: float = 0.8
     dropout_rate: float = 0.50
+    dropout_range: tuple[float, float] | None = None
 
     # Engagement (if available)
     avg_weekly_logins: float | None = None
     avg_forum_posts_per_student: float | None = None
+
+    def __post_init__(self):
+        if self.dropout_range is not None:
+            lo, hi = self.dropout_range
+            if not (0.0 < lo < hi < 1.0):
+                raise ValueError(
+                    f"dropout_range must satisfy 0 < lower < upper < 1, "
+                    f"got {self.dropout_range}"
+                )
 
     @classmethod
     def from_json(cls, filepath: str) -> ReferenceStatistics:
@@ -246,19 +256,31 @@ class SyntheticDataValidator:
         # Dropout rate
         if outcomes:
             dropout_rate = sum(1 for o in outcomes if o.get("has_dropped_out")) / len(outcomes)
-            z_stat, z_p = self._proportion_z_test(
-                dropout_rate, self.reference.dropout_rate, len(outcomes)
-            )
-            results.append(ValidationResult(
-                test_name="dropout_rate",
-                metric="Proportion Z-test",
-                synthetic_value=dropout_rate,
-                reference_value=self.reference.dropout_rate,
-                statistic=z_stat,
-                p_value=z_p,
-                passed=z_p > self._effective_alpha(len(outcomes)),
-                details=f"Dropout: synth={dropout_rate:.2%}, ref={self.reference.dropout_rate:.2%}",
-            ))
+            if self.reference.dropout_range is not None:
+                lo, hi = self.reference.dropout_range
+                passed = lo <= dropout_rate <= hi
+                results.append(ValidationResult(
+                    test_name="dropout_rate",
+                    metric="Range check",
+                    synthetic_value=dropout_rate,
+                    reference_value=(lo + hi) / 2,
+                    passed=passed,
+                    details=f"Dropout: synth={dropout_rate:.2%}, target=[{lo:.2%}, {hi:.2%}]",
+                ))
+            else:
+                z_stat, z_p = self._proportion_z_test(
+                    dropout_rate, self.reference.dropout_rate, len(outcomes)
+                )
+                results.append(ValidationResult(
+                    test_name="dropout_rate",
+                    metric="Proportion Z-test",
+                    synthetic_value=dropout_rate,
+                    reference_value=self.reference.dropout_rate,
+                    statistic=z_stat,
+                    p_value=z_p,
+                    passed=z_p > self._effective_alpha(len(outcomes)),
+                    details=f"Dropout: synth={dropout_rate:.2%}, ref={self.reference.dropout_rate:.2%}",
+                ))
 
         return results
 

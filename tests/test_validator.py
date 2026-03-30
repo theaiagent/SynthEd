@@ -1,6 +1,6 @@
 """Tests for SyntheticDataValidator."""
 
-from synthed.validation.validator import SyntheticDataValidator
+from synthed.validation.validator import SyntheticDataValidator, ReferenceStatistics
 
 
 class TestSyntheticDataValidator:
@@ -53,3 +53,56 @@ class TestSyntheticDataValidator:
 
     def test_effective_alpha_minimum_bound(self):
         assert self.validator._effective_alpha(10_000_000) >= 0.001
+
+
+class TestDropoutRangeValidation:
+    """Tests for range-based dropout validation."""
+
+    def _make_data(self, n=30, n_dropout=10):
+        students = [
+            {"student_id": f"s{i}", "age": 25 + i, "gender": "female",
+             "is_employed": i % 2 == 0, "prior_gpa": 2.5,
+             "socioeconomic_level": "middle"}
+            for i in range(n)
+        ]
+        outcomes = [
+            {"student_id": f"s{i}", "has_dropped_out": i < n_dropout,
+             "dropout_week": 5 if i < n_dropout else None,
+             "final_engagement": 0.3 if i < n_dropout else 0.7}
+            for i in range(n)
+        ]
+        return students, outcomes
+
+    def test_dropout_range_pass(self):
+        """Observed dropout within range passes."""
+        ref = ReferenceStatistics(dropout_range=(0.20, 0.50))
+        v = SyntheticDataValidator(reference=ref)
+        students, outcomes = self._make_data(n=30, n_dropout=10)  # ~33%
+        report = v.validate_all(students, outcomes)
+        dropout_result = next(
+            r for r in report["results"] if r["test"] == "dropout_rate"
+        )
+        assert dropout_result["passed"] is True
+        assert dropout_result["metric"] == "Range check"
+
+    def test_dropout_range_fail(self):
+        """Observed dropout outside range fails."""
+        ref = ReferenceStatistics(dropout_range=(0.60, 0.80))
+        v = SyntheticDataValidator(reference=ref)
+        students, outcomes = self._make_data(n=30, n_dropout=10)  # ~33%
+        report = v.validate_all(students, outcomes)
+        dropout_result = next(
+            r for r in report["results"] if r["test"] == "dropout_rate"
+        )
+        assert dropout_result["passed"] is False
+
+    def test_dropout_range_backward_compat(self):
+        """Without dropout_range, existing z-test behavior is preserved."""
+        ref = ReferenceStatistics()  # no dropout_range
+        v = SyntheticDataValidator(reference=ref)
+        students, outcomes = self._make_data(n=30, n_dropout=10)
+        report = v.validate_all(students, outcomes)
+        dropout_result = next(
+            r for r in report["results"] if r["test"] == "dropout_rate"
+        )
+        assert dropout_result["metric"] == "Proportion Z-test"

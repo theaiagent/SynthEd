@@ -12,12 +12,14 @@ from __future__ import annotations
 import json
 import logging
 import time
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
 from . import __version__
 from .agents.persona import PersonaConfig
 from .agents.factory import StudentFactory
+from .calibration import CalibrationMap
 from .simulation.environment import ODLEnvironment
 from .simulation.engine import SimulationEngine
 from .data_output.exporter import DataExporter
@@ -51,6 +53,7 @@ class SynthEdPipeline:
         seed: int = 42,
         n_semesters: int = 1,
         carry_over_config: Any | None = None,
+        target_dropout_range: tuple[float, float] | None = None,
     ):
         self.persona_config = persona_config or PersonaConfig()
         self.environment = environment or ODLEnvironment()
@@ -60,6 +63,12 @@ class SynthEdPipeline:
         self.seed = seed
         self.n_semesters = n_semesters
         self.carry_over_config = carry_over_config
+        self.target_dropout_range = target_dropout_range
+        self._calibration_estimate = None
+
+        # Apply calibration when a target dropout range is provided
+        if target_dropout_range is not None:
+            self._apply_calibration(target_dropout_range, n_semesters)
 
         # Initialize components
         self.llm = LLMClient(model=llm_model) if use_llm else None
@@ -67,6 +76,70 @@ class SynthEdPipeline:
         self.engine = SimulationEngine(environment=self.environment, llm_client=self.llm, seed=seed)
         self.exporter = DataExporter(output_dir=str(self.output_dir))
         self.validator = SyntheticDataValidator(reference=self.reference)
+
+    def _apply_calibration(
+        self,
+        target_range: tuple[float, float],
+        n_semesters: int,
+    ) -> None:
+        """Use CalibrationMap to set dropout_base_rate from target dropout range."""
+        calibration_map = CalibrationMap()
+        estimate = calibration_map.estimate_from_range(target_range, n_semesters)
+        self._calibration_estimate = estimate
+
+        # Update PersonaConfig with calibrated dropout_base_rate
+        self.persona_config = replace(
+            self.persona_config,
+            dropout_base_rate=estimate.estimated_dropout_base_rate,
+        )
+
+        # Update ReferenceStatistics with target range for validation
+        midpoint = (target_range[0] + target_range[1]) / 2
+        self.reference = replace(
+            self.reference,
+            dropout_rate=midpoint,
+            dropout_range=target_range,
+        )
+
+        logger.info(
+            "Calibration: targeting %s dropout, estimated base_rate=%.2f (confidence: %s)",
+            target_range,
+            estimate.estimated_dropout_base_rate,
+            estimate.confidence,
+        )
+
+    @classmethod
+    def from_profile(
+        cls,
+        profile_name: str,
+        output_dir: str = "./output",
+        use_llm: bool = False,
+        llm_model: str = "gpt-4o-mini",
+    ) -> SynthEdPipeline:
+        """Create a pipeline from a named benchmark profile.
+
+        The profile's ``expected_dropout_range`` is used as the
+        ``target_dropout_range`` for calibration.
+        """
+        from .benchmarks.profiles import PROFILES
+
+        if profile_name not in PROFILES:
+            available = ", ".join(PROFILES.keys())
+            raise ValueError(
+                f"Unknown profile '{profile_name}'. Available: {available}"
+            )
+
+        profile = PROFILES[profile_name]
+        return cls(
+            persona_config=profile.persona_config,
+            environment=profile.environment,
+            reference_stats=profile.reference_stats,
+            output_dir=output_dir,
+            use_llm=use_llm,
+            llm_model=llm_model,
+            seed=profile.seed,
+            target_dropout_range=profile.expected_dropout_range,
+        )
 
     def run(
         self,
@@ -98,6 +171,16 @@ class SynthEdPipeline:
             "timing": {},
         }
 
+        # Include calibration info when dropout targeting is active
+        if self._calibration_estimate is not None:
+            est = self._calibration_estimate
+            report["dropout_targeting"] = {
+                "target_range": self.target_dropout_range,
+                "estimated_base_rate": est.estimated_dropout_base_rate,
+                "confidence": est.confidence,
+                "n_semesters": est.n_semesters,
+            }
+
         # Stage 1: Generate Population
         logger.info("[1/4] Generating %d student personas...", n_students)
         t0 = time.time()
@@ -122,11 +205,22 @@ class SynthEdPipeline:
             runner = MultiSemesterRunner(
                 self.engine, self.n_semesters,
                 carry_over=self.carry_over_config,
+                target_dropout_range=self.target_dropout_range,
             )
             result = runner.run(students)
             records, states, network = (
                 result.all_records, result.final_states, result.final_network,
             )
+            if result.interim_reports:
+                report["interim_reports"] = [
+                    {
+                        "semester": ir.semester,
+                        "cumulative_dropout_rate": ir.cumulative_dropout_rate,
+                        "target_range": ir.target_range,
+                        "status": ir.status,
+                    }
+                    for ir in result.interim_reports
+                ]
         report["timing"]["simulation_sec"] = round(time.time() - t0, 2)
         report["simulation_summary"] = self.engine.summary_statistics(states)
         report["network_summary"] = network.network_statistics(states)

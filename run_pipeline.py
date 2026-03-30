@@ -16,7 +16,6 @@ from pathlib import Path
 from synthed.utils.log_config import configure_logging
 
 from synthed.agents.persona import PersonaConfig
-from synthed.simulation.environment import ODLEnvironment
 from synthed.validation.validator import ReferenceStatistics
 from synthed.pipeline import SynthEdPipeline
 
@@ -30,6 +29,10 @@ def main():
     parser.add_argument("--model", type=str, default="gpt-4o-mini", help="LLM model (default: gpt-4o-mini)")
     parser.add_argument("--config", type=str, default=None, help="Path to JSON config file")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose/debug logging")
+    parser.add_argument(
+        "--target-dropout", type=float, nargs=2, metavar=("LOWER", "UPPER"),
+        help="Target dropout range, e.g. --target-dropout 0.40 0.60",
+    )
     args = parser.parse_args()
 
     configure_logging(verbose=args.verbose)
@@ -52,10 +55,22 @@ def main():
         use_llm = args.llm
         llm_model = args.model
 
+    # Parse and validate target dropout range from CLI
+    target_dropout_range = None
+    if args.target_dropout:
+        lo, hi = args.target_dropout
+        if not (0.0 < lo < hi < 1.0):
+            parser.error(
+                f"--target-dropout: expected 0 < LOWER < UPPER < 1, got {lo} {hi}"
+            )
+        target_dropout_range = (lo, hi)
+
     print("=" * 60)
     print("  SynthEd: Agent-Based Synthetic Educational Data Generator")
     print("=" * 60)
     print(f"  Students: {n_students} | Seed: {seed} | LLM: {'ON' if use_llm else 'OFF'}")
+    if target_dropout_range:
+        print(f"  Target dropout: {target_dropout_range[0]:.0%}-{target_dropout_range[1]:.0%}")
     print(f"  Output: {args.output}")
     print("=" * 60 + "\n")
 
@@ -66,6 +81,7 @@ def main():
         llm_model=llm_model,
         use_llm=use_llm,
         seed=seed,
+        target_dropout_range=target_dropout_range,
     )
 
     report = pipeline.run(n_students=n_students, enrich_personas=use_llm)
@@ -79,6 +95,12 @@ def main():
     print(f"  Population: {n_students} students")
     print(f"  Interactions: {len(report.get('exported_files', {}))} files exported")
     print(f"  Dropout rate: {sim.get('dropout_rate', 0):.1%}")
+    if "dropout_targeting" in report:
+        dt = report["dropout_targeting"]
+        lo, hi = dt["target_range"]
+        actual = sim.get("dropout_rate", 0)
+        in_range = lo <= actual <= hi
+        print(f"  Target range: {lo:.0%}-{hi:.0%} ({'HIT' if in_range else 'MISS'})")
     print(f"  Validation: {val.get('overall_quality', 'N/A')}")
     print(f"  Tests: {val.get('passed', 0)}/{val.get('total_tests', 0)} passed")
     timing = report.get("timing", {})

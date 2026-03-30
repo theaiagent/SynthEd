@@ -37,6 +37,7 @@ class BenchmarkGenerator:
             reference_stats=profile.reference_stats,
             output_dir=out,
             seed=profile.seed,
+            target_dropout_range=profile.expected_dropout_range,
         )
 
         report = pipeline.run(n_students=profile.n_students)

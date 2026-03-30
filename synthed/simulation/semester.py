@@ -80,6 +80,15 @@ class SemesterResult:
     network: SocialNetwork
 
 
+@dataclass(frozen=True)
+class SemesterInterimReport:
+    """Progress report generated after each semester when a target range is set."""
+    semester: int
+    cumulative_dropout_rate: float
+    target_range: tuple[float, float] | None
+    status: str  # "on_track", "below_target", "above_target"
+
+
 @dataclass
 class MultiSemesterResult:
     """Aggregated result from all semesters."""
@@ -87,6 +96,7 @@ class MultiSemesterResult:
     all_records: list[InteractionRecord]
     final_states: dict[str, SimulationState]
     final_network: SocialNetwork
+    interim_reports: list[SemesterInterimReport]
 
 
 # ─────────────────────────────────────────────
@@ -114,6 +124,7 @@ class MultiSemesterRunner:
         n_semesters: int,
         weeks_per_semester: int | None = None,
         carry_over: SemesterCarryOverConfig | None = None,
+        target_dropout_range: tuple[float, float] | None = None,
     ):
         if n_semesters < 2:
             raise ValueError(
@@ -123,6 +134,7 @@ class MultiSemesterRunner:
         self.n_semesters = n_semesters
         self.weeks_per_semester = weeks_per_semester or engine.env.total_weeks
         self.carry_over = carry_over or SemesterCarryOverConfig()
+        self.target_dropout_range = target_dropout_range
 
     def run(
         self, students: list[StudentPersona],
@@ -135,6 +147,8 @@ class MultiSemesterRunner:
         """
         semester_results: list[SemesterResult] = []
         all_records: list[InteractionRecord] = []
+        interim_reports: list[SemesterInterimReport] = []
+        total_students = len(students)
 
         active_students = list(students)
         state_overrides: dict[str, dict[str, Any]] | None = None
@@ -175,6 +189,20 @@ class MultiSemesterRunner:
             ))
             all_records.extend(records)
 
+            # Compute interim report when a target range is configured
+            if self.target_dropout_range is not None:
+                interim = _build_interim_report(
+                    semester_num, semester_results, total_students,
+                    self.target_dropout_range,
+                )
+                interim_reports.append(interim)
+                logger.info(
+                    "  Semester %d interim: cumulative dropout %.1f%% — %s",
+                    semester_num,
+                    interim.cumulative_dropout_rate * 100,
+                    interim.status,
+                )
+
             # After the last semester, no carry-over needed
             if sem_idx == self.n_semesters - 1:
                 break
@@ -203,6 +231,7 @@ class MultiSemesterRunner:
             all_records=all_records,
             final_states=final_states,
             final_network=final_network,
+            interim_reports=interim_reports,
         )
 
     @staticmethod
@@ -345,3 +374,35 @@ def _build_state_overrides(
         "exhaustion": new_exhaustion,
         "coi_state": new_coi,
     }
+
+
+def _build_interim_report(
+    semester_num: int,
+    semester_results: list[SemesterResult],
+    total_students: int,
+    target_range: tuple[float, float],
+) -> SemesterInterimReport:
+    """Compute cumulative dropout rate and status after a semester."""
+    # Count unique dropped-out students across all semesters so far
+    dropped_ids: set[str] = set()
+    for sem_result in semester_results:
+        for sid, state in sem_result.states.items():
+            if state.has_dropped_out:
+                dropped_ids.add(sid)
+
+    cumulative_rate = len(dropped_ids) / total_students if total_students > 0 else 0.0
+    lo, hi = target_range
+
+    if cumulative_rate < lo:
+        status = "below_target"
+    elif cumulative_rate > hi:
+        status = "above_target"
+    else:
+        status = "on_track"
+
+    return SemesterInterimReport(
+        semester=semester_num,
+        cumulative_dropout_rate=round(cumulative_rate, 4),
+        target_range=target_range,
+        status=status,
+    )
