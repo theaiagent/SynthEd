@@ -5,14 +5,12 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 from typing import TYPE_CHECKING
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
-import pytest
 
 from synthed.agents.factory import StudentFactory
-from synthed.agents.persona import StudentPersona
 from synthed.data_output.exporter import DataExporter
-from synthed.utils.llm import LLMClient, LLMError, LLMResponseError
+from synthed.utils.llm import LLMClient, LLMError
 
 if TYPE_CHECKING:
     pass
