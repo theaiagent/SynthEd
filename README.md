@@ -255,7 +255,7 @@ SynthEd/
 │   │   ├── log_config.py        # Logging configuration
 │   │   └── validation.py        # Input validation utilities
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                        # 52 pytest tests across 9 files
+├── tests/                        # 97 pytest tests across 14 files
 ├── configs/
 │   └── default.json
 ├── run_pipeline.py               # CLI entry point
@@ -302,7 +302,7 @@ Extend `SimulationEngine._simulate_student_week()` to add new behavioral channel
 
 ## Test Suite
 
-SynthEd includes 52 pytest tests across 9 test files, covering all theory modules, simulation mechanics, LLM enrichment, and the full pipeline.
+SynthEd includes 97 pytest tests across 14 test files, covering all theory modules, simulation mechanics, LLM enrichment, and the full pipeline.
 
 ```bash
 python -m pytest tests/ -v --tb=short
@@ -318,7 +318,12 @@ python -m pytest tests/ -v --tb=short
 | `test_validator.py` | 3 | Report structure, z-test symmetry, quality grade thresholds |
 | `test_pipeline_integration.py` | 4 | Full pipeline run, output file creation, validation results, input rejection |
 | `test_theories.py` | 9 | One test per theory module (Tinto, Bean-Metzner, Moore, Rovai, Garrison, Bäulke, Kember, SDT, Gonzalez) |
-| `test_llm_enrichment.py` | 6 | Mock LLM enrichment, backstory export, error handling, invalid JSON, empty backstory rejection |
+| `test_llm_enrichment.py` | 8 | Mock LLM enrichment, backstory export, error handling, cost report, custom pricing |
+| `test_llm_client.py` | 16 | LLMClient init, chat, retry, cache, JSON parsing, cost tracking, error handling |
+| `test_semester.py` | 5 | Multi-semester carry-over, dropout persistence, engagement recovery |
+| `test_sensitivity.py` | 2 | OAT parameter sweep, tornado chart data |
+| `test_benchmarks.py` | 4 | Profiles registry, generator, error handling |
+| `test_utils.py` | 11 | Validation helpers (range, int, distribution), logging config |
 
 CI runs tests across **Python 3.10, 3.11, and 3.12** on every push and pull request via [GitHub Actions](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml).
 
