@@ -374,7 +374,7 @@ MIT License. See [LICENSE](LICENSE) for details.
 |-------------|------|
 | [Halis Aykut Cosgun](https://github.com/theaiagent) | Project lead, system architecture, development, simulation design, theoretical framework design |
 | [Evrim Genc Kumtepe](https://avesis.anadolu.edu.tr/egkumtepe) | Research advisor |
-| [Claude](https://claude.ai) (Anthropic) | AI pair programmer — architecture, implementation, testing, code review |
+| [Claude](https://claude.ai) (Anthropic) | AI pair programmer — implementation, testing, code review |
 
 ## Citation
 
