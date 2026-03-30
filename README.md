@@ -3,7 +3,7 @@
 [![CI](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml/badge.svg)](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
-[![Tests: 46 passed](https://img.shields.io/badge/tests-46%20passed-brightgreen.svg)](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml)
+[![Tests: 46 passed](https://img.shields.io/badge/tests-46%20passed-brightgreen.svg)](#test-suite)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![Status: Active Development](https://img.shields.io/badge/status-active%20development-orange.svg)](https://github.com/theaiagent/SynthEd/releases)
 
@@ -309,6 +309,27 @@ If you use SynthEd in your research, please cite:
   note = {GitHub repository: \url{https://github.com/theaiagent/SynthEd}}
 }
 ```
+
+## Test Suite
+
+SynthEd includes 46 pytest tests across 9 test files, covering all theory modules, simulation mechanics, and the full pipeline.
+
+```bash
+python -m pytest tests/ -v --tb=short
+```
+
+| Test File | Tests | Coverage |
+|-----------|-------|----------|
+| `test_persona.py` | 7 | BigFive validation, engagement/dropout bounds, motivation comparison, dict roundtrip |
+| `test_factory.py` | 4 | Population count, seed determinism, attribute ranges, summary keys |
+| `test_engine.py` | 8 | Return types, state completeness, engagement bounds, dropout phases, risk cohort differentiation |
+| `test_social_network.py` | 6 | Link creation/strengthening, degree counting, peer influence, link decay, statistics |
+| `test_environment.py` | 4 | Default courses, exam week detection, positive events, course lookup |
+| `test_validator.py` | 3 | Report structure, z-test symmetry, quality grade thresholds |
+| `test_pipeline_integration.py` | 4 | Full pipeline run, output file creation, validation results, input rejection |
+| `test_theories.py` | 9 | One test per theory module (Tinto, Bean-Metzner, Moore, Rovai, Garrison, Bäulke, Kember, SDT, Gonzalez) |
+
+CI runs tests across **Python 3.10, 3.11, and 3.12** on every push and pull request via [GitHub Actions](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml).
 
 ## Legal Disclaimer
 
