@@ -239,7 +239,7 @@ SynthEd/
 │   │       ├── baulke.py        # 6-phase dropout model (Bäulke et al., 2022)
 │   │       ├── epstein_axtell.py # Peer influence + contagion
 │   │       ├── positive_events.py # Positive environmental events
-│   │       └── gonzalez_exhaustion.py # Academic exhaustion mediator
+│   │       └── academic_exhaustion.py # Academic exhaustion mediator
 │   ├── data_output/
 │   │   └── exporter.py          # CSV dataset generation
 │   ├── validation/

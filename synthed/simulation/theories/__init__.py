@@ -11,7 +11,7 @@ from .epstein_axtell import EpsteinAxtellPeerInfluence
 from .rovai import RovaiPersistence
 from .sdt_motivation import SDTMotivationDynamics, SDTNeedSatisfaction
 from .positive_events import PositiveEventHandler
-from .gonzalez_exhaustion import GonzalezExhaustion, ExhaustionState
+from .academic_exhaustion import GonzalezExhaustion, ExhaustionState
 
 __all__ = [
     "TintoIntegration",
