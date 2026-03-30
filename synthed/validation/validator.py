@@ -37,7 +37,7 @@ class ReferenceStatistics:
     # Academic
     gpa_mean: float = 2.3
     gpa_std: float = 0.8
-    dropout_rate: float = 0.80
+    dropout_rate: float = 0.50
 
     # Engagement (if available)
     avg_weekly_logins: float | None = None
