@@ -62,7 +62,8 @@ Educational data mining research faces three persistent challenges:
 │              │  ├ Distributions │                                │
 │              │  ├ Correlations  │                                │
 │              │  ├ Temporal      │                                │
-│              │  └ Privacy       │                                │
+│              │  ├ Privacy       │                                │
+│              │  └ Backstory     │                                │
 │              └──────────────────┘                                │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -255,7 +256,7 @@ SynthEd/
 │   │   ├── log_config.py        # Logging configuration
 │   │   └── validation.py        # Input validation utilities
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                        # 97 pytest tests across 14 files
+├── tests/                        # 132 pytest tests across 16 files
 ├── configs/
 │   └── default.json
 ├── run_pipeline.py               # CLI entry point
@@ -302,7 +303,7 @@ Extend `SimulationEngine._simulate_student_week()` to add new behavioral channel
 
 ## Test Suite
 
-SynthEd includes 97 pytest tests across 14 test files, covering all theory modules, simulation mechanics, LLM enrichment, and the full pipeline.
+SynthEd includes 132 pytest tests across 16 test files, covering all theory modules, simulation mechanics, LLM enrichment, and the full pipeline.
 
 ```bash
 python -m pytest tests/ -v --tb=short
@@ -324,6 +325,8 @@ python -m pytest tests/ -v --tb=short
 | `test_sensitivity.py` | 2 | OAT parameter sweep, tornado chart data |
 | `test_benchmarks.py` | 4 | Profiles registry, generator, error handling |
 | `test_utils.py` | 11 | Validation helpers (range, int, distribution), logging config |
+| `test_network_scaling.py` | 4 | Network degree cap, sampling threshold, backward compatibility, large-scale bounds |
+| `test_coverage_boost.py` | 26 | Validator edge cases, pipeline branches, exporter skips, environment seasons, Bäulke phases, positive events |
 
 CI runs tests across **Python 3.10, 3.11, and 3.12** on every push and pull request via [GitHub Actions](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml).
 
