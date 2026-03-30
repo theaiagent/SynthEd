@@ -69,6 +69,10 @@ class BigFiveTraits:
 # Population Configuration
 # ─────────────────────────────────────────────
 
+# The dropout_base_rate at which _calculate_derived_attributes() was calibrated.
+# Referenced by factory.py to compute scaling factors.
+_CALIBRATED_DROPOUT_BASE_RATE: float = 0.80
+
 @dataclass
 class PersonaConfig:
     """Configuration for population-level persona generation."""
@@ -119,9 +123,9 @@ class PersonaConfig:
         default_factory=lambda: {"visual": 0.35, "auditory": 0.20, "reading": 0.30, "kinesthetic": 0.15}
     )
 
-    # Target outcome — ODL dropout rates range 40-80% in literature
+    # Target outcome — ODL dropout rates range 40-90% in literature
     # (Bağrıacık Yılmaz & Karataş, 2022; Shaikh & Asif, 2022)
-    dropout_base_rate: float = 0.80
+    dropout_base_rate: float = _CALIBRATED_DROPOUT_BASE_RATE
 
     def __post_init__(self):
         from ..utils.validation import validate_range, validate_probability_distribution
@@ -131,7 +135,7 @@ class PersonaConfig:
         validate_range(self.prior_gpa_mean, 0.0, 4.0, "prior_gpa_mean")
         validate_range(self.digital_literacy_mean, 0.0, 1.0, "digital_literacy_mean")
         validate_range(self.self_regulation_mean, 0.0, 1.0, "self_regulation_mean")
-        validate_range(self.dropout_base_rate, 0.0, 1.0, "dropout_base_rate")
+        validate_range(self.dropout_base_rate, 0.01, 1.0, "dropout_base_rate")
         validate_probability_distribution(self.gender_distribution, "gender_distribution")
         validate_probability_distribution(self.motivation_levels, "motivation_levels")
         validate_probability_distribution(self.socioeconomic_distribution, "socioeconomic_distribution")
@@ -221,6 +225,7 @@ class StudentPersona:
     # ── Derived Behavioral Probabilities ──
     base_engagement_probability: float = 0.0
     base_dropout_risk: float = 0.0
+    _dropout_risk_scale: float = 1.0  # population-level calibration factor
 
     # ── LLM-generated backstory (optional) ──
     backstory: str = ""
@@ -321,8 +326,9 @@ class StudentPersona:
         # Economic rationality (Kember) — 10%
         econ_risk = (1 - self.perceived_cost_benefit) * 0.10
 
+        raw_risk = ext_risk + int_risk + char_risk + skill_risk + econ_risk
         self.base_dropout_risk = min(max(
-            ext_risk + int_risk + char_risk + skill_risk + econ_risk, 0.02
+            raw_risk * self._dropout_risk_scale, 0.02
         ), 0.90)
 
     @staticmethod

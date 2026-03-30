@@ -1,6 +1,12 @@
 """Tests for StudentFactory population generation."""
 
+from dataclasses import replace
+
+import numpy as np
+import pytest
+
 from synthed.agents.factory import StudentFactory
+from synthed.agents.persona import PersonaConfig
 
 
 class TestStudentFactory:
@@ -45,3 +51,50 @@ class TestStudentFactory:
             assert 0.02 <= p.base_dropout_risk <= 0.90
             assert p.personality.openness >= 0.0
             assert p.personality.openness <= 1.0
+
+
+class TestDropoutScaling:
+    """Tests for dropout_base_rate → base_dropout_risk scaling."""
+
+    def test_scaling_identity_at_default(self):
+        """Default dropout_base_rate (0.80) produces scale=1.0, no change."""
+        unscaled = StudentFactory(seed=42).generate_population(50)
+        default = StudentFactory(PersonaConfig(dropout_base_rate=0.80), seed=42).generate_population(50)
+        for u, d in zip(unscaled, default):
+            assert abs(u.base_dropout_risk - d.base_dropout_risk) < 1e-10
+
+    def test_scaling_increases_risk(self):
+        """Higher dropout_base_rate produces higher mean risk."""
+        default = StudentFactory(seed=42).generate_population(200)
+        high = StudentFactory(PersonaConfig(dropout_base_rate=0.90), seed=42).generate_population(200)
+        mean_default = np.mean([p.base_dropout_risk for p in default])
+        mean_high = np.mean([p.base_dropout_risk for p in high])
+        assert mean_high > mean_default
+
+    def test_scaling_decreases_risk(self):
+        """Lower dropout_base_rate produces lower mean risk."""
+        default = StudentFactory(seed=42).generate_population(200)
+        low = StudentFactory(PersonaConfig(dropout_base_rate=0.40), seed=42).generate_population(200)
+        mean_default = np.mean([p.base_dropout_risk for p in default])
+        mean_low = np.mean([p.base_dropout_risk for p in low])
+        assert mean_low < mean_default
+
+    def test_scaling_respects_bounds(self):
+        """Scaled values stay within [0.02, 0.90] even at extreme rates."""
+        high = StudentFactory(PersonaConfig(dropout_base_rate=0.95), seed=42).generate_population(200)
+        low = StudentFactory(PersonaConfig(dropout_base_rate=0.10), seed=42).generate_population(200)
+        for p in high + low:
+            assert 0.02 <= p.base_dropout_risk <= 0.90
+
+    def test_scaling_survives_replace(self):
+        """Scale is preserved after dataclasses.replace() (e.g. LLM enrichment)."""
+        factory = StudentFactory(PersonaConfig(dropout_base_rate=0.90), seed=42)
+        personas = factory.generate_population(10)
+        for p in personas:
+            p2 = replace(p, backstory="test backstory")
+            assert abs(p.base_dropout_risk - p2.base_dropout_risk) < 1e-10
+
+    def test_dropout_base_rate_zero_rejected(self):
+        """dropout_base_rate=0.0 raises ValueError at config construction."""
+        with pytest.raises(ValueError):
+            PersonaConfig(dropout_base_rate=0.0)

@@ -14,7 +14,9 @@ from typing import Any
 
 import numpy as np
 
-from .persona import StudentPersona, BigFiveTraits, PersonaConfig
+from dataclasses import replace
+
+from .persona import StudentPersona, BigFiveTraits, PersonaConfig, _CALIBRATED_DROPOUT_BASE_RATE
 from ..utils.llm import LLMClient, LLMError, LLMResponseError
 
 logger = logging.getLogger(__name__)
@@ -66,7 +68,21 @@ class StudentFactory:
             if enrich_with_llm and self.llm:
                 persona = self._enrich_with_llm(persona)
             personas.append(persona)
-        return personas
+
+        return self._apply_dropout_scaling(personas)
+
+    def _apply_dropout_scaling(
+        self, personas: list[StudentPersona],
+    ) -> list[StudentPersona]:
+        """Scale base_dropout_risk proportionally to dropout_base_rate.
+
+        Uses _dropout_risk_scale field on StudentPersona so that
+        dataclasses.replace() preserves the scaling through __post_init__.
+        """
+        scale = self.config.dropout_base_rate / _CALIBRATED_DROPOUT_BASE_RATE
+        if abs(scale - 1.0) < 1e-9:
+            return personas
+        return [replace(p, _dropout_risk_scale=scale) for p in personas]
 
     def _generate_single(self, index: int) -> StudentPersona:
         cfg = self.config
@@ -335,7 +351,6 @@ class StudentFactory:
             )
             return persona
 
-        from dataclasses import replace
         return replace(persona, backstory=backstory)
 
     def population_summary(self, personas: list[StudentPersona]) -> dict[str, Any]:
