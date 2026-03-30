@@ -31,12 +31,13 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          python -m pytest tests/ -v --tb=short --cov=synthed --cov-report=xml --cov-report=term-missing --junitxml=test-results.xml
+          python -m pytest tests/ -v --tb=short --cov=synthed --cov-branch --cov-report=xml --cov-report=term-missing --junitxml=test-results.xml
 
       - name: Upload coverage to Codecov
         if: matrix.python-version == '3.12'
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v5
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.xml
           fail_ci_if_error: false
 
