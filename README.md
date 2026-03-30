@@ -1,8 +1,8 @@
 # SynthEd
 
 [![CI](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml/badge.svg)](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![pytest](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/theaiagent/cbf1abd6cdc2134e7e26374de286f2c9/raw/synthed-test-badge.json)](#test-suite)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![Status: Active Development](https://img.shields.io/badge/status-active%20development-orange.svg)](https://github.com/theaiagent/SynthEd/releases)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19334118.svg)](https://doi.org/10.5281/zenodo.19334118)
