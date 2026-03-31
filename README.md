@@ -76,6 +76,10 @@ Educational data mining research faces three persistent challenges:
 - **Multi-Level Validation**: Automatic statistical comparison against reference data using KS-tests, chi-squared tests, correlation checks, and temporal coherence analysis.
 - **Optional LLM Enrichment**: Use GPT-4o-mini to generate narrative backstories with automatic retry, validation, and persona-attribute consistency checks (off by default — zero API cost in rule-based mode). Backstories provide researchers with human-readable explanations of *why* each synthetic student behaves the way they do, making datasets more interpretable for presentations, publications, and qualitative analysis. In future versions, backstories will serve as agent context for LLM-driven behavioral simulation (realistic forum posts, assignment text).
 - **Privacy by Design**: Synthetic agents are fictional constructs with no mapping to real individuals.
+- **Configurable Dropout Targeting**: Specify `target_dropout_range=(0.40, 0.55)` as a single control point — the system automatically estimates simulation parameters via calibration mapping and validates results against the target range.
+- **Dual ID System**: Each student has a UUIDv7 `id` (time-sortable, DB/GraphRAG optimized) and a sequential `display_id` (S-0001) for human-readable CSV output and charts.
+- **Unavoidable Withdrawal Events**: Low-probability life events (serious illness, death, forced relocation, career change) that force withdrawal independent of academic engagement. Configurable per-semester rate (default 0.3%).
+- **GPA Computation**: Cumulative GPA (4.0 scale) computed from assignment and exam quality scores, carried across multi-semester runs. Reported in `outcomes.csv` as `final_gpa`.
 
 ## Quick Start
 
@@ -98,6 +102,9 @@ python run_pipeline.py --n 500
 
 # With config file
 python run_pipeline.py --config configs/default.json
+
+# Target specific dropout range
+python run_pipeline.py --n 300 --target-dropout 0.40 0.55
 ```
 
 ### With LLM Enrichment (Optional)
@@ -118,6 +125,18 @@ report = pipeline.run(n_students=300)
 
 print(f"Dropout rate: {report['simulation_summary']['dropout_rate']:.1%}")
 print(f"Validation: {report['validation']['summary']['overall_quality']}")
+```
+
+```python
+# Target a specific dropout range
+pipeline = SynthEdPipeline(
+    output_dir="./targeted",
+    seed=42,
+    target_dropout_range=(0.40, 0.55),  # system auto-calibrates
+)
+report = pipeline.run(n_students=300)
+print(f"Dropout: {report['simulation_summary']['dropout_rate']:.1%}")
+print(f"Mean GPA: {report['simulation_summary']['mean_final_gpa']:.2f}")
 ```
 
 ### Multi-Semester Simulation
@@ -153,13 +172,19 @@ report = gen.generate("mega_university", output_dir="./mega_output")
 
 Custom profiles can be added to `synthed/benchmarks/profiles.py`.
 
+```python
+# Create pipeline from a benchmark profile
+pipeline = SynthEdPipeline.from_profile("high_dropout_developing")
+report = pipeline.run(n_students=500)
+```
+
 ## Output Datasets
 
 | File | Description | Rows | Use Case |
 |------|-------------|------|----------|
-| `students.csv` | Initial/baseline persona attributes (Big Five, motivation, self-efficacy, etc.) | 1 per student | Feature engineering, clustering |
+| `students.csv` | Initial persona attributes (Big Five, motivation, self-efficacy, etc.) with UUIDv7 `student_id` and sequential `display_id` | 1 per student | Feature engineering, clustering |
 | `interactions.csv` | Timestamped LMS events (logins, posts, submissions) | ~50-100 per student/week | Sequence modeling, engagement analysis |
-| `outcomes.csv` | Dropout status, final engagement, trend, CoI presences, network degree | 1 per student | Classification, survival analysis |
+| `outcomes.csv` | Dropout status, withdrawal reason, final GPA, engagement, trend, CoI presences, network degree | 1 per student | Classification, survival analysis |
 | `weekly_engagement.csv` | Week-by-week engagement scores | 1 per student | Time series, early warning systems |
 | `pipeline_report.json` | Full validation report and pipeline metadata | 1 | Quality assurance |
 
@@ -179,7 +204,7 @@ Quality: A (Excellent) — 17/17 tests passed
   ✓ age_distribution (KS-test)
   ✓ gender_distribution (Chi-squared)
   ✓ employment_rate (Z-test)
-  ✓ dropout_rate (Z-test)
+  ✓ dropout_rate (Range check or Z-test)
   ✓ tinto_conscientiousness_dropout (expected negative)
   ✓ bandura_self_efficacy_engagement (expected positive)
   ✓ rovai_self_regulation_engagement (expected positive)
@@ -213,6 +238,7 @@ SynthEd's persona attributes and simulation mechanics are grounded in nine estab
 | **Rovai's Composite Persistence Model** (2003) | Online/distance learning | `digital_literacy`, `self_regulation`, `time_management`, and `institutional_support_access` as persistence factors specific to ODE. |
 | **Bäulke et al. Phase-Oriented Dropout Model** (2022) | Psychology | Dropout modeled as a **phased process**: non-fit perception → thoughts of quitting → deliberation → information search → final decision. Tracked via `dropout_phase`. (Originally developed for general HE; adapted to ODE context in SynthEd.) |
 | **Agent-Based Social Simulation** (Epstein & Axtell, 1996) | Computational social science | Methodological framework for bottom-up emergent social behavior. Students form peer networks through forum co-activity; peer influence creates engagement contagion and dropout cascades as emergent phenomena. |
+| **Unavoidable Withdrawal Events** | Life-event modeling | Low-probability stochastic life events (serious illness, death, forced relocation, career change, military deployment) that force involuntary withdrawal independent of engagement or Bäulke phases. 7 event types with configurable per-semester probability. |
 
 ### Factor Clusters (Rovai, 2003)
 
@@ -261,7 +287,8 @@ SynthEd/
 │   │       ├── baulke.py        # 6-phase dropout model (Bäulke et al., 2022)
 │   │       ├── epstein_axtell.py # Peer influence + contagion
 │   │       ├── positive_events.py # Positive environmental events
-│   │       └── academic_exhaustion.py # Academic exhaustion mediator
+│   │       ├── academic_exhaustion.py # Academic exhaustion mediator
+│   │       └── unavoidable_withdrawal.py  # Life-event withdrawal (illness, relocation, death)
 │   ├── data_output/
 │   │   └── exporter.py          # CSV dataset generation
 │   ├── validation/
@@ -275,8 +302,9 @@ SynthEd/
 │   │   ├── llm.py               # OpenAI wrapper with caching, retries & cost tracking
 │   │   ├── log_config.py        # Logging configuration
 │   │   └── validation.py        # Input validation utilities
+│   ├── calibration.py             # CalibrationMap: target dropout → simulation params
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                        # 132 pytest tests across 16 files
+├── tests/                        # 177 pytest tests across 19 files
 ├── configs/
 │   └── default.json
 ├── run_pipeline.py               # CLI entry point
@@ -295,7 +323,8 @@ Create a JSON config matching your institution's demographics:
   "persona_config": {
     "age_range": [22, 60],
     "employment_rate": 0.80,
-    "dropout_base_rate": 0.75
+    "dropout_base_rate": 0.75,
+    "unavoidable_withdrawal_rate": 0.005
   },
   "reference_statistics": {
     "age_mean": 32.0,
@@ -310,20 +339,27 @@ Extend `SimulationEngine._simulate_student_week()` to add new behavioral channel
 
 ## Roadmap
 
-- [x] **Multi-Semester Simulation** — Carry-over mechanics between semesters (engagement recovery, social decay, fresh start effect)
-- [x] **Sensitivity Analysis** — OAT parameter sweeps to identify most impactful dropout predictors
-- [x] **Benchmark Datasets** — Pre-generated profiles for different ODL contexts (developing, western, corporate, mega university)
-- [x] **Academic Exhaustion** — Gonzalez et al. (2025) exhaustion mediator between stressors and dropout
-- [ ] **OULAD-Compatible Export** — Generate data in Open University Learning Analytics Dataset format (7 tables) for drop-in compatibility with existing EDM research
-- [ ] **GraphRAG Integration** — Knowledge graph-based curriculum modeling (MiroFish-inspired)
+- [x] **Multi-Semester Simulation** — Carry-over mechanics between semesters
+- [x] **Sensitivity Analysis** — OAT parameter sweeps
+- [x] **Benchmark Datasets** — 4 institutional profiles
+- [x] **Academic Exhaustion** — Gonzalez et al. (2025) exhaustion mediator
+- [x] **Configurable Dropout Targeting** — CalibrationMap with range-based validation and semester interim reports
+- [x] **UUIDv7 Student IDs** — Full UUID, time-sortable, collision-free
+- [x] **Dual ID System** — UUIDv7 `id` + sequential `display_id` (S-0001)
+- [x] **Unavoidable Withdrawal Events** — 7 life-event types with configurable per-semester probability
+- [x] **GPA Computation** — Cumulative GPA from assignment/exam quality, multi-semester carry-over
+- [ ] **GPA Feedback Loop** — Feed cumulative GPA into Kember cost-benefit and Bäulke non-fit perception
+- [ ] **OULAD-Compatible Export** — 7-table format for drop-in EDM research compatibility
+- [ ] **GraphRAG Integration** — Knowledge graph-based curriculum modeling
 - [ ] **LLM-Augmented Mode** — Generate realistic forum posts, assignment text
-- [ ] **RL Calibration** — Use [Agent Lightning](https://github.com/microsoft/agent-lightning) to optimize agent parameters against real data
+- [ ] **RL Calibration** — Agent Lightning for parameter optimization
 - [ ] **Interactive Dashboard** — Vue.js frontend for scenario exploration
 - [ ] **Parquet/Arrow Export** — For large-scale data processing
+- [ ] **PyPI Package Publication**
 
 ## Test Suite
 
-SynthEd includes 132 pytest tests across 16 test files, covering all theory modules, simulation mechanics, LLM enrichment, and the full pipeline.
+SynthEd includes 177 pytest tests across 19 test files, covering all theory modules, simulation mechanics, LLM enrichment, and the full pipeline.
 
 ```bash
 python -m pytest tests/ -v --tb=short
@@ -331,12 +367,12 @@ python -m pytest tests/ -v --tb=short
 
 | Test File | Tests | Coverage |
 |-----------|-------|----------|
-| `test_persona.py` | 8 | BigFive validation, engagement/dropout bounds, motivation comparison, dict roundtrip |
-| `test_factory.py` | 4 | Population count, seed determinism, attribute ranges, summary keys |
+| `test_persona.py` | 11 | BigFive validation, engagement/dropout bounds, motivation comparison, dict roundtrip, UUIDv7 tests |
+| `test_factory.py` | 10 | Population count, seed determinism, attribute ranges, summary keys, dropout scaling, display_id tests |
 | `test_engine.py` | 8 | Return types, state completeness, engagement bounds, dropout phases, risk cohort differentiation |
 | `test_social_network.py` | 6 | Link creation/strengthening, degree counting, peer influence, link decay, statistics |
 | `test_environment.py` | 4 | Default courses, exam week detection, positive events, course lookup |
-| `test_validator.py` | 3 | Report structure, z-test symmetry, quality grade thresholds |
+| `test_validator.py` | 6 | Report structure, z-test symmetry, quality grade thresholds, dropout range tests |
 | `test_pipeline_integration.py` | 4 | Full pipeline run, output file creation, validation results, input rejection |
 | `test_theories.py` | 9 | One test per theory module (Tinto, Bean-Metzner, Moore, Rovai, Garrison, Bäulke, Kember, SDT, Gonzalez) |
 | `test_llm_enrichment.py` | 8 | Mock LLM enrichment, backstory export, error handling, cost report, custom pricing |
@@ -347,6 +383,9 @@ python -m pytest tests/ -v --tb=short
 | `test_utils.py` | 11 | Validation helpers (range, int, distribution), logging config |
 | `test_network_scaling.py` | 4 | Network degree cap, sampling threshold, backward compatibility, large-scale bounds |
 | `test_coverage_boost.py` | 26 | Validator edge cases, pipeline branches, exporter skips, environment seasons, Bäulke phases, positive events |
+| `test_calibration.py` | 11 | CalibrationMap interpolation, clamping, confidence, range estimation |
+| `test_unavoidable_withdrawal.py` | 9 | Withdrawal probability, event types, statistical rate validation |
+| `test_gpa.py` | 8 | GPA accumulation, bounds, consistency, CSV export, face validity |
 
 CI runs tests across **Python 3.10, 3.11, and 3.12** on every push and pull request via [GitHub Actions](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml).
 
