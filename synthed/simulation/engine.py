@@ -604,6 +604,7 @@ class SimulationEngine:
             "mean_dropout_week": float(np.mean(dropout_weeks)) if dropout_weeks else None,
             "std_dropout_week": float(np.std(dropout_weeks)) if dropout_weeks else None,
             "mean_final_engagement": float(np.mean(final_engagements)) if final_engagements else None,
+            "std_final_engagement": float(np.std(final_engagements)) if final_engagements else None,
             "mean_final_gpa": mean_final_gpa,
             "retained_students": total - dropouts,
             "dropout_phase_distribution": {

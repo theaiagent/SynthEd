@@ -82,6 +82,7 @@ def run_simulation_with_overrides(
         summary = report["simulation_summary"]
         engagement = summary.get("mean_final_engagement")
         gpa = summary.get("mean_final_gpa")
+        engagement_std = summary.get("std_final_engagement")
         if engagement is None:
             logger.warning("mean_final_engagement missing from summary; defaulting to 0.0")
             engagement = 0.0
@@ -93,6 +94,7 @@ def run_simulation_with_overrides(
             "dropout_rate": summary["dropout_rate"],
             "mean_engagement": float(engagement),
             "mean_gpa": float(gpa),
+            "std_engagement": float(engagement_std) if engagement_std is not None else 0.0,
         }
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)

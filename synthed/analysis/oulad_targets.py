@@ -41,6 +41,7 @@ class OuladTargets:
     engagement_mean: float
     engagement_std: float
     engagement_median: float
+    engagement_cv: float              # coefficient of variation (std/mean), scale-independent
 
     # Demographics
     disability_rate: float
@@ -115,6 +116,7 @@ def extract_targets(oulad_dir: str | Path) -> OuladTargets:
         engagement_mean=round(float(np.mean(eng_arr)), 2),
         engagement_std=round(float(np.std(eng_arr)), 2),
         engagement_median=round(float(np.median(eng_arr)), 2),
+        engagement_cv=round(float(np.std(eng_arr) / np.mean(eng_arr)), 4) if float(np.mean(eng_arr)) > 0 else 0.0,
         disability_rate=round(disability_rate, 4),
         gender_male_rate=round(male_rate, 4),
         n_students=n_total,

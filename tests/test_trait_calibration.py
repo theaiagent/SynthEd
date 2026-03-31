@@ -138,6 +138,13 @@ class TestOuladTargets:
         targets = extract_targets(mock_oulad_dir)
         assert targets.gender_male_rate == 0.5  # 5/10
 
+    def test_engagement_cv(self, mock_oulad_dir):
+        """CV = std/mean, scale-independent engagement shape metric."""
+        targets = extract_targets(mock_oulad_dir)
+        assert targets.engagement_cv > 0
+        expected_cv = targets.engagement_std / targets.engagement_mean
+        assert abs(targets.engagement_cv - expected_cv) < 0.001
+
 
 # ─────────────────────────────────────────────
 # Parameter selection tests
@@ -186,7 +193,7 @@ class TestCalibratorInit:
             overall_dropout_rate=0.31, module_dropout_rates={},
             score_mean=75.8, score_std=18.8, score_median=80.0,
             gpa_mean=3.03, gpa_std=0.75,
-            engagement_mean=19.7, engagement_std=11.8, engagement_median=17.0,
+            engagement_mean=19.7, engagement_std=11.8, engagement_median=17.0, engagement_cv=0.5990,
             disability_rate=0.097, gender_male_rate=0.55, n_students=32593,
         )
         cal = TraitCalibrator(targets, n_students=10)
@@ -197,7 +204,7 @@ class TestCalibratorInit:
             overall_dropout_rate=0.31, module_dropout_rates={},
             score_mean=75.8, score_std=18.8, score_median=80.0,
             gpa_mean=3.03, gpa_std=0.75,
-            engagement_mean=19.7, engagement_std=11.8, engagement_median=17.0,
+            engagement_mean=19.7, engagement_std=11.8, engagement_median=17.0, engagement_cv=0.5990,
             disability_rate=0.097, gender_male_rate=0.55, n_students=32593,
         )
         subset = (
@@ -224,7 +231,7 @@ class TestCalibratorIntegration:
             overall_dropout_rate=0.31, module_dropout_rates={},
             score_mean=75.8, score_std=18.8, score_median=80.0,
             gpa_mean=3.03, gpa_std=0.75,
-            engagement_mean=19.7, engagement_std=11.8, engagement_median=17.0,
+            engagement_mean=19.7, engagement_std=11.8, engagement_median=17.0, engagement_cv=0.5990,
             disability_rate=0.097, gender_male_rate=0.55, n_students=32593,
         )
         subset = (
@@ -255,7 +262,7 @@ class TestCalibratorIntegration:
             overall_dropout_rate=0.31, module_dropout_rates={},
             score_mean=75.8, score_std=18.8, score_median=80.0,
             gpa_mean=3.03, gpa_std=0.75,
-            engagement_mean=19.7, engagement_std=11.8, engagement_median=17.0,
+            engagement_mean=19.7, engagement_std=11.8, engagement_median=17.0, engagement_cv=0.5990,
             disability_rate=0.097, gender_male_rate=0.55, n_students=32593,
         )
         subset = (

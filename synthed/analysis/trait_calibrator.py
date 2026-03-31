@@ -190,8 +190,15 @@ class TraitCalibrator:
         gpa_loss = normalized_squared_error(
             metrics["mean_gpa"], self.targets.gpa_mean,
         )
+
+        # Engagement: compare CV (coefficient of variation) — scale-independent.
+        # SynthEd engagement is 0-1 probability, OULAD is clicks/day.
+        # Absolute values are incomparable; CV captures distribution shape.
+        mean_eng = metrics["mean_engagement"]
+        std_eng = metrics["std_engagement"]
+        synthed_cv = std_eng / mean_eng if mean_eng > 0 else 0.0
         engagement_loss = normalized_squared_error(
-            metrics["mean_engagement"], self.targets.engagement_mean,
+            synthed_cv, self.targets.engagement_cv,
         )
 
         composite = (
