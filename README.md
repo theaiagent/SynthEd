@@ -98,7 +98,9 @@ flowchart TD
 - **Configurable Dropout Targeting**: Specify `target_dropout_range=(0.40, 0.55)` as a single control point — the system automatically estimates simulation parameters via calibration mapping and validates results against the target range.
 - **Dual ID System**: Each student has a UUIDv7 `id` (time-sortable, DB/GraphRAG optimized) and a sequential `display_id` (S-0001) for human-readable CSV output and charts. `student_id` (UUIDv7) appears in all four CSV files as the join key. `display_id` (S-0001) appears alongside it for human readability.
 - **Unavoidable Withdrawal Events**: Low-probability life events (serious illness, death, forced relocation, career change) that force withdrawal independent of academic engagement. Configurable per-semester rate (default 0.3%). In `outcomes.csv`, voluntary dropout (Bäulke phase 5) has `withdrawal_reason` empty, while unavoidable withdrawal has a specific reason (e.g., 'serious_illness').
-- **GPA Computation**: Cumulative GPA (4.0 scale) computed from assignment and exam quality scores, carried across multi-semester runs. Reported in `outcomes.csv` as `final_gpa`. Note: GPA is currently a reporting metric and does not yet influence engagement or dropout decisions during simulation (see Roadmap).
+- **GPA Computation & Feedback Loop**: Cumulative GPA (4.0 scale) computed from assignment and exam quality scores, carried across multi-semester runs. Reported in `outcomes.csv` as `final_gpa`. GPA feeds back into simulation as a weekly signal: anchoring Kember cost-benefit perception, triggering Bäulke non-fit perception (GPA < 1.6) and dropout triggers (GPA < 1.2), and reinforcing or eroding SDT competence beliefs. In multi-semester runs, earned GPA blends into `prior_gpa` (60/40 weighted) to anchor future quality formulas.
+- **Coping Factor**: State-level `coping_factor` (0.0–0.5) in the Bean & Metzner module reduces environmental pressure *impact* without mutating persona demographics. Growth is driven by self-regulation and conscientiousness with diminishing returns. Partially retained (70%) across semesters. Based on Lazarus & Folkman's (1984) transactional stress model.
+- **Optional Name Generation**: Culturally diverse name pools (488 first names, 235 last names across 10 regional pools) mapped to 4 economic contexts. Off by default (`generate_names=False`) for GraphRAG/analytics compatibility. Enable with `PersonaConfig(generate_names=True)` or `--names` CLI flag.
 - **Temporal Coherence**: Unlike GAN/VAE-generated datasets, each student's trajectory emerges from a continuous weekly simulation loop where states depend on prior states, producing naturally coherent time series (e.g., failed midterm → declining engagement → dropout).
 
 ## Quick Start
@@ -199,9 +201,11 @@ report = pipeline.run(n_students=300)
 |-------------|--------|
 | Academic integration | Weekly engagement history |
 | Social integration (decayed 20%) | Memory/event log |
-| Engagement (with +0.12 recovery) | Missed assignments streak |
-| Dropout phase (regressed by 2) | Dropout status |
-| Cost-benefit (with +0.06 recovery) | Network links (decayed) |
+| Engagement (with +0.05 recovery) | Missed assignments streak |
+| Dropout phase (regressed by 1) | Dropout status |
+| Cost-benefit (with +0.03 recovery) | Network links (decayed) |
+| Prior GPA (60/40 blend with earned GPA) | |
+| Coping factor (70% retained) | |
 | Exhaustion (reduced 70%) | |
 | GPA accumulator | |
 | CoI presences (partially decayed) | |
@@ -362,7 +366,7 @@ SynthEd/
 │   │   └── validation.py        # Input validation utilities
 │   ├── calibration.py             # CalibrationMap: target dropout → simulation params
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                        # 288 pytest tests across 23 files
+├── tests/                        # 327 pytest tests across 23 files
 ├── configs/
 │   └── default.json
 ├── run_pipeline.py               # CLI entry point
@@ -411,7 +415,10 @@ Extend `SimulationEngine._simulate_student_week()` to add new behavioral channel
 - [x] **LLM Cache TTL + LRU** — 7-day default TTL, 10K max entries with lazy LRU eviction
 - [x] **LLM Cost Warning** — Pre-enrichment cost estimation with configurable threshold and confirm_callback
 - [x] **LLM Streaming + Conversation Memory** — `chat_stream()` and immutable ConversationMemory for future LLM-augmented mode
-- [ ] **GPA Feedback Loop** — Feed cumulative GPA into Kember cost-benefit and Bäulke non-fit perception
+- [x] **Optional Name Generation** — Culturally diverse name pools (10 regions), off by default for GraphRAG/analytics
+- [x] **GPA Feedback Loop** — Cumulative GPA feeds into Kember cost-benefit, Bäulke non-fit/triggers, SDT competence
+- [x] **Multi-Semester Prior GPA Update** — Earned GPA blends into prior_gpa (alpha=0.6) during carry-over
+- [x] **Coping Factor** — State-level Bean & Metzner pressure attenuation with diminishing returns and semester carry-over
 - [ ] **OULAD-Compatible Export** — 7-table format for drop-in EDM research compatibility
 - [ ] **GraphRAG Integration** — Knowledge graph-based curriculum modeling
 - [ ] **LLM-Augmented Mode** — Generate realistic forum posts, assignment text
@@ -422,7 +429,7 @@ Extend `SimulationEngine._simulate_student_week()` to add new behavioral channel
 
 ## Test Suite
 
-SynthEd includes 288 pytest tests across 23 test files, covering all theory modules, simulation mechanics, LLM enrichment, and the full pipeline.
+SynthEd includes 327 pytest tests across 23 test files, covering all theory modules, simulation mechanics, LLM enrichment, and the full pipeline.
 
 ```bash
 python -m pytest tests/ -v --tb=short
@@ -431,20 +438,21 @@ python -m pytest tests/ -v --tb=short
 | Test File | Tests | Coverage |
 |-----------|-------|----------|
 | `test_persona.py` | 22 | BigFive validation, engagement/dropout bounds, motivation comparison, dict roundtrip, UUIDv7 tests |
-| `test_factory.py` | 15 | Population count, seed determinism, attribute ranges, summary keys, dropout scaling, display_id tests |
+| `test_factory.py` | 20 | Population count, seed determinism, attribute ranges, summary keys, dropout scaling, display_id, name generation toggle |
 | `test_engine.py` | 10 | Return types, state completeness, engagement bounds, dropout phases, risk cohort differentiation |
 | `test_social_network.py` | 11 | Link creation/strengthening, degree counting, peer influence, link decay, statistics, max degree cap |
 | `test_environment.py` | 4 | Default courses, exam week detection, positive events, course lookup |
 | `test_validator.py` | 9 | Report structure, z-test symmetry, quality grade thresholds, effective alpha scaling, dropout range tests |
 | `test_pipeline_integration.py` | 11 | Full pipeline run, output file creation, validation results, input rejection, calibration, profiles, multi-semester |
-| `test_theories.py` | 9 | One test per theory module (Tinto, Bean-Metzner, Moore, Rovai, Garrison, Bäulke, Kember, SDT, Gonzalez) |
+| `test_theories.py` | 24 | Theory modules (Tinto, Bean-Metzner, Moore, Rovai, Garrison, Bäulke, Kember, SDT, Gonzalez), GPA feedback, coping factor |
 | `test_llm_enrichment.py` | 12 | Mock LLM enrichment, backstory export, error handling, cost report, custom pricing, varied prompts |
 | `test_llm_client.py` | 27 | LLMClient init, chat, retry, cache, JSON parsing, cost tracking, base_url validation, streaming |
 | `test_llm_cache.py` | 9 | Cache TTL expiry, LRU eviction, recently-accessed preservation, defaults |
 | `test_llm_cost_warning.py` | 11 | Cost estimation, threshold blocking, confirm_callback, default constants |
 | `test_llm_memory.py` | 14 | ConversationMemory immutability, role validation, add/clear messages, Message dataclass |
 | `test_backstory_templates.py` | 17 | Template selection, life events, regional contexts, enrichment prompt building, constants |
-| `test_semester.py` | 12 | Multi-semester carry-over, dropout persistence, engagement recovery, interim reports |
+| `test_name_pools.py` | 11 | Name pool constants, select_name determinism, country context coverage, fallback behavior |
+| `test_semester.py` | 19 | Multi-semester carry-over, dropout persistence, engagement recovery, interim reports, prior_gpa blend, coping carry-over |
 | `test_sensitivity.py` | 2 | OAT parameter sweep, tornado chart data |
 | `test_benchmarks.py` | 10 | Profiles registry, profile structure, profile names, generator, list profiles, error handling |
 | `test_utils.py` | 14 | Validation helpers (range, int, distribution, boundaries), logging config |
@@ -452,7 +460,7 @@ python -m pytest tests/ -v --tb=short
 | `test_coverage_boost.py` | 37 | Validator edge cases, pipeline branches, exporter skips, environment seasons, Bäulke phases, positive events |
 | `test_calibration.py` | 11 | CalibrationMap interpolation, clamping, confidence, range estimation |
 | `test_unavoidable_withdrawal.py` | 9 | Withdrawal probability, event types, statistical rate validation |
-| `test_gpa.py` | 8 | GPA accumulation, bounds, consistency, CSV export, face validity |
+| `test_gpa.py` | 9 | GPA accumulation, bounds, consistency, CSV export, face validity, feedback loop stability |
 
 CI runs tests across **Python 3.10, 3.11, and 3.12** on every push and pull request via [GitHub Actions](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml).
 
