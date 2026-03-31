@@ -601,7 +601,8 @@ class SimulationEngine:
             "mean_final_gpa": mean_final_gpa,
             "retained_students": total - dropouts,
             "dropout_phase_distribution": {
-                f"phase_{k}": v for k, v in sorted(phase_dist.items())
+                (f"phase_{k}" if isinstance(k, int) else str(k)): v
+                for k, v in sorted(phase_dist.items(), key=lambda x: (isinstance(x[0], str), x[0]))
             },
             "unavoidable_withdrawal_count": withdrawal_count,
             "unavoidable_withdrawal_reasons": withdrawal_reasons,
