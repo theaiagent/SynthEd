@@ -95,6 +95,43 @@ class TestLLMEnrichment:
         for persona in population:
             assert persona.backstory == ""
 
+    def test_llm_unexpected_exception(self):
+        """Factory handles unexpected (non-LLMError) exceptions gracefully (lines 335-337)."""
+        mock_llm = MagicMock(spec=LLMClient)
+        mock_llm.chat_json.side_effect = RuntimeError("unexpected crash")
+
+        factory = StudentFactory(seed=42, llm_client=mock_llm)
+        population = factory.generate_population(n=2, enrich_with_llm=True)
+
+        assert len(population) == 2
+        for persona in population:
+            assert persona.backstory == ""
+
+    def test_llm_returns_non_dict(self):
+        """Factory handles LLM returning a non-dict value (lines 341-344)."""
+        mock_llm = MagicMock(spec=LLMClient)
+        mock_llm.chat_json.return_value = "just a string"
+
+        factory = StudentFactory(seed=42, llm_client=mock_llm)
+        population = factory.generate_population(n=2, enrich_with_llm=True)
+
+        for persona in population:
+            assert persona.backstory == ""
+
+    def test_llm_returns_too_short_backstory(self):
+        """Factory rejects backstories shorter than MIN_BACKSTORY_LENGTH (lines 357-361)."""
+        mock_llm = MagicMock(spec=LLMClient)
+        mock_llm.chat_json.return_value = {
+            "backstory": "Too short.",  # less than 20 chars
+            "primary_challenge": "test",
+        }
+
+        factory = StudentFactory(seed=42, llm_client=mock_llm)
+        population = factory.generate_population(n=2, enrich_with_llm=True)
+
+        for persona in population:
+            assert persona.backstory == ""
+
     def test_llm_client_cost_report(self):
         """LLMClient.cost_report() returns expected structure with zero usage."""
         mock_openai = MagicMock()

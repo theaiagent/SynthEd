@@ -88,3 +88,146 @@ class TestMultiSemesterRunner:
         assert hasattr(result, "final_network")
         assert len(result.all_records) > 0
         assert len(result.final_states) > 0
+
+    def test_multi_semester_with_target_dropout_range(self):
+        """Runner with target_dropout_range produces interim reports (lines 194-199)."""
+        engine, students = _make_engine_and_students(n=20, seed=42)
+        runner = MultiSemesterRunner(
+            engine, n_semesters=2,
+            target_dropout_range=(0.30, 0.80),
+        )
+        result = runner.run(students)
+
+        assert len(result.interim_reports) == 2
+        for report in result.interim_reports:
+            assert report.target_range == (0.30, 0.80)
+            assert report.status in ("on_track", "below_target", "above_target")
+            assert 0.0 <= report.cumulative_dropout_rate <= 1.0
+
+    def test_carry_over_skips_withdrawn_students(self):
+        """Students with withdrawal_reason (unavoidable) are filtered (line 256+)."""
+        engine, students = _make_engine_and_students(n=20, seed=42)
+        # Use a high unavoidable withdrawal rate to force some withdrawals
+        from synthed.simulation.theories import UnavoidableWithdrawal
+        engine.unavoidable_withdrawal = UnavoidableWithdrawal(
+            per_semester_probability=0.50, total_weeks=6,
+        )
+        runner = MultiSemesterRunner(engine, n_semesters=2)
+        result = runner.run(students)
+
+        # Verify that withdrawn students from sem1 are not in sem2
+        sem1_states = result.semester_results[0].states
+        sem2_states = result.semester_results[1].states
+        for sid, state in sem1_states.items():
+            if state.withdrawal_reason is not None:
+                assert sid not in sem2_states
+
+
+class TestCarryOverStateNone:
+    """Test _apply_carry_over when state is None for a student (line 256)."""
+
+    def test_carry_over_skips_student_without_state(self):
+        """Student not in states dict is skipped in carry-over."""
+        from synthed.agents.persona import StudentPersona
+        from synthed.simulation.engine import SimulationState
+        from synthed.simulation.social_network import SocialNetwork
+
+        students = [
+            StudentPersona(name="WithState"),
+            StudentPersona(name="WithoutState"),
+        ]
+
+        # Only include first student's state
+        states = {
+            students[0].id: SimulationState(
+                student_id=students[0].id,
+                has_dropped_out=False,
+                dropout_phase=1,
+                current_engagement=0.5,
+                academic_integration=0.5,
+                social_integration=0.3,
+                perceived_cost_benefit=0.6,
+            ),
+            # students[1].id is NOT in states
+        }
+
+        network = SocialNetwork()
+        config = SemesterCarryOverConfig()
+
+        surviving, overrides, carried_net = MultiSemesterRunner._apply_carry_over(
+            students, states, network, config,
+        )
+
+        # Only the student with state should survive
+        assert len(surviving) == 1
+        assert surviving[0].name == "WithState"
+
+
+class TestBuildInterimReport:
+    """Tests for _build_interim_report helper (lines 393-409)."""
+
+    def test_below_target(self):
+        from synthed.simulation.semester import (
+            _build_interim_report, SemesterResult,
+        )
+        from synthed.simulation.engine import SimulationState
+
+        # Create mock semester results with no dropouts
+        states = {
+            f"s{i}": SimulationState(
+                student_id=f"s{i}", has_dropped_out=False,
+            )
+            for i in range(10)
+        }
+        sem_result = SemesterResult(
+            semester_index=0, records=[], states=states, network=None,
+        )
+        report = _build_interim_report(1, [sem_result], 10, (0.30, 0.50))
+        assert report.status == "below_target"
+        assert report.cumulative_dropout_rate == 0.0
+
+    def test_above_target(self):
+        from synthed.simulation.semester import (
+            _build_interim_report, SemesterResult,
+        )
+        from synthed.simulation.engine import SimulationState
+
+        # All students dropped out
+        states = {
+            f"s{i}": SimulationState(
+                student_id=f"s{i}", has_dropped_out=True, dropout_week=3,
+            )
+            for i in range(10)
+        }
+        sem_result = SemesterResult(
+            semester_index=0, records=[], states=states, network=None,
+        )
+        report = _build_interim_report(1, [sem_result], 10, (0.10, 0.20))
+        assert report.status == "above_target"
+        assert report.cumulative_dropout_rate == 1.0
+
+    def test_on_track(self):
+        from synthed.simulation.semester import (
+            _build_interim_report, SemesterResult,
+        )
+        from synthed.simulation.engine import SimulationState
+
+        # 5 out of 10 dropped out = 50%, target is 40-60%
+        states = {}
+        for i in range(10):
+            states[f"s{i}"] = SimulationState(
+                student_id=f"s{i}",
+                has_dropped_out=(i < 5),
+                dropout_week=3 if i < 5 else None,
+            )
+        sem_result = SemesterResult(
+            semester_index=0, records=[], states=states, network=None,
+        )
+        report = _build_interim_report(1, [sem_result], 10, (0.40, 0.60))
+        assert report.status == "on_track"
+        assert report.cumulative_dropout_rate == 0.5
+
+    def test_zero_students(self):
+        from synthed.simulation.semester import _build_interim_report
+        report = _build_interim_report(1, [], 0, (0.30, 0.50))
+        assert report.cumulative_dropout_rate == 0.0

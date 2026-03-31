@@ -81,6 +81,116 @@ class TestStudentPersona:
         assert high.base_dropout_risk >= 0.02
 
 
+class TestBigFiveToDescription:
+    """Tests for BigFiveTraits.to_description() (lines 51-65)."""
+
+    def test_high_traits_described(self):
+        """Traits >= 0.7 produce high descriptions."""
+        traits = BigFiveTraits(
+            openness=0.8, conscientiousness=0.9, extraversion=0.75,
+            agreeableness=0.85, neuroticism=0.7,
+        )
+        desc = traits.to_description()
+        assert "curious" in desc
+        assert "organized" in desc
+        assert "socially active" in desc
+        assert "cooperative" in desc
+        assert "prone to stress" in desc
+
+    def test_low_traits_described(self):
+        """Traits <= 0.3 produce low descriptions."""
+        traits = BigFiveTraits(
+            openness=0.2, conscientiousness=0.1, extraversion=0.3,
+            agreeableness=0.25, neuroticism=0.15,
+        )
+        desc = traits.to_description()
+        assert "routine" in desc
+        assert "spontaneous" in desc
+        assert "independent study" in desc
+        assert "competitive" in desc
+        assert "emotionally stable" in desc
+
+    def test_balanced_personality(self):
+        """All traits in 0.31-0.69 returns 'balanced personality'."""
+        traits = BigFiveTraits(
+            openness=0.5, conscientiousness=0.5, extraversion=0.5,
+            agreeableness=0.5, neuroticism=0.5,
+        )
+        desc = traits.to_description()
+        assert desc == "balanced personality"
+
+    def test_mixed_traits(self):
+        """Some high, some low, some balanced produces partial descriptions."""
+        traits = BigFiveTraits(
+            openness=0.9, conscientiousness=0.5, extraversion=0.1,
+            agreeableness=0.5, neuroticism=0.5,
+        )
+        desc = traits.to_description()
+        assert "curious" in desc
+        assert "independent study" in desc
+        # Balanced traits should NOT appear
+        assert "organized" not in desc
+        assert "spontaneous" not in desc
+
+
+class TestStudentPersonaLevel:
+    """Tests for StudentPersona._level() and to_prompt_description() (lines 343-356)."""
+
+    def test_level_high(self):
+        assert StudentPersona._level(0.8) == "high"
+
+    def test_level_moderate(self):
+        assert StudentPersona._level(0.5) == "moderate"
+
+    def test_level_low(self):
+        assert StudentPersona._level(0.3) == "low"
+
+    def test_level_boundary_high(self):
+        assert StudentPersona._level(0.71) == "high"
+        assert StudentPersona._level(0.7) == "moderate"
+
+    def test_level_boundary_low(self):
+        assert StudentPersona._level(0.41) == "moderate"
+        assert StudentPersona._level(0.4) == "low"
+
+    def test_to_prompt_description_content(self):
+        """to_prompt_description() produces a structured string."""
+        p = StudentPersona(
+            name="Test",
+            age=30,
+            gender="female",
+            is_employed=True,
+            weekly_work_hours=40,
+            has_family_responsibilities=True,
+            financial_stress=0.8,
+            self_regulation=0.3,
+            digital_literacy=0.6,
+            learner_autonomy=0.4,
+            goal_commitment=0.9,
+            motivation_type="intrinsic",
+            perceived_cost_benefit=0.7,
+            personality=BigFiveTraits(
+                openness=0.9, conscientiousness=0.2,
+                extraversion=0.5, agreeableness=0.5, neuroticism=0.5,
+            ),
+        )
+        desc = p.to_prompt_description()
+        assert "Student ID:" in desc
+        assert "Age: 30" in desc
+        assert "Gender: female" in desc
+        assert "employed 40h/wk" in desc
+        assert "Family responsibilities: yes" in desc
+        assert "Financial stress: high" in desc
+        assert "Self-regulation: low" in desc
+        assert "Motivation: intrinsic" in desc
+
+    def test_to_prompt_description_unemployed(self):
+        """to_prompt_description() with unemployed student."""
+        p = StudentPersona(is_employed=False)
+        desc = p.to_prompt_description()
+        assert "unemployed" in desc
+
+
 class TestStudentID:
     """Tests for UUIDv7 student ID generation."""
 

@@ -77,3 +77,84 @@ class TestBenchmarkGenerator:
         gen = BenchmarkGenerator()
         with pytest.raises(ValueError, match="Unknown profile"):
             gen.generate("nonexistent_profile", output_dir="/tmp/test")
+
+    def test_generate_valid_profile_in_range(self, tmp_path):
+        """generate() with a valid profile returns report with benchmark_validation."""
+        from unittest.mock import patch
+
+        mock_report = {
+            "simulation_summary": {"dropout_rate": 0.15},
+        }
+        with patch(
+            "synthed.benchmarks.generator.SynthEdPipeline"
+        ) as MockPipeline:
+            MockPipeline.return_value.run.return_value = mock_report
+            gen = BenchmarkGenerator()
+            report = gen.generate(
+                "low_dropout_corporate",
+                output_dir=str(tmp_path / "benchmark"),
+            )
+
+        assert "benchmark_validation" in report
+        bv = report["benchmark_validation"]
+        assert bv["profile"] == "low_dropout_corporate"
+        assert bv["actual_dropout_rate"] == 0.15
+        # 0.15 is within (0.05, 0.30)
+        assert bv["in_expected_range"] is True
+
+    def test_generate_valid_profile_out_of_range(self, tmp_path):
+        """generate() logs warning when dropout is outside expected range."""
+        from unittest.mock import patch
+
+        mock_report = {
+            "simulation_summary": {"dropout_rate": 0.95},
+        }
+        with patch(
+            "synthed.benchmarks.generator.SynthEdPipeline"
+        ) as MockPipeline:
+            MockPipeline.return_value.run.return_value = mock_report
+            gen = BenchmarkGenerator()
+            report = gen.generate(
+                "low_dropout_corporate",
+                output_dir=str(tmp_path / "benchmark"),
+            )
+
+        bv = report["benchmark_validation"]
+        # 0.95 is outside (0.05, 0.30)
+        assert bv["in_expected_range"] is False
+
+    def test_generate_default_output_dir(self):
+        """generate() with no output_dir uses default benchmarks/<name>."""
+        from unittest.mock import patch
+
+        mock_report = {
+            "simulation_summary": {"dropout_rate": 0.45},
+        }
+        with patch(
+            "synthed.benchmarks.generator.SynthEdPipeline"
+        ) as MockPipeline:
+            MockPipeline.return_value.run.return_value = mock_report
+            gen = BenchmarkGenerator()
+            report = gen.generate("moderate_dropout_western")
+
+        assert "benchmark_validation" in report
+
+    def test_generate_all(self, tmp_path):
+        """generate_all() runs all profiles and returns a list of reports."""
+        from unittest.mock import patch
+
+        mock_report = {
+            "simulation_summary": {"dropout_rate": 0.50},
+        }
+        with patch(
+            "synthed.benchmarks.generator.SynthEdPipeline"
+        ) as MockPipeline:
+            MockPipeline.return_value.run.return_value = mock_report
+            gen = BenchmarkGenerator()
+            results = gen.generate_all(output_dir=str(tmp_path / "all"))
+
+        assert isinstance(results, list)
+        assert len(results) == len(PROFILES)
+        for report in results:
+            assert "benchmark_validation" in report
+            assert "simulation_summary" in report

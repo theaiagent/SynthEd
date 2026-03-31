@@ -481,3 +481,237 @@ class TestPositiveEventUnknown:
         student = StudentPersona(name="Test", age=25, gender="male")
         boost = handler.apply("nonexistent_event", student, state)
         assert boost == 0.0
+
+
+# ── __init__.py: setuptools_scm fallback (lines 16-17) ──────────────
+
+
+class TestVersionFallback:
+    def test_version_fallback_to_dev(self):
+        """When both importlib.metadata and setuptools_scm fail, version is 0.0.0-dev (lines 16-17)."""
+        import importlib
+        import synthed
+
+        def bad_version(name):
+            raise Exception("no metadata")
+
+        def bad_get_version(**kwargs):
+            raise Exception("no setuptools_scm")
+
+        with patch("importlib.metadata.version", side_effect=bad_version):
+            with patch.dict("sys.modules", {"setuptools_scm": MagicMock(get_version=bad_get_version)}):
+                importlib.reload(synthed)
+                assert synthed.__version__ == "0.0.0-dev"
+
+        # Reload to restore real version
+        importlib.reload(synthed)
+
+    def test_version_is_string(self):
+        """__version__ should always be a string."""
+        import synthed
+        assert isinstance(synthed.__version__, str)
+        assert len(synthed.__version__) > 0
+
+
+# ── Exporter: short engagement history trend (line 185) ──────────────
+
+
+class TestExporterShortHistory:
+    def test_export_outcomes_short_history_unknown_trend(self, tmp_path):
+        """Engagement history < 4 weeks produces 'unknown' trend (line 185)."""
+        import csv
+
+        exporter = DataExporter(output_dir=str(tmp_path))
+        student = StudentPersona(name="Test", age=25, gender="male")
+        state = SimulationState(
+            student_id=student.id,
+            weekly_engagement_history=[0.5, 0.6],  # only 2 weeks
+        )
+        states = {student.id: state}
+
+        from synthed.simulation.social_network import SocialNetwork
+        network = SocialNetwork()
+        exporter.export_outcomes([student], states, network=network)
+
+        with open(tmp_path / "outcomes.csv", newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            rows = list(reader)
+
+        assert len(rows) == 1
+        assert rows[0]["engagement_trend"] == "unknown"
+
+
+# ── Calibration: insufficient data (line 101) ───────────────────────
+
+
+class TestCalibrationInsufficientData:
+    def test_insufficient_calibration_data_raises(self):
+        """CalibrationMap with < 2 points raises ValueError (line 101)."""
+        import pytest
+        from synthed.calibration import CalibrationMap, CalibrationPoint
+
+        # Only 1 data point for n_semesters=1, and nothing else
+        sparse_data = (
+            CalibrationPoint(1, 0.50, 0.40, 100, 1),
+        )
+        cal = CalibrationMap(data=sparse_data)
+        # n_semesters=3 has no data, falls back to 1-sem which has only 1 point
+        with pytest.raises(ValueError, match="Insufficient calibration data"):
+            cal.estimate(0.40, n_semesters=3)
+
+
+# ── Academic exhaustion: dropout threshold (line 113) ────────────────
+
+
+class TestExhaustionDropoutThreshold:
+    def test_exhaustion_accelerates_dropout_true(self):
+        """exhaustion_accelerates_dropout returns True when above threshold (line 113)."""
+        from synthed.simulation.theories.academic_exhaustion import (
+            GonzalezExhaustion,
+        )
+
+        exhaustion = GonzalezExhaustion()
+        state = SimulationState(
+            student_id="test",
+            exhaustion=ExhaustionState(exhaustion_level=0.80),
+        )
+        assert exhaustion.exhaustion_accelerates_dropout(state) is True
+
+    def test_exhaustion_does_not_accelerate_dropout_when_low(self):
+        from synthed.simulation.theories.academic_exhaustion import (
+            GonzalezExhaustion,
+        )
+
+        exhaustion = GonzalezExhaustion()
+        state = SimulationState(
+            student_id="test",
+            exhaustion=ExhaustionState(exhaustion_level=0.30),
+        )
+        assert exhaustion.exhaustion_accelerates_dropout(state) is False
+
+
+# ── Unavoidable withdrawal: edge cases (lines 57, 92) ───────────────
+
+
+class TestUnavoidableWithdrawalEdgeCases:
+    def test_event_weights_validation_error(self):
+        """_EVENT_WEIGHTS sum != 1.0 would raise (line 57)."""
+        import pytest
+        from synthed.simulation.theories.unavoidable_withdrawal import (
+            UnavoidableWithdrawal,
+        )
+
+        # Monkey-patch to test the validation
+        original_weights = UnavoidableWithdrawal._EVENT_WEIGHTS.copy()
+        try:
+            UnavoidableWithdrawal._EVENT_WEIGHTS = {"event1": 0.5}  # doesn't sum to 1.0
+            with pytest.raises(ValueError, match="sum to 1.0"):
+                UnavoidableWithdrawal(per_semester_probability=0.1, total_weeks=14)
+        finally:
+            UnavoidableWithdrawal._EVENT_WEIGHTS = original_weights
+
+    def test_already_dropped_out_returns_false(self):
+        """check_withdrawal returns False if student already dropped out (line 92)."""
+        from synthed.simulation.theories.unavoidable_withdrawal import (
+            UnavoidableWithdrawal,
+        )
+
+        uw = UnavoidableWithdrawal(per_semester_probability=1.0, total_weeks=14)
+        student = StudentPersona()
+        rng = np.random.default_rng(42)
+        state = SimulationState(
+            student_id="test",
+            has_dropped_out=True,
+            dropout_week=3,
+        )
+        result = uw.check_withdrawal(student, state, 5, rng)
+        assert result is False
+
+
+# ── Validator: dropout_range validation (line 51) ────────────────────
+
+
+class TestReferenceStatisticsDropoutRange:
+    def test_invalid_dropout_range_raises(self):
+        """dropout_range that doesn't satisfy 0 < lo < hi < 1 raises ValueError."""
+        import pytest
+
+        with pytest.raises(ValueError, match="dropout_range"):
+            ReferenceStatistics(dropout_range=(0.5, 0.3))  # lo > hi
+
+        with pytest.raises(ValueError, match="dropout_range"):
+            ReferenceStatistics(dropout_range=(0.0, 0.5))  # lo must be > 0
+
+        with pytest.raises(ValueError, match="dropout_range"):
+            ReferenceStatistics(dropout_range=(0.5, 1.0))  # hi must be < 1
+
+
+# ── Validator: CoI and network correlations (lines 396-397, 409-410) ─
+
+
+class TestValidatorCorrelations:
+    def test_coi_and_network_correlations(self):
+        """Validate CoI composite and network degree correlations are computed."""
+        validator = SyntheticDataValidator()
+        students = []
+        outcomes = []
+        for i in range(30):
+            # _get_pairs looks for attr_key in student dicts, outcome_key in outcome dicts
+            # coi_composite and network_degree must be in student data for _get_pairs to find them
+            students.append({
+                "student_id": f"s{i}",
+                "age": 25 + i % 10,
+                "gender": "female" if i % 2 == 0 else "male",
+                "is_employed": i % 3 == 0,
+                "prior_gpa": 2.0 + (i % 10) * 0.2,
+                "socioeconomic_level": "middle",
+                "conscientiousness": 0.3 + (i / 30) * 0.4,
+                "self_efficacy": 0.3 + (i / 30) * 0.4,
+                "self_regulation": 0.3 + (i / 30) * 0.4,
+                "financial_stress": 0.3,
+                "goal_commitment": 0.5,
+                "learner_autonomy": 0.3 + (i / 30) * 0.4,
+                "coi_composite": 0.2 + (i / 30) * 0.6,
+                "network_degree": 1 + i,
+            })
+            eng = 0.3 + (i / 30) * 0.5
+            outcomes.append({
+                "student_id": f"s{i}",
+                "has_dropped_out": i < 5,
+                "dropout_week": 3 if i < 5 else None,
+                "final_engagement": eng,
+                "final_dropout_phase": 5 if i < 5 else 0,
+                "perceived_cost_benefit": 0.5,
+            })
+        report = validator.validate_all(students, outcomes)
+        test_names = [r["test"] for r in report["results"]]
+        # Lines 396-397: garrison_coi_engagement should be computed
+        assert "garrison_coi_engagement" in test_names
+        # Lines 409-410: epstein_network_degree_engagement should be computed
+        assert "epstein_network_degree_engagement" in test_names
+
+
+# ── Validator: _proportion_z_test se=0 edge case (line 646) ──────────
+
+
+class TestProportionZTestSE0:
+    def test_se_zero_returns_defaults(self):
+        """When se=0 (defensive guard), return (0.0, 1.0) (line 646).
+
+        This guard is unreachable under normal math (p*(1-p)/n > 0 when
+        0 < p < 1 and n > 0), but exists for floating-point safety.
+        We force it via monkeypatching np.sqrt to return 0.
+        """
+        import synthed.validation.validator as vmod
+        original_sqrt = np.sqrt
+
+        def zero_sqrt(x):
+            return np.float64(0.0)
+
+        vmod.np.sqrt = zero_sqrt
+        try:
+            z, p = SyntheticDataValidator._proportion_z_test(0.5, 0.5, 100)
+            assert z == 0.0
+            assert p == 1.0
+        finally:
+            vmod.np.sqrt = original_sqrt

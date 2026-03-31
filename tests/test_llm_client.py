@@ -136,6 +136,18 @@ class TestLLMClientCostReport:
         assert client.estimated_cost_usd > 0
 
 
+    def test_connection_error_retries_then_raises_generic(self, mock_openai):
+        """Connection error retries then raises generic LLMError (line 153)."""
+        class ConnectionError(Exception):
+            pass
+        mock_openai.chat.completions.create.side_effect = ConnectionError("connection refused")
+        client = LLMClient(api_key="test-key", max_retries=2, retry_base_delay=0.01)
+        with pytest.raises(LLMError, match="API call failed after"):
+            client.chat([{"role": "user", "content": "hello"}])
+        assert mock_openai.chat.completions.create.call_count == 2
+        assert client.total_failures == 1
+
+
 class TestLLMClientCache:
     def test_corrupt_cache_handled(self, mock_openai, tmp_path):
         cache_dir = tmp_path / "cache"

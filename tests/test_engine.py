@@ -96,3 +96,70 @@ class TestSimulationEngine:
         hr_dropouts = sum(1 for s in states_hr.values() if s.has_dropped_out)
         lr_dropouts = sum(1 for s in states_lr.values() if s.has_dropped_out)
         assert hr_dropouts >= lr_dropouts
+
+    def test_summary_statistics_with_unavoidable_withdrawals(self):
+        """summary_statistics handles withdrawal_reason in phase_dist (lines 574, 585)."""
+        from synthed.simulation.engine import SimulationState
+
+        states = {
+            "s1": SimulationState(
+                student_id="s1",
+                has_dropped_out=True,
+                dropout_week=3,
+                withdrawal_reason="serious_illness",
+                weekly_engagement_history=[0.5, 0.4, 0.3],
+            ),
+            "s2": SimulationState(
+                student_id="s2",
+                has_dropped_out=True,
+                dropout_week=5,
+                withdrawal_reason="family_emergency",
+                weekly_engagement_history=[0.6, 0.5, 0.4, 0.3, 0.2],
+            ),
+            "s3": SimulationState(
+                student_id="s3",
+                has_dropped_out=False,
+                weekly_engagement_history=[0.7, 0.7, 0.7],
+            ),
+        }
+
+        env = ODLEnvironment()
+        engine = SimulationEngine(environment=env, seed=42)
+        summary = engine.summary_statistics(states)
+
+        assert summary["dropout_count"] == 2
+        assert summary["unavoidable_withdrawal_count"] == 2
+        assert "serious_illness" in summary["unavoidable_withdrawal_reasons"]
+        assert "family_emergency" in summary["unavoidable_withdrawal_reasons"]
+        phase_dist = summary["dropout_phase_distribution"]
+        assert "unavoidable_withdrawal" in phase_dist
+
+    def test_course_not_found_skipped(self):
+        """Simulation skips courses not found by ID (line 358)."""
+        from synthed.agents.persona import StudentPersona
+
+        env = ODLEnvironment()
+        engine = SimulationEngine(environment=env, seed=42)
+
+        # Create a student with an enrolled_courses count higher than available
+        student = StudentPersona(
+            name="Test",
+            enrolled_courses=4,
+        )
+
+        # Manually run with a state that has an invalid course ID
+        from synthed.simulation.engine import SimulationState
+        states = {
+            student.id: SimulationState(
+                student_id=student.id,
+                current_engagement=0.5,
+                courses_active=["NONEXISTENT_COURSE_ID"],
+            ),
+        }
+        engine.network = SocialNetwork()
+
+        # _simulate_student_week should handle missing course gracefully
+        context = env.get_week_context(1)
+        records = engine._simulate_student_week(student, states[student.id], 1, context)
+        # No crash, no records for the nonexistent course
+        assert isinstance(records, list)
