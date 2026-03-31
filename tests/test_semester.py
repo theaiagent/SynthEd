@@ -341,3 +341,27 @@ class TestPriorGPABlend:
                 changed += 1
 
         assert changed > 0, "No students had graded items to trigger GPA blend"
+
+
+class TestCopingCarryOver:
+    """Tests for coping_factor carry-over between semesters."""
+
+    def test_coping_retention_in_carry_over(self):
+        """Coping factor is partially retained via _build_state_overrides."""
+        from synthed.simulation.engine import SimulationState
+        from synthed.simulation.semester import _build_state_overrides, SemesterCarryOverConfig
+
+        state = SimulationState(
+            student_id="test",
+            current_engagement=0.5,
+            coping_factor=0.3,
+        )
+        config = SemesterCarryOverConfig()  # default retention=0.70
+        overrides = _build_state_overrides(state, config)
+        assert abs(overrides["coping_factor"] - 0.21) < 0.01  # 0.3 * 0.70 = 0.21
+
+    def test_coping_retention_config_default(self):
+        """Default coping_retention is 0.70."""
+        from synthed.simulation.semester import SemesterCarryOverConfig
+        config = SemesterCarryOverConfig()
+        assert config.coping_retention == 0.70

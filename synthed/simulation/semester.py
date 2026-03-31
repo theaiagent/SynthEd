@@ -70,6 +70,9 @@ class SemesterCarryOverConfig:
     # (0 = keep original, 1 = fully replace with earned GPA)
     prior_gpa_blend_alpha: float = 0.6
 
+    # Bean & Metzner: coping skill retention across semester break
+    coping_retention: float = 0.70
+
 
 # ─────────────────────────────────────────────
 # Result containers
@@ -394,6 +397,11 @@ def _build_state_overrides(
         "cumulative_gpa": state.cumulative_gpa,
         "gpa_points_sum": state.gpa_points_sum,
         "gpa_count": state.gpa_count,
+        # Coping skill partially retained across break (Bean & Metzner)
+        "coping_factor": float(np.clip(
+            state.coping_factor * config.coping_retention,
+            0.0, 0.5,
+        )),
     }
 
 

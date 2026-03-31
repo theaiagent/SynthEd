@@ -287,3 +287,89 @@ class TestSDTGPAFeedback:
         sdt.update_needs(student, state, 1, records)
         # With low GPA (1.2) and neutral quality (0.5), competence should drop
         assert state.sdt_needs.competence < 0.5
+
+
+class TestBeanMetznerCoping:
+    """Tests for coping factor in Bean & Metzner module."""
+
+    def test_coping_starts_at_zero(self):
+        """SimulationState initializes with coping_factor=0.0."""
+        state = _make_state()
+        assert state.coping_factor == 0.0
+
+    def test_coping_grows_each_week(self):
+        """update_coping increases coping_factor monotonically."""
+        bm = BeanMetznerPressure()
+        student = StudentPersona(self_regulation=0.7,
+                                 personality=BigFiveTraits(conscientiousness=0.7))
+        state = _make_state()
+        prev = 0.0
+        for _ in range(10):
+            bm.update_coping(student, state)
+            assert state.coping_factor > prev
+            prev = state.coping_factor
+
+    def test_coping_never_exceeds_max(self):
+        """Coping factor stays within [0.0, 0.5] even after many weeks."""
+        bm = BeanMetznerPressure()
+        student = StudentPersona(self_regulation=0.95,
+                                 personality=BigFiveTraits(conscientiousness=0.95))
+        state = _make_state()
+        for _ in range(200):
+            bm.update_coping(student, state)
+        assert 0.0 <= state.coping_factor <= 0.5
+
+    def test_high_regulation_faster_growth(self):
+        """High self-regulation students develop coping faster."""
+        bm = BeanMetznerPressure()
+        high_reg = StudentPersona(self_regulation=0.9,
+                                  personality=BigFiveTraits(conscientiousness=0.9))
+        low_reg = StudentPersona(self_regulation=0.2,
+                                 personality=BigFiveTraits(conscientiousness=0.2))
+        state_high = _make_state()
+        state_low = _make_state()
+        for _ in range(10):
+            bm.update_coping(high_reg, state_high)
+            bm.update_coping(low_reg, state_low)
+        assert state_high.coping_factor > state_low.coping_factor
+
+    def test_coping_attenuates_pressure(self):
+        """Coping reduces the magnitude of environmental pressure."""
+        bm = BeanMetznerPressure()
+        student = StudentPersona(is_employed=True, weekly_work_hours=40,
+                                 has_family_responsibilities=True,
+                                 financial_stress=0.7)
+        pressure_no_coping = bm.calculate_environmental_pressure(student, coping_factor=0.0)
+        pressure_with_coping = bm.calculate_environmental_pressure(student, coping_factor=0.3)
+        # Both should be negative (pressure), but with coping the magnitude is smaller
+        assert pressure_no_coping < 0
+        assert pressure_with_coping < 0
+        assert abs(pressure_with_coping) < abs(pressure_no_coping)
+
+    def test_coping_zero_preserves_original(self):
+        """coping_factor=0.0 produces identical result to the old behavior."""
+        bm = BeanMetznerPressure()
+        student = StudentPersona(is_employed=True, weekly_work_hours=40,
+                                 has_family_responsibilities=True,
+                                 financial_stress=0.7)
+        p1 = bm.calculate_environmental_pressure(student)
+        p2 = bm.calculate_environmental_pressure(student, coping_factor=0.0)
+        assert p1 == p2
+
+    def test_diminishing_returns(self):
+        """Growth from 0.0 is faster than growth from near the cap."""
+        bm = BeanMetznerPressure()
+        student = StudentPersona(self_regulation=0.7,
+                                 personality=BigFiveTraits(conscientiousness=0.7))
+        # Growth from 0.0
+        state_low = _make_state()
+        bm.update_coping(student, state_low)
+        growth_from_zero = state_low.coping_factor
+
+        # Growth from 0.4 (near cap)
+        state_high = _make_state(coping_factor=0.4)
+        initial = state_high.coping_factor
+        bm.update_coping(student, state_high)
+        growth_from_high = state_high.coping_factor - initial
+
+        assert growth_from_zero > growth_from_high

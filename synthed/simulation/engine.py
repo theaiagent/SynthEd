@@ -92,6 +92,8 @@ class SimulationState:
     current_motivation_type: str = "extrinsic"
     # Gonzalez et al. (2025): Academic exhaustion as mediator
     exhaustion: ExhaustionState = field(default_factory=ExhaustionState)
+    # Bean & Metzner coping adaptation (Lazarus & Folkman, 1984)
+    coping_factor: float = 0.0  # 0.0-0.5; reduces environmental pressure impact
     # Temporal memory (moved from StudentPersona to avoid mutating input)
     memory: list[dict[str, Any]] = field(default_factory=list)
 
@@ -498,8 +500,9 @@ class SimulationEngine:
         )
         engagement += integration_effect
 
-        # ── Bean & Metzner: Environmental pressure ──
-        engagement += self.bean_metzner.calculate_environmental_pressure(student)
+        # ── Bean & Metzner: Environmental pressure (with coping attenuation) ──
+        self.bean_metzner.update_coping(student, state)
+        engagement += self.bean_metzner.calculate_environmental_pressure(student, state.coping_factor)
 
         # ── Positive environmental events (counter-pressure) ──
         engagement += self.positive_events.apply(
