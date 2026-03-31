@@ -73,7 +73,12 @@ class SynthEdPipeline:
         # Initialize components
         self.llm = LLMClient(model=llm_model) if use_llm else None
         self.factory = StudentFactory(config=self.persona_config, llm_client=self.llm, seed=seed)
-        self.engine = SimulationEngine(environment=self.environment, llm_client=self.llm, seed=seed)
+        self.engine = SimulationEngine(
+            environment=self.environment,
+            llm_client=self.llm,
+            seed=seed,
+            unavoidable_withdrawal_rate=self.persona_config.unavoidable_withdrawal_rate,
+        )
         self.exporter = DataExporter(output_dir=str(self.output_dir))
         self.validator = SyntheticDataValidator(reference=self.reference)
 
@@ -282,6 +287,7 @@ class SynthEdPipeline:
                     "display_id": s.display_id,
                     "has_dropped_out": state.has_dropped_out,
                     "dropout_week": state.dropout_week,
+                    "withdrawal_reason": state.withdrawal_reason or "",
                     "final_dropout_phase": state.dropout_phase,
                     "final_engagement": state.weekly_engagement_history[-1] if state.weekly_engagement_history else None,
                     # Garrison et al. (2000)

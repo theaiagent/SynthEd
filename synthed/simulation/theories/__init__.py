@@ -12,6 +12,7 @@ from .rovai import RovaiPersistence
 from .sdt_motivation import SDTMotivationDynamics, SDTNeedSatisfaction
 from .positive_events import PositiveEventHandler
 from .academic_exhaustion import GonzalezExhaustion, ExhaustionState
+from .unavoidable_withdrawal import UnavoidableWithdrawal
 
 __all__ = [
     "TintoIntegration",
@@ -27,4 +28,5 @@ __all__ = [
     "PositiveEventHandler",
     "GonzalezExhaustion",
     "ExhaustionState",
+    "UnavoidableWithdrawal",
 ]

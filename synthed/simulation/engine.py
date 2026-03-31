@@ -42,6 +42,7 @@ from .theories import (
     PositiveEventHandler,
     GonzalezExhaustion,
     ExhaustionState,
+    UnavoidableWithdrawal,
 )
 
 
@@ -79,6 +80,7 @@ class SimulationState:
     courses_active: list[str] = field(default_factory=list)
     has_dropped_out: bool = False
     dropout_week: int | None = None
+    withdrawal_reason: str | None = None
     weekly_engagement_history: list[float] = field(default_factory=list)
     missed_assignments_streak: int = 0  # Consecutive missed assignments
     # Garrison et al. (2000): Community of Inquiry
@@ -203,6 +205,7 @@ class SimulationEngine:
         llm_client: LLMClient | None = None,
         seed: int = 42,
         mode: str = "rule_based",
+        unavoidable_withdrawal_rate: float = 0.0,
     ):
         self.env = environment
         self.llm = llm_client
@@ -222,6 +225,10 @@ class SimulationEngine:
         self.sdt = SDTMotivationDynamics()
         self.positive_events = PositiveEventHandler()
         self.gonzalez = GonzalezExhaustion()
+        self.unavoidable_withdrawal = UnavoidableWithdrawal(
+            per_semester_probability=unavoidable_withdrawal_rate,
+            total_weeks=environment.total_weeks,
+        )
 
     def run(
         self,
@@ -285,6 +292,9 @@ class SimulationEngine:
             for student in students:
                 state = states[student.id]
                 if state.has_dropped_out:
+                    continue
+
+                if self.unavoidable_withdrawal.check_withdrawal(student, state, week, self.rng):
                     continue
 
                 week_records = self._simulate_student_week(student, state, week, week_context)
@@ -548,10 +558,24 @@ class SimulationEngine:
             s.weekly_engagement_history[-1] if s.weekly_engagement_history else 0
             for s in states.values() if not s.has_dropped_out
         ]
-        phase_dist = {}
+        phase_dist: dict[str | int, int] = {}
         for s in states.values():
-            p = s.dropout_phase if not s.has_dropped_out else 5
-            phase_dist[p] = phase_dist.get(p, 0) + 1
+            if s.withdrawal_reason is not None:
+                key = "unavoidable_withdrawal"
+            elif s.has_dropped_out:
+                key = 5  # Bäulke phase 5 (decided)
+            else:
+                key = s.dropout_phase
+            phase_dist[key] = phase_dist.get(key, 0) + 1
+
+        # Unavoidable withdrawal breakdown
+        withdrawal_reasons: dict[str, int] = {}
+        for s in states.values():
+            if s.withdrawal_reason is not None:
+                withdrawal_reasons[s.withdrawal_reason] = (
+                    withdrawal_reasons.get(s.withdrawal_reason, 0) + 1
+                )
+        withdrawal_count = sum(withdrawal_reasons.values())
 
         return {
             "total_students": total,
@@ -564,4 +588,6 @@ class SimulationEngine:
             "dropout_phase_distribution": {
                 f"phase_{k}": v for k, v in sorted(phase_dist.items())
             },
+            "unavoidable_withdrawal_count": withdrawal_count,
+            "unavoidable_withdrawal_reasons": withdrawal_reasons,
         }

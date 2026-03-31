@@ -256,7 +256,8 @@ class MultiSemesterRunner:
                 continue
 
             # Filter out permanently dropped students (Bäulke phase 5)
-            if state.dropout_phase >= 5:
+            # or students who withdrew due to unavoidable life events
+            if state.dropout_phase >= 5 or state.withdrawal_reason is not None:
                 continue
 
             # Create carry-over persona (immutable: use dataclasses.replace)
@@ -368,6 +369,7 @@ def _build_state_overrides(
         "dropout_phase": new_dropout_phase,
         "has_dropped_out": False,
         "dropout_week": None,
+        "withdrawal_reason": None,
         "missed_assignments_streak": 0,
         "weekly_engagement_history": [],
         "memory": [],
