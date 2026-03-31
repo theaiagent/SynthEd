@@ -25,52 +25,52 @@ Educational data mining research faces three persistent challenges:
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                       SynthEd Pipeline                          │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌──────────────┐                                               │
-│  │ Calibration   │───┐                                          │
-│  │ Map           │   │                                          │
-│  └──────────────┘   │                                          │
-│  ┌──────────────┐   │                                          │
-│  │  Student      │◀──┘ ┌───────────────────────┐   ┌───────────┐ │
-│  │  Factory      │───▶│   Simulation Engine   │──▶│   Data    │ │
-│  │               │    │                       │   │   Export  │ │
-│  │               │    │  Phase 1: Individual   │   │          │ │
-│  │ 4 clusters    │    │  ├ LMS logins (Rovai) │   │ students │ │
-│  │ (Rovai 2003)  │    │  ├ Forum posts (Tinto)│   │ .csv     │ │
-│  │ Big Five      │    │  ├ Assignments        │   │ interact.│ │
-│  │ SDT motivation│    │  ├ Live sessions      │   │ .csv     │ │
-│  │ Bean & Metzner│    │  ├ CoI presences      │   │ outcomes │ │
-│  │ Moore autonomy│    │  └ Engagement update  │   │ .csv     │ │
-│  │ ...           │    │                       │   │ weekly   │ │
-│  └──────────────┘    │  Phase 2: Social       │   │ .csv     │ │
-│                       │  ├ Network formation  │   └───────────┘ │
-│                       │  ├ Peer influence     │        │        │
-│                       │  ├ Dropout contagion  │        │        │
-│                       │  └ Bäulke 6-phase     │        │        │
-│                       │    dropout decision   │        │        │
-│                       └───────────────────────┘        │        │
-│                                │                       │        │
-│                       ┌────────┴───────┐               │        │
-│                       │  Social Network│               │        │
-│                       │  (Epstein &    │               │        │
-│                       │   Axtell)      │               │        │
-│                       └────────────────┘               │        │
-│                                                        │        │
-│              ┌──────────────────┐                       │        │
-│              │  Validation Suite│◀──────────────────────┘        │
-│              │  17+ validation  │                                │
-│              │  tests           │                                │
-│              │  ├ Distributions │                                │
-│              │  ├ Correlations  │                                │
-│              │  ├ Temporal      │                                │
-│              │  ├ Privacy       │                                │
-│              │  └ Backstory     │                                │
-│              └──────────────────┘                                │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    CM["CalibrationMap\ntarget dropout range → params"]
+    BP["Benchmark Profiles / JSON Config"]
+    PC["PersonaConfig\nadjusted parameters"]
+
+    CM --> PC
+    BP --> PC
+
+    SF["Student Factory\n4 clusters (Rovai 2003)\nBig Five · SDT · Bean & Metzner · Moore"]
+    PC --> SF
+
+    SF -->|"N students\nwith UUIDv7 id + display_id"| engine
+
+    subgraph engine ["Simulation Engine — 14 weeks × N semesters"]
+        direction TB
+        P1["Phase 1: Individual Behavior\nLMS logins (Rovai) · Forum posts (Tinto)\nAssignments & exams · Live sessions\nCoI presences (Garrison) · Engagement update"]
+        UW["Unavoidable Withdrawal\nLife events: illness, relocation, death..."]
+        GPA["GPA Computation\nCumulative 4.0-scale from assignments & exams"]
+        P2["Phase 2: Social Network\nPeer influence & contagion\nBäulke 6-phase dropout decision"]
+        P1 --> UW --> GPA --> P2
+    end
+
+    SN["Social Network\nEpstein & Axtell\nLink formation · decay · contagion"]
+    P2 <--> SN
+
+    engine --> EX
+
+    subgraph EX ["Data Export"]
+        direction LR
+        E1["students.csv"]
+        E2["interactions.csv"]
+        E3["outcomes.csv"]
+        E4["weekly.csv"]
+    end
+
+    EX --> VAL
+
+    subgraph VAL ["Validation Suite — 18 tests"]
+        direction LR
+        V1["L1: Distributions"]
+        V2["L2: Correlations"]
+        V3["L3: Temporal"]
+        V4["L4: Privacy"]
+        V5["L5: Backstory"]
+    end
 ```
 
 ## Key Features
