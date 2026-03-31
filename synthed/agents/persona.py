@@ -131,6 +131,9 @@ class PersonaConfig:
     # per semester (e.g., serious illness, family emergency, relocation)
     unavoidable_withdrawal_rate: float = 0.003  # 0.3% per semester
 
+    # Name generation (default: off for GraphRAG/analytics compatibility)
+    generate_names: bool = False
+
     def __post_init__(self):
         from ..utils.validation import validate_range, validate_probability_distribution
         validate_range(self.employment_rate, 0.0, 1.0, "employment_rate")

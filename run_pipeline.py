@@ -47,6 +47,10 @@ def main():
         "--cost-threshold", type=float, default=1.0,
         help="LLM cost warning threshold in USD (default: 1.0)",
     )
+    parser.add_argument(
+        "--names", action="store_true",
+        help="Generate culturally diverse student names (default: ID-only)",
+    )
     args = parser.parse_args()
 
     configure_logging(verbose=args.verbose)
@@ -54,7 +58,10 @@ def main():
     # Load config if provided
     if args.config:
         config_data = json.loads(Path(args.config).read_text())
-        persona_config = PersonaConfig(**config_data.get("persona_config", {}))
+        config_kwargs = config_data.get("persona_config", {})
+        if args.names:
+            config_kwargs["generate_names"] = True
+        persona_config = PersonaConfig(**config_kwargs)
         reference_stats = ReferenceStatistics(**config_data.get("reference_statistics", {}))
         sim_config = config_data.get("simulation", {})
         n_students = sim_config.get("n_students", args.n)
@@ -62,7 +69,7 @@ def main():
         use_llm = sim_config.get("use_llm", args.llm)
         llm_model = sim_config.get("llm_model", args.model)
     else:
-        persona_config = PersonaConfig()
+        persona_config = PersonaConfig(generate_names=args.names)
         reference_stats = ReferenceStatistics()
         n_students = args.n
         seed = args.seed
@@ -82,7 +89,7 @@ def main():
     print("=" * 60)
     print("  SynthEd: Agent-Based Synthetic Educational Data Generator")
     print("=" * 60)
-    print(f"  Students: {n_students} | Seed: {seed} | LLM: {'ON' if use_llm else 'OFF'}")
+    print(f"  Students: {n_students} | Seed: {seed} | LLM: {'ON' if use_llm else 'OFF'} | Names: {'ON' if args.names else 'OFF'}")
     if target_dropout_range:
         print(f"  Target dropout: {target_dropout_range[0]:.0%}-{target_dropout_range[1]:.0%}")
     print(f"  Output: {args.output}")

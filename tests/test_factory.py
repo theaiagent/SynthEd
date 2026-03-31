@@ -16,10 +16,11 @@ class TestStudentFactory:
         assert len(pop) == 50
 
     def test_deterministic_with_seed(self):
+        """Same seed produces identical populations (names default to "")."""
         pop1 = StudentFactory(seed=42).generate_population(n=10)
         pop2 = StudentFactory(seed=42).generate_population(n=10)
         for p1, p2 in zip(pop1, pop2):
-            assert p1.name == p2.name
+            assert p1.name == p2.name  # both "" with default config
             assert p1.age == p2.age
             assert abs(p1.financial_stress - p2.financial_stress) < 1e-9
             assert abs(p1.self_regulation - p2.self_regulation) < 1e-9
@@ -128,3 +129,55 @@ class TestDisplayId:
 
     def test_display_id_default_empty(self):
         assert StudentPersona(name="Manual").display_id == ""
+
+
+class TestNameGeneration:
+    def test_default_no_names(self):
+        """Default PersonaConfig produces empty names for all personas."""
+        factory = StudentFactory(seed=42)
+        pop = factory.generate_population(n=10)
+        for p in pop:
+            assert p.name == ""
+
+    def test_generate_names_true(self):
+        """generate_names=True produces non-empty names."""
+        cfg = PersonaConfig(generate_names=True)
+        factory = StudentFactory(config=cfg, seed=42)
+        pop = factory.generate_population(n=10)
+        for p in pop:
+            assert p.name != ""
+            assert " " in p.name  # first + last
+
+    def test_names_deterministic(self):
+        """Same seed + generate_names=True produces same names."""
+        cfg = PersonaConfig(generate_names=True)
+        pop1 = StudentFactory(config=cfg, seed=42).generate_population(n=10)
+        pop2 = StudentFactory(config=cfg, seed=42).generate_population(n=10)
+        for p1, p2 in zip(pop1, pop2):
+            assert p1.name == p2.name
+
+    def test_names_do_not_affect_attributes(self):
+        """Toggling generate_names does not change any simulation attribute.
+
+        This is the CRITICAL regression test proving RNG isolation.
+        """
+        pop_no_names = StudentFactory(seed=42).generate_population(n=50)
+        cfg = PersonaConfig(generate_names=True)
+        pop_with_names = StudentFactory(config=cfg, seed=42).generate_population(n=50)
+        for p1, p2 in zip(pop_no_names, pop_with_names):
+            assert p1.age == p2.age
+            assert abs(p1.financial_stress - p2.financial_stress) < 1e-9
+            assert abs(p1.self_regulation - p2.self_regulation) < 1e-9
+            assert abs(p1.self_efficacy - p2.self_efficacy) < 1e-9
+            assert abs(p1.base_dropout_risk - p2.base_dropout_risk) < 1e-9
+            assert abs(p1.base_engagement_probability - p2.base_engagement_probability) < 1e-9
+            assert p1.gender == p2.gender
+            assert p1.motivation_type == p2.motivation_type
+
+    def test_display_id_independent_of_names(self):
+        """Display IDs are identical regardless of generate_names."""
+        pop1 = StudentFactory(seed=42).generate_population(n=10)
+        cfg = PersonaConfig(generate_names=True)
+        pop2 = StudentFactory(config=cfg, seed=42).generate_population(n=10)
+        for p1, p2 in zip(pop1, pop2):
+            assert p1.display_id == p2.display_id

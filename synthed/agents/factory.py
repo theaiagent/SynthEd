@@ -9,7 +9,6 @@ origin (Tinto, Bean & Metzner, Kember, Rovai, Bäulke et al.).
 from __future__ import annotations
 
 import logging
-import random
 from typing import Any
 
 import numpy as np
@@ -21,21 +20,10 @@ from .backstory_templates import (
     select_template, select_life_event, select_regional_context,
     build_enrichment_prompt,
 )
+from .name_pools import select_name, select_country_context
 from ..utils.llm import LLMClient, LLMError, LLMResponseError
 
 logger = logging.getLogger(__name__)
-
-
-FIRST_NAMES = {
-    "male": ["James", "Ahmed", "Carlos", "Wei", "Dmitri", "Kofi", "Raj", "Mehmet",
-             "Lucas", "Omar", "Yuki", "Daniel", "Emre", "Kenji", "Ali"],
-    "female": ["Sarah", "Fatima", "Maria", "Ling", "Olga", "Amara", "Priya", "Ayşe",
-               "Emma", "Layla", "Sakura", "Sophie", "Elif", "Mina", "Ana"],
-}
-LAST_NAMES = [
-    "Anderson", "Yılmaz", "Chen", "Müller", "Santos", "Okafor", "Sharma", "Petrov",
-    "Nakamura", "Al-Farsi", "Kim", "García", "Nguyen", "Johansson", "Osei",
-]
 
 
 class StudentFactory:
@@ -59,7 +47,12 @@ class StudentFactory:
         self.config = config or PersonaConfig()
         self.llm = llm_client
         self.rng = np.random.default_rng(seed)
-        random.seed(seed)
+        # Isolated RNG for name generation — spawned from SeedSequence so the
+        # name stream is cryptographically independent from self.rng without
+        # any magic-number offset or collision risk.
+        self._name_rng = np.random.default_rng(
+            np.random.SeedSequence(seed).spawn(1)[0]
+        )
 
     def generate_population(
         self,
@@ -105,8 +98,12 @@ class StudentFactory:
             list(cfg.gender_distribution.keys()),
             p=list(cfg.gender_distribution.values()),
         )
-        first = random.choice(FIRST_NAMES[gender])
-        last = random.choice(LAST_NAMES)
+        if cfg.generate_names:
+            country_ctx = select_country_context(self._name_rng)
+            first, last = select_name(self._name_rng, gender, country_ctx)
+            name = f"{first} {last}"
+        else:
+            name = ""
         age = int(self.rng.beta(2, 5) * (cfg.age_range[1] - cfg.age_range[0])
                   + cfg.age_range[0])
 
@@ -253,7 +250,7 @@ class StudentFactory:
         ))
 
         return StudentPersona(
-            name=f"{first} {last}",
+            name=name,
             age=age,
             gender=gender,
             personality=big_five,
@@ -316,23 +313,23 @@ class StudentFactory:
         try:
             result = self.llm.chat_json(messages, temperature=0.7)
         except (LLMError, LLMResponseError) as exc:
-            logger.warning("LLM enrichment failed for %s: %s", persona.name, exc)
+            logger.warning("LLM enrichment failed for %s: %s", persona.id, exc)
             return persona
         except Exception as exc:
-            logger.warning("Unexpected LLM error for %s: %s", persona.name, exc)
+            logger.warning("Unexpected LLM error for %s: %s", persona.id, exc)
             return persona
 
         # Validate response contains expected key
         if not isinstance(result, dict):
             logger.warning(
-                "LLM returned non-dict for %s: %s", persona.name, type(result).__name__
+                "LLM returned non-dict for %s: %s", persona.id, type(result).__name__
             )
             return persona
 
         backstory = result.get("backstory")
         if not isinstance(backstory, str) or not backstory.strip():
             logger.warning(
-                "LLM returned missing/empty backstory for %s", persona.name
+                "LLM returned missing/empty backstory for %s", persona.id
             )
             return persona
 
@@ -342,7 +339,7 @@ class StudentFactory:
         if len(backstory) < self._MIN_BACKSTORY_LENGTH:
             logger.warning(
                 "LLM backstory too short for %s (%d chars): %s",
-                persona.name, len(backstory), backstory,
+                persona.id, len(backstory), backstory,
             )
             return persona
 
