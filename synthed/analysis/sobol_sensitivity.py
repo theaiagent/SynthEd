@@ -39,6 +39,8 @@ class SobolParameter:
     lower: float        # lower bound
     upper: float        # upper bound
     description: str    # human-readable purpose
+    log_scale: bool = False       # Phase 2: Optuna log-uniform sampling
+    step: float | None = None     # Phase 2: discretization step
 
     def __post_init__(self):
         if self.lower >= self.upper:
@@ -191,6 +193,47 @@ class SobolAnalyzer:
         self.parameters = parameters or SOBOL_PARAMETER_SPACE
         self._problem = self._build_problem()
         self._default_config = PersonaConfig()  # cached to avoid repeated construction
+        self._validate_parameters()
+
+    def _validate_parameters(self) -> None:
+        """Verify all parameter names resolve to real attributes.
+
+        Catches typos and stale names at setup time rather than after
+        thousands of simulations produce meaningless indices.
+        """
+        from ..simulation.engine import SimulationEngine
+        from ..simulation.environment import ODLEnvironment
+
+        config_fields = {f.name for f in fields(PersonaConfig)}
+        engine = SimulationEngine(environment=ODLEnvironment(), seed=0)
+        module_map = {
+            "tinto": engine.tinto,
+            "bean": engine.bean_metzner,
+            "kember": engine.kember,
+            "baulke": engine.baulke,
+            "sdt": engine.sdt,
+            "rovai": engine.rovai,
+            "garrison": engine.garrison,
+            "gonzalez": engine.gonzalez,
+            "moore": engine.moore,
+            "epstein": engine.epstein_axtell,
+        }
+
+        for p in self.parameters:
+            prefix, _, attr = p.name.partition(".")
+            if prefix == "config":
+                if attr not in config_fields:
+                    raise ValueError(f"Unknown PersonaConfig field: '{attr}' in {p.name}")
+            elif prefix == "engine":
+                if not hasattr(engine, attr):
+                    raise ValueError(f"Unknown engine attribute: '{attr}' in {p.name}")
+            elif prefix in module_map:
+                if not hasattr(module_map[prefix], attr):
+                    raise ValueError(
+                        f"Unknown attribute '{attr}' on {prefix} module in {p.name}"
+                    )
+            else:
+                raise ValueError(f"Unknown parameter prefix: '{prefix}' in {p.name}")
 
     def _build_problem(self) -> dict:
         """Build SALib problem definition from parameter space."""

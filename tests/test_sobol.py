@@ -69,6 +69,33 @@ class TestParameterSpace:
 # SALib problem builder tests
 # ─────────────────────────────────────────────
 
+class TestParameterValidation:
+    def test_invalid_config_field_raises(self):
+        bad = (SobolParameter("config.nonexistent_field", 0.1, 0.9, "test"),)
+        with pytest.raises(ValueError, match="Unknown PersonaConfig field"):
+            SobolAnalyzer(n_students=10, parameters=bad)
+
+    def test_invalid_engine_attr_raises(self):
+        bad = (SobolParameter("engine._NONEXISTENT_WEIGHT", 0.1, 0.9, "test"),)
+        with pytest.raises(ValueError, match="Unknown engine attribute"):
+            SobolAnalyzer(n_students=10, parameters=bad)
+
+    def test_invalid_theory_attr_raises(self):
+        bad = (SobolParameter("bean._NONEXISTENT_PENALTY", 0.1, 0.9, "test"),)
+        with pytest.raises(ValueError, match="Unknown attribute"):
+            SobolAnalyzer(n_students=10, parameters=bad)
+
+    def test_invalid_prefix_raises(self):
+        bad = (SobolParameter("unknown_module.some_attr", 0.1, 0.9, "test"),)
+        with pytest.raises(ValueError, match="Unknown parameter prefix"):
+            SobolAnalyzer(n_students=10, parameters=bad)
+
+    def test_default_space_passes_validation(self):
+        """Full SOBOL_PARAMETER_SPACE validates without error."""
+        analyzer = SobolAnalyzer(n_students=10, seed=42)
+        assert len(analyzer.parameters) == len(SOBOL_PARAMETER_SPACE)
+
+
 class TestProblemBuilder:
     def test_build_problem_structure(self):
         analyzer = SobolAnalyzer(n_students=10, seed=42)
