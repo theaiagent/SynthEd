@@ -64,7 +64,8 @@ class DataExporter:
             # Cluster 2: Student Skills (Rovai, Moore)
             "digital_literacy", "self_regulation", "time_management",
             "learner_autonomy",
-            "academic_reading_writing", "has_reliable_internet", "device_type",
+            "academic_reading_writing", "has_reliable_internet", "disability_severity",
+            "device_type",
             "preferred_learning_style",
             # Cluster 3: External Factors (Bean & Metzner)
             "is_employed", "weekly_work_hours", "has_family_responsibilities",
@@ -100,6 +101,7 @@ class DataExporter:
                     "learner_autonomy": round(s.learner_autonomy, 3),
                     "academic_reading_writing": s.academic_reading_writing,
                     "has_reliable_internet": int(s.has_reliable_internet),
+                    "disability_severity": s.disability_severity,
                     "device_type": s.device_type,
                     "preferred_learning_style": s.preferred_learning_style,
                     "is_employed": int(s.is_employed),

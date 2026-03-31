@@ -373,3 +373,66 @@ class TestBeanMetznerCoping:
         growth_from_high = state_high.coping_factor - initial
 
         assert growth_from_zero > growth_from_high
+
+
+class TestRovaiDisability:
+    def test_disability_low_support_reduces_floor(self):
+        """Disability + low institutional support reduces engagement floor."""
+        rovai = RovaiPersistence()
+        student_dis = StudentPersona(disability_severity=0.6,
+                                     institutional_support_access=0.2,
+                                     self_regulation=0.5, goal_commitment=0.5,
+                                     self_efficacy=0.5, learner_autonomy=0.5)
+        student_no = StudentPersona(disability_severity=0.0,
+                                    institutional_support_access=0.2,
+                                    self_regulation=0.5, goal_commitment=0.5,
+                                    self_efficacy=0.5, learner_autonomy=0.5)
+        floor_dis = rovai.engagement_floor(student_dis)
+        floor_no = rovai.engagement_floor(student_no)
+        assert floor_dis < floor_no
+
+    def test_disability_high_support_no_penalty(self):
+        """Disability with high support has no floor penalty."""
+        rovai = RovaiPersistence()
+        student_dis = StudentPersona(disability_severity=0.5,
+                                     institutional_support_access=0.7,
+                                     self_regulation=0.5, goal_commitment=0.5,
+                                     self_efficacy=0.5, learner_autonomy=0.5)
+        student_no = StudentPersona(disability_severity=0.0,
+                                    institutional_support_access=0.7,
+                                    self_regulation=0.5, goal_commitment=0.5,
+                                    self_efficacy=0.5, learner_autonomy=0.5)
+        assert rovai.engagement_floor(student_dis) == rovai.engagement_floor(student_no)
+
+    def test_severe_disability_stronger_penalty(self):
+        """Higher severity means stronger floor reduction."""
+        rovai = RovaiPersistence()
+        mild = StudentPersona(disability_severity=0.1, institutional_support_access=0.2,
+                              self_regulation=0.5, goal_commitment=0.5,
+                              self_efficacy=0.5, learner_autonomy=0.5)
+        severe = StudentPersona(disability_severity=0.8, institutional_support_access=0.2,
+                                self_regulation=0.5, goal_commitment=0.5,
+                                self_efficacy=0.5, learner_autonomy=0.5)
+        assert rovai.engagement_floor(severe) < rovai.engagement_floor(mild)
+
+
+class TestBeanMetznerDisability:
+    def test_disability_adds_pressure(self):
+        """Disabled student gets more negative pressure."""
+        bm = BeanMetznerPressure()
+        student_dis = StudentPersona(disability_severity=0.5,
+                                     is_employed=True, weekly_work_hours=40,
+                                     financial_stress=0.7)
+        student_no = StudentPersona(disability_severity=0.0,
+                                    is_employed=True, weekly_work_hours=40,
+                                    financial_stress=0.7)
+        p_dis = bm.calculate_environmental_pressure(student_dis)
+        p_no = bm.calculate_environmental_pressure(student_no)
+        assert p_dis < p_no  # more negative = more pressure
+
+    def test_severe_disability_more_pressure(self):
+        """Higher severity means more environmental pressure."""
+        bm = BeanMetznerPressure()
+        mild = StudentPersona(disability_severity=0.1, is_employed=False)
+        severe = StudentPersona(disability_severity=0.8, is_employed=False)
+        assert bm.calculate_environmental_pressure(severe) < bm.calculate_environmental_pressure(mild)

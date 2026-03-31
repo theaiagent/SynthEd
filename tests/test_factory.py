@@ -181,3 +181,59 @@ class TestNameGeneration:
         pop2 = StudentFactory(config=cfg, seed=42).generate_population(n=10)
         for p1, p2 in zip(pop1, pop2):
             assert p1.display_id == p2.display_id
+
+
+class TestDisabilitySeverityGeneration:
+    def test_disability_rate_respected(self):
+        """Population disability rate should be approximately disability_rate."""
+        cfg = PersonaConfig(disability_rate=0.20)
+        factory = StudentFactory(config=cfg, seed=42)
+        pop = factory.generate_population(n=500)
+        disabled_count = sum(1 for p in pop if p.disability_severity > 0)
+        rate = disabled_count / len(pop)
+        # Within reasonable range of 0.20 (allow ±0.08 for N=500)
+        assert 0.10 < rate < 0.30
+
+    def test_disability_severity_is_spectrum(self):
+        """Disabled students should have varied severity, not all the same."""
+        cfg = PersonaConfig(disability_rate=0.50)
+        factory = StudentFactory(config=cfg, seed=42)
+        pop = factory.generate_population(n=100)
+        severities = [p.disability_severity for p in pop if p.disability_severity > 0]
+        assert len(severities) > 10
+        # Should have at least 3 unique severity values (spectrum, not binary)
+        assert len(set(severities)) >= 3
+
+    def test_disabled_students_lower_digital_literacy(self):
+        """Disabled students should have lower mean digital_literacy."""
+        import numpy as np
+        cfg = PersonaConfig(disability_rate=0.50)
+        factory = StudentFactory(config=cfg, seed=42)
+        pop = factory.generate_population(n=200)
+        disabled = [p for p in pop if p.disability_severity > 0]
+        non_disabled = [p for p in pop if p.disability_severity == 0]
+        assert len(disabled) > 20 and len(non_disabled) > 20
+        mean_dis = np.mean([p.digital_literacy for p in disabled])
+        mean_non = np.mean([p.digital_literacy for p in non_disabled])
+        assert mean_dis < mean_non
+
+    def test_disability_rate_zero_no_disabled(self):
+        """disability_rate=0 produces no disabled students."""
+        cfg = PersonaConfig(disability_rate=0.0)
+        factory = StudentFactory(config=cfg, seed=42)
+        pop = factory.generate_population(n=100)
+        assert all(p.disability_severity == 0.0 for p in pop)
+
+    def test_disability_deterministic(self):
+        """Same seed produces same disability assignments."""
+        cfg = PersonaConfig(disability_rate=0.15)
+        pop1 = StudentFactory(config=cfg, seed=42).generate_population(n=50)
+        pop2 = StudentFactory(config=cfg, seed=42).generate_population(n=50)
+        for p1, p2 in zip(pop1, pop2):
+            assert p1.disability_severity == p2.disability_severity
+
+    def test_population_summary_includes_disability(self):
+        factory = StudentFactory(seed=42)
+        pop = factory.generate_population(n=50)
+        summary = factory.population_summary(pop)
+        assert "disability_rate" in summary

@@ -17,6 +17,8 @@ class RovaiPersistence:
     _FLOOR_EFFICACY_WEIGHT: float = 0.10   # self-efficacy weight in engagement floor
     _FLOOR_AUTONOMY_WEIGHT: float = 0.08   # learner autonomy weight in engagement floor
     _FLOOR_SCALE: float = 0.50             # scale factor; max floor ~0.22 for high-resilience
+    _DISABILITY_SUPPORT_THRESHOLD: float = 0.50  # support level above which disability penalty vanishes
+    _DISABILITY_FLOOR_PENALTY: float = 0.40       # max floor reduction factor at zero support
 
     def regulation_buffer(self, student: StudentPersona) -> float:
         """
@@ -39,4 +41,10 @@ class RovaiPersistence:
             + student.self_efficacy * self._FLOOR_EFFICACY_WEIGHT
             + student.learner_autonomy * self._FLOOR_AUTONOMY_WEIGHT  # Moore: autonomous learners persist
         ) * self._FLOOR_SCALE  # Scale: max ~0.22 for high-resilience students
+
+        # Rovai (2003): Inaccessible environments erode persistence floor
+        if student.disability_severity > 0 and student.institutional_support_access < self._DISABILITY_SUPPORT_THRESHOLD:
+            accessibility_gap = self._DISABILITY_SUPPORT_THRESHOLD - student.institutional_support_access
+            personal_floor *= (1.0 - accessibility_gap * self._DISABILITY_FLOOR_PENALTY * student.disability_severity)
+
         return personal_floor

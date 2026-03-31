@@ -4,7 +4,7 @@ import uuid
 
 import pytest
 
-from synthed.agents.persona import StudentPersona, BigFiveTraits
+from synthed.agents.persona import StudentPersona, BigFiveTraits, PersonaConfig
 
 
 class TestBigFiveTraits:
@@ -213,3 +213,22 @@ class TestStudentID:
         time.sleep(0.005)
         batch_b = [StudentPersona().id for _ in range(5)]
         assert max(batch_a) < min(batch_b)
+
+
+class TestDisabilitySeverity:
+    def test_disability_default_zero(self):
+        assert StudentPersona().disability_severity == 0.0
+
+    def test_disability_severity_accepted(self):
+        p = StudentPersona(disability_severity=0.4)
+        assert p.disability_severity == 0.4
+
+    def test_disability_rate_config_default(self):
+        assert PersonaConfig().disability_rate == 0.10
+
+    def test_disability_rate_validation(self):
+        import pytest
+        with pytest.raises(ValueError):
+            PersonaConfig(disability_rate=-0.1)
+        with pytest.raises(ValueError):
+            PersonaConfig(disability_rate=1.5)

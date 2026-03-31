@@ -249,7 +249,7 @@ class StudentFactory:
             0.05, 0.95
         ))
 
-        return StudentPersona(
+        persona = StudentPersona(
             name=name,
             age=age,
             gender=gender,
@@ -281,6 +281,20 @@ class StudentFactory:
             motivation_type=motivation_type,
             goal_orientation=goal_orientation,
         )
+
+        # Disability severity — drawn AFTER all other attributes (Option B: RNG isolation)
+        if self.rng.random() < cfg.disability_rate:
+            severity = float(np.clip(self.rng.beta(2, 5), 0.05, 0.95))
+            new_dl = round(float(np.clip(
+                persona.digital_literacy - severity * 0.15, 0.05, 0.95
+            )), 2)
+            new_tm = round(float(np.clip(
+                persona.time_management - severity * 0.10, 0.05, 0.95
+            )), 2)
+            persona = replace(persona, disability_severity=round(severity, 2),
+                              digital_literacy=new_dl, time_management=new_tm)
+
+        return persona
 
     def _sample_big_five(self) -> BigFiveTraits:
         base = self.rng.normal(0.5, 0.15, size=5)
@@ -356,6 +370,8 @@ class StudentFactory:
                 g: sum(1 for p in personas if p.gender == g) / n
                 for g in set(p.gender for p in personas)
             },
+            # Disability (Rovai, 2003: accessibility)
+            "disability_rate": sum(1 for p in personas if p.disability_severity > 0) / n,
             # External factors (Bean & Metzner)
             "employment_rate": sum(1 for p in personas if p.is_employed) / n,
             "family_responsibility_rate": sum(1 for p in personas if p.has_family_responsibilities) / n,

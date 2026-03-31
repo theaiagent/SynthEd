@@ -37,25 +37,25 @@ class CalibrationEstimate:
 
 
 # Empirically measured calibration data (N=500, 5 seeds averaged per point).
-# Measured 2026-03-31 post coping factor (Bean & Metzner pressure attenuation).
+# Measured 2026-03-31 post disability_severity (Rovai accessibility + B&M pressure).
 # IMPORTANT: Re-measure if theory modules, engine weights, or RNG-consuming
 #            code paths change (even non-dropout features shift RNG sequence).
 # TODO: Warn when n_students is small (e.g. <100) — stochastic variance
 #       makes calibration estimates unreliable at low N.
 CALIBRATION_DATA: tuple[CalibrationPoint, ...] = (
     # 1-semester sweep across dropout_base_rate values
-    CalibrationPoint(1, 0.20, 0.224, 500, 5),
-    CalibrationPoint(1, 0.30, 0.289, 500, 5),
-    CalibrationPoint(1, 0.40, 0.330, 500, 5),
-    CalibrationPoint(1, 0.50, 0.368, 500, 5),
-    CalibrationPoint(1, 0.60, 0.402, 500, 5),
+    CalibrationPoint(1, 0.20, 0.207, 500, 5),
+    CalibrationPoint(1, 0.30, 0.276, 500, 5),
+    CalibrationPoint(1, 0.40, 0.319, 500, 5),
+    CalibrationPoint(1, 0.50, 0.347, 500, 5),
+    CalibrationPoint(1, 0.60, 0.384, 500, 5),
     CalibrationPoint(1, 0.70, 0.431, 500, 5),
-    CalibrationPoint(1, 0.80, 0.445, 500, 5),
-    CalibrationPoint(1, 0.90, 0.468, 500, 5),
-    CalibrationPoint(1, 0.95, 0.476, 500, 5),
+    CalibrationPoint(1, 0.80, 0.446, 500, 5),
+    CalibrationPoint(1, 0.90, 0.462, 500, 5),
+    CalibrationPoint(1, 0.95, 0.462, 500, 5),
     # Multi-semester at default rate (0.80)
-    CalibrationPoint(2, 0.80, 0.744, 500, 5),
-    CalibrationPoint(4, 0.80, 0.945, 500, 5),
+    CalibrationPoint(2, 0.80, 0.718, 500, 5),
+    CalibrationPoint(4, 0.80, 0.939, 500, 5),
 )
 
 # Bounds for dropout_base_rate

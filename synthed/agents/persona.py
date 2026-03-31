@@ -131,6 +131,9 @@ class PersonaConfig:
     # per semester (e.g., serious illness, family emergency, relocation)
     unavoidable_withdrawal_rate: float = 0.003  # 0.3% per semester
 
+    # Disability prevalence rate (Rovai, 2003: accessibility factor)
+    disability_rate: float = 0.10
+
     # Name generation (default: off for GraphRAG/analytics compatibility)
     generate_names: bool = False
 
@@ -144,6 +147,7 @@ class PersonaConfig:
         validate_range(self.self_regulation_mean, 0.0, 1.0, "self_regulation_mean")
         validate_range(self.dropout_base_rate, 0.01, 1.0, "dropout_base_rate")
         validate_range(self.unavoidable_withdrawal_rate, 0.0, 0.05, "unavoidable_withdrawal_rate")
+        validate_range(self.disability_rate, 0.0, 1.0, "disability_rate")
         validate_probability_distribution(self.gender_distribution, "gender_distribution")
         validate_probability_distribution(self.motivation_levels, "motivation_levels")
         validate_probability_distribution(self.socioeconomic_distribution, "socioeconomic_distribution")
@@ -208,6 +212,7 @@ class StudentPersona:
     academic_reading_writing: float = 0.6  # 0-1; readiness for academic work
     learner_autonomy: float = 0.5  # 0-1; Moore (1993): self-direction in learning
     has_reliable_internet: bool = True
+    disability_severity: float = 0.0  # 0.0 = none, >0 = severity from Beta(2,5); Rovai accessibility
     device_type: str = "laptop"  # laptop, desktop, mobile, tablet
     preferred_learning_style: str = "visual"
 

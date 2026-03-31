@@ -19,6 +19,7 @@ class BeanMetznerPressure:
     _FAMILY_PENALTY: float = 0.02             # engagement erosion from family responsibilities
     _FINANCIAL_STRESS_THRESHOLD: float = 0.5  # stress level triggering financial penalty
     _FINANCIAL_PENALTY: float = 0.015         # engagement erosion from financial stress
+    _DISABILITY_PENALTY: float = 0.015           # engagement erosion from disability-related challenges
     _COPING_MAX: float = 0.50              # maximum coping factor (50% pressure reduction)
     _COPING_GROWTH_RATE: float = 0.03      # weekly growth rate (modulated by aptitude)
     _COPING_REG_WEIGHT: float = 0.60       # self-regulation weight in coping aptitude
@@ -40,6 +41,8 @@ class BeanMetznerPressure:
             env_pressure -= self._FAMILY_PENALTY
         if student.financial_stress > self._FINANCIAL_STRESS_THRESHOLD:
             env_pressure -= self._FINANCIAL_PENALTY
+        if student.disability_severity > 0:
+            env_pressure -= self._DISABILITY_PENALTY * student.disability_severity
         return env_pressure * (1.0 - coping_factor)
 
     def update_coping(self, student: StudentPersona, state: SimulationState) -> None:
