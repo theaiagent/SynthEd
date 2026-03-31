@@ -17,8 +17,8 @@ class TestCalibrationMap:
 
     def test_estimate_known_point(self):
         """Estimation at a known observed dropout should return its base_rate."""
-        # 1-sem, rate=0.80, observed=0.486
-        result = self.cal.estimate(0.486, n_semesters=1)
+        # 1-sem, rate=0.80, observed=0.462
+        result = self.cal.estimate(0.462, n_semesters=1)
         assert abs(result.estimated_dropout_base_rate - 0.80) < 0.05
 
     def test_estimate_interpolation(self):

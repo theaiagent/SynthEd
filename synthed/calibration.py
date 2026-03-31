@@ -36,25 +36,26 @@ class CalibrationEstimate:
     source_data_points: int
 
 
-# Empirically measured calibration data (N=300, 3 seeds averaged per point).
-# Measured 2026-03-31 with _dropout_risk_scale active (post Step 0 fix).
-# IMPORTANT: Re-measure if theory modules or engine weights change.
+# Empirically measured calibration data (N=500, 5 seeds averaged per point).
+# Measured 2026-03-31 post v0.4.0 (all features active incl. withdrawal 0.3%).
+# IMPORTANT: Re-measure if theory modules, engine weights, or RNG-consuming
+#            code paths change (even non-dropout features shift RNG sequence).
 # TODO: Warn when n_students is small (e.g. <100) — stochastic variance
 #       makes calibration estimates unreliable at low N.
 CALIBRATION_DATA: tuple[CalibrationPoint, ...] = (
     # 1-semester sweep across dropout_base_rate values
-    CalibrationPoint(1, 0.20, 0.227, 300, 3),
-    CalibrationPoint(1, 0.30, 0.279, 300, 3),
-    CalibrationPoint(1, 0.40, 0.342, 300, 3),
-    CalibrationPoint(1, 0.50, 0.386, 300, 3),
-    CalibrationPoint(1, 0.60, 0.422, 300, 3),
-    CalibrationPoint(1, 0.70, 0.446, 300, 3),
-    CalibrationPoint(1, 0.80, 0.486, 300, 3),
-    CalibrationPoint(1, 0.90, 0.489, 300, 3),
-    CalibrationPoint(1, 0.95, 0.516, 300, 3),
+    CalibrationPoint(1, 0.20, 0.229, 500, 5),
+    CalibrationPoint(1, 0.30, 0.280, 500, 5),
+    CalibrationPoint(1, 0.40, 0.336, 500, 5),
+    CalibrationPoint(1, 0.50, 0.379, 500, 5),
+    CalibrationPoint(1, 0.60, 0.427, 500, 5),
+    CalibrationPoint(1, 0.70, 0.443, 500, 5),
+    CalibrationPoint(1, 0.80, 0.462, 500, 5),
+    CalibrationPoint(1, 0.90, 0.480, 500, 5),
+    CalibrationPoint(1, 0.95, 0.486, 500, 5),
     # Multi-semester at default rate (0.80)
-    CalibrationPoint(2, 0.80, 0.759, 300, 3),
-    CalibrationPoint(4, 0.80, 0.962, 300, 3),
+    CalibrationPoint(2, 0.80, 0.770, 500, 5),
+    CalibrationPoint(4, 0.80, 0.955, 500, 5),
 )
 
 # Bounds for dropout_base_rate
