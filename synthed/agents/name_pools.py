@@ -396,10 +396,7 @@ def select_name(
     elif gender == "female":
         first_names = pool.female_first
     else:
-        logger.warning(
-            "Unrecognised gender %r — defaulting to female first-name pool",
-            gender,
-        )
+        logger.warning("Unrecognised gender value — defaulting to female first-name pool")
         first_names = pool.female_first
 
     first_idx = rng.integers(0, len(first_names))
