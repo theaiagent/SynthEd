@@ -156,7 +156,7 @@ class DataExporter:
         filepath = self.output_dir / "outcomes.csv"
         fieldnames = [
             "student_id", "display_id", "has_dropped_out", "dropout_week", "withdrawal_reason", "final_dropout_phase",
-            "final_engagement", "final_academic_integration", "final_social_integration",
+            "final_engagement", "final_gpa", "final_academic_integration", "final_social_integration",
             "final_perceived_cost_benefit", "courses_active_count",
             "engagement_trend",
             # Garrison et al. (2000): Community of Inquiry
@@ -191,6 +191,7 @@ class DataExporter:
                     "withdrawal_reason": state.withdrawal_reason or "",
                     "final_dropout_phase": state.dropout_phase,
                     "final_engagement": round(history[-1], 3) if history else "",
+                    "final_gpa": round(state.cumulative_gpa, 2) if state.gpa_count > 0 else "",
                     "final_academic_integration": round(state.academic_integration, 3),
                     "final_social_integration": round(state.social_integration, 3),
                     "final_perceived_cost_benefit": round(state.perceived_cost_benefit, 3),

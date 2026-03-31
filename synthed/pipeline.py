@@ -290,6 +290,7 @@ class SynthEdPipeline:
                     "withdrawal_reason": state.withdrawal_reason or "",
                     "final_dropout_phase": state.dropout_phase,
                     "final_engagement": state.weekly_engagement_history[-1] if state.weekly_engagement_history else None,
+                    "final_gpa": round(state.cumulative_gpa, 2) if state.gpa_count > 0 else None,
                     # Garrison et al. (2000)
                     "coi_composite": round(coi_composite, 3),
                     # Deci & Ryan (1985)

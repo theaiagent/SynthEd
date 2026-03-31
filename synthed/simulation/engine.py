@@ -77,6 +77,8 @@ class SimulationState:
     perceived_cost_benefit: float = 0.6  # Kember: evolves with experience
     dropout_phase: int = 0  # Bäulke: 0–5
     cumulative_gpa: float = 0.0
+    gpa_points_sum: float = 0.0  # running sum of quality scores scaled to 4.0
+    gpa_count: int = 0           # number of graded items (assignments + exams)
     courses_active: list[str] = field(default_factory=list)
     has_dropped_out: bool = False
     dropout_week: int | None = None
@@ -337,6 +339,12 @@ class SimulationEngine:
 
         return all_records, states, self.network
 
+    def _record_graded_item(self, state: SimulationState, quality: float) -> None:
+        """Update cumulative GPA with a graded item (assignment or exam)."""
+        state.gpa_points_sum += quality * self._GPA_SCALE
+        state.gpa_count += 1
+        state.cumulative_gpa = state.gpa_points_sum / state.gpa_count
+
     def _simulate_student_week(
         self, student: StudentPersona, state: SimulationState,
         week: int, context: dict,
@@ -413,6 +421,7 @@ class SimulationEngine:
                         quality_score=round(quality, 2),
                         metadata={"is_late": is_late, "assignment_week": week},
                     ))
+                    self._record_graded_item(state, quality)
                     state.missed_assignments_streak = 0
                     state.memory.append({"week": week, "event_type": "assignment",
                                         "details": f"Submitted {'late ' if is_late else ''}assignment for {course_id} ({quality:.0%})",
@@ -455,6 +464,7 @@ class SimulationEngine:
                         quality_score=round(exam_quality, 2),
                         metadata={"exam_type": exam_type},
                     ))
+                    self._record_graded_item(state, exam_quality)
                     state.memory.append({"week": week, "event_type": "exam",
                                         "details": f"{exam_type.title()} for {course_id} ({exam_quality:.0%})",
                                         "impact": exam_quality - 0.5})
@@ -577,6 +587,10 @@ class SimulationEngine:
                 )
         withdrawal_count = sum(withdrawal_reasons.values())
 
+        # GPA statistics (only for students with graded items)
+        gpa_values = [s.cumulative_gpa for s in states.values() if s.gpa_count > 0]
+        mean_final_gpa = float(np.mean(gpa_values)) if gpa_values else None
+
         return {
             "total_students": total,
             "dropout_count": dropouts,
@@ -584,6 +598,7 @@ class SimulationEngine:
             "mean_dropout_week": float(np.mean(dropout_weeks)) if dropout_weeks else None,
             "std_dropout_week": float(np.std(dropout_weeks)) if dropout_weeks else None,
             "mean_final_engagement": float(np.mean(final_engagements)) if final_engagements else None,
+            "mean_final_gpa": mean_final_gpa,
             "retained_students": total - dropouts,
             "dropout_phase_distribution": {
                 f"phase_{k}": v for k, v in sorted(phase_dist.items())

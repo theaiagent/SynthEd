@@ -375,6 +375,10 @@ def _build_state_overrides(
         "memory": [],
         "exhaustion": new_exhaustion,
         "coi_state": new_coi,
+        # GPA accumulator carries forward across semesters
+        "cumulative_gpa": state.cumulative_gpa,
+        "gpa_points_sum": state.gpa_points_sum,
+        "gpa_count": state.gpa_count,
     }
 
 
