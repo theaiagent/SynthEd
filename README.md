@@ -101,6 +101,8 @@ flowchart TD
 - **GPA Computation & Feedback Loop**: Cumulative GPA (4.0 scale) computed from assignment and exam quality scores, carried across multi-semester runs. Reported in `outcomes.csv` as `final_gpa`. GPA feeds back into simulation as a weekly signal: anchoring Kember cost-benefit perception, triggering Bäulke non-fit perception (GPA < 1.6) and dropout triggers (GPA < 1.2), and reinforcing or eroding SDT competence beliefs. In multi-semester runs, earned GPA blends into `prior_gpa` (60/40 weighted) to anchor future quality formulas.
 - **Coping Factor**: State-level `coping_factor` (0.0–0.5) in the Bean & Metzner module reduces environmental pressure *impact* without mutating persona demographics. Growth is driven by self-regulation and conscientiousness with diminishing returns. Partially retained (70%) across semesters. Based on Lazarus & Folkman's (1984) transactional stress model.
 - **Optional Name Generation**: Culturally diverse name pools (488 first names, 235 last names across 10 regional pools) mapped to 4 economic contexts. Off by default (`generate_names=False`) for GraphRAG/analytics compatibility. Enable with `PersonaConfig(generate_names=True)` or `--names` CLI flag.
+- **Disability Severity**: Continuous `disability_severity` (0.0–0.95) drawn from Beta(2,5) distribution for a realistic mild-to-severe spectrum. Affects digital literacy, time management, Bean & Metzner environmental pressure (scaled by severity), and Rovai engagement floor (when institutional support is low). Configurable prevalence via `PersonaConfig(disability_rate=0.10)`.
+- **OULAD-Compatible Export**: Optional 7-table CSV export (`--oulad`) matching the Open University Learning Analytics Dataset schema exactly. Drop-in replacement for real OULAD data in EDM research pipelines: `courses.csv`, `assessments.csv`, `vle.csv`, `studentInfo.csv`, `studentRegistration.csv`, `studentAssessment.csv`, `studentVle.csv`.
 - **Temporal Coherence**: Unlike GAN/VAE-generated datasets, each student's trajectory emerges from a continuous weekly simulation loop where states depend on prior states, producing naturally coherent time series (e.g., failed midterm → declining engagement → dropout).
 
 ## Quick Start
@@ -130,6 +132,12 @@ python run_pipeline.py --n 300 --target-dropout 0.40 0.55
 
 # Verbose logging (per-student debug output)
 python run_pipeline.py --verbose
+
+# OULAD-compatible 7-table export
+python run_pipeline.py --n 300 --oulad
+
+# With culturally diverse student names
+python run_pipeline.py --n 200 --names
 ```
 
 ### With LLM Enrichment (Optional)
@@ -246,6 +254,18 @@ report = pipeline.run(n_students=500)
 | `weekly_engagement.csv` | Week-by-week engagement scores | 1 per student | Time series, early warning systems |
 | `pipeline_report.json` | Full validation report and pipeline metadata | 1 | Quality assurance |
 
+### OULAD-Compatible Export (optional, `--oulad`)
+
+| File | Description | Rows |
+|------|-------------|------|
+| `oulad/courses.csv` | Module presentations with length in days | 1 per course |
+| `oulad/assessments.csv` | TMA and Exam assessments per course | ~6 per course |
+| `oulad/vle.csv` | VLE material catalog per course | ~5-6 per course |
+| `oulad/studentInfo.csv` | Demographics, disability, final result | 1 per student x course |
+| `oulad/studentRegistration.csv` | Registration and unregistration dates | 1 per student x course |
+| `oulad/studentAssessment.csv` | Graded submissions with scores (0-100) | Variable |
+| `oulad/studentVle.csv` | VLE click interactions | Variable |
+
 ## Validation Suite
 
 SynthEd validates generated data across five levels:
@@ -351,7 +371,9 @@ SynthEd/
 │   │       ├── academic_exhaustion.py # Academic exhaustion mediator
 │   │       └── unavoidable_withdrawal.py  # Life-event withdrawal (illness, relocation, death)
 │   ├── data_output/
-│   │   └── exporter.py          # CSV dataset generation
+│   │   ├── exporter.py          # CSV dataset generation (4 standard files)
+│   │   ├── oulad_exporter.py    # OULAD-compatible 7-table export
+│   │   └── oulad_mappings.py    # OULAD schema mapping constants and functions
 │   ├── validation/
 │   │   └── validator.py         # 17+ statistical validation tests
 │   ├── analysis/
@@ -366,7 +388,7 @@ SynthEd/
 │   │   └── validation.py        # Input validation utilities
 │   ├── calibration.py             # CalibrationMap: target dropout → simulation params
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                        # 327 pytest tests across 23 files
+├── tests/                        # 377 pytest tests across 24 files
 ├── configs/
 │   └── default.json
 ├── run_pipeline.py               # CLI entry point
@@ -419,7 +441,8 @@ Extend `SimulationEngine._simulate_student_week()` to add new behavioral channel
 - [x] **GPA Feedback Loop** — Cumulative GPA feeds into Kember cost-benefit, Bäulke non-fit/triggers, SDT competence
 - [x] **Multi-Semester Prior GPA Update** — Earned GPA blends into prior_gpa (alpha=0.6) during carry-over
 - [x] **Coping Factor** — State-level Bean & Metzner pressure attenuation with diminishing returns and semester carry-over
-- [ ] **OULAD-Compatible Export** — 7-table format for drop-in EDM research compatibility
+- [x] **Disability Severity** — Continuous severity from Beta(2,5) distribution affecting Rovai floor and Bean & Metzner pressure
+- [x] **OULAD-Compatible Export** — 7-table format for drop-in EDM research compatibility
 - [ ] **GraphRAG Integration** — Knowledge graph-based curriculum modeling
 - [ ] **LLM-Augmented Mode** — Generate realistic forum posts, assignment text
 - [ ] **RL Calibration** — Agent Lightning for parameter optimization
@@ -429,7 +452,7 @@ Extend `SimulationEngine._simulate_student_week()` to add new behavioral channel
 
 ## Test Suite
 
-SynthEd includes 327 pytest tests across 23 test files, covering all theory modules, simulation mechanics, LLM enrichment, and the full pipeline.
+SynthEd includes 377 pytest tests across 24 test files, covering all theory modules, simulation mechanics, LLM enrichment, OULAD export, and the full pipeline.
 
 ```bash
 python -m pytest tests/ -v --tb=short
@@ -437,14 +460,14 @@ python -m pytest tests/ -v --tb=short
 
 | Test File | Tests | Coverage |
 |-----------|-------|----------|
-| `test_persona.py` | 22 | BigFive validation, engagement/dropout bounds, motivation comparison, dict roundtrip, UUIDv7 tests |
-| `test_factory.py` | 20 | Population count, seed determinism, attribute ranges, summary keys, dropout scaling, display_id, name generation toggle |
+| `test_persona.py` | 26 | BigFive validation, engagement/dropout bounds, motivation comparison, dict roundtrip, UUIDv7, disability severity |
+| `test_factory.py` | 26 | Population count, seed determinism, attribute ranges, dropout scaling, display_id, name generation, disability generation |
 | `test_engine.py` | 10 | Return types, state completeness, engagement bounds, dropout phases, risk cohort differentiation |
 | `test_social_network.py` | 11 | Link creation/strengthening, degree counting, peer influence, link decay, statistics, max degree cap |
 | `test_environment.py` | 4 | Default courses, exam week detection, positive events, course lookup |
 | `test_validator.py` | 9 | Report structure, z-test symmetry, quality grade thresholds, effective alpha scaling, dropout range tests |
 | `test_pipeline_integration.py` | 11 | Full pipeline run, output file creation, validation results, input rejection, calibration, profiles, multi-semester |
-| `test_theories.py` | 24 | Theory modules (Tinto, Bean-Metzner, Moore, Rovai, Garrison, Bäulke, Kember, SDT, Gonzalez), GPA feedback, coping factor |
+| `test_theories.py` | 29 | Theory modules (Tinto, Bean-Metzner, Moore, Rovai, Garrison, Bäulke, Kember, SDT, Gonzalez), GPA feedback, coping, disability |
 | `test_llm_enrichment.py` | 12 | Mock LLM enrichment, backstory export, error handling, cost report, custom pricing, varied prompts |
 | `test_llm_client.py` | 27 | LLMClient init, chat, retry, cache, JSON parsing, cost tracking, base_url validation, streaming |
 | `test_llm_cache.py` | 9 | Cache TTL expiry, LRU eviction, recently-accessed preservation, defaults |
@@ -461,6 +484,7 @@ python -m pytest tests/ -v --tb=short
 | `test_calibration.py` | 11 | CalibrationMap interpolation, clamping, confidence, range estimation |
 | `test_unavoidable_withdrawal.py` | 9 | Withdrawal probability, event types, statistical rate validation |
 | `test_gpa.py` | 9 | GPA accumulation, bounds, consistency, CSV export, face validity, feedback loop stability |
+| `test_oulad_export.py` | 35 | OULAD mapping functions, 7-table export, schema conformance, foreign keys, determinism |
 
 CI runs tests across **Python 3.10, 3.11, and 3.12** on every push and pull request via [GitHub Actions](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml).
 
