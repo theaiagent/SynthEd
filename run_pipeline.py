@@ -20,6 +20,12 @@ from synthed.validation.validator import ReferenceStatistics
 from synthed.pipeline import SynthEdPipeline
 
 
+def _cli_confirm(warning: str) -> bool:
+    """Prompt user for confirmation when estimated cost exceeds threshold."""
+    response = input(f"\nWARNING: {warning}\nProceed? [y/N]: ")
+    return response.strip().lower() in ("y", "yes")
+
+
 def main():
     parser = argparse.ArgumentParser(description="SynthEd: Synthetic Educational Data Generator")
     parser.add_argument("--n", type=int, default=200, help="Number of students (default: 200)")
@@ -27,11 +33,19 @@ def main():
     parser.add_argument("--output", type=str, default="./output", help="Output directory")
     parser.add_argument("--llm", action="store_true", help="Enable LLM enrichment (requires OPENAI_API_KEY)")
     parser.add_argument("--model", type=str, default="gpt-4o-mini", help="LLM model (default: gpt-4o-mini)")
+    parser.add_argument(
+        "--base-url", type=str, default=None,
+        help="OpenAI-compatible API base URL (e.g., http://localhost:11434/v1 for Ollama)",
+    )
     parser.add_argument("--config", type=str, default=None, help="Path to JSON config file")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose/debug logging")
     parser.add_argument(
         "--target-dropout", type=float, nargs=2, metavar=("LOWER", "UPPER"),
         help="Target dropout range, e.g. --target-dropout 0.40 0.60",
+    )
+    parser.add_argument(
+        "--cost-threshold", type=float, default=1.0,
+        help="LLM cost warning threshold in USD (default: 1.0)",
     )
     args = parser.parse_args()
 
@@ -79,9 +93,12 @@ def main():
         reference_stats=reference_stats,
         output_dir=args.output,
         llm_model=llm_model,
+        llm_base_url=args.base_url,
         use_llm=use_llm,
         seed=seed,
         target_dropout_range=target_dropout_range,
+        cost_threshold=args.cost_threshold,
+        confirm_callback=_cli_confirm if use_llm else None,
     )
 
     report = pipeline.run(n_students=n_students, enrich_personas=use_llm)

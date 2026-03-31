@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -146,6 +147,130 @@ class TestLLMClientCostReport:
             client.chat([{"role": "user", "content": "hello"}])
         assert mock_openai.chat.completions.create.call_count == 2
         assert client.total_failures == 1
+
+
+class TestLLMClientBaseUrl:
+    def test_base_url_none_default(self):
+        """OpenAI() called with base_url=None when not provided."""
+        with patch("synthed.utils.llm.OpenAI") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            LLMClient(api_key="test-key")
+            mock_cls.assert_called_once_with(
+                api_key="test-key",
+                base_url=None,
+            )
+
+    def test_base_url_custom(self):
+        """OpenAI() called with the provided base URL."""
+        with patch("synthed.utils.llm.OpenAI") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            url = "http://localhost:11434/v1"
+            LLMClient(api_key="test-key", base_url=url)
+            mock_cls.assert_called_once_with(
+                api_key="test-key",
+                base_url=url,
+            )
+
+    def test_unknown_model_with_base_url_logs_info(self, caplog):
+        """Info message logged for non-standard model with custom base_url."""
+        with patch("synthed.utils.llm.OpenAI") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            with caplog.at_level(logging.INFO, logger="synthed.utils.llm"):
+                LLMClient(
+                    api_key="test-key",
+                    base_url="http://localhost:11434/v1",
+                    model="llama3",
+                )
+            assert "cost tracking may be inaccurate" in caplog.text
+            assert "llama3" in caplog.text
+
+
+class TestLLMClientBaseUrlValidation:
+    def test_invalid_scheme_raises(self):
+        """base_url with non-http/https scheme is rejected."""
+        with patch("synthed.utils.llm.OpenAI"):
+            with pytest.raises(ValueError, match="http or https"):
+                LLMClient(api_key="test-key", base_url="ftp://example.com/v1")
+
+    def test_missing_host_raises(self):
+        """base_url without a host is rejected."""
+        with patch("synthed.utils.llm.OpenAI"):
+            with pytest.raises(ValueError, match="must include a host"):
+                LLMClient(api_key="test-key", base_url="http://")
+
+    def test_http_with_api_key_warns(self, caplog):
+        """Plain HTTP base_url with API key logs a warning."""
+        with patch("synthed.utils.llm.OpenAI") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            with caplog.at_level(logging.WARNING, logger="synthed.utils.llm"):
+                LLMClient(api_key="test-key", base_url="http://localhost:11434/v1")
+            assert "plain HTTP" in caplog.text
+
+
+class TestLLMClientStream:
+    def test_chat_stream_yields_chunks(self, mock_openai):
+        """Mock streaming response yields content strings."""
+        # Create mock streaming chunks
+        chunk1 = MagicMock()
+        chunk1.choices = [MagicMock()]
+        chunk1.choices[0].delta.content = "Hello "
+
+        chunk2 = MagicMock()
+        chunk2.choices = [MagicMock()]
+        chunk2.choices[0].delta.content = "world"
+
+        chunk3 = MagicMock()
+        chunk3.choices = [MagicMock()]
+        chunk3.choices[0].delta.content = None  # final chunk
+
+        mock_openai.chat.completions.create.return_value = iter([chunk1, chunk2, chunk3])
+
+        client = LLMClient(api_key="test-key")
+        chunks = list(client.chat_stream([{"role": "user", "content": "hi"}]))
+        assert chunks == ["Hello ", "world"]
+
+    def test_chat_stream_tracks_approximate_tokens(self, mock_openai):
+        """Output tokens updated after stream completes."""
+        chunk = MagicMock()
+        chunk.choices = [MagicMock()]
+        chunk.choices[0].delta.content = "A" * 100  # 100 chars ~ 25 tokens
+
+        mock_openai.chat.completions.create.return_value = iter([chunk])
+
+        client = LLMClient(api_key="test-key")
+        list(client.chat_stream([{"role": "user", "content": "hi"}]))
+        assert client.total_output_tokens == 25  # 100 / 4
+        assert client.total_calls == 1
+
+    def test_chat_stream_no_cache(self, mock_openai, tmp_path):
+        """No cache file written for streaming calls."""
+        chunk = MagicMock()
+        chunk.choices = [MagicMock()]
+        chunk.choices[0].delta.content = "test"
+
+        mock_openai.chat.completions.create.return_value = iter([chunk])
+
+        cache_dir = tmp_path / "cache"
+        client = LLMClient(api_key="test-key", cache_dir=str(cache_dir))
+        list(client.chat_stream([{"role": "user", "content": "hi"}]))
+        # Cache dir may be created but should have no entries
+        json_files = list(cache_dir.glob("*.json")) if cache_dir.exists() else []
+        assert len(json_files) == 0
+
+    def test_chat_stream_empty_choices_skipped(self, mock_openai):
+        """Chunks with empty choices are silently skipped."""
+        chunk_empty = MagicMock()
+        chunk_empty.choices = []
+
+        chunk_good = MagicMock()
+        chunk_good.choices = [MagicMock()]
+        chunk_good.choices[0].delta.content = "data"
+
+        mock_openai.chat.completions.create.return_value = iter([chunk_empty, chunk_good])
+
+        client = LLMClient(api_key="test-key")
+        chunks = list(client.chat_stream([{"role": "user", "content": "hi"}]))
+        assert chunks == ["data"]
 
 
 class TestLLMClientCache:

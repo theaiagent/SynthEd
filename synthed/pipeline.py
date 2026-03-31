@@ -14,7 +14,7 @@ import logging
 import time
 from dataclasses import replace
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from . import __version__
 from .agents.persona import PersonaConfig
@@ -27,6 +27,8 @@ from .validation.validator import SyntheticDataValidator, ReferenceStatistics
 from .utils.llm import LLMClient
 
 logger = logging.getLogger(__name__)
+
+_DEFAULT_COST_THRESHOLD_USD: float = 1.0
 
 
 class SynthEdPipeline:
@@ -49,11 +51,14 @@ class SynthEdPipeline:
         reference_stats: ReferenceStatistics | None = None,
         output_dir: str = "./output",
         llm_model: str = "gpt-4o-mini",
+        llm_base_url: str | None = None,
         use_llm: bool = False,
         seed: int = 42,
         n_semesters: int = 1,
         carry_over_config: Any | None = None,
         target_dropout_range: tuple[float, float] | None = None,
+        cost_threshold: float = _DEFAULT_COST_THRESHOLD_USD,
+        confirm_callback: Callable[[str], bool] | None = None,
     ):
         self.persona_config = persona_config or PersonaConfig()
         self.environment = environment or ODLEnvironment()
@@ -64,6 +69,8 @@ class SynthEdPipeline:
         self.n_semesters = n_semesters
         self.carry_over_config = carry_over_config
         self.target_dropout_range = target_dropout_range
+        self.cost_threshold = cost_threshold
+        self.confirm_callback = confirm_callback
         self._calibration_estimate = None
 
         # Apply calibration when a target dropout range is provided
@@ -71,7 +78,7 @@ class SynthEdPipeline:
             self._apply_calibration(target_dropout_range, n_semesters)
 
         # Initialize components
-        self.llm = LLMClient(model=llm_model) if use_llm else None
+        self.llm = LLMClient(model=llm_model, base_url=llm_base_url) if use_llm else None
         self.factory = StudentFactory(config=self.persona_config, llm_client=self.llm, seed=seed)
         self.engine = SimulationEngine(
             environment=self.environment,
@@ -117,6 +124,39 @@ class SynthEdPipeline:
             estimate.confidence,
         )
 
+    def _check_cost_before_enrichment(self, n_students: int) -> bool:
+        """Estimate LLM cost and warn/prompt if above threshold.
+
+        Returns True if enrichment should proceed, False to skip.
+        """
+        if not self.llm:
+            return True
+
+        estimated = self.llm.estimate_cost(n_calls=n_students)
+        if estimated <= self.cost_threshold:
+            logger.info(
+                "Estimated LLM cost: $%.4f (within threshold $%.2f)",
+                estimated, self.cost_threshold,
+            )
+            return True
+
+        warning = (
+            f"Estimated LLM cost: ${estimated:.4f} exceeds threshold "
+            f"${self.cost_threshold:.2f} ({n_students} students x {self.llm.model})"
+        )
+        logger.warning(warning)
+
+        if self.confirm_callback is not None:
+            return self.confirm_callback(warning)
+
+        # Library mode: no interactive prompt — block by default
+        logger.error(
+            "LLM enrichment blocked: cost $%.4f exceeds threshold $%.2f. "
+            "Pass confirm_callback=lambda _: True to override.",
+            estimated, self.cost_threshold,
+        )
+        return False
+
     @classmethod
     def from_profile(
         cls,
@@ -124,6 +164,9 @@ class SynthEdPipeline:
         output_dir: str = "./output",
         use_llm: bool = False,
         llm_model: str = "gpt-4o-mini",
+        llm_base_url: str | None = None,
+        cost_threshold: float = _DEFAULT_COST_THRESHOLD_USD,
+        confirm_callback: Callable[[str], bool] | None = None,
     ) -> SynthEdPipeline:
         """Create a pipeline from a named benchmark profile.
 
@@ -146,8 +189,11 @@ class SynthEdPipeline:
             output_dir=output_dir,
             use_llm=use_llm,
             llm_model=llm_model,
+            llm_base_url=llm_base_url,
             seed=profile.seed,
             target_dropout_range=profile.expected_dropout_range,
+            cost_threshold=cost_threshold,
+            confirm_callback=confirm_callback,
         )
 
     def run(
@@ -190,11 +236,18 @@ class SynthEdPipeline:
                 "n_semesters": est.n_semesters,
             }
 
+        # Pre-enrichment cost check
+        enrich = enrich_personas and self.use_llm
+        if enrich:
+            if not self._check_cost_before_enrichment(n_students):
+                logger.info("LLM enrichment skipped by user")
+                enrich = False
+
         # Stage 1: Generate Population
         logger.info("[1/4] Generating %d student personas...", n_students)
         t0 = time.time()
         students = self.factory.generate_population(
-            n=n_students, enrich_with_llm=enrich_personas and self.use_llm
+            n=n_students, enrich_with_llm=enrich
         )
         report["timing"]["generation_sec"] = round(time.time() - t0, 2)
         report["population_summary"] = self.factory.population_summary(students)

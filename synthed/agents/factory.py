@@ -17,6 +17,10 @@ import numpy as np
 from dataclasses import replace
 
 from .persona import StudentPersona, BigFiveTraits, PersonaConfig, _CALIBRATED_DROPOUT_BASE_RATE
+from .backstory_templates import (
+    select_template, select_life_event, select_regional_context,
+    build_enrichment_prompt,
+)
 from ..utils.llm import LLMClient, LLMError, LLMResponseError
 
 logger = logging.getLogger(__name__)
@@ -299,36 +303,18 @@ class StudentFactory:
     def _enrich_with_llm(self, persona: StudentPersona) -> StudentPersona:
         """Enrich a persona with an LLM-generated backstory.
 
+        Uses the template system to produce diverse narrative prompts.
         Validates the LLM response for expected keys and content quality.
         On any failure, logs a warning and returns the persona unchanged
         (empty backstory) so the pipeline continues without crashing.
         """
-        # Sanitize persona attributes to prevent prompt injection
-        age = int(persona.age)
-        gender = str(persona.gender)[:10]
-        education = str(persona.prior_education_level)[:20]
-        motivation = str(persona.motivation_type)[:15]
+        template = select_template(self.rng)
+        life_event = select_life_event(self.rng)
+        regional_ctx = select_regional_context(self.rng)
+        messages = build_enrichment_prompt(persona, template, life_event, regional_ctx)
 
-        prompt = (
-            f"Age: {age}, Gender: {gender}, "
-            f"Employment: {'employed ' + str(persona.weekly_work_hours) + 'h/wk' if persona.is_employed else 'unemployed'}, "
-            f"Family: {'has dependents' if persona.has_family_responsibilities else 'no dependents'}, "
-            f"Financial stress: {persona.financial_stress:.0%}, "
-            f"Education: {education} (GPA {persona.prior_gpa:.1f}), {persona.years_since_last_education}y gap, "
-            f"Motivation: {motivation}, Goal commitment: {persona.goal_commitment:.0%}, "
-            f"Self-regulation: {persona.self_regulation:.0%}, Digital literacy: {persona.digital_literacy:.0%}"
-        )
         try:
-            result = self.llm.chat_json([
-                {"role": "system", "content": (
-                    "Generate a 5-6 sentence backstory for a synthetic ODL student. "
-                    "Explain WHY they chose distance learning and their main challenge. "
-                    "Keep content professional and appropriate. No violence, sexual content, "
-                    "discrimination, or illegal activities. "
-                    "Respond with JSON: {\"backstory\": \"<string>\", \"primary_challenge\": \"<string>\"}"
-                )},
-                {"role": "user", "content": prompt},
-            ], temperature=0.7)
+            result = self.llm.chat_json(messages, temperature=0.7)
         except (LLMError, LLMResponseError) as exc:
             logger.warning("LLM enrichment failed for %s: %s", persona.name, exc)
             return persona
