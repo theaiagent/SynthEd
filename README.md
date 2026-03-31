@@ -1,4 +1,4 @@
-# SynthEd
+# SynthEd: From synthetic data to simulated learners
 
 [![Status: Active Development](https://img.shields.io/badge/status-active%20development-orange.svg)](https://github.com/theaiagent/SynthEd/releases)
 [![CI](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml/badge.svg)](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml)
@@ -9,9 +9,13 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19334118.svg)](https://doi.org/10.5281/zenodo.19334118)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Agent-Based Synthetic Educational Data Generation for Open & Distance Learning Research**
+**Agent-Based Simulation Environment for Open & Distance Learning Research**
 
-SynthEd generates behaviorally coherent synthetic student data by combining **persona-driven agent modeling** (inspired by [TinyTroupe](https://github.com/microsoft/tinytroupe)) with **scalable multi-agent simulation** (inspired by [MiroFish](https://github.com/666ghj/MiroFish)). Unlike traditional synthetic data methods (GANs, VAEs), SynthEd produces temporally consistent interaction traces where each data point is grounded in a simulated student's personality, motivation, and life context.
+SynthEd is an agent-based simulation environment for open and distance learning (ODL) research that shifts the focus from static data generation to dynamic learner simulation.
+
+By combining persona-driven agent modeling (inspired by [TinyTroupe](https://github.com/microsoft/tinytroupe)) with scalable multi-agent systems (inspired by [MiroFish](https://github.com/666ghj/MiroFish)), SynthEd enables the creation of virtual learners whose behaviors evolve over time based on their motivations, experiences, and contexts.
+
+Rather than producing isolated data points, the system generates behaviorally grounded and temporally coherent learning trajectories, allowing researchers to simulate realistic educational scenarios, test interventions, and develop robust learning analytics models in privacy-constrained settings.
 
 ## Why SynthEd?
 
@@ -322,7 +326,7 @@ SynthEd/
 │   │   └── validation.py        # Input validation utilities
 │   ├── calibration.py             # CalibrationMap: target dropout → simulation params
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                        # 177 pytest tests across 19 files
+├── tests/                        # 226 pytest tests across 19 files
 ├── configs/
 │   └── default.json
 ├── run_pipeline.py               # CLI entry point
@@ -377,7 +381,7 @@ Extend `SimulationEngine._simulate_student_week()` to add new behavioral channel
 
 ## Test Suite
 
-SynthEd includes 177 pytest tests across 19 test files, covering all theory modules, simulation mechanics, LLM enrichment, and the full pipeline.
+SynthEd includes 226 pytest tests across 19 test files, covering all theory modules, simulation mechanics, LLM enrichment, and the full pipeline.
 
 ```bash
 python -m pytest tests/ -v --tb=short
