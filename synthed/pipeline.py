@@ -23,6 +23,7 @@ from .calibration import CalibrationMap
 from .simulation.environment import ODLEnvironment
 from .simulation.engine import SimulationEngine
 from .data_output.exporter import DataExporter
+from .data_output.oulad_exporter import OuladExporter
 from .validation.validator import SyntheticDataValidator, ReferenceStatistics
 from .utils.llm import LLMClient
 
@@ -59,6 +60,7 @@ class SynthEdPipeline:
         target_dropout_range: tuple[float, float] | None = None,
         cost_threshold: float = _DEFAULT_COST_THRESHOLD_USD,
         confirm_callback: Callable[[str], bool] | None = None,
+        export_oulad: bool = False,
     ):
         self.persona_config = persona_config or PersonaConfig()
         self.environment = environment or ODLEnvironment()
@@ -71,6 +73,7 @@ class SynthEdPipeline:
         self.target_dropout_range = target_dropout_range
         self.cost_threshold = cost_threshold
         self.confirm_callback = confirm_callback
+        self.export_oulad = export_oulad
         self._calibration_estimate = None
 
         # Apply calibration when a target dropout range is provided
@@ -297,7 +300,16 @@ class SynthEdPipeline:
         report["exported_files"] = file_paths
         logger.info("      Done. Files: %s", ', '.join(Path(p).name for p in file_paths.values()))
 
-        # Stage 4: Validate
+        # Stage 4: OULAD export (optional)
+        if self.export_oulad:
+            oulad_exporter = OuladExporter(str(self.output_dir), seed=self.seed)
+            oulad_paths = oulad_exporter.export_all(
+                students, records, states, self.environment,
+            )
+            report["exported_files"]["oulad"] = oulad_paths
+            logger.info("OULAD-compatible export completed: 7 tables")
+
+        # Stage 5: Validate
         logger.info("[4/4] Running validation suite...")
         t0 = time.time()
 

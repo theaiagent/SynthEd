@@ -51,6 +51,10 @@ def main():
         "--names", action="store_true",
         help="Generate culturally diverse student names (default: ID-only)",
     )
+    parser.add_argument(
+        "--oulad", action="store_true",
+        help="Export OULAD-compatible 7-table format alongside standard output",
+    )
     args = parser.parse_args()
 
     configure_logging(verbose=args.verbose)
@@ -89,7 +93,7 @@ def main():
     print("=" * 60)
     print("  SynthEd: Agent-Based Synthetic Educational Data Generator")
     print("=" * 60)
-    print(f"  Students: {n_students} | Seed: {seed} | LLM: {'ON' if use_llm else 'OFF'} | Names: {'ON' if args.names else 'OFF'}")
+    print(f"  Students: {n_students} | Seed: {seed} | LLM: {'ON' if use_llm else 'OFF'} | Names: {'ON' if args.names else 'OFF'} | OULAD: {'ON' if args.oulad else 'OFF'}")
     if target_dropout_range:
         print(f"  Target dropout: {target_dropout_range[0]:.0%}-{target_dropout_range[1]:.0%}")
     print(f"  Output: {args.output}")
@@ -106,6 +110,7 @@ def main():
         target_dropout_range=target_dropout_range,
         cost_threshold=args.cost_threshold,
         confirm_callback=_cli_confirm if use_llm else None,
+        export_oulad=args.oulad,
     )
 
     report = pipeline.run(n_students=n_students, enrich_personas=use_llm)
