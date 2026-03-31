@@ -164,3 +164,12 @@ class TestGPAComputation:
                 f"High-ability mean GPA ({mean_ha:.2f}) should exceed "
                 f"low-ability mean GPA ({mean_la:.2f})"
             )
+
+    def test_gpa_feedback_loop_stability(self):
+        """Verify no runaway effects from GPA feedback — all values stay bounded."""
+        students, records, states, _, _ = self._run_sim(n=50, seed=42)
+        for state in states.values():
+            assert 0.0 <= state.cumulative_gpa <= 4.0
+            assert 0.0 <= state.perceived_cost_benefit <= 1.0
+            assert 0.0 <= state.current_engagement <= 1.0
+            assert 0.0 <= state.sdt_needs.competence <= 1.0

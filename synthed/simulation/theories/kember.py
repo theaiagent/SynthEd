@@ -19,6 +19,8 @@ class KemberCostBenefit:
     _TD_PENALTY_FACTOR: float = 0.02         # Moore TD influence on perceived value
     _TEACHING_PRESENCE_FACTOR: float = 0.03  # Garrison teaching presence boost
     _COI_COMPOSITE_FACTOR: float = 0.02      # CoI composite influence on value
+    _GPA_CB_FACTOR: float = 0.01             # cost-benefit sensitivity to cumulative GPA
+    _GPA_SCALE: float = 4.0                   # GPA scale denominator
     _CLIP_LO: float = 0.05                   # cost-benefit lower bound
     _CLIP_HI: float = 0.95                   # cost-benefit upper bound
 
@@ -31,10 +33,11 @@ class KemberCostBenefit:
         avg_td: float,
     ) -> None:
         """
-        Recalculate cost-benefit perception after major events.
+        Recalculate cost-benefit perception after academic events.
 
-        Triggered during exam weeks or after missed assignment streaks.
-        Moore's transactional distance also feeds into perceived value.
+        Triggered when graded items are submitted, during exam weeks,
+        or after missed assignment streaks. Cumulative GPA anchors the
+        perceived return on educational investment.
         """
         # Poor performance reduces perceived cost-benefit
         recent_quality = [r.quality_score for r in records
@@ -58,5 +61,10 @@ class KemberCostBenefit:
             + state.coi_state.teaching_presence
         ) / 3
         state.perceived_cost_benefit += (coi_composite - 0.4) * self._COI_COMPOSITE_FACTOR
+
+        # GPA -> Kember: cumulative academic outcomes modulate perceived value
+        if state.gpa_count > 0:
+            gpa_normalized = state.cumulative_gpa / self._GPA_SCALE
+            state.perceived_cost_benefit += (gpa_normalized - 0.5) * self._GPA_CB_FACTOR
 
         state.perceived_cost_benefit = float(np.clip(state.perceived_cost_benefit, self._CLIP_LO, self._CLIP_HI))

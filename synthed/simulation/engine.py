@@ -550,7 +550,10 @@ class SimulationEngine:
             engagement -= student.personality.neuroticism * self._NEUROTICISM_EXAM_FACTOR
 
         # ── Kember: Cost-benefit recalculation after major events ──
-        if context.get("is_exam_week") or state.missed_assignments_streak >= 2:
+        has_graded_item = any(
+            r.interaction_type in ("assignment_submit", "exam") for r in records
+        )
+        if context.get("is_exam_week") or state.missed_assignments_streak >= 2 or has_graded_item:
             self.kember.recalculate(student, state, context, records, avg_td)
             # Cost-benefit feeds back into engagement
             engagement += (state.perceived_cost_benefit - 0.5) * self._CB_FEEDBACK_FACTOR

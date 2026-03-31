@@ -156,3 +156,134 @@ class TestGonzalez:
         context = {"active_assignments": ["CS101", "MATH201", "EDU301"]}
         gonzalez.update_exhaustion(student, state, 1, context, [])
         assert state.exhaustion.exhaustion_level > 0.0
+
+
+class TestKemberGPAFeedback:
+    def test_high_gpa_increases_cost_benefit(self):
+        kember = KemberCostBenefit()
+        student = StudentPersona()
+        state = _make_state(
+            perceived_cost_benefit=0.50,
+            missed_assignments_streak=0,
+            cumulative_gpa=3.6,
+            gpa_count=5,
+        )
+        records = [
+            InteractionRecord(student_id="test", week=1, course_id="CS101",
+                              interaction_type="assignment_submit", quality_score=0.7),
+        ]
+        kember.recalculate(student, state, {}, records, avg_td=0.5)
+        assert state.perceived_cost_benefit > 0.50
+
+    def test_low_gpa_decreases_cost_benefit(self):
+        kember = KemberCostBenefit()
+        student = StudentPersona()
+        state = _make_state(
+            perceived_cost_benefit=0.50,
+            missed_assignments_streak=0,
+            cumulative_gpa=1.2,
+            gpa_count=5,
+        )
+        records = [
+            InteractionRecord(student_id="test", week=1, course_id="CS101",
+                              interaction_type="assignment_submit", quality_score=0.5),
+        ]
+        kember.recalculate(student, state, {}, records, avg_td=0.5)
+        assert state.perceived_cost_benefit < 0.50
+
+    def test_no_gpa_items_no_gpa_effect(self):
+        kember = KemberCostBenefit()
+        student = StudentPersona()
+        state = _make_state(
+            perceived_cost_benefit=0.50,
+            missed_assignments_streak=3,
+            gpa_count=0,
+            cumulative_gpa=0.0,
+        )
+        # With no GPA items, only missed streak should affect cost-benefit
+        kember.recalculate(student, state, {}, [], avg_td=0.5)
+        # Should still decrease (missed streak), but NOT from GPA
+        assert state.perceived_cost_benefit < 0.50
+
+
+class TestBaulkeGPAFeedback:
+    def test_low_gpa_triggers_nonfit(self):
+        baulke = BaulkeDropoutPhase()
+        student = StudentPersona()
+        state = _make_state(
+            current_engagement=0.43,
+            dropout_phase=0,
+            cumulative_gpa=1.4,
+            gpa_count=3,
+        )
+        env = ODLEnvironment()
+        rng = np.random.default_rng(42)
+        baulke.advance_phase(student, state, 5, env, lambda s, st: 0.5, rng)
+        assert state.dropout_phase == 1
+
+    def test_low_gpa_without_low_engagement_no_nonfit(self):
+        baulke = BaulkeDropoutPhase()
+        student = StudentPersona()
+        state = _make_state(
+            current_engagement=0.55,
+            dropout_phase=0,
+            cumulative_gpa=1.4,
+            gpa_count=3,
+        )
+        env = ODLEnvironment()
+        rng = np.random.default_rng(42)
+        baulke.advance_phase(student, state, 5, env, lambda s, st: 0.5, rng)
+        assert state.dropout_phase == 0
+
+    def test_gpa_gate_minimum_items(self):
+        baulke = BaulkeDropoutPhase()
+        student = StudentPersona()
+        state = _make_state(
+            current_engagement=0.43,
+            dropout_phase=0,
+            cumulative_gpa=1.0,
+            gpa_count=1,  # below minimum of 2
+        )
+        env = ODLEnvironment()
+        rng = np.random.default_rng(42)
+        baulke.advance_phase(student, state, 5, env, lambda s, st: 0.5, rng)
+        # GPA alone shouldn't trigger non-fit with only 1 graded item
+        # (may still trigger from low engagement alone if < 0.40)
+        # engagement is 0.43, which is above _NONFIT_ENG_THRESHOLD (0.40)
+        # but below _NONFIT_ENG_SOFT (0.45) — needs another condition
+        # With gpa_count=1, GPA condition doesn't activate
+        assert state.dropout_phase == 0
+
+
+class TestSDTGPAFeedback:
+    def test_high_gpa_boosts_competence(self):
+        sdt = SDTMotivationDynamics()
+        student = StudentPersona(self_efficacy=0.5)
+        state = _make_state(
+            cumulative_gpa=3.6,
+            gpa_count=5,
+        )
+        state.sdt_needs = SDTNeedSatisfaction(competence=0.5)
+        records = [
+            InteractionRecord(student_id="test", week=1, course_id="CS101",
+                              interaction_type="assignment_submit", quality_score=0.5),
+        ]
+        sdt.update_needs(student, state, 1, records)
+        # With high GPA (3.6) and neutral quality (0.5), competence should rise
+        assert state.sdt_needs.competence > 0.5
+
+    def test_low_gpa_erodes_competence(self):
+        sdt = SDTMotivationDynamics()
+        student = StudentPersona(self_efficacy=0.5)
+        state = _make_state(
+            cumulative_gpa=1.2,
+            gpa_count=5,
+        )
+        state.sdt_needs = SDTNeedSatisfaction(competence=0.5)
+        records = [
+            InteractionRecord(student_id="test", week=1, course_id="CS101",
+                              interaction_type="assignment_submit", quality_score=0.5),
+        ]
+        sdt.update_needs(student, state, 1, records)
+        # With low GPA (1.2) and neutral quality (0.5), competence should drop
+        assert state.sdt_needs.competence < 0.5

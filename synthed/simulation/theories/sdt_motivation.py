@@ -51,6 +51,8 @@ class SDTMotivationDynamics:
     _COMPETENCE_STREAK_PENALTY: float = 0.02 # per-streak competence erosion
     _COMPETENCE_STREAK_CAP: int = 3          # max streak multiplier for competence
     _COMPETENCE_EFFICACY_FACTOR: float = 0.01  # self-efficacy buffer for competence
+    _COMPETENCE_GPA_FACTOR: float = 0.008    # competence sensitivity to cumulative GPA (weekly)
+    _GPA_SCALE: float = 4.0                   # GPA scale denominator
     _RELATEDNESS_SOCIAL_FACTOR: float = 0.02 # social integration influence on relatedness
     _RELATEDNESS_COI_FACTOR: float = 0.02    # CoI social presence influence on relatedness
     _RELATEDNESS_FORUM_BOOST: float = 0.015  # relatedness boost per forum post
@@ -105,6 +107,10 @@ class SDTMotivationDynamics:
 
         # Self-efficacy provides a small buffer
         competence_delta += (student.self_efficacy - 0.5) * self._COMPETENCE_EFFICACY_FACTOR
+        # Cumulative GPA anchors competence belief to overall trajectory
+        if state.gpa_count > 0:
+            gpa_normalized = state.cumulative_gpa / self._GPA_SCALE
+            competence_delta += (gpa_normalized - 0.5) * self._COMPETENCE_GPA_FACTOR
         needs.competence = float(np.clip(needs.competence + competence_delta, self._NEED_CLIP_LO, self._NEED_CLIP_HI))
 
         # ── Relatedness ──

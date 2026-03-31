@@ -25,6 +25,10 @@ class BaulkeDropoutPhase:
     _NONFIT_COG_THRESHOLD: float = 0.25           # cognitive presence threshold for soft trigger
     _NONFIT_TD_THRESHOLD: float = 0.55            # transactional distance threshold for soft trigger
     _EXHAUSTION_THRESHOLD: float = 0.70           # exhaustion level that accelerates dropout
+    _NONFIT_GPA_THRESHOLD: float = 1.6          # GPA below this contributes to non-fit perception
+    _NONFIT_GPA_MIN_ITEMS: int = 2             # minimum graded items for non-fit GPA signal
+    _TRIGGER_GPA_THRESHOLD: float = 1.2        # GPA below this is an additional phase 4->5 trigger
+    _TRIGGER_GPA_MIN_ITEMS: int = 2            # minimum graded items for phase 4->5 GPA trigger
 
     # ── phase 1 → 0 / 1 → 2 ──
     _RECOVERY_1_TO_0: float = 0.50               # engagement above this recovers to phase 0
@@ -90,7 +94,10 @@ class BaulkeDropoutPhase:
             if (eng < self._NONFIT_ENG_THRESHOLD
                     or (eng < self._NONFIT_ENG_SOFT and state.coi_state.cognitive_presence < self._NONFIT_COG_THRESHOLD)
                     or (eng < self._NONFIT_ENG_SOFT and avg_td > self._NONFIT_TD_THRESHOLD)
-                    or (eng < self._NONFIT_ENG_SOFT and exhausted)):
+                    or (eng < self._NONFIT_ENG_SOFT and exhausted)
+                    or (eng < self._NONFIT_ENG_SOFT
+                        and state.gpa_count >= self._NONFIT_GPA_MIN_ITEMS
+                        and state.cumulative_gpa < self._NONFIT_GPA_THRESHOLD)):
                 state.dropout_phase = 1
                 state.memory.append({"week": week, "event_type": "dropout_phase",
                                     "details": "Non-fit perception: questioning fit with program",
@@ -158,6 +165,9 @@ class BaulkeDropoutPhase:
                     triggers += 1  # Bean & Metzner: environmental crisis
                 if exhausted:
                     triggers += 1  # Gonzalez: academic exhaustion crisis
+                if (state.gpa_count >= self._TRIGGER_GPA_MIN_ITEMS
+                        and state.cumulative_gpa < self._TRIGGER_GPA_THRESHOLD):
+                    triggers += 1  # Academic failure: GPA below recoverable threshold
                 # Withdrawal deadline at ~70% of semester (Kember)
                 withdrawal_week = int(env.total_weeks * self._WITHDRAWAL_WEEK_FRACTION)
                 if week == withdrawal_week:
