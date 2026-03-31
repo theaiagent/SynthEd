@@ -273,6 +273,10 @@ class SynthEdPipeline:
                 # Cluster 4: Internal Factors (Tinto)
                 "self_efficacy": s.self_efficacy,
                 "motivation_type": s.motivation_type,
+                # Garrison et al. (2000) — CoI composite for correlation validation
+                "coi_composite": round((states[s.id].coi_state.social_presence + states[s.id].coi_state.cognitive_presence + states[s.id].coi_state.teaching_presence) / 3, 3) if s.id in states else None,
+                # Epstein & Axtell (1996) — Network degree for correlation validation
+                "network_degree": network.get_degree(s.id) if network else 0,
             }
             students_data.append(d)
 
