@@ -77,7 +77,7 @@ flowchart TD
 
     EX --> VAL
 
-    subgraph VAL ["Validation Suite — 19 tests"]
+    subgraph VAL ["Validation Suite — 19 statistical tests"]
         direction LR
         V1["L1: Distributions"]
         V2["L2: Correlations"]
@@ -93,7 +93,7 @@ flowchart TD
 - **Simulation Memory**: Each student's simulation state accumulates events across weeks (assignments, exams, phase transitions), creating realistic engagement trajectories (e.g., a failed midterm reduces subsequent engagement).
 - **Configurable Populations**: Calibrate to your institution's demographics using aggregate statistics only (no individual data needed).
 - **Multi-Level Validation**: Automatic statistical comparison against reference data using KS-tests, chi-squared tests, correlation checks, and temporal coherence analysis.
-- **Optional LLM Enrichment**: Use GPT-4o-mini to generate narrative backstories with automatic retry, validation, and persona-attribute consistency checks (off by default — zero API cost in rule-based mode). Backstories provide researchers with human-readable explanations of *why* each synthetic student behaves the way they do, making datasets more interpretable for presentations, publications, and qualitative analysis. In future versions, backstories will serve as agent context for LLM-driven behavioral simulation (realistic forum posts, assignment text).
+- **Optional LLM Enrichment**: Use GPT-4o-mini (or any OpenAI-compatible provider via `base_url`) to generate narrative backstories with automatic retry, validation, and persona-attribute consistency checks (off by default — zero API cost in rule-based mode). Features 7 narrative templates rotating per-student, 12 life events (40% injection rate), and 8 regional contexts for diverse ODL backstories. Includes cache with 7-day TTL and 10K-entry LRU eviction, pre-enrichment cost estimation with configurable threshold, and streaming support. Backstories provide researchers with human-readable explanations of *why* each synthetic student behaves the way they do, making datasets more interpretable for presentations, publications, and qualitative analysis. In future versions, backstories will serve as agent context for LLM-driven behavioral simulation (realistic forum posts, assignment text).
 - **Privacy by Design**: Synthetic agents are fictional constructs with no mapping to real individuals.
 - **Configurable Dropout Targeting**: Specify `target_dropout_range=(0.40, 0.55)` as a single control point — the system automatically estimates simulation parameters via calibration mapping and validates results against the target range.
 - **Dual ID System**: Each student has a UUIDv7 `id` (time-sortable, DB/GraphRAG optimized) and a sequential `display_id` (S-0001) for human-readable CSV output and charts. `student_id` (UUIDv7) appears in all four CSV files as the join key. `display_id` (S-0001) appears alongside it for human readability.
@@ -135,6 +135,12 @@ python run_pipeline.py --verbose
 ```bash
 export OPENAI_API_KEY="your-key-here"
 python run_pipeline.py --n 100 --llm --model gpt-4o-mini
+
+# With local Ollama provider
+python run_pipeline.py --n 100 --llm --base-url http://localhost:11434/v1
+
+# With cost threshold ($2 max, prompts for confirmation)
+python run_pipeline.py --n 500 --llm --cost-threshold 2.0
 ```
 
 ### Python API
@@ -320,7 +326,8 @@ SynthEd/
 ├── synthed/
 │   ├── agents/
 │   │   ├── persona.py          # StudentPersona, PersonaConfig, BigFiveTraits
-│   │   └── factory.py          # Calibrated population generation
+│   │   ├── factory.py          # Calibrated population generation
+│   │   └── backstory_templates.py  # 7 narrative templates, 12 life events, 8 regional contexts
 │   ├── simulation/
 │   │   ├── engine.py            # Simulation orchestrator (delegates to theories/)
 │   │   ├── environment.py       # ODL course structure + positive events
@@ -349,12 +356,13 @@ SynthEd/
 │   │   ├── profiles.py          # Pre-defined ODL institutional profiles
 │   │   └── generator.py         # Benchmark dataset generator
 │   ├── utils/
-│   │   ├── llm.py               # OpenAI wrapper with caching, retries & cost tracking
+│   │   ├── llm.py               # OpenAI wrapper with base_url, cache TTL/LRU, cost estimation, streaming
+│   │   ├── llm_memory.py        # Immutable ConversationMemory for LLM-augmented mode
 │   │   ├── log_config.py        # Logging configuration
 │   │   └── validation.py        # Input validation utilities
 │   ├── calibration.py             # CalibrationMap: target dropout → simulation params
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                        # 226 pytest tests across 19 files
+├── tests/                        # 288 pytest tests across 23 files
 ├── configs/
 │   └── default.json
 ├── run_pipeline.py               # CLI entry point
@@ -398,6 +406,11 @@ Extend `SimulationEngine._simulate_student_week()` to add new behavioral channel
 - [x] **Dual ID System** — UUIDv7 `id` + sequential `display_id` (S-0001)
 - [x] **Unavoidable Withdrawal Events** — 7 life-event types with configurable per-semester probability
 - [x] **GPA Computation** — Cumulative GPA from assignment/exam quality, multi-semester carry-over
+- [x] **LLM Backstory Diversity** — 7 narrative templates, 12 life events (40% injection), 8 regional contexts
+- [x] **LLM Provider Flexibility** — `base_url` parameter for Ollama, local models, and OpenAI-compatible providers
+- [x] **LLM Cache TTL + LRU** — 7-day default TTL, 10K max entries with lazy LRU eviction
+- [x] **LLM Cost Warning** — Pre-enrichment cost estimation with configurable threshold and confirm_callback
+- [x] **LLM Streaming + Conversation Memory** — `chat_stream()` and immutable ConversationMemory for future LLM-augmented mode
 - [ ] **GPA Feedback Loop** — Feed cumulative GPA into Kember cost-benefit and Bäulke non-fit perception
 - [ ] **OULAD-Compatible Export** — 7-table format for drop-in EDM research compatibility
 - [ ] **GraphRAG Integration** — Knowledge graph-based curriculum modeling
@@ -409,7 +422,7 @@ Extend `SimulationEngine._simulate_student_week()` to add new behavioral channel
 
 ## Test Suite
 
-SynthEd includes 226 pytest tests across 19 test files, covering all theory modules, simulation mechanics, LLM enrichment, and the full pipeline.
+SynthEd includes 288 pytest tests across 23 test files, covering all theory modules, simulation mechanics, LLM enrichment, and the full pipeline.
 
 ```bash
 python -m pytest tests/ -v --tb=short
@@ -425,8 +438,12 @@ python -m pytest tests/ -v --tb=short
 | `test_validator.py` | 9 | Report structure, z-test symmetry, quality grade thresholds, effective alpha scaling, dropout range tests |
 | `test_pipeline_integration.py` | 11 | Full pipeline run, output file creation, validation results, input rejection, calibration, profiles, multi-semester |
 | `test_theories.py` | 9 | One test per theory module (Tinto, Bean-Metzner, Moore, Rovai, Garrison, Bäulke, Kember, SDT, Gonzalez) |
-| `test_llm_enrichment.py` | 11 | Mock LLM enrichment, backstory export, error handling, cost report, custom pricing |
-| `test_llm_client.py` | 17 | LLMClient init, chat, retry, cache, JSON parsing, cost tracking, error handling |
+| `test_llm_enrichment.py` | 12 | Mock LLM enrichment, backstory export, error handling, cost report, custom pricing, varied prompts |
+| `test_llm_client.py` | 27 | LLMClient init, chat, retry, cache, JSON parsing, cost tracking, base_url validation, streaming |
+| `test_llm_cache.py` | 9 | Cache TTL expiry, LRU eviction, recently-accessed preservation, defaults |
+| `test_llm_cost_warning.py` | 11 | Cost estimation, threshold blocking, confirm_callback, default constants |
+| `test_llm_memory.py` | 14 | ConversationMemory immutability, role validation, add/clear messages, Message dataclass |
+| `test_backstory_templates.py` | 17 | Template selection, life events, regional contexts, enrichment prompt building, constants |
 | `test_semester.py` | 12 | Multi-semester carry-over, dropout persistence, engagement recovery, interim reports |
 | `test_sensitivity.py` | 2 | OAT parameter sweep, tornado chart data |
 | `test_benchmarks.py` | 10 | Profiles registry, profile structure, profile names, generator, list profiles, error handling |
