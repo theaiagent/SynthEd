@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use SynthEd in your research, please cite it as below."
+title: "SynthEd: From Synthetic Data to Simulated Learners"
+type: software
+license: MIT
+url: "https://github.com/theaiagent/SynthEd"
+doi: "10.5281/zenodo.19334118"
+authors:
+  - family-names: Cosgun
+    given-names: Halis Aykut
+    orcid: "https://orcid.org/0000-0003-0166-6237"
+    affiliation: "Anadolu University"
+  - family-names: Kumtepe Genc
+    given-names: Evrim
+    orcid: "https://orcid.org/0000-0002-2568-8054"
+    affiliation: "Anadolu University"
+keywords:
+  - synthetic data
+  - agent-based simulation
+  - open distance learning
+  - dropout prediction
+  - educational data mining
+  - learning analytics

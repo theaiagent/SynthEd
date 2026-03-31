@@ -1,0 +1,34 @@
+{
+  "title": "SynthEd: From Synthetic Data to Simulated Learners",
+  "description": "Agent-based simulation environment for open and distance learning research. Generates behaviorally grounded, temporally coherent student trajectories using theory-driven persona models.",
+  "license": "MIT",
+  "upload_type": "software",
+  "creators": [
+    {
+      "name": "Cosgun, Halis Aykut",
+      "orcid": "0000-0003-0166-6237",
+      "affiliation": "Anadolu University"
+    },
+    {
+      "name": "Kumtepe Genc, Evrim",
+      "orcid": "0000-0002-2568-8054",
+      "affiliation": "Anadolu University"
+    }
+  ],
+  "keywords": [
+    "synthetic data",
+    "agent-based simulation",
+    "open distance learning",
+    "dropout prediction",
+    "educational data mining",
+    "learning analytics"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/theaiagent/SynthEd",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    }
+  ],
+  "access_right": "open"
+}
