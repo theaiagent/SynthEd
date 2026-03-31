@@ -30,9 +30,14 @@ Educational data mining research faces three persistent challenges:
 │                       SynthEd Pipeline                          │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  ┌──────────────┐    ┌───────────────────────┐   ┌───────────┐ │
-│  │  Student      │───▶│   Simulation Engine   │──▶│   Data    │ │
-│  │  Factory      │    │                       │   │   Export  │ │
+│  ┌──────────────┐                                               │
+│  │ Calibration   │───┐                                          │
+│  │ Map           │   │                                          │
+│  └──────────────┘   │                                          │
+│  ┌──────────────┐   │                                          │
+│  │  Student      │◀──┘ ┌───────────────────────┐   ┌───────────┐ │
+│  │  Factory      │───▶│   Simulation Engine   │──▶│   Data    │ │
+│  │               │    │                       │   │   Export  │ │
 │  │               │    │  Phase 1: Individual   │   │          │ │
 │  │ 4 clusters    │    │  ├ LMS logins (Rovai) │   │ students │ │
 │  │ (Rovai 2003)  │    │  ├ Forum posts (Tinto)│   │ .csv     │ │
@@ -105,6 +110,9 @@ python run_pipeline.py --config configs/default.json
 
 # Target specific dropout range
 python run_pipeline.py --n 300 --target-dropout 0.40 0.55
+
+# Verbose logging (per-student debug output)
+python run_pipeline.py --verbose
 ```
 
 ### With LLM Enrichment (Optional)
@@ -138,6 +146,16 @@ report = pipeline.run(n_students=300)
 print(f"Dropout: {report['simulation_summary']['dropout_rate']:.1%}")
 print(f"Mean GPA: {report['simulation_summary']['mean_final_gpa']:.2f}")
 ```
+
+### Default Calibration Targets
+
+| Semesters | Default Dropout Rate | Quality |
+|-----------|---------------------|---------|
+| 1 (14 weeks) | ~46% | A (Excellent) |
+| 2 (28 weeks) | ~77% | B (Good) |
+| 4 (56 weeks) | ~95% | B (Good) |
+
+These rates use the default `PersonaConfig` (dropout_base_rate=0.80, unavoidable_withdrawal_rate=0.003). Customize with `target_dropout_range` or benchmark profiles.
 
 ### Multi-Semester Simulation
 
@@ -184,7 +202,7 @@ report = pipeline.run(n_students=500)
 |------|-------------|------|----------|
 | `students.csv` | Initial persona attributes (Big Five, motivation, self-efficacy, etc.) with UUIDv7 `student_id` and sequential `display_id` | 1 per student | Feature engineering, clustering |
 | `interactions.csv` | Timestamped LMS events (logins, posts, submissions) | ~50-100 per student/week | Sequence modeling, engagement analysis |
-| `outcomes.csv` | Dropout status, withdrawal reason, final GPA, engagement, trend, CoI presences, network degree | 1 per student | Classification, survival analysis |
+| `outcomes.csv` | Dropout status, withdrawal reason, final GPA, final engagement, trend, CoI presences, network degree | 1 per student | Classification, survival analysis |
 | `weekly_engagement.csv` | Week-by-week engagement scores | 1 per student | Time series, early warning systems |
 | `pipeline_report.json` | Full validation report and pipeline metadata | 1 | Quality assurance |
 
@@ -198,9 +216,9 @@ SynthEd validates generated data across five levels:
 4. **Privacy Assessment** — k-anonymity check on quasi-identifiers
 5. **Backstory Consistency** (optional) — LLM-generated backstories checked for non-empty rate and persona-attribute relevance
 
-Example validation output (17 tests across 9 theoretical anchors):
+Example validation output (18 tests across 9 theoretical anchors):
 ```
-Quality: A (Excellent) — 17/17 tests passed
+Quality: A (Excellent) — 18/18 tests passed
   ✓ age_distribution (KS-test)
   ✓ gender_distribution (Chi-squared)
   ✓ employment_rate (Z-test)
@@ -368,19 +386,19 @@ python -m pytest tests/ -v --tb=short
 | Test File | Tests | Coverage |
 |-----------|-------|----------|
 | `test_persona.py` | 11 | BigFive validation, engagement/dropout bounds, motivation comparison, dict roundtrip, UUIDv7 tests |
-| `test_factory.py` | 10 | Population count, seed determinism, attribute ranges, summary keys, dropout scaling, display_id tests |
+| `test_factory.py` | 15 | Population count, seed determinism, attribute ranges, summary keys, dropout scaling, display_id tests |
 | `test_engine.py` | 8 | Return types, state completeness, engagement bounds, dropout phases, risk cohort differentiation |
-| `test_social_network.py` | 6 | Link creation/strengthening, degree counting, peer influence, link decay, statistics |
+| `test_social_network.py` | 8 | Link creation/strengthening, degree counting, peer influence, link decay, statistics, max degree cap |
 | `test_environment.py` | 4 | Default courses, exam week detection, positive events, course lookup |
-| `test_validator.py` | 6 | Report structure, z-test symmetry, quality grade thresholds, dropout range tests |
+| `test_validator.py` | 9 | Report structure, z-test symmetry, quality grade thresholds, effective alpha scaling, dropout range tests |
 | `test_pipeline_integration.py` | 4 | Full pipeline run, output file creation, validation results, input rejection |
 | `test_theories.py` | 9 | One test per theory module (Tinto, Bean-Metzner, Moore, Rovai, Garrison, Bäulke, Kember, SDT, Gonzalez) |
 | `test_llm_enrichment.py` | 8 | Mock LLM enrichment, backstory export, error handling, cost report, custom pricing |
 | `test_llm_client.py` | 16 | LLMClient init, chat, retry, cache, JSON parsing, cost tracking, error handling |
 | `test_semester.py` | 5 | Multi-semester carry-over, dropout persistence, engagement recovery |
 | `test_sensitivity.py` | 2 | OAT parameter sweep, tornado chart data |
-| `test_benchmarks.py` | 4 | Profiles registry, generator, error handling |
-| `test_utils.py` | 11 | Validation helpers (range, int, distribution), logging config |
+| `test_benchmarks.py` | 6 | Profiles registry, profile structure, profile names, generator, list profiles, error handling |
+| `test_utils.py` | 14 | Validation helpers (range, int, distribution, boundaries), logging config |
 | `test_network_scaling.py` | 4 | Network degree cap, sampling threshold, backward compatibility, large-scale bounds |
 | `test_coverage_boost.py` | 26 | Validator edge cases, pipeline branches, exporter skips, environment seasons, Bäulke phases, positive events |
 | `test_calibration.py` | 11 | CalibrationMap interpolation, clamping, confidence, range estimation |
