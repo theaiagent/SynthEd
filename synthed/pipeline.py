@@ -248,6 +248,7 @@ class SynthEdPipeline:
         for s in students:
             d = {
                 "student_id": s.id,
+                "display_id": s.display_id,
                 "age": s.age,
                 "gender": s.gender,
                 "is_employed": s.is_employed,
@@ -278,6 +279,7 @@ class SynthEdPipeline:
                 coi_composite = (coi.social_presence + coi.cognitive_presence + coi.teaching_presence) / 3
                 outcomes_data.append({
                     "student_id": s.id,
+                    "display_id": s.display_id,
                     "has_dropped_out": state.has_dropped_out,
                     "dropout_week": state.dropout_week,
                     "final_dropout_phase": state.dropout_phase,

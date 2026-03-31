@@ -179,6 +179,7 @@ class StudentPersona:
 
     # ── Identity ──
     id: str = field(default_factory=lambda: str(uuid7()))
+    display_id: str = ""
     name: str = ""
     age: int = 25
     gender: str = "female"

@@ -69,7 +69,8 @@ class StudentFactory:
                 persona = self._enrich_with_llm(persona)
             personas.append(persona)
 
-        return self._apply_dropout_scaling(personas)
+        scaled = self._apply_dropout_scaling(personas)
+        return self._assign_display_ids(scaled)
 
     def _apply_dropout_scaling(
         self, personas: list[StudentPersona],
@@ -83,6 +84,14 @@ class StudentFactory:
         if abs(scale - 1.0) < 1e-9:
             return personas
         return [replace(p, _dropout_risk_scale=scale) for p in personas]
+
+    @staticmethod
+    def _assign_display_ids(personas: list[StudentPersona]) -> list[StudentPersona]:
+        """Assign sequential human-readable display IDs (S-0001, S-0002, ...)."""
+        return [
+            replace(p, display_id=f"S-{i:04d}")
+            for i, p in enumerate(personas, start=1)
+        ]
 
     def _generate_single(self, index: int) -> StudentPersona:
         cfg = self.config

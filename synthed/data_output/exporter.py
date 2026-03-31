@@ -37,8 +37,9 @@ class DataExporter:
         network: SocialNetwork | None = None,
     ) -> dict[str, str]:
         paths = {}
+        display_id_map = {s.id: s.display_id for s in students}
         paths["students"] = self.export_students(students)
-        paths["interactions"] = self.export_interactions(records)
+        paths["interactions"] = self.export_interactions(records, display_id_map=display_id_map)
         paths["outcomes"] = self.export_outcomes(students, states, network)
         paths["weekly_engagement"] = self.export_weekly_engagement(students, states)
         return paths
@@ -53,7 +54,7 @@ class DataExporter:
         filepath = self.output_dir / "students.csv"
         fieldnames = [
             # Identity
-            "student_id", "name", "age", "gender",
+            "student_id", "display_id", "name", "age", "gender",
             # Big Five
             "openness", "conscientiousness", "extraversion", "agreeableness", "neuroticism",
             # Cluster 1: Student Characteristics (Tinto, Kember)
@@ -82,7 +83,8 @@ class DataExporter:
             writer.writeheader()
             for s in students:
                 row = {
-                    "student_id": s.id, "name": s.name, "age": s.age, "gender": s.gender,
+                    "student_id": s.id, "display_id": s.display_id,
+                    "name": s.name, "age": s.age, "gender": s.gender,
                     "openness": round(s.personality.openness, 3),
                     "conscientiousness": round(s.personality.conscientiousness, 3),
                     "extraversion": round(s.personality.extraversion, 3),
@@ -117,10 +119,14 @@ class DataExporter:
                 writer.writerow(row)
         return str(filepath)
 
-    def export_interactions(self, records: list[InteractionRecord]) -> str:
+    def export_interactions(
+        self, records: list[InteractionRecord],
+        display_id_map: dict[str, str] | None = None,
+    ) -> str:
         filepath = self.output_dir / "interactions.csv"
+        _display_map = display_id_map or {}
         fieldnames = [
-            "student_id", "week", "course_id", "interaction_type",
+            "student_id", "display_id", "week", "course_id", "interaction_type",
             "timestamp_offset_hours", "duration_minutes", "quality_score",
             "device", "is_late", "exam_type", "post_length",
         ]
@@ -129,7 +135,9 @@ class DataExporter:
             writer.writeheader()
             for r in records:
                 writer.writerow({
-                    "student_id": r.student_id, "week": r.week,
+                    "student_id": r.student_id,
+                    "display_id": _display_map.get(r.student_id, ""),
+                    "week": r.week,
                     "course_id": r.course_id, "interaction_type": r.interaction_type,
                     "timestamp_offset_hours": round(r.timestamp_offset_hours, 2),
                     "duration_minutes": r.duration_minutes,
@@ -147,7 +155,7 @@ class DataExporter:
     ) -> str:
         filepath = self.output_dir / "outcomes.csv"
         fieldnames = [
-            "student_id", "has_dropped_out", "dropout_week", "final_dropout_phase",
+            "student_id", "display_id", "has_dropped_out", "dropout_week", "final_dropout_phase",
             "final_engagement", "final_academic_integration", "final_social_integration",
             "final_perceived_cost_benefit", "courses_active_count",
             "engagement_trend",
@@ -177,6 +185,7 @@ class DataExporter:
                     trend = "unknown"
                 writer.writerow({
                     "student_id": student.id,
+                    "display_id": student.display_id,
                     "has_dropped_out": int(state.has_dropped_out),
                     "dropout_week": state.dropout_week or "",
                     "final_dropout_phase": state.dropout_phase,
@@ -207,7 +216,7 @@ class DataExporter:
     ) -> str:
         filepath = self.output_dir / "weekly_engagement.csv"
         max_weeks = max((len(s.weekly_engagement_history) for s in states.values()), default=0)
-        fieldnames = ["student_id"] + [f"week_{w}" for w in range(1, max_weeks + 1)]
+        fieldnames = ["student_id", "display_id"] + [f"week_{w}" for w in range(1, max_weeks + 1)]
         with open(filepath, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
@@ -215,7 +224,7 @@ class DataExporter:
                 state = states.get(student.id)
                 if not state:
                     continue
-                row = {"student_id": student.id}
+                row = {"student_id": student.id, "display_id": student.display_id}
                 for w, eng in enumerate(state.weekly_engagement_history, 1):
                     row[f"week_{w}"] = round(eng, 3)
                 writer.writerow(row)

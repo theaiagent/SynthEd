@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from synthed.agents.factory import StudentFactory
-from synthed.agents.persona import PersonaConfig
+from synthed.agents.persona import PersonaConfig, StudentPersona
 
 
 class TestStudentFactory:
@@ -98,3 +98,33 @@ class TestDropoutScaling:
         """dropout_base_rate=0.0 raises ValueError at config construction."""
         with pytest.raises(ValueError):
             PersonaConfig(dropout_base_rate=0.0)
+
+
+class TestDisplayId:
+    def test_display_ids_assigned_sequentially(self):
+        factory = StudentFactory(seed=42)
+        pop = factory.generate_population(n=5)
+        expected = ["S-0001", "S-0002", "S-0003", "S-0004", "S-0005"]
+        assert [p.display_id for p in pop] == expected
+
+    def test_display_ids_unique(self):
+        factory = StudentFactory(seed=42)
+        pop = factory.generate_population(n=100)
+        assert len(set(p.display_id for p in pop)) == 100
+
+    def test_display_id_format(self):
+        import re
+        factory = StudentFactory(seed=42)
+        pop = factory.generate_population(n=50)
+        pattern = re.compile(r"^S-\d{4,}$")  # 4+ digits (handles n>9999)
+        for p in pop:
+            assert pattern.match(p.display_id)
+
+    def test_display_id_survives_replace(self):
+        factory = StudentFactory(seed=42)
+        pop = factory.generate_population(n=3)
+        for p in pop:
+            assert replace(p, backstory="test").display_id == p.display_id
+
+    def test_display_id_default_empty(self):
+        assert StudentPersona(name="Manual").display_id == ""
