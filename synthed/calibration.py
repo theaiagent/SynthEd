@@ -54,8 +54,8 @@ CALIBRATION_DATA: tuple[CalibrationPoint, ...] = (
     CalibrationPoint(1, 0.90, 0.476, 500, 5),
     CalibrationPoint(1, 0.95, 0.477, 500, 5),
     # Multi-semester at default rate (0.80)
-    CalibrationPoint(2, 0.80, 0.749, 500, 5),
-    CalibrationPoint(4, 0.80, 0.947, 500, 5),
+    CalibrationPoint(2, 0.80, 0.746, 500, 5),
+    CalibrationPoint(4, 0.80, 0.946, 500, 5),
 )
 
 # Bounds for dropout_base_rate

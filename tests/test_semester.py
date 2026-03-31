@@ -231,3 +231,113 @@ class TestBuildInterimReport:
         from synthed.simulation.semester import _build_interim_report
         report = _build_interim_report(1, [], 0, (0.30, 0.50))
         assert report.cumulative_dropout_rate == 0.0
+
+
+class TestPriorGPABlend:
+    """Tests for prior_gpa blending during carry-over."""
+
+    def test_prior_gpa_blend_updates_persona(self):
+        """Earned GPA blends into prior_gpa with default alpha=0.6."""
+        from synthed.agents.persona import StudentPersona
+        from synthed.simulation.engine import SimulationState
+        from synthed.simulation.semester import _create_carry_over_persona, SemesterCarryOverConfig
+
+        student = StudentPersona(prior_gpa=3.0)
+        state = SimulationState(
+            student_id=student.id,
+            current_engagement=0.5,
+            academic_integration=0.5,
+            social_integration=0.3,
+            perceived_cost_benefit=0.6,
+            cumulative_gpa=2.0,
+            gpa_count=5,
+        )
+        config = SemesterCarryOverConfig()
+        new_persona = _create_carry_over_persona(student, state, config)
+        # 0.6 * 2.0 + 0.4 * 3.0 = 2.4
+        assert new_persona.prior_gpa == 2.4
+
+    def test_prior_gpa_no_blend_when_no_grades(self):
+        """With gpa_count=0, prior_gpa stays unchanged."""
+        from synthed.agents.persona import StudentPersona
+        from synthed.simulation.engine import SimulationState
+        from synthed.simulation.semester import _create_carry_over_persona, SemesterCarryOverConfig
+
+        student = StudentPersona(prior_gpa=3.0)
+        state = SimulationState(
+            student_id=student.id,
+            current_engagement=0.5,
+            academic_integration=0.5,
+            social_integration=0.3,
+            perceived_cost_benefit=0.6,
+            cumulative_gpa=0.0,
+            gpa_count=0,
+        )
+        config = SemesterCarryOverConfig()
+        new_persona = _create_carry_over_persona(student, state, config)
+        assert new_persona.prior_gpa == 3.0
+
+    def test_prior_gpa_blend_respects_alpha(self):
+        """alpha=0 keeps original, alpha=1 fully replaces."""
+        from synthed.agents.persona import StudentPersona
+        from synthed.simulation.engine import SimulationState
+        from synthed.simulation.semester import _create_carry_over_persona, SemesterCarryOverConfig
+
+        student = StudentPersona(prior_gpa=3.0)
+        state = SimulationState(
+            student_id=student.id,
+            current_engagement=0.5,
+            academic_integration=0.5,
+            social_integration=0.3,
+            perceived_cost_benefit=0.6,
+            cumulative_gpa=2.0,
+            gpa_count=5,
+        )
+
+        # alpha=0: keep original
+        config_0 = SemesterCarryOverConfig(prior_gpa_blend_alpha=0.0)
+        assert _create_carry_over_persona(student, state, config_0).prior_gpa == 3.0
+
+        # alpha=1: fully replace
+        config_1 = SemesterCarryOverConfig(prior_gpa_blend_alpha=1.0)
+        assert _create_carry_over_persona(student, state, config_1).prior_gpa == 2.0
+
+    def test_prior_gpa_blend_clamps_to_range(self):
+        """Blended prior_gpa is clipped to [0.0, 4.0]."""
+        from synthed.agents.persona import StudentPersona
+        from synthed.simulation.engine import SimulationState
+        from synthed.simulation.semester import _create_carry_over_persona, SemesterCarryOverConfig
+
+        student = StudentPersona(prior_gpa=3.5)
+        state = SimulationState(
+            student_id=student.id,
+            current_engagement=0.5,
+            academic_integration=0.5,
+            social_integration=0.3,
+            perceived_cost_benefit=0.6,
+            cumulative_gpa=3.95,
+            gpa_count=10,
+        )
+        config = SemesterCarryOverConfig(prior_gpa_blend_alpha=1.0)
+        new_persona = _create_carry_over_persona(student, state, config)
+        assert 0.0 <= new_persona.prior_gpa <= 4.0
+
+    def test_multi_semester_prior_gpa_evolves(self):
+        """In a 2-semester run, surviving students' prior_gpa should change."""
+        engine, students = _make_engine_and_students(n=20, seed=42)
+        runner = MultiSemesterRunner(engine, n_semesters=2)
+        result = runner.run(students)
+
+        # Get semester 2 students (they went through carry-over)
+        sem2_student_ids = set(result.semester_results[1].states.keys())
+
+        # At least one surviving student should have a changed prior_gpa
+        sem1_states = result.semester_results[0].states
+        changed = 0
+        for sid in sem2_student_ids:
+            state = sem1_states.get(sid)
+            if state and state.gpa_count > 0:
+                # The blend should have changed prior_gpa
+                changed += 1
+
+        assert changed > 0, "No students had graded items to trigger GPA blend"

@@ -66,6 +66,10 @@ class SemesterCarryOverConfig:
     # Kember: small positive cost-benefit adjustment after break reflection
     cost_benefit_recovery: float = 0.03
 
+    # Prior GPA blending: weight given to earned GPA vs. original prior_gpa
+    # (0 = keep original, 1 = fully replace with earned GPA)
+    prior_gpa_blend_alpha: float = 0.6
+
 
 # ─────────────────────────────────────────────
 # Result containers
@@ -315,12 +319,23 @@ def _create_carry_over_persona(
         0.01, 0.95,
     ))
 
+    # Prior GPA blending: earned performance anchors future quality formulas
+    if state.gpa_count > 0:
+        new_prior_gpa = float(np.clip(
+            config.prior_gpa_blend_alpha * state.cumulative_gpa
+            + (1.0 - config.prior_gpa_blend_alpha) * original.prior_gpa,
+            0.0, 4.0,
+        ))
+    else:
+        new_prior_gpa = original.prior_gpa
+
     return replace(
         original,
         academic_integration=new_academic_integration,
         social_integration=new_social_integration,
         base_engagement_probability=recovered_engagement,
         perceived_cost_benefit=new_cost_benefit,
+        prior_gpa=round(new_prior_gpa, 2),
     )
 
 
