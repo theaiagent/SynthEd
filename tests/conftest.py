@@ -7,6 +7,10 @@ from synthed.agents.factory import StudentFactory
 from synthed.simulation.environment import ODLEnvironment
 
 
+def pytest_configure(config):
+    config.addinivalue_line("markers", "slow: marks tests as slow (deselect with '-k not slow')")
+
+
 @pytest.fixture
 def sample_persona():
     """A moderate-attribute StudentPersona for general tests."""
