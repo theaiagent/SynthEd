@@ -37,7 +37,10 @@ class CalibrationEstimate:
 
 
 # Empirically measured calibration data (N=300, 3 seeds averaged per point).
-# Measured with _dropout_risk_scale active (post Step 0 fix).
+# Measured 2026-03-31 with _dropout_risk_scale active (post Step 0 fix).
+# IMPORTANT: Re-measure if theory modules or engine weights change.
+# TODO: Warn when n_students is small (e.g. <100) — stochastic variance
+#       makes calibration estimates unreliable at low N.
 CALIBRATION_DATA: tuple[CalibrationPoint, ...] = (
     # 1-semester sweep across dropout_base_rate values
     CalibrationPoint(1, 0.20, 0.227, 300, 3),

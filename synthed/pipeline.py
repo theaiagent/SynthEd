@@ -82,7 +82,11 @@ class SynthEdPipeline:
         target_range: tuple[float, float],
         n_semesters: int,
     ) -> None:
-        """Use CalibrationMap to set dropout_base_rate from target dropout range."""
+        """Use CalibrationMap to set dropout_base_rate from target dropout range.
+
+        TODO: Warn when n_students < 100 — stochastic variance makes
+              calibration estimates unreliable at small population sizes.
+        """
         calibration_map = CalibrationMap()
         estimate = calibration_map.estimate_from_range(target_range, n_semesters)
         self._calibration_estimate = estimate
