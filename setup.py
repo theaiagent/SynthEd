@@ -22,6 +22,7 @@ setup(
         "openai>=1.0.0",
         "uuid_utils>=0.9.0,<1.0.0",
         "SALib>=1.4.0",
+        "optuna>=3.0.0",
     ],
     extras_require={
         "dev": ["pytest", "pytest-cov", "ruff"],

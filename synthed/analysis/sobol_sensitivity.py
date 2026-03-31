@@ -14,16 +14,14 @@ Requires: SALib (pip install SALib)
 from __future__ import annotations
 
 import logging
-import shutil
-import tempfile
-from dataclasses import dataclass, fields, replace
+from dataclasses import dataclass, fields
 
 import numpy as np
 from SALib.analyze import sobol as sobol_analyze
 from SALib.sample import sobol as sobol_sample
 
 from ..agents.persona import PersonaConfig
-from ..pipeline import SynthEdPipeline
+from ._sim_runner import MODULE_ALIASES, run_simulation_with_overrides
 
 logger = logging.getLogger(__name__)
 
@@ -206,18 +204,6 @@ class SobolAnalyzer:
 
         config_fields = {f.name for f in fields(PersonaConfig)}
         engine = SimulationEngine(environment=ODLEnvironment(), seed=0)
-        module_map = {
-            "tinto": engine.tinto,
-            "bean": engine.bean_metzner,
-            "kember": engine.kember,
-            "baulke": engine.baulke,
-            "sdt": engine.sdt,
-            "rovai": engine.rovai,
-            "garrison": engine.garrison,
-            "gonzalez": engine.gonzalez,
-            "moore": engine.moore,
-            "epstein": engine.epstein_axtell,
-        }
 
         for p in self.parameters:
             prefix, _, attr = p.name.partition(".")
@@ -227,8 +213,9 @@ class SobolAnalyzer:
             elif prefix == "engine":
                 if not hasattr(engine, attr):
                     raise ValueError(f"Unknown engine attribute: '{attr}' in {p.name}")
-            elif prefix in module_map:
-                if not hasattr(module_map[prefix], attr):
+            elif prefix in MODULE_ALIASES:
+                module = getattr(engine, MODULE_ALIASES[prefix])
+                if not hasattr(module, attr):
                     raise ValueError(
                         f"Unknown attribute '{attr}' on {prefix} module in {p.name}"
                     )
@@ -354,7 +341,9 @@ class SobolAnalyzer:
 
         for i, row in enumerate(samples):
             overrides = dict(zip(self._problem["names"], row))
-            result = self._run_single(overrides)
+            result = run_simulation_with_overrides(
+                overrides, self.n_students, self.seed, self._default_config,
+            )
             outputs.append(result)
 
             if (i + 1) % log_interval == 0:
@@ -362,108 +351,3 @@ class SobolAnalyzer:
                 logger.info("  Progress: %d/%d (%.0f%%)", i + 1, n_total, pct)
 
         return outputs
-
-    def _run_single(self, overrides: dict[str, float]) -> dict:
-        """
-        Run a single simulation with parameter overrides applied.
-
-        Returns dict with keys: dropout_rate, mean_engagement, mean_gpa.
-        """
-        # Split overrides by target
-        config_overrides: dict[str, float] = {}
-        engine_overrides: dict[str, float] = {}
-        theory_overrides: dict[str, dict[str, float]] = {}
-
-        for key, value in overrides.items():
-            prefix, _, attr = key.partition(".")
-            if prefix == "config":
-                config_overrides[attr] = value
-            elif prefix == "engine":
-                engine_overrides[attr] = value
-            else:
-                # Theory module: prefix is the module alias
-                theory_overrides.setdefault(prefix, {})[attr] = value
-
-        # Build PersonaConfig with overrides
-        config = self._build_config(config_overrides)
-
-        tmp_dir = tempfile.mkdtemp(prefix="synthed_sobol_")
-        try:
-            pipeline = SynthEdPipeline(
-                persona_config=config,
-                output_dir=tmp_dir,
-                seed=self.seed,
-            )
-            # Apply engine + theory overrides before running
-            self._apply_engine_overrides(pipeline, engine_overrides, theory_overrides)
-            report = pipeline.run(n_students=self.n_students)
-
-            summary = report["simulation_summary"]
-            engagement = summary.get("mean_final_engagement")
-            gpa = summary.get("mean_final_gpa")
-            if engagement is None:
-                logger.warning("mean_final_engagement missing from summary; defaulting to 0.0")
-                engagement = 0.0
-            if gpa is None:
-                logger.warning("mean_final_gpa missing from summary; defaulting to 0.0")
-                gpa = 0.0
-            return {
-                "dropout_rate": summary["dropout_rate"],
-                "mean_engagement": float(engagement),
-                "mean_gpa": float(gpa),
-            }
-        finally:
-            shutil.rmtree(tmp_dir, ignore_errors=True)
-
-    def _build_config(self, overrides: dict[str, float]) -> PersonaConfig:
-        """Create PersonaConfig with overrides via dataclasses.replace()."""
-        valid = {f.name for f in fields(PersonaConfig)}
-        filtered = {}
-        for attr, value in overrides.items():
-            if attr in valid:
-                filtered[attr] = value
-            else:
-                logger.warning("config override '%s' not in PersonaConfig — ignored", attr)
-        return replace(self._default_config, **filtered)
-
-    def _apply_engine_overrides(
-        self,
-        pipeline: SynthEdPipeline,
-        engine_overrides: dict[str, float],
-        theory_overrides: dict[str, dict[str, float]],
-    ) -> None:
-        """
-        Apply parameter overrides to the pipeline's engine and theory modules.
-
-        Sets instance-level attributes that shadow class defaults without
-        mutating the class itself. Safe because _run_single always creates
-        a fresh SynthEdPipeline (and therefore fresh engine + theory instances)
-        per simulation call — instance shadows do not persist across runs.
-        """
-        engine = pipeline.engine
-
-        # Engine-level constants
-        for attr, value in engine_overrides.items():
-            setattr(engine, attr, value)
-
-        # Theory module aliases → engine attributes
-        module_map = {
-            "tinto": engine.tinto,
-            "bean": engine.bean_metzner,
-            "kember": engine.kember,
-            "baulke": engine.baulke,
-            "sdt": engine.sdt,
-            "rovai": engine.rovai,
-            "garrison": engine.garrison,
-            "gonzalez": engine.gonzalez,
-            "moore": engine.moore,
-            "epstein": engine.epstein_axtell,
-        }
-
-        for module_alias, attrs in theory_overrides.items():
-            module = module_map.get(module_alias)
-            if module is None:
-                logger.warning("Unknown theory module alias: %s", module_alias)
-                continue
-            for attr, value in attrs.items():
-                setattr(module, attr, value)

@@ -11,6 +11,7 @@ from synthed.analysis.sobol_sensitivity import (
     SobolParameter,
     SobolResult,
 )
+from synthed.analysis._sim_runner import run_simulation_with_overrides
 
 
 # ─────────────────────────────────────────────
@@ -158,34 +159,33 @@ class TestSampleGeneration:
 
 class TestOverrides:
     def test_config_override_builds_valid_config(self):
-        analyzer = SobolAnalyzer(n_students=10, seed=42)
-        config = analyzer._build_config({"employment_rate": 0.55})
+        from synthed.analysis._sim_runner import _build_config
+        from synthed.agents.persona import PersonaConfig
+        config = _build_config(PersonaConfig(), {"employment_rate": 0.55})
         assert config.employment_rate == 0.55
-        # Other fields remain default
         assert config.dropout_base_rate == 0.80
 
     def test_engine_override_applies(self, tmp_path):
         """Engine-level constants can be overridden via setattr."""
         from synthed.pipeline import SynthEdPipeline
+        from synthed.analysis._sim_runner import _apply_engine_overrides
         pipeline = SynthEdPipeline(output_dir=str(tmp_path), seed=42)
         original = pipeline.engine._TINTO_ACADEMIC_WEIGHT
-        analyzer = SobolAnalyzer(n_students=10)
-        analyzer._apply_engine_overrides(
+        _apply_engine_overrides(
             pipeline,
             {"_TINTO_ACADEMIC_WEIGHT": 0.999},
             {},
         )
         assert pipeline.engine._TINTO_ACADEMIC_WEIGHT == 0.999
-        # Verify original class default is unchanged
         from synthed.simulation.engine import SimulationEngine
         assert SimulationEngine._TINTO_ACADEMIC_WEIGHT == original
 
     def test_theory_override_applies(self, tmp_path):
         """Theory module constants can be overridden."""
         from synthed.pipeline import SynthEdPipeline
+        from synthed.analysis._sim_runner import _apply_engine_overrides
         pipeline = SynthEdPipeline(output_dir=str(tmp_path), seed=42)
-        analyzer = SobolAnalyzer(n_students=10)
-        analyzer._apply_engine_overrides(
+        _apply_engine_overrides(
             pipeline,
             {},
             {"bean": {"_OVERWORK_PENALTY": 0.999}},
@@ -306,24 +306,19 @@ class TestSobolIntegration:
         """
         Verify that engine/theory overrides actually change simulation output.
 
-        Run two analyses with the same seed but extreme parameter values:
+        Run two simulations with the same seed but extreme parameter values:
         one with very low dropout risk multiplier, one with very high.
         """
-        subset = (
-            SobolParameter("baulke._DECISION_RISK_MULTIPLIER", 0.05, 0.10, "Low risk"),
-        )
-        analyzer_low = SobolAnalyzer(n_students=20, seed=42, parameters=subset)
-        # Just run a single simulation with the override
-        result_low = analyzer_low._run_single(
-            {"baulke._DECISION_RISK_MULTIPLIER": 0.05}
-        )
+        from synthed.agents.persona import PersonaConfig
+        default_config = PersonaConfig()
 
-        subset_high = (
-            SobolParameter("baulke._DECISION_RISK_MULTIPLIER", 0.80, 0.90, "High risk"),
+        result_low = run_simulation_with_overrides(
+            {"baulke._DECISION_RISK_MULTIPLIER": 0.05},
+            n_students=20, seed=42, default_config=default_config,
         )
-        analyzer_high = SobolAnalyzer(n_students=20, seed=42, parameters=subset_high)
-        result_high = analyzer_high._run_single(
-            {"baulke._DECISION_RISK_MULTIPLIER": 0.90}
+        result_high = run_simulation_with_overrides(
+            {"baulke._DECISION_RISK_MULTIPLIER": 0.90},
+            n_students=20, seed=42, default_config=default_config,
         )
 
         # Higher risk multiplier should produce more dropouts
