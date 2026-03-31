@@ -23,7 +23,7 @@ Factor clusters follow Rovai's (2003) composite persistence model:
 
 from __future__ import annotations
 
-import uuid
+from uuid_utils import uuid7
 from dataclasses import dataclass, field, asdict
 
 
@@ -178,7 +178,7 @@ class StudentPersona:
     """
 
     # ── Identity ──
-    id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
+    id: str = field(default_factory=lambda: str(uuid7()))
     name: str = ""
     age: int = 25
     gender: str = "female"

@@ -1,5 +1,7 @@
 """Tests for StudentPersona and BigFiveTraits."""
 
+import uuid
+
 import pytest
 
 from synthed.agents.persona import StudentPersona, BigFiveTraits
@@ -77,3 +79,27 @@ class TestStudentPersona:
         )
         assert high.base_engagement_probability <= 0.95
         assert high.base_dropout_risk >= 0.02
+
+
+class TestStudentID:
+    """Tests for UUIDv7 student ID generation."""
+
+    def test_id_is_valid_uuidv7(self):
+        """Student IDs should be valid UUIDv7 (time-sortable, full 128-bit)."""
+        p = StudentPersona()
+        parsed = uuid.UUID(p.id)
+        assert parsed.version == 7
+        assert len(p.id) == 36
+
+    def test_id_uniqueness(self):
+        """Each StudentPersona should receive a unique ID."""
+        ids = [StudentPersona().id for _ in range(100)]
+        assert len(set(ids)) == 100
+
+    def test_id_time_sortable(self):
+        """UUIDv7 IDs generated in separate ms buckets sort chronologically."""
+        import time
+        batch_a = [StudentPersona().id for _ in range(5)]
+        time.sleep(0.005)
+        batch_b = [StudentPersona().id for _ in range(5)]
+        assert max(batch_a) < min(batch_b)
