@@ -1,0 +1,94 @@
+name: Documentation Improvement
+description: Suggest improvements, corrections, or additions to SynthEd documentation
+title: "[DOCS] "
+labels: ["documentation"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping improve SynthEd documentation. Please provide specific details about what needs to be addressed.
+
+  - type: dropdown
+    id: documentation_area
+    attributes:
+      label: Documentation Area
+      description: Which documentation area does this concern?
+      options:
+        - README.md (project overview and quick start)
+        - GUIDE.md (user guide and tutorials)
+        - THEORY.md (theoretical foundations and architecture)
+        - Docstrings (in-code documentation)
+        - Examples or tutorials
+        - API reference
+        - Configuration guide
+        - Other (specify below)
+    validations:
+      required: true
+
+  - type: textarea
+    id: other_area
+    attributes:
+      label: Other Documentation Area
+      description: If you selected Other, specify which documentation area
+      placeholder: Website documentation, blog post, etc.
+    validations:
+      required: false
+
+  - type: textarea
+    id: current_issue
+    attributes:
+      label: Current Documentation Issue
+      description: What is wrong, unclear, or missing in the current documentation?
+      placeholder: |
+        Example: The GUIDE.md section on calibration does not explain what the "confidence" field means in CalibrationEstimate output.
+    validations:
+      required: true
+
+  - type: textarea
+    id: location
+    attributes:
+      label: Specific Location
+      description: Exact file path and section heading if applicable
+      placeholder: |
+        File: docs/GUIDE.md
+        Section: "Calibration Pipeline"
+        Line/Paragraph: "Use CalibrationMap to set dropout_base_rate..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed_fix
+    attributes:
+      label: Proposed Improvement
+      description: What should the documentation say instead? Include specific wording if possible.
+      placeholder: |
+        Add explanation:
+
+        "The confidence field indicates whether the estimate is based on interpolation (high) or extrapolation (low). High confidence estimates are recommended for production use."
+    validations:
+      required: true
+
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Impact and Rationale
+      description: Why is this documentation change important? Who would benefit?
+      placeholder: |
+        New users struggle to understand what determines calibration accuracy. This explanation would help them make informed decisions about whether to use automatic calibration for their use case.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Verification
+      description: Before submitting, verify the following
+      options:
+        - label: I have read the documentation area in question
+          required: true
+        - label: I have searched existing documentation issues
+          required: true
+        - label: I have provided specific location and details
+          required: true

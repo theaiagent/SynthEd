@@ -1,0 +1,55 @@
+# SynthEd Repository Code Owners
+# Reference: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+# This file defines required reviewers for pull requests affecting specific paths.
+# GitHub automatically requests review from code owners when a PR modifies their code.
+
+# Default code owner for all files
+* @theaiagent
+
+# Core simulation engine requires review
+synthed/simulation/engine.py @theaiagent
+synthed/simulation/theories/ @theaiagent
+synthed/simulation/social_network.py @theaiagent
+synthed/simulation/environment.py @theaiagent
+synthed/simulation/semester.py @theaiagent
+
+# Agent personality and factory
+synthed/agents/ @theaiagent
+
+# Calibration system
+synthed/calibration.py @theaiagent
+synthed/analysis/ @theaiagent
+
+# Pipeline orchestrator
+synthed/pipeline.py @theaiagent
+
+# Data export and OULAD compatibility
+synthed/data_output/ @theaiagent
+
+# Validation suite
+synthed/validation/ @theaiagent
+
+# LLM utilities and integration
+synthed/utils/llm.py @theaiagent
+synthed/utils/llm_memory.py @theaiagent
+
+# Test suite
+tests/ @theaiagent
+
+# Documentation
+docs/ @theaiagent
+README.md @theaiagent
+GUIDE.md @theaiagent
+THEORY.md @theaiagent
+CITATION.cff @theaiagent
+
+# GitHub configuration and CI/CD
+.github/ @theaiagent
+.github/workflows/ @theaiagent
+
+# Build and package configuration
+setup.py @theaiagent
+setup.cfg @theaiagent
+pyproject.toml @theaiagent
+requirements.txt @theaiagent
+MANIFEST.in @theaiagent

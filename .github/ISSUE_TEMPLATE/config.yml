@@ -1,0 +1,14 @@
+# Issue template configuration
+# Reference: https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/configuring-issue-templates-for-your-repository
+
+blank_issues_enabled: false
+contact_links:
+  - name: GitHub Discussions
+    url: https://github.com/theaiagent/SynthEd/discussions
+    about: Ask questions and share ideas about SynthEd in discussions
+  - name: Real OULAD Data
+    url: https://github.com/TheOUDialDataRepo/OpenUniversityLearningAnalytics
+    about: Access the Open University Learning Analytics Dataset used for calibration
+  - name: Email Support
+    url: https://github.com/theaiagent/SynthEd/security/policy
+    about: Report security vulnerabilities via email per security policy

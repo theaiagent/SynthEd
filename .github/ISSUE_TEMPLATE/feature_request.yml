@@ -1,0 +1,90 @@
+name: Feature Request
+description: Propose a new feature or capability for SynthEd
+title: "[FEATURE] "
+labels: ["enhancement"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a feature. Please provide detailed information to help us evaluate the proposal.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Feature Description
+      description: Clear and concise description of what you want to be added or improved.
+      placeholder: |
+        Example: Add support for simulating asynchronous vs synchronous course delivery modes with different interaction patterns.
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation and Use Case
+      description: Why would this feature be useful? Who would benefit and how? What problem does it solve?
+      placeholder: |
+        Researchers studying different pedagogical approaches need to model how synchronous requirements affect dropout patterns. This would enable comparison of online vs hybrid delivery scenarios.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed_solution
+    attributes:
+      label: Proposed Implementation (Optional)
+      description: If you have ideas on how to implement this, describe your approach.
+      placeholder: |
+        1. Add "delivery_mode" parameter to ODLEnvironment (sync/async)
+        2. Modify interaction probability calculations based on delivery mode
+        3. Adjust time_management skill impact
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative Approaches
+      description: Have you considered other solutions? List any alternatives you evaluated.
+      placeholder: |
+        Alternative 1: Configuration file approach (more flexible but harder to learn)
+        Alternative 2: Subclass ODLEnvironment (verbose but keeps code separation)
+    validations:
+      required: false
+
+  - type: textarea
+    id: affected_modules
+    attributes:
+      label: Affected Components
+      description: Which SynthEd modules would this impact? (e.g., simulation/engine.py, agents/factory.py)
+      placeholder: |
+        - synthed/simulation/engine.py
+        - synthed/simulation/environment.py
+        - synthed/validation/validator.py
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional Context
+      description: Links to related research, GitHub issues, or other relevant information.
+      placeholder: References to ODL research papers, competitor tools, or existing GitHub discussions
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Verification
+      description: Before submitting, verify the following
+      options:
+        - label: I have searched existing issues and found no duplicates
+          required: true
+        - label: This feature aligns with SynthEd educational research focus
+          required: true
+        - label: I have provided clear use case and motivation
+          required: true
+        - label: I understand this is a community-driven project
+          required: false
