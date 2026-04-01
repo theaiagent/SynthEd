@@ -35,7 +35,7 @@
 - **Adaptive Parameter Bounds** -- `auto_bounds()` adjusts calibration space when demographics change
 - **5-Level Validation Suite** -- 21 statistical tests (distributions, correlations, temporal coherence, privacy, backstory)
 - **Optional LLM Enrichment** -- Persona-grounded narrative backstories via OpenAI, Ollama, or any compatible provider
-- **464 Tests** -- 99% coverage, CI across Python 3.10/3.11/3.12
+- **472 Tests** -- 98% coverage, CI across Python 3.10/3.11/3.12
 
 ---
 

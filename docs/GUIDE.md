@@ -560,14 +560,21 @@ ValueError: Unknown PersonaConfig field: 'emplyment_rate' in config.emplyment_ra
 
 #### GPA gap in calibration
 
-**Symptom:** `target_gpa=3.03, achieved_gpa=2.56` (~15% gap)
+**Symptom:** `target_gpa=3.03, achieved_gpa=2.77` (~8.6% gap)
 
-**Context:** Assignment/exam quality formula has a structural ceiling.
+**Context:** Assignment/exam quality formula interacts with Optuna's composite loss. Too many trials causes over-optimization of dropout at GPA's expense.
 
 **Action:**
-1. Increase Optuna trials: `calibrator.run(n_trials=200)`
-2. Increase `gpa_weight` relative to `dropout_weight`
-3. ~15% gap is a known limitation of the current formula
+1. Use 60-80 Optuna trials (sweet spot). More trials (120+) can degrade GPA.
+2. Increase `gpa_weight` relative to `dropout_weight` if GPA is priority.
+3. Best observed: 80 trials → GPA 2.77 (8.6% error), Score 70.1 (8.6%), Loss 0.0036.
+
+| Trials | Loss | GPA | GPA Error | Grade |
+|--------|------|-----|-----------|-------|
+| 30 | 0.0319 | 2.19 | 27% | — |
+| 60 | 0.0084 | 2.56 | 15% | B |
+| **80** | **0.0036** | **2.77** | **8.6%** | **B** |
+| 120 | 0.0168 | 2.32 | 23% | D |
 
 #### auto_bounds returns empty
 
