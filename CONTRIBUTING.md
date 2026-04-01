@@ -10,7 +10,7 @@ Thank you for your interest in contributing to SynthEd! Whether you are a resear
 git clone https://github.com/theaiagent/SynthEd.git
 cd SynthEd
 pip install -e ".[dev]"
-python -m pytest tests/ -q --tb=short   # verify: 472+ tests pass
+python -m pytest tests/ -q --tb=short   # all tests must pass
 ```
 
 ### Project Structure
@@ -109,5 +109,5 @@ Examples:
 
 ## Questions?
 
-- Open a [Discussion](https://github.com/theaiagent/SynthEd/issues) or Issue
+- Open an [Issue](https://github.com/theaiagent/SynthEd/issues)
 - Check the [User Guide](docs/GUIDE.md) and [Troubleshooting](docs/GUIDE.md#-troubleshooting)
