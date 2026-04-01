@@ -394,7 +394,7 @@ SynthEd/
 │   │   └── validation.py        # Input validation utilities
 │   ├── calibration.py             # CalibrationMap: target dropout → simulation params
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                        # 434 pytest tests across 26 files
+├── tests/                        # 452 pytest tests across 27 files
 ├── configs/
 │   └── default.json
 ├── run_pipeline.py               # CLI entry point
@@ -461,7 +461,7 @@ Extend `SimulationEngine._simulate_student_week()` to add new behavioral channel
 
 ## Test Suite
 
-SynthEd includes 434 pytest tests across 26 test files, covering all theory modules, simulation mechanics, LLM enrichment, OULAD export, trait-based calibration, and the full pipeline.
+SynthEd includes 452 pytest tests across 27 test files, covering all theory modules, simulation mechanics, LLM enrichment, OULAD export, trait-based calibration, and the full pipeline.
 
 ```bash
 python -m pytest tests/ -v --tb=short
@@ -496,6 +496,7 @@ python -m pytest tests/ -v --tb=short
 | `test_oulad_export.py` | 35 | OULAD mapping functions, 7-table export, schema conformance, foreign keys, determinism |
 | `test_sobol.py` | 26 | Sobol parameter space, SALib sampling, override routing, ranking, init-time validation |
 | `test_trait_calibration.py` | 31 | OULAD target extraction, Optuna calibrator, loss functions, held-out validation, module split |
+| `test_auto_bounds.py` | 18 | Auto parameter generation, margin clipping, filtering, custom config, Sobol compatibility |
 
 CI runs tests across **Python 3.10, 3.11, and 3.12** on every push and pull request via [GitHub Actions](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml).
 
