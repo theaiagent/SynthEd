@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from synthed.benchmarks.profiles import PROFILES, BenchmarkProfile
 from synthed.benchmarks.generator import BenchmarkGenerator
 
@@ -158,3 +160,106 @@ class TestBenchmarkGenerator:
         for report in results:
             assert "benchmark_validation" in report
             assert "simulation_summary" in report
+
+
+class TestBenchmarkReport:
+    """Tests for benchmark report generation."""
+
+    def _make_mock_report(self, profile_name, dropout=0.45, gpa=2.85, engagement=0.62):
+        """Build a realistic mock report for testing."""
+        return {
+            "simulation_summary": {
+                "total_students": 100,
+                "dropout_rate": dropout,
+                "dropout_count": int(100 * dropout),
+                "retained_students": 100 - int(100 * dropout),
+                "mean_final_gpa": gpa,
+                "mean_final_engagement": engagement,
+                "mean_dropout_week": 8.5,
+            },
+            "benchmark_validation": {
+                "profile": profile_name,
+                "expected_dropout_range": PROFILES[profile_name].expected_dropout_range,
+                "actual_dropout_rate": dropout,
+                "in_expected_range": (
+                    PROFILES[profile_name].expected_dropout_range[0]
+                    <= dropout
+                    <= PROFILES[profile_name].expected_dropout_range[1]
+                ),
+            },
+            "validation": {"summary": {"overall_quality": "GOOD", "passed": 18, "total_tests": 21}},
+            "timing": {"generation_sec": 0.5, "simulation_sec": 1.2, "export_sec": 0.1, "validation_sec": 0.3},
+        }
+
+    def test_format_report_contains_all_profiles(self):
+        """_format_report should mention every profile name."""
+        results = [
+            self._make_mock_report("high_dropout_developing", dropout=0.72),
+            self._make_mock_report("moderate_dropout_western", dropout=0.45),
+            self._make_mock_report("low_dropout_corporate", dropout=0.15),
+            self._make_mock_report("mega_university", dropout=0.68),
+        ]
+        md = BenchmarkGenerator._format_report(results, elapsed=5.0)
+
+        for name in PROFILES:
+            assert name in md
+
+    def test_format_report_markdown_structure(self):
+        """Report should have expected headers and table."""
+        results = [self._make_mock_report("moderate_dropout_western")]
+        md = BenchmarkGenerator._format_report(results, elapsed=1.0)
+
+        assert "# SynthEd Benchmark Report" in md
+        assert "## Profile Comparison" in md
+        assert "## Profile Details" in md
+        assert "| Profile |" in md
+        assert "Generated in" in md
+
+    def test_format_report_in_range_flag(self):
+        """YES/NO flags should match expected range."""
+        results = [
+            self._make_mock_report("low_dropout_corporate", dropout=0.15),
+            self._make_mock_report("low_dropout_corporate", dropout=0.95),
+        ]
+        # Override the second to be out of range
+        results[1]["benchmark_validation"]["in_expected_range"] = False
+
+        md = BenchmarkGenerator._format_report(results, elapsed=1.0)
+        assert "YES" in md
+        assert "NO" in md
+
+    def test_format_report_handles_none_gpa(self):
+        """Report should not crash when GPA or engagement is None."""
+        report = self._make_mock_report("moderate_dropout_western")
+        report["simulation_summary"]["mean_final_gpa"] = None
+        report["simulation_summary"]["mean_final_engagement"] = None
+        report["simulation_summary"]["mean_dropout_week"] = None
+
+        md = BenchmarkGenerator._format_report([report], elapsed=1.0)
+        assert "N/A" in md
+        assert "-" in md
+
+    def test_generate_report_writes_files(self, tmp_path):
+        """generate_report should write .md and .json files."""
+        from unittest.mock import patch
+
+        mock_report = self._make_mock_report("moderate_dropout_western")
+        with patch(
+            "synthed.benchmarks.generator.SynthEdPipeline"
+        ) as MockPipeline:
+            MockPipeline.return_value.run.return_value = {
+                "simulation_summary": mock_report["simulation_summary"],
+            }
+            gen = BenchmarkGenerator()
+            md = gen.generate_report(output_dir=str(tmp_path))
+
+        assert (tmp_path / "benchmark_report.md").exists()
+        assert (tmp_path / "benchmark_results.json").exists()
+
+        # Verify JSON is valid
+        data = json.loads((tmp_path / "benchmark_results.json").read_text())
+        assert isinstance(data, list)
+        assert len(data) == 4
+
+        # Verify markdown returned
+        assert "# SynthEd Benchmark Report" in md

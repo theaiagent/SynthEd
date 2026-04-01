@@ -7,6 +7,8 @@ Usage:
     python run_pipeline.py --n 500             # 500 students
     python run_pipeline.py --n 100 --llm       # 100 students with LLM enrichment
     python run_pipeline.py --config configs/default.json
+    python run_pipeline.py --benchmark         # Run all 4 benchmark profiles
+    python run_pipeline.py --benchmark --benchmark-profile moderate_dropout_western
 """
 
 import argparse
@@ -55,9 +57,50 @@ def main():
         "--oulad", action="store_true",
         help="Export OULAD-compatible 7-table format alongside standard output",
     )
+    parser.add_argument(
+        "--benchmark", action="store_true",
+        help="Run benchmark profiles and generate comparison report",
+    )
+    parser.add_argument(
+        "--benchmark-profile", type=str, default=None,
+        help="Run a specific benchmark profile (default: all profiles)",
+    )
     args = parser.parse_args()
 
     configure_logging(verbose=args.verbose)
+
+    # Benchmark mode
+    if args.benchmark:
+        from synthed.benchmarks.generator import BenchmarkGenerator
+        gen = BenchmarkGenerator()
+        out = args.output if args.output != "./output" else "./benchmarks"
+
+        print("=" * 60)
+        print("  SynthEd Benchmark Runner")
+        print("=" * 60)
+
+        if args.benchmark_profile:
+            print(f"  Profile: {args.benchmark_profile}")
+            print(f"  Output: {out}/{args.benchmark_profile}")
+            print("=" * 60 + "\n")
+            report = gen.generate(args.benchmark_profile, output_dir=f"{out}/{args.benchmark_profile}")
+            bv = report["benchmark_validation"]
+            sim = report["simulation_summary"]
+            print(f"\n  Dropout: {sim['dropout_rate']:.1%} (expected {bv['expected_dropout_range'][0]:.0%}-{bv['expected_dropout_range'][1]:.0%})")
+            gpa = sim.get("mean_final_gpa")
+            print(f"  GPA: {gpa:.2f}" if gpa is not None else "  GPA: N/A")
+            print(f"  In range: {'YES' if bv['in_expected_range'] else 'NO'}")
+        else:
+            print(f"  Profiles: {len(BenchmarkGenerator.list_profiles())}")
+            print(f"  Output: {out}")
+            print("=" * 60 + "\n")
+            md = gen.generate_report(output_dir=out)
+            print(md)
+
+        print("\n" + "=" * 60)
+        print("  Benchmark complete.")
+        print("=" * 60)
+        return
 
     # Load config if provided
     if args.config:
