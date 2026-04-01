@@ -134,6 +134,50 @@ class TestSimulationEngine:
         phase_dist = summary["dropout_phase_distribution"]
         assert "unavoidable_withdrawal" in phase_dist
 
+    def test_summary_includes_std_final_engagement(self):
+        """summary_statistics returns std_final_engagement for retained students."""
+        from synthed.simulation.engine import SimulationState
+
+        states = {
+            "s1": SimulationState(
+                student_id="s1", has_dropped_out=False,
+                weekly_engagement_history=[0.8, 0.7, 0.6],
+            ),
+            "s2": SimulationState(
+                student_id="s2", has_dropped_out=False,
+                weekly_engagement_history=[0.4, 0.3, 0.2],
+            ),
+            "s3": SimulationState(
+                student_id="s3", has_dropped_out=True, dropout_week=2,
+                weekly_engagement_history=[0.5, 0.3],
+            ),
+        }
+
+        env = ODLEnvironment()
+        engine = SimulationEngine(environment=env, seed=42)
+        summary = engine.summary_statistics(states)
+
+        assert "std_final_engagement" in summary
+        # Only retained students (s1=0.6, s2=0.2) contribute
+        assert summary["std_final_engagement"] is not None
+        assert summary["std_final_engagement"] > 0  # two different values → nonzero std
+        assert summary["mean_final_engagement"] is not None
+
+    def test_std_final_engagement_none_when_all_dropout(self):
+        """std_final_engagement is None when all students dropped out."""
+        from synthed.simulation.engine import SimulationState
+
+        states = {
+            "s1": SimulationState(
+                student_id="s1", has_dropped_out=True, dropout_week=3,
+                weekly_engagement_history=[0.5],
+            ),
+        }
+        env = ODLEnvironment()
+        engine = SimulationEngine(environment=env, seed=42)
+        summary = engine.summary_statistics(states)
+        assert summary["std_final_engagement"] is None
+
     def test_course_not_found_skipped(self):
         """Simulation skips courses not found by ID (line 358)."""
         from synthed.agents.persona import StudentPersona

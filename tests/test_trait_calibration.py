@@ -342,6 +342,63 @@ class TestValidationMetrics:
         )
         assert report.grade == "A"
 
+    def test_report_grade_b(self):
+        passed = tuple(_compare(f"p{i}", 0.5, 0.5, 0.1) for i in range(3))
+        failed = (_compare("f1", 0.9, 0.5, 0.1),)
+        metrics = passed + failed
+        report = ValidationReport(
+            metrics=metrics, passed_count=3, total_count=4, pass_rate=0.75,
+            calibrated_params={}, calibration_modules=frozenset(),
+            validation_modules=frozenset(), n_students=100,
+        )
+        assert report.grade == "B"
+
+    def test_report_grade_c(self):
+        passed = tuple(_compare(f"p{i}", 0.5, 0.5, 0.1) for i in range(2))
+        failed = tuple(_compare(f"f{i}", 0.9, 0.5, 0.1) for i in range(3))
+        metrics = passed + failed
+        report = ValidationReport(
+            metrics=metrics, passed_count=2, total_count=5, pass_rate=0.4,
+            calibrated_params={}, calibration_modules=frozenset(),
+            validation_modules=frozenset(), n_students=100,
+        )
+        assert report.grade == "C"
+
+    def test_report_grade_d(self):
+        failed = tuple(_compare(f"f{i}", 0.9, 0.5, 0.1) for i in range(5))
+        report = ValidationReport(
+            metrics=failed, passed_count=0, total_count=5, pass_rate=0.0,
+            calibrated_params={}, calibration_modules=frozenset(),
+            validation_modules=frozenset(), n_students=100,
+        )
+        assert report.grade == "D"
+
+    def test_dropout_tolerance_boundary(self):
+        """Dropout uses absolute tolerance (10pp)."""
+        m_pass = _compare("dropout", 0.40, 0.31, tolerance=0.10, absolute=True)
+        assert m_pass.passed is True  # |0.40 - 0.31| = 0.09 < 0.10
+        m_fail = _compare("dropout", 0.42, 0.31, tolerance=0.10, absolute=True)
+        assert m_fail.passed is False  # |0.42 - 0.31| = 0.11 > 0.10
+
+    def test_gpa_tolerance_boundary(self):
+        """GPA uses relative tolerance (20%)."""
+        m_pass = _compare("gpa", 2.50, 3.00, tolerance=0.20)
+        assert m_pass.passed is True  # |2.50-3.00|/3.00 = 0.167 < 0.20
+        m_fail = _compare("gpa", 2.30, 3.00, tolerance=0.20)
+        assert m_fail.passed is False  # |2.30-3.00|/3.00 = 0.233 > 0.20
+
+    def test_validation_report_has_4_metrics(self, mock_oulad_dir):
+        """validate_against_oulad produces exactly 4 validation metrics."""
+        report = validate_against_oulad(
+            calibrated_params={},
+            oulad_dir=str(mock_oulad_dir),
+            n_students=10, seed=42,
+            validation_modules=frozenset({"AAA"}),
+        )
+        assert report.total_count == 4
+        names = {m.name for m in report.metrics}
+        assert names == {"dropout_rate", "gpa_mean", "engagement_cv", "score_mean_approx"}
+
 
 class TestValidationIntegration:
     @pytest.mark.slow
