@@ -77,7 +77,7 @@ flowchart TD
 
     EX --> VAL
 
-    subgraph VAL ["Validation Suite — 19 statistical tests"]
+    subgraph VAL ["Validation Suite — 21 statistical tests"]
         direction LR
         V1["L1: Distributions"]
         V2["L2: Correlations"]
@@ -277,9 +277,9 @@ SynthEd validates generated data across five levels:
 4. **Privacy Assessment** — k-anonymity check on quasi-identifiers
 5. **Backstory Consistency** (optional) — LLM-generated backstories checked for non-empty rate and persona-attribute relevance
 
-Example validation output (19 tests across 11 theoretical anchors):
+Example validation output (21 tests across 11 theoretical anchors):
 ```
-Quality: A (Excellent) — 19/19 tests passed
+Quality: A (Excellent) — 21/21 tests passed
   ✓ age_distribution (KS-test)
   ✓ gender_distribution (Chi-squared)
   ✓ employment_rate (Z-test)
@@ -296,8 +296,10 @@ Quality: A (Excellent) — 19/19 tests passed
   ✓ kember_cost_benefit_engagement (expected positive)
   ✓ sdt_intrinsic_vs_amotivation (intrinsic > amotivation)
   ✓ baulke_phase_distribution (decided phase proportion)
+  ✓ gpa_dropout_correlation (expected negative)
   ✓ engagement_trajectory_divergence (retained > dropout)
   ✓ dropout_negative_trend_rate (decline before dropout)
+  ✓ dropout_early_attrition (first half concentration)
   ✓ k_anonymity
 ```
 
@@ -394,7 +396,7 @@ SynthEd/
 │   │   └── validation.py        # Input validation utilities
 │   ├── calibration.py             # CalibrationMap: target dropout → simulation params
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                        # 452 pytest tests across 27 files
+├── tests/                        # 464 pytest tests across 27 files
 ├── configs/
 │   └── default.json
 ├── run_pipeline.py               # CLI entry point
@@ -418,7 +420,7 @@ Create a JSON config matching your institution's demographics:
   },
   "reference_statistics": {
     "age_mean": 32.0,
-    "dropout_rate": 0.50
+    "dropout_rate": 0.43
   }
 }
 ```
@@ -461,7 +463,7 @@ Extend `SimulationEngine._simulate_student_week()` to add new behavioral channel
 
 ## Test Suite
 
-SynthEd includes 452 pytest tests across 27 test files, covering all theory modules, simulation mechanics, LLM enrichment, OULAD export, trait-based calibration, and the full pipeline.
+SynthEd includes 464 pytest tests across 27 test files, covering all theory modules, simulation mechanics, LLM enrichment, OULAD export, trait-based calibration, and the full pipeline.
 
 ```bash
 python -m pytest tests/ -v --tb=short

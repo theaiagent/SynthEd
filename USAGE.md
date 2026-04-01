@@ -368,7 +368,7 @@ Backstories explain *why* each student behaves the way they do — useful for pu
 
 ## Validation Suite
 
-19 statistical tests across 5 levels:
+21 statistical tests across 5 levels:
 
 ```bash
 python -m pytest tests/ -v --tb=short
