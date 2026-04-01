@@ -85,7 +85,7 @@ class TestPipelineFromProfile:
             output_dir=str(tmp_path),
         )
         assert pipeline._calibration_estimate is not None
-        assert pipeline.target_dropout_range == (0.05, 0.30)
+        assert pipeline.target_dropout_range == (0.05, 0.25)
         # Run to ensure it works end-to-end
         report = pipeline.run(n_students=20)
         assert "simulation_summary" in report

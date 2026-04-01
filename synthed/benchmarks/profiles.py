@@ -31,39 +31,39 @@ class BenchmarkProfile:
 PROFILES: dict[str, BenchmarkProfile] = {
     "high_dropout_developing": BenchmarkProfile(
         name="high_dropout_developing",
-        description="Developing country ODL: high dropout (65-85%), high employment, low digital literacy",
+        description="Developing country ODL: high dropout (50-66%), high employment, low digital literacy",
         persona_config=PersonaConfig(
             employment_rate=0.85,
             financial_stress_mean=0.65,
             digital_literacy_mean=0.35,
             self_regulation_mean=0.35,
-            dropout_base_rate=0.85,
+            dropout_base_rate=0.92,
         ),
         environment=ODLEnvironment(total_weeks=14),
-        reference_stats=ReferenceStatistics(dropout_rate=0.75),
+        reference_stats=ReferenceStatistics(dropout_rate=0.58),
         n_students=500,
         seed=42,
-        expected_dropout_range=(0.60, 0.90),
+        expected_dropout_range=(0.50, 0.66),
     ),
     "moderate_dropout_western": BenchmarkProfile(
         name="moderate_dropout_western",
-        description="Western university ODL: moderate dropout (35-55%), mixed employment",
+        description="Western university ODL: moderate dropout (15-35%), mixed employment",
         persona_config=PersonaConfig(
             employment_rate=0.55,
-            financial_stress_mean=0.35,
+            financial_stress_mean=0.45,
             digital_literacy_mean=0.65,
-            self_regulation_mean=0.55,
-            dropout_base_rate=0.50,
+            self_regulation_mean=0.45,
+            dropout_base_rate=0.65,
         ),
         environment=ODLEnvironment(total_weeks=14),
-        reference_stats=ReferenceStatistics(dropout_rate=0.45, age_mean=26.0),
+        reference_stats=ReferenceStatistics(dropout_rate=0.25, age_mean=26.0),
         n_students=500,
         seed=42,
-        expected_dropout_range=(0.30, 0.60),
+        expected_dropout_range=(0.15, 0.35),
     ),
     "low_dropout_corporate": BenchmarkProfile(
         name="low_dropout_corporate",
-        description="Corporate training ODL: low dropout (10-25%), employer-sponsored",
+        description="Corporate training ODL: low dropout (5-25%), employer-sponsored",
         persona_config=PersonaConfig(
             employment_rate=0.95,
             financial_stress_mean=0.20,
@@ -78,11 +78,11 @@ PROFILES: dict[str, BenchmarkProfile] = {
         ),
         n_students=300,
         seed=42,
-        expected_dropout_range=(0.05, 0.30),
+        expected_dropout_range=(0.05, 0.25),
     ),
     "mega_university": BenchmarkProfile(
         name="mega_university",
-        description="Mega university: very high enrollment, high dropout",
+        description="Mega university: very high enrollment, elevated dropout (35-55%)",
         persona_config=PersonaConfig(
             age_range=(18, 60),
             employment_rate=0.80,
@@ -90,14 +90,14 @@ PROFILES: dict[str, BenchmarkProfile] = {
             financial_stress_mean=0.55,
             digital_literacy_mean=0.45,
             self_regulation_mean=0.40,
-            dropout_base_rate=0.80,
+            dropout_base_rate=0.90,
         ),
         environment=ODLEnvironment(total_weeks=14),
         reference_stats=ReferenceStatistics(
-            dropout_rate=0.75, age_mean=30.0, age_std=10.0
+            dropout_rate=0.42, age_mean=30.0, age_std=10.0
         ),
         n_students=1000,
         seed=42,
-        expected_dropout_range=(0.55, 0.85),
+        expected_dropout_range=(0.35, 0.55),
     ),
 }
