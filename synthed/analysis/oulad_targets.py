@@ -49,13 +49,18 @@ class OuladTargets:
     n_students: int
 
 
-def extract_targets(oulad_dir: str | Path) -> OuladTargets:
+def extract_targets(
+    oulad_dir: str | Path,
+    modules: set[str] | None = None,
+) -> OuladTargets:
     """
     Extract calibration targets from OULAD CSV files.
 
     Args:
         oulad_dir: Path to directory containing OULAD CSV files
                    (studentInfo.csv, studentAssessment.csv, studentVle.csv).
+        modules: If provided, only include students from these code_modules.
+                 Use for held-out splits (calibration vs validation).
 
     Returns:
         OuladTargets with reference distributions.
@@ -63,8 +68,16 @@ def extract_targets(oulad_dir: str | Path) -> OuladTargets:
     oulad_path = Path(oulad_dir)
 
     student_info = _read_student_info(oulad_path / "studentInfo.csv")
-    scores = _read_scores(oulad_path / "studentAssessment.csv")
-    student_daily_means = _read_and_aggregate_engagement(oulad_path / "studentVle.csv")
+    if modules is not None:
+        student_info = [s for s in student_info if s["code_module"] in modules]
+        logger.info("Filtered to modules %s: %d students", modules, len(student_info))
+
+    # Get student IDs for filtering scores and engagement
+    student_ids = {s["id_student"] for s in student_info} if modules else None
+    scores = _read_scores(oulad_path / "studentAssessment.csv", student_ids)
+    student_daily_means = _read_and_aggregate_engagement(
+        oulad_path / "studentVle.csv", student_ids,
+    )
 
     # Dropout rate
     n_total = len(student_info)
@@ -139,14 +152,19 @@ def _read_student_info(path: Path) -> list[dict[str, str]]:
         return list(reader)
 
 
-def _read_scores(path: Path) -> list[float]:
-    """Read all numeric scores from studentAssessment.csv."""
+def _read_scores(
+    path: Path,
+    student_ids: set[str] | None = None,
+) -> list[float]:
+    """Read numeric scores from studentAssessment.csv."""
     scores: list[float] = []
     with open(path, encoding="utf-8") as f:
         reader = csv.DictReader(f)
         if "score" not in (reader.fieldnames or []):
             raise ValueError("studentAssessment.csv missing 'score' column")
         for row in reader:
+            if student_ids is not None and row.get("id_student") not in student_ids:
+                continue
             try:
                 score = float(row["score"])
                 scores.append(score)
@@ -155,7 +173,10 @@ def _read_scores(path: Path) -> list[float]:
     return scores
 
 
-def _read_and_aggregate_engagement(path: Path) -> list[float]:
+def _read_and_aggregate_engagement(
+    path: Path,
+    student_ids: set[str] | None = None,
+) -> list[float]:
     """Stream studentVle.csv and compute mean daily clicks per student.
 
     Aggregates on-the-fly to avoid loading 10M+ rows into memory.
@@ -165,6 +186,8 @@ def _read_and_aggregate_engagement(path: Path) -> list[float]:
         reader = csv.DictReader(f)
         for row in reader:
             sid = row.get("id_student", "")
+            if student_ids is not None and sid not in student_ids:
+                continue
             day = row.get("date", "")
             try:
                 clicks = int(row.get("sum_click", "0"))

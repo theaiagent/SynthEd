@@ -14,6 +14,13 @@ from synthed.analysis.trait_calibrator import (
     select_top_parameters,
     squared_error,
 )
+from synthed.analysis.oulad_validator import (
+    CALIBRATION_MODULES,
+    VALIDATION_MODULES,
+    ValidationReport,
+    validate_against_oulad,
+    _compare,
+)
 from synthed.analysis.sobol_sensitivity import (
     SOBOL_PARAMETER_SPACE,
     SobolParameter,
@@ -274,3 +281,79 @@ class TestCalibratorIntegration:
         # Best loss should be finite and non-negative
         assert result.best_loss >= 0.0
         assert result.best_loss < float("inf")
+
+
+# ─────────────────────────────────────────────
+# OULAD held-out split tests
+# ─────────────────────────────────────────────
+
+class TestOuladModuleSplit:
+    def test_calibration_validation_disjoint(self):
+        """Calibration and validation modules have no overlap."""
+        assert CALIBRATION_MODULES & VALIDATION_MODULES == frozenset()
+
+    def test_all_modules_covered(self):
+        """All 7 OULAD modules are in either calibration or validation."""
+        all_modules = CALIBRATION_MODULES | VALIDATION_MODULES
+        assert len(all_modules) == 7
+
+    def test_extract_with_module_filter(self, mock_oulad_dir):
+        """Module filter restricts to specified modules only."""
+        targets_all = extract_targets(mock_oulad_dir)
+        targets_aaa = extract_targets(mock_oulad_dir, modules={"AAA"})
+        assert targets_aaa.n_students < targets_all.n_students
+        # AAA has 5 students in mock data
+        assert targets_aaa.n_students == 5
+
+
+# ─────────────────────────────────────────────
+# Validation metric tests
+# ─────────────────────────────────────────────
+
+class TestValidationMetrics:
+    def test_compare_pass(self):
+        m = _compare("test", 0.30, 0.31, tolerance=0.10)
+        assert m.passed is True
+        assert m.name == "test"
+
+    def test_compare_fail(self):
+        m = _compare("test", 0.10, 0.50, tolerance=0.10)
+        assert m.passed is False
+
+    def test_compare_absolute_mode(self):
+        """Absolute tolerance: error = |predicted - target|."""
+        m = _compare("test", 0.35, 0.31, tolerance=0.05, absolute=True)
+        assert m.passed is True  # |0.35 - 0.31| = 0.04 < 0.05
+
+    def test_compare_relative_mode(self):
+        """Relative tolerance: error = |predicted - target| / |target|."""
+        m = _compare("test", 0.35, 0.31, tolerance=0.15)
+        # |0.35 - 0.31| / 0.31 = 0.129 < 0.15
+        assert m.passed is True
+
+    def test_report_grade_a(self):
+        metrics = tuple(
+            _compare(f"m{i}", 0.5, 0.5, tolerance=0.1) for i in range(5)
+        )
+        report = ValidationReport(
+            metrics=metrics, passed_count=5, total_count=5, pass_rate=1.0,
+            calibrated_params={}, calibration_modules=frozenset(),
+            validation_modules=frozenset(), n_students=100,
+        )
+        assert report.grade == "A"
+
+
+class TestValidationIntegration:
+    @pytest.mark.slow
+    def test_validate_with_default_params(self, mock_oulad_dir):
+        """Validation runs end-to-end with mock OULAD data."""
+        report = validate_against_oulad(
+            calibrated_params={"config.dropout_base_rate": 0.70},
+            oulad_dir=str(mock_oulad_dir),
+            n_students=15,
+            seed=42,
+            validation_modules=frozenset({"AAA"}),
+        )
+        assert isinstance(report, ValidationReport)
+        assert report.total_count >= 3
+        assert 0.0 <= report.pass_rate <= 1.0
