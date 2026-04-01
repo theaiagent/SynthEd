@@ -408,11 +408,293 @@ metrics = run_simulation_with_overrides(
 
 ## 🔍 Troubleshooting
 
-| Problem | Solution |
-|---------|----------|
-| `validate_range: employment_rate must be between 0.0 and 1.0` | Check PersonaConfig values |
-| `Unknown PersonaConfig field` during Sobol | Check spelling or use `auto_bounds()` |
-| Validation grade D | Use N=200+ for reliable results |
-| LLM 429 rate limit | Automatic retry with backoff; use `--cost-threshold` |
-| Windows CRLF warnings | Normal, harmless |
-| GPA gap (~15%) | Assignment quality formula ceiling; use 100+ Optuna trials |
+> Find your error in the Quick Reference table, then jump to the detailed entry. Each entry follows the **Error-Context-Action** pattern.
+
+### Quick Reference
+
+| Error / Symptom | Jump to |
+|---|---|
+| `{name} must be between {lo} and {hi}` | [Range violation](#personaconfig-range-violation) |
+| `{name} must sum to 1.0` | [Distribution sum](#distribution-does-not-sum-to-1) |
+| `ModuleNotFoundError: No module named 'synthed'` | [Missing package](#missing-package) |
+| `SyntaxError` on `X \| None` | [Python version](#python-version-mismatch) |
+| Validation grade D or F | [Low validation grade](#low-validation-grade) |
+| Dropout rate too low/high | [Dropout mismatch](#dropout-rate-outside-expectations) |
+| `Unknown PersonaConfig field` | [Sobol typo](#unknown-parameter-in-sobol) |
+| GPA gap (~15%) | [GPA convergence](#gpa-gap-in-calibration) |
+| `auto_bounds()` returns empty | [Auto bounds edge case](#auto_bounds-returns-empty) |
+| `openai.AuthenticationError` | [API key missing](#openai-api-key-missing) |
+| `LLM enrichment blocked: cost exceeds threshold` | [Cost threshold](#llm-cost-threshold) |
+| `base_url must use http or https scheme` | [Ollama URL](#ollama-base_url-validation) |
+| `studentInfo.csv missing columns` | [OULAD columns](#oulad-csv-missing-columns) |
+| Windows CRLF warnings | [CRLF warnings](#windows-crlf-warnings) |
+| `ConstantInputWarning` from scipy | [Constant input](#constantinputwarning) |
+
+### Prerequisites Checklist
+
+- [ ] Python 3.10+: `python --version`
+- [ ] Package installed: `pip install -e ".[dev]"`
+- [ ] Dependencies OK: `python -c "import numpy, scipy, SALib, optuna; print('OK')"`
+- [ ] (LLM only) `OPENAI_API_KEY` set
+- [ ] (OULAD calibration only) OULAD CSV files present
+
+---
+
+### Installation
+
+#### Missing package
+
+**Error:**
+```
+ModuleNotFoundError: No module named 'synthed'
+```
+
+**Context:** Package not installed.
+
+**Action:**
+1. `cd SynthEd`
+2. `pip install -e ".[dev]"`
+3. Verify: `python -c "import synthed; print('OK')"`
+
+#### Python version mismatch
+
+**Error:**
+```
+SyntaxError: unsupported operand type(s) for |: 'type' and 'NoneType'
+```
+
+**Context:** SynthEd requires Python 3.10+ for `X | None` union syntax.
+
+**Action:**
+1. `python --version` -- must be 3.10+
+2. Upgrade Python if needed
+
+---
+
+### Configuration Errors
+
+#### PersonaConfig range violation
+
+**Error:**
+```
+ValueError: employment_rate must be between 0.0 and 1.0, got 1.5
+```
+
+**Context:** Any numeric PersonaConfig field outside its valid range.
+
+**Action:** Check valid ranges:
+
+| Field | Min | Max |
+|---|---|---|
+| `employment_rate` | 0.0 | 1.0 |
+| `has_family_rate` | 0.0 | 1.0 |
+| `financial_stress_mean` | 0.0 | 1.0 |
+| `prior_gpa_mean` | 0.0 | 4.0 |
+| `digital_literacy_mean` | 0.0 | 1.0 |
+| `self_regulation_mean` | 0.0 | 1.0 |
+| `dropout_base_rate` | 0.01 | 1.0 |
+| `unavoidable_withdrawal_rate` | 0.0 | 0.05 |
+| `disability_rate` | 0.0 | 1.0 |
+
+#### Distribution does not sum to 1
+
+**Error:**
+```
+ValueError: gender_distribution must sum to 1.0, got 0.9000
+```
+
+**Context:** Any categorical distribution (gender, motivation, socioeconomic, education, device, goal, learning style) must sum to 1.0 (tolerance: 0.01).
+
+**Action:**
+```python
+config = PersonaConfig(
+    gender_distribution={"male": 0.48, "female": 0.52},  # sums to 1.0
+)
+```
+
+---
+
+### Simulation Issues
+
+#### Low validation grade
+
+**Symptom:** `Quality: D (12/21 tests passed)`
+
+**Context:** Population too small for reliable statistics, or PersonaConfig far from reference defaults.
+
+**Action:**
+1. Use N >= 200 (N=500 recommended)
+2. If using custom config, provide matching `ReferenceStatistics`
+3. Check `pipeline_report.json` for per-test details
+
+> **Why:** With N < 100, stochastic variance dominates. The validator uses scale-adjusted alpha for N > 500 to prevent overpowered tests.
+
+#### Dropout rate outside expectations
+
+**Symptom:** Dropout rate diverges from target.
+
+**Action:**
+1. Use `target_dropout_range`: `python run_pipeline.py --target-dropout 0.40 0.60`
+2. Too low? Increase `dropout_base_rate`
+3. Too high? Decrease `dropout_base_rate` or increase `self_regulation_mean`
+4. N < 100 → high variance between runs
+
+> **Why:** `dropout_base_rate` is a scaling factor, not the literal rate. The `CalibrationMap` maps target rates to base rates via interpolation. Calibrated range: ~0.21 to ~0.46 for 1 semester.
+
+---
+
+### Calibration Issues
+
+#### Unknown parameter in Sobol
+
+**Error:**
+```
+ValueError: Unknown PersonaConfig field: 'emplyment_rate' in config.emplyment_rate
+```
+
+**Context:** Typo in custom `SobolParameter` name. Caught at setup time before simulations run.
+
+**Action:**
+1. Fix the spelling, or
+2. Use `auto_bounds()` for auto-generated valid parameters
+
+#### GPA gap in calibration
+
+**Symptom:** `target_gpa=3.03, achieved_gpa=2.56` (~15% gap)
+
+**Context:** Assignment/exam quality formula has a structural ceiling.
+
+**Action:**
+1. Increase Optuna trials: `calibrator.run(n_trials=200)`
+2. Increase `gpa_weight` relative to `dropout_weight`
+3. ~15% gap is a known limitation of the current formula
+
+#### auto_bounds returns empty
+
+**Symptom:** `len(auto_bounds(margin=0.01))` returns 0.
+
+**Context:** Very small margin collapses bounds to `lower >= upper` after clipping.
+
+**Action:** Use larger margin: `auto_bounds(margin=0.5)` (default)
+
+---
+
+### LLM Issues
+
+#### OpenAI API key missing
+
+**Error:**
+```
+openai.AuthenticationError: No API key provided.
+```
+
+**Action:**
+```bash
+export OPENAI_API_KEY="sk-..."
+# For Ollama (any non-empty string works):
+export OPENAI_API_KEY="not-needed"
+python run_pipeline.py --llm --base-url http://localhost:11434/v1
+```
+
+#### LLM cost threshold
+
+**Error:**
+```
+LLM enrichment blocked: cost $1.25 exceeds threshold $1.00
+```
+
+**Action:**
+1. CLI: `--cost-threshold 5.0`
+2. Python: `SynthEdPipeline(cost_threshold=5.0, confirm_callback=lambda _: True)`
+3. Use cheaper model: `--model gpt-4o-mini`
+
+#### Ollama base_url validation
+
+**Error:**
+```
+ValueError: base_url must use http or https scheme
+```
+
+**Action:** Use correct format: `--base-url http://localhost:11434/v1`
+
+---
+
+### Export Issues
+
+#### OULAD CSV missing columns
+
+**Error:**
+```
+ValueError: studentInfo.csv missing columns: {'final_result', 'disability'}
+```
+
+**Context:** OULAD CSV files must contain specific columns for calibration target extraction.
+
+**Action:**
+1. Download official OULAD dataset: [Kuzilek et al. (2017)](https://doi.org/10.1038/sdata.2017.171)
+2. Required columns in `studentInfo.csv`: `final_result`, `code_module`, `gender`, `disability`
+3. Required columns in `studentAssessment.csv`: `score`
+
+---
+
+### Runtime Warnings
+
+#### Windows CRLF warnings
+
+```
+warning: LF will be replaced by CRLF
+```
+
+Harmless. Suppress with: `git config core.autocrlf true`
+
+#### ConstantInputWarning
+
+```
+ConstantInputWarning: An input array is constant
+```
+
+Appears with small populations where all students share a trait value. Use N >= 200 for sufficient variance.
+
+#### Student IDs differ between runs
+
+UUIDv7 embeds wall-clock time. Same seed at different times produces different IDs. Use `display_id` (S-0001) for stable identifiers. Simulation state is deterministic.
+
+#### Calibration data staleness
+
+`CALIBRATION_DATA` in `calibration.py` was measured 2026-03-31. Re-measure if you modify theory modules or engine weights (N=500, 5 seeds per point).
+
+---
+
+## ⚖️ Legal Disclaimer
+
+> **SynthEd is under active development and is for research and simulation purposes only.**
+
+SynthEd generates **entirely fictional synthetic data**. No real individuals are represented, modeled, or identifiable in any output. The generated personas, interaction logs, and behavioral trajectories are computational artifacts produced by agent-based simulation grounded in published educational theories.
+
+**By using SynthEd, you acknowledge that:**
+
+- You are **fully responsible** for any use you make of the generated outputs.
+- Synthetic data should **not** be presented as real student data without clear disclosure.
+- The simulation reflects theoretical models, not empirical observations of specific institutions or populations.
+- Outputs are intended for **research, development, and educational purposes** -- not for making decisions about real individuals.
+- SynthEd is **under active development** (pre-release). APIs, default parameters, and output formats may change between versions without prior notice.
+- As with any actively developed software, **bugs, inaccuracies, or incomplete features may exist**. Generated data should be independently validated before use in publications or critical research decisions.
+- If using the optional LLM enrichment feature, you are responsible for compliance with the LLM provider's terms of service and content policies.
+
+## 🤝 Responsible Use
+
+SynthEd is designed to **address** ethical challenges in educational data mining, not create them:
+
+- **Privacy by design**: Synthetic agents have no mapping to real individuals, eliminating re-identification risk.
+- **Bias awareness**: The simulation parameters (demographics, employment rates, dropout thresholds) reflect configurable assumptions. Users should critically evaluate whether default parameters are appropriate for their research context.
+- **Transparency**: All theoretical frameworks, formulas, and calibration decisions are documented in the source code and this documentation. The simulation is fully auditable.
+- **No surveillance**: SynthEd is not designed for, and should not be used for, monitoring or evaluating real students.
+
+## 🙏 Acknowledgments
+
+This project is conceptually inspired by:
+- [TinyTroupe](https://github.com/microsoft/tinytroupe) (Microsoft) -- Persona-based multi-agent simulation
+- [MiroFish](https://github.com/666ghj/MiroFish) -- Scalable agent-based prediction engine with GraphRAG
+- [Agent Lightning](https://github.com/microsoft/agent-lightning) -- RL-based agent optimization framework
+
+OULAD reference data: [Kuzilek, J., Hlosta, M., & Zdrahal, Z. (2017). Open University Learning Analytics Dataset. *Scientific Data*, 4, 170171.](https://doi.org/10.1038/sdata.2017.171)

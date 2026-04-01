@@ -163,7 +163,7 @@ SynthEd/
 ├── docs/
 │   ├── GUIDE.md                 # User guide
 │   └── THEORY.md                # This file
-├── oulad/                       # Real OULAD reference data (32K students)
+├── oulad/                       # Real OULAD reference data — Kuzilek et al. (2017) doi:10.1038/sdata.2017.171
 ├── run_pipeline.py              # CLI entry point
 └── README.md
 ```
