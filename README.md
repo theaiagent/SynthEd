@@ -123,8 +123,11 @@ If you use SynthEd in your research, please cite using the [CITATION.cff](CITATI
 
 ## Contributors
 
-- **Halis Aykut Cosgun** ([ORCID](https://orcid.org/0000-0003-0166-6237)) -- Yozgat Bozok University
-- **Evrim Genc Kumtepe** ([ORCID](https://orcid.org/0000-0002-2568-8054)) -- Anadolu University
+| Contributor | Role |
+|-------------|------|
+| [Halis Aykut Cosgun](https://orcid.org/0000-0003-0166-6237) | Lead Developer, Data Scientist & AI Engineer, Researcher -- Yozgat Bozok University |
+| [Evrim Genc Kumtepe](https://orcid.org/0000-0002-2568-8054) | Research Advisor -- Anadolu University |
+| [Claude](https://claude.ai) (Anthropic) | AI pair programmer -- implementation, testing, code review |
 
 ## Acknowledgments
 
