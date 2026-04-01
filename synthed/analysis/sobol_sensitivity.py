@@ -139,6 +139,7 @@ SOBOL_PARAMETER_SPACE: tuple[SobolParameter, ...] = (
     SobolParameter("engine._EXAM_ENG_WEIGHT", 0.05, 0.35, "Engagement → exam quality"),
     SobolParameter("engine._EXAM_EFFICACY_WEIGHT", 0.05, 0.35, "Self-efficacy → exam quality"),
     SobolParameter("engine._ASSIGN_SUBMIT_BASE", 0.15, 0.50, "Base assignment submission probability"),
+    SobolParameter("engine._GRADE_FLOOR", 0.30, 0.55, "Structural grade floor (partial credit)"),
 )
 
 

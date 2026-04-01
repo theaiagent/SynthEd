@@ -154,6 +154,7 @@ class SimulationEngine:
     _ASSIGN_NOISE_WEIGHT: float = 0.15        # random noise weight in quality
     _ASSIGN_NOISE_STD: float = 0.15           # std dev of assignment quality noise
     _GPA_SCALE: float = 4.0                   # GPA denominator for normalisation
+    _GRADE_FLOOR: float = 0.45               # structural grade floor (easy marks, partial credit)
     _MISSED_IMPACT: float = -0.3              # memory impact of missed assignment
 
     # Live sessions
@@ -342,8 +343,14 @@ class SimulationEngine:
         return all_records, states, self.network
 
     def _record_graded_item(self, state: SimulationState, quality: float) -> None:
-        """Update cumulative GPA with a graded item (assignment or exam)."""
-        state.gpa_points_sum += quality * self._GPA_SCALE
+        """Update cumulative GPA with a graded item (assignment or exam).
+
+        Applies a structural grade floor before scaling to GPA. In real courses
+        students earn baseline marks from assignment templates, partial credit,
+        and easy initial portions — this floor captures that effect.
+        """
+        graded = self._GRADE_FLOOR + (1.0 - self._GRADE_FLOOR) * quality
+        state.gpa_points_sum += graded * self._GPA_SCALE
         state.gpa_count += 1
         state.cumulative_gpa = state.gpa_points_sum / state.gpa_count
 

@@ -69,8 +69,8 @@ class CalibrationResult:
 # Calibrator
 # ─────────────────────────────────────────────
 
-_DROPOUT_WEIGHT: float = 0.50    # dropout rate match priority
-_GPA_WEIGHT: float = 0.30       # GPA distribution match
+_DROPOUT_WEIGHT: float = 0.40    # dropout rate match priority
+_GPA_WEIGHT: float = 0.40       # GPA distribution match
 _ENGAGEMENT_WEIGHT: float = 0.20  # engagement level match
 
 
