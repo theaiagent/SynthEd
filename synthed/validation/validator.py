@@ -37,8 +37,8 @@ class ReferenceStatistics:
     # Academic
     gpa_mean: float = 2.3
     gpa_std: float = 0.8
-    dropout_rate: float = 0.50
-    dropout_range: tuple[float, float] | None = None
+    dropout_rate: float = 0.43
+    dropout_range: tuple[float, float] | None = (0.35, 0.55)
 
     # Engagement (if available)
     avg_weekly_logins: float | None = None
@@ -172,10 +172,11 @@ class SyntheticDataValidator:
         """Level 1: Validate demographic distributions."""
         results = []
 
-        # Age distribution (KS-test against normal with reference params)
+        # Age distribution (one-sample KS-test against theoretical normal CDF)
         ages = [s["age"] for s in students]
-        ref_samples = self._rng.normal(self.reference.age_mean, self.reference.age_std, len(ages))
-        ks_stat, ks_p = stats.ks_2samp(ages, ref_samples)
+        ks_stat, ks_p = stats.kstest(
+            ages, "norm", args=(self.reference.age_mean, self.reference.age_std),
+        )
         results.append(ValidationResult(
             test_name="age_distribution",
             metric="KS-test",
@@ -458,6 +459,27 @@ class SyntheticDataValidator:
                         f"(Deci & Ryan 1985: intrinsic > amotivation)",
             ))
 
+        # ── GPA → dropout (negative): Higher GPA students drop out less ──
+        gpa_xs, gpa_ys = [], []
+        for s in students:
+            sid = s.get("student_id")
+            if sid in outcome_map:
+                final_gpa = outcome_map[sid].get("final_gpa")
+                dropped = outcome_map[sid].get("has_dropped_out")
+                if final_gpa is not None and dropped is not None:
+                    gpa_xs.append(float(final_gpa))
+                    gpa_ys.append(int(dropped))
+        if len(gpa_xs) > 10:
+            corr, p_val = stats.pointbiserialr(gpa_ys, gpa_xs)
+            results.append(ValidationResult(
+                test_name="gpa_dropout_correlation",
+                metric="Point-biserial r",
+                synthetic_value=float(corr), reference_value=-0.2,
+                statistic=float(corr), p_value=float(p_val),
+                passed=corr < 0,
+                details=f"GPA-dropout: r={corr:.3f} (expected negative: higher GPA → less dropout)",
+            ))
+
         # ── Bäulke et al.: Dropout phase distribution ──
         phase_counts: dict[int, int] = {}
         for o in outcomes:
@@ -534,6 +556,27 @@ class SyntheticDataValidator:
                 reference_value=0.6,  # At least 60% should show decline
                 passed=neg_trend_rate >= 0.5,
                 details=f"{neg_trend_rate:.0%} of dropout students show declining engagement",
+            ))
+
+        # Dropout timing: early attrition pattern (majority drop in first half)
+        dropout_weeks = [
+            outcome_map[sid].get("dropout_week")
+            for sid in weekly_engagement
+            if sid in outcome_map and outcome_map[sid].get("has_dropped_out")
+            and outcome_map[sid].get("dropout_week") is not None
+        ]
+        if dropout_weeks:
+            total_weeks = max(len(t) for t in weekly_engagement.values() if t)
+            midpoint = total_weeks / 2
+            early_dropouts = sum(1 for w in dropout_weeks if w <= midpoint)
+            early_rate = early_dropouts / len(dropout_weeks)
+            results.append(ValidationResult(
+                test_name="dropout_early_attrition",
+                metric="Early dropout proportion",
+                synthetic_value=early_rate,
+                reference_value=0.50,
+                passed=early_rate >= 0.30,  # at least 30% drop in first half
+                details=f"{early_rate:.0%} of dropouts occur in first half of semester",
             ))
 
         return results

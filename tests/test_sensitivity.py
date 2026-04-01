@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import pytest
+
 from synthed.analysis.sensitivity import SensitivityAnalyzer, SensitivityResult
 
 
 class TestSensitivityAnalyzer:
     """OAT sensitivity sweep tests with minimal parameters for speed."""
 
+    @pytest.mark.slow
     def test_oat_sweep_returns_results(self, tmp_path):
         """run_oat_sweep with tiny population returns non-empty result list."""
         analyzer = SensitivityAnalyzer(n_students=20, seed=42)
@@ -31,6 +34,7 @@ class TestSensitivityAnalyzer:
         assert hasattr(r, "delta")
         assert hasattr(r, "normalized_sensitivity")
 
+    @pytest.mark.slow
     def test_tornado_chart_data(self, tmp_path):
         """tornado_chart_data returns dict with expected keys per parameter."""
         analyzer = SensitivityAnalyzer(n_students=20, seed=42)

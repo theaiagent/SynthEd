@@ -97,12 +97,22 @@ class TestDropoutRangeValidation:
         assert dropout_result["passed"] is False
 
     def test_dropout_range_backward_compat(self):
-        """Without dropout_range, existing z-test behavior is preserved."""
-        ref = ReferenceStatistics()  # no dropout_range
-        v = SyntheticDataValidator(reference=ref)
+        """Default uses range check; explicit None uses z-test."""
+        # Default now has dropout_range=(0.35, 0.55) → range check
+        ref_default = ReferenceStatistics()
+        v_default = SyntheticDataValidator(reference=ref_default)
         students, outcomes = self._make_data(n=30, n_dropout=10)
-        report = v.validate_all(students, outcomes)
+        report = v_default.validate_all(students, outcomes)
         dropout_result = next(
             r for r in report["results"] if r["test"] == "dropout_rate"
         )
-        assert dropout_result["metric"] == "Proportion Z-test"
+        assert dropout_result["metric"] == "Range check"
+
+        # Explicit dropout_range=None → z-test
+        ref_ztest = ReferenceStatistics(dropout_range=None)
+        v_ztest = SyntheticDataValidator(reference=ref_ztest)
+        report2 = v_ztest.validate_all(students, outcomes)
+        dropout_result2 = next(
+            r for r in report2["results"] if r["test"] == "dropout_rate"
+        )
+        assert dropout_result2["metric"] == "Proportion Z-test"
