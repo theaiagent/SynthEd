@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Troubleshooting Guide
+    url: https://github.com/theaiagent/SynthEd/blob/main/docs/GUIDE.md#-troubleshooting
+    about: Check the troubleshooting guide before opening a bug report.
+  - name: OULAD Reference Dataset
+    url: https://doi.org/10.1038/sdata.2017.171
+    about: "Kuzilek, Hlosta & Zdrahal (2017) -- Open University Learning Analytics Dataset."
