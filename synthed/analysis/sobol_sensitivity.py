@@ -61,7 +61,7 @@ class SobolParameter:
 #   "moore."    → engine.moore attribute
 #   "epstein."  → engine.epstein_axtell attribute
 
-# Full parameter space: 44 parameters selected for theoretical importance
+# Full parameter space: 51 parameters selected for theoretical importance
 # and empirical impact on dropout/engagement/GPA outcomes.
 SOBOL_PARAMETER_SPACE: tuple[SobolParameter, ...] = (
     # ── PersonaConfig: Population characteristics ──
@@ -130,6 +130,15 @@ SOBOL_PARAMETER_SPACE: tuple[SobolParameter, ...] = (
     # ── Moore: Transactional distance ──
     SobolParameter("moore._STRUCTURE_WEIGHT", 0.15, 0.50, "Course structure → TD"),
     SobolParameter("moore._DIALOGUE_WEIGHT", 0.15, 0.45, "Dialogue → TD reduction"),
+
+    # ── Engine: Assignment/Exam quality weights (GPA drivers) ──
+    SobolParameter("engine._ASSIGN_GPA_WEIGHT", 0.10, 0.40, "Prior GPA → assignment quality"),
+    SobolParameter("engine._ASSIGN_ENG_WEIGHT", 0.10, 0.40, "Engagement → assignment quality"),
+    SobolParameter("engine._ASSIGN_EFFICACY_WEIGHT", 0.05, 0.35, "Self-efficacy → assignment quality"),
+    SobolParameter("engine._EXAM_GPA_WEIGHT", 0.05, 0.35, "Prior GPA → exam quality"),
+    SobolParameter("engine._EXAM_ENG_WEIGHT", 0.05, 0.35, "Engagement → exam quality"),
+    SobolParameter("engine._EXAM_EFFICACY_WEIGHT", 0.05, 0.35, "Self-efficacy → exam quality"),
+    SobolParameter("engine._ASSIGN_SUBMIT_BASE", 0.15, 0.50, "Base assignment submission probability"),
 )
 
 
