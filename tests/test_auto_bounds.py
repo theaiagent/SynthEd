@@ -122,3 +122,16 @@ class TestCompatibility:
     def test_sobol_parameter_type(self):
         for p in auto_bounds():
             assert isinstance(p, SobolParameter)
+
+
+class TestEdgeCases:
+    def test_margin_zero_returns_empty(self):
+        """margin=0 produces lower==upper for all params, so all are skipped."""
+        params = auto_bounds(margin=0.0)
+        assert len(params) == 0
+
+    def test_single_source_only(self):
+        """Only config, no engine/theories."""
+        params = auto_bounds(include_engine=False, include_theories=False)
+        assert len(params) > 0
+        assert all(p.name.startswith("config.") for p in params)

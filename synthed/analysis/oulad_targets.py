@@ -106,30 +106,46 @@ def extract_targets(
     n_male = sum(1 for s in student_info if s["gender"] == "M")
     male_rate = n_male / n_total if n_total > 0 else 0.0
 
-    # Scores
-    score_arr = np.array(scores, dtype=float)
-    gpa_arr = score_arr / 100.0 * _GPA_SCALE
+    # Scores (guard empty arrays)
+    if scores:
+        score_arr = np.array(scores, dtype=float)
+        gpa_arr = score_arr / 100.0 * _GPA_SCALE
+        score_mean = round(float(np.mean(score_arr)), 2)
+        score_std = round(float(np.std(score_arr)), 2)
+        score_median = round(float(np.median(score_arr)), 2)
+        gpa_mean = round(float(np.mean(gpa_arr)), 3)
+        gpa_std = round(float(np.std(gpa_arr)), 3)
+    else:
+        score_mean = score_std = score_median = 0.0
+        gpa_mean = gpa_std = 0.0
 
-    # Engagement: mean clicks per student per day
-    eng_arr = np.array(student_daily_means, dtype=float)
+    # Engagement: mean clicks per student per day (guard empty)
+    if student_daily_means:
+        eng_arr = np.array(student_daily_means, dtype=float)
+        eng_mean = round(float(np.mean(eng_arr)), 2)
+        eng_std = round(float(np.std(eng_arr)), 2)
+        eng_median = round(float(np.median(eng_arr)), 2)
+        eng_cv = round(float(np.std(eng_arr) / np.mean(eng_arr)), 4) if float(np.mean(eng_arr)) > 0 else 0.0
+    else:
+        eng_mean = eng_std = eng_median = eng_cv = 0.0
 
     logger.info(
         "OULAD targets: %d students, dropout=%.1f%%, GPA=%.2f, engagement=%.1f clicks/day",
-        n_total, overall_dropout * 100, float(np.mean(gpa_arr)), float(np.mean(eng_arr)),
+        n_total, overall_dropout * 100, gpa_mean, eng_mean,
     )
 
     return OuladTargets(
         overall_dropout_rate=round(overall_dropout, 4),
         module_dropout_rates=module_dropout,
-        score_mean=round(float(np.mean(score_arr)), 2),
-        score_std=round(float(np.std(score_arr)), 2),
-        score_median=round(float(np.median(score_arr)), 2),
-        gpa_mean=round(float(np.mean(gpa_arr)), 3),
-        gpa_std=round(float(np.std(gpa_arr)), 3),
-        engagement_mean=round(float(np.mean(eng_arr)), 2),
-        engagement_std=round(float(np.std(eng_arr)), 2),
-        engagement_median=round(float(np.median(eng_arr)), 2),
-        engagement_cv=round(float(np.std(eng_arr) / np.mean(eng_arr)), 4) if float(np.mean(eng_arr)) > 0 else 0.0,
+        score_mean=score_mean,
+        score_std=score_std,
+        score_median=score_median,
+        gpa_mean=gpa_mean,
+        gpa_std=gpa_std,
+        engagement_mean=eng_mean,
+        engagement_std=eng_std,
+        engagement_median=eng_median,
+        engagement_cv=eng_cv,
         disability_rate=round(disability_rate, 4),
         gender_male_rate=round(male_rate, 4),
         n_students=n_total,

@@ -61,7 +61,7 @@ class SobolParameter:
 #   "moore."    → engine.moore attribute
 #   "epstein."  → engine.epstein_axtell attribute
 
-# Full parameter space: 51 parameters selected for theoretical importance
+# Full parameter space: 52 parameters selected for theoretical importance
 # and empirical impact on dropout/engagement/GPA outcomes.
 SOBOL_PARAMETER_SPACE: tuple[SobolParameter, ...] = (
     # ── PersonaConfig: Population characteristics ──

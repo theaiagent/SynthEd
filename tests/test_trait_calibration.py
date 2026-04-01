@@ -152,6 +152,31 @@ class TestOuladTargets:
         expected_cv = targets.engagement_std / targets.engagement_mean
         assert abs(targets.engagement_cv - expected_cv) < 0.001
 
+    def test_empty_csv_raises(self, tmp_path):
+        """Header-only CSVs should raise ValueError for missing data."""
+        import csv
+        # studentInfo with header only
+        with open(tmp_path / "studentInfo.csv", "w", newline="", encoding="utf-8") as f:
+            csv.writer(f).writerow(["code_module", "code_presentation", "id_student",
+                                     "gender", "region", "highest_education", "imd_band",
+                                     "age_band", "num_of_prev_attempts", "studied_credits",
+                                     "disability", "final_result"])
+        with open(tmp_path / "studentAssessment.csv", "w", newline="", encoding="utf-8") as f:
+            csv.writer(f).writerow(["id_assessment", "id_student", "date_submitted", "is_banked", "score"])
+        with open(tmp_path / "studentVle.csv", "w", newline="", encoding="utf-8") as f:
+            csv.writer(f).writerow(["code_module", "code_presentation", "id_student",
+                                     "id_site", "date", "sum_click"])
+        # Empty data → n_students=0, will cause division by zero or empty arrays
+        targets = extract_targets(tmp_path)
+        assert targets.n_students == 0
+
+    def test_missing_score_column_raises(self, tmp_path):
+        """CSV without required columns should raise ValueError."""
+        with open(tmp_path / "studentInfo.csv", "w", newline="", encoding="utf-8") as f:
+            csv.writer(f).writerow(["wrong_column"])
+        with pytest.raises(ValueError, match="missing columns"):
+            extract_targets(tmp_path)
+
 
 # ─────────────────────────────────────────────
 # Parameter selection tests

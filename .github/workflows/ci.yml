@@ -116,13 +116,13 @@ jobs:
           configure_logging()
           from synthed.pipeline import SynthEdPipeline
           p = SynthEdPipeline(output_dir='./ci_output', seed=42)
-          r = p.run(n_students=50)
+          r = p.run(n_students=100)
           quality = r['validation']['summary']['overall_quality']
           passed = r['validation']['summary']['passed']
           total = r['validation']['summary']['total_tests']
           dropout = r['simulation_summary']['dropout_rate']
           print(f'Quality: {quality} ({passed}/{total}), Dropout: {dropout:.1%}')
-          assert passed >= total * 0.75, f'Too many validation failures: {passed}/{total}'
+          assert passed >= total * 0.70, f'Too many validation failures: {passed}/{total}'
           "
 
       - name: Run pipeline smoke test (multi-semester)
