@@ -98,7 +98,7 @@ print(f"Dropout: {report['simulation_summary']['dropout_rate']:.1%}")
 
 > **SynthEd generates entirely fictional synthetic data.** No real individuals are represented or identifiable. Outputs are intended for research, development, and educational purposes. SynthEd is under active development -- APIs and output formats may change between versions.
 
-See full [Responsible Use](docs/GUIDE.md#-troubleshooting) guidelines.
+See full [Legal Disclaimer](docs/GUIDE.md#%EF%B8%8F-legal-disclaimer) and [Responsible Use](docs/GUIDE.md#-responsible-use) guidelines.
 
 ---
 
@@ -125,3 +125,7 @@ If you use SynthEd in your research, please cite using the [CITATION.cff](CITATI
 
 - **Halis Aykut Cosgun** ([ORCID](https://orcid.org/0000-0003-0166-6237)) -- Yozgat Bozok University
 - **Evrim Genc Kumtepe** ([ORCID](https://orcid.org/0000-0002-2568-8054)) -- Anadolu University
+
+## Acknowledgments
+
+Conceptually inspired by [TinyTroupe](https://github.com/microsoft/tinytroupe) (Microsoft), [MiroFish](https://github.com/666ghj/MiroFish), and [Agent Lightning](https://github.com/microsoft/agent-lightning). OULAD reference data: [Kuzilek et al. (2017)](https://doi.org/10.1038/sdata.2017.171).
