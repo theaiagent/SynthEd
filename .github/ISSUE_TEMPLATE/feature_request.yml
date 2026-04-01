@@ -1,0 +1,70 @@
+name: Feature Request
+description: Suggest a new feature or improvement for SynthEd
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! Please describe the idea below.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: A brief description of the feature you'd like.
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use Case
+      description: Why is this feature needed? What problem does it solve for ODL research?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected Area
+      description: Which part of SynthEd does this relate to?
+      options:
+        - Simulation engine / theories
+        - Persona generation
+        - Validation suite
+        - Calibration pipeline (Sobol / Optuna)
+        - Benchmark profiles
+        - LLM enrichment
+        - Data export (CSV / OULAD / Parquet)
+        - CLI / Pipeline
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution
+      description: How do you think this should work? (API, CLI, configuration, etc.)
+
+  - type: textarea
+    id: theoretical-basis
+    attributes:
+      label: Theoretical Basis (if applicable)
+      description: |
+        Does this feature relate to a specific educational theory or dropout framework?
+        Cite papers or models if possible.
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any alternative approaches you've thought about.
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Links to papers, datasets, or other projects that implement something similar.
