@@ -103,6 +103,7 @@ flowchart TD
 - **Optional Name Generation**: Culturally diverse name pools (488 first names, 235 last names across 10 regional pools) mapped to 4 economic contexts. Off by default (`generate_names=False`) for GraphRAG/analytics compatibility. Enable with `PersonaConfig(generate_names=True)` or `--names` CLI flag.
 - **Disability Severity**: Continuous `disability_severity` (0.0–0.95) drawn from Beta(2,5) distribution for a realistic mild-to-severe spectrum. Affects digital literacy, time management, Bean & Metzner environmental pressure (scaled by severity), and Rovai engagement floor (when institutional support is low). Configurable prevalence via `PersonaConfig(disability_rate=0.10)`.
 - **OULAD-Compatible Export**: Optional 7-table CSV export (`--oulad`) matching the Open University Learning Analytics Dataset schema exactly. Drop-in replacement for real OULAD data in EDM research pipelines: `courses.csv`, `assessments.csv`, `vle.csv`, `studentInfo.csv`, `studentRegistration.csv`, `studentAssessment.csv`, `studentVle.csv`.
+- **Trait-Based Calibration Pipeline**: Three-phase calibration against real OULAD data (32K students): Sobol sensitivity analysis (SALib, 51 parameters) identifies which parameters matter most, Optuna Bayesian optimization tunes them against OULAD target distributions, and held-out module validation confirms generalization. Validated Grade B (3/4 metrics pass) on modules never seen during calibration.
 - **Temporal Coherence**: Unlike GAN/VAE-generated datasets, each student's trajectory emerges from a continuous weekly simulation loop where states depend on prior states, producing naturally coherent time series (e.g., failed midterm → declining engagement → dropout).
 
 ## Quick Start
@@ -377,7 +378,12 @@ SynthEd/
 │   ├── validation/
 │   │   └── validator.py         # 17+ statistical validation tests
 │   ├── analysis/
-│   │   └── sensitivity.py       # OAT parameter sensitivity analysis
+│   │   ├── sensitivity.py       # OAT parameter sensitivity analysis
+│   │   ├── sobol_sensitivity.py # Sobol variance decomposition (51 params)
+│   │   ├── trait_calibrator.py  # Optuna Bayesian optimization
+│   │   ├── oulad_targets.py     # OULAD reference data extraction
+│   │   ├── oulad_validator.py   # Held-out module validation
+│   │   └── _sim_runner.py       # Shared simulation runner
 │   ├── benchmarks/
 │   │   ├── profiles.py          # Pre-defined ODL institutional profiles
 │   │   └── generator.py         # Benchmark dataset generator
@@ -388,7 +394,7 @@ SynthEd/
 │   │   └── validation.py        # Input validation utilities
 │   ├── calibration.py             # CalibrationMap: target dropout → simulation params
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                        # 377 pytest tests across 24 files
+├── tests/                        # 434 pytest tests across 26 files
 ├── configs/
 │   └── default.json
 ├── run_pipeline.py               # CLI entry point
@@ -443,6 +449,9 @@ Extend `SimulationEngine._simulate_student_week()` to add new behavioral channel
 - [x] **Coping Factor** — State-level Bean & Metzner pressure attenuation with diminishing returns and semester carry-over
 - [x] **Disability Severity** — Continuous severity from Beta(2,5) distribution affecting Rovai floor and Bean & Metzner pressure
 - [x] **OULAD-Compatible Export** — 7-table format for drop-in EDM research compatibility
+- [x] **Sobol Sensitivity Analysis** — SALib variance decomposition, 51 parameters, S1/ST indices
+- [x] **Bayesian Optimization** — Optuna TPE, OULAD targets, CV-based engagement, shared sim runner
+- [x] **OULAD Comparative Validation** — Held-out module split (CCC/GGG), Grade B (3/4 pass)
 - [ ] **GraphRAG Integration** — Knowledge graph-based curriculum modeling
 - [ ] **LLM-Augmented Mode** — Generate realistic forum posts, assignment text
 - [ ] **RL Calibration** — Agent Lightning for parameter optimization
@@ -452,7 +461,7 @@ Extend `SimulationEngine._simulate_student_week()` to add new behavioral channel
 
 ## Test Suite
 
-SynthEd includes 377 pytest tests across 24 test files, covering all theory modules, simulation mechanics, LLM enrichment, OULAD export, and the full pipeline.
+SynthEd includes 434 pytest tests across 26 test files, covering all theory modules, simulation mechanics, LLM enrichment, OULAD export, trait-based calibration, and the full pipeline.
 
 ```bash
 python -m pytest tests/ -v --tb=short
@@ -485,6 +494,8 @@ python -m pytest tests/ -v --tb=short
 | `test_unavoidable_withdrawal.py` | 9 | Withdrawal probability, event types, statistical rate validation |
 | `test_gpa.py` | 9 | GPA accumulation, bounds, consistency, CSV export, face validity, feedback loop stability |
 | `test_oulad_export.py` | 35 | OULAD mapping functions, 7-table export, schema conformance, foreign keys, determinism |
+| `test_sobol.py` | 26 | Sobol parameter space, SALib sampling, override routing, ranking, init-time validation |
+| `test_trait_calibration.py` | 31 | OULAD target extraction, Optuna calibrator, loss functions, held-out validation, module split |
 
 CI runs tests across **Python 3.10, 3.11, and 3.12** on every push and pull request via [GitHub Actions](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml).
 
