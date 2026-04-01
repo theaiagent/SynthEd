@@ -34,7 +34,7 @@
 - **OULAD-Compatible Export** -- 7-table CSV matching the Open University Learning Analytics Dataset schema
 - **Adaptive Parameter Bounds** -- `auto_bounds()` adjusts calibration space when demographics change
 - **5-Level Validation Suite** -- 21 statistical tests (distributions, correlations, temporal coherence, privacy, backstory)
-- **Optional LLM Enrichment** -- Narrative backstories via OpenAI, Ollama, or any compatible provider
+- **Optional LLM Enrichment** -- Persona-grounded narrative backstories via OpenAI, Ollama, or any compatible provider
 - **464 Tests** -- 99% coverage, CI across Python 3.10/3.11/3.12
 
 ---

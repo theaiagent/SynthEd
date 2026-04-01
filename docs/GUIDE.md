@@ -327,17 +327,18 @@ targets_bbb = extract_targets("oulad/", modules={"BBB", "FFF"})
 
 ## 🤖 LLM Enrichment
 
-Adds narrative backstories explaining *why* each student behaves the way they do:
+Generates narrative backstories from each student's actual persona attributes (age, employment, financial stress, motivation, etc.) to explain *why* they behave the way they do:
 
 ```bash
 export OPENAI_API_KEY="your-key"
 python run_pipeline.py --n 100 --llm
 ```
 
+- **Persona-grounded:** Backstories are generated *from* real persona attributes via `to_prompt_description()`, not randomly. A student with `financial_stress=0.8` and `is_employed=True` gets a backstory reflecting financial hardship and work-life balance.
 - **Providers:** OpenAI, Ollama (`--base-url`), any OpenAI-compatible API
 - **Cost control:** `--cost-threshold 2.0` prompts for confirmation
 - **Cache:** 7-day TTL, 10K-entry LRU eviction
-- **No simulation effect:** Backstories are for interpretation only
+- **Current scope:** Backstories do not feed back into simulation mechanics. Dropout, engagement, and GPA are computed from persona attributes and theory modules. Future LLM-augmented mode will use backstories as agent context for generating forum posts and assignment text.
 
 ---
 
