@@ -96,6 +96,9 @@ class SimulationState:
     exhaustion: ExhaustionState = field(default_factory=ExhaustionState)
     # Bean & Metzner coping adaptation (Lazarus & Folkman, 1984)
     coping_factor: float = 0.0  # 0.0-0.5; reduces environmental pressure impact
+    # Environmental shocks (Bean & Metzner: acute life events)
+    env_shock_remaining: int = 0        # weeks remaining for active shock
+    env_shock_magnitude: float = 0.0    # engagement penalty per week during shock
     # Temporal memory (moved from StudentPersona to avoid mutating input)
     memory: list[dict[str, Any]] = field(default_factory=list)
 
@@ -521,6 +524,24 @@ class SimulationEngine:
         # ── Bean & Metzner: Environmental pressure (with coping attenuation) ──
         self.bean_metzner.update_coping(student, state)
         engagement += self.bean_metzner.calculate_environmental_pressure(student, state.coping_factor)
+
+        # ── Environmental shocks: stochastic life events ──
+        if state.env_shock_remaining > 0:
+            engagement -= state.env_shock_magnitude * 0.05
+            state.env_shock_remaining -= 1
+            if state.env_shock_remaining == 0:
+                state.env_shock_magnitude = 0.0
+        else:
+            duration, magnitude = self.bean_metzner.stochastic_pressure_event(student, self.rng)
+            if duration > 0:
+                state.env_shock_remaining = duration
+                state.env_shock_magnitude = magnitude
+                engagement -= magnitude * 0.05
+                state.memory.append({
+                    "week": week, "event_type": "env_shock",
+                    "details": f"Environmental shock (magnitude={magnitude:.2f}, duration={duration}w)",
+                    "impact": -magnitude * 0.05,
+                })
 
         # ── Positive environmental events (counter-pressure) ──
         engagement += self.positive_events.apply(
