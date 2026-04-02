@@ -140,7 +140,7 @@ class NSGAIICalibrator:
             eng = trial.user_attrs["achieved_engagement"]
             drop = trial.user_attrs["achieved_dropout"]
             return [
-                0.3 - eng,    # engagement >= 0.3
+                0.1 - eng,    # engagement >= 0.1 (includes dropped-out students)
                 lo - drop,    # dropout >= lo
                 drop - hi,    # dropout <= hi
             ]
