@@ -40,6 +40,7 @@ class BaulkeDropoutPhase:
     # ── phase 2 → 1 / 2 → 3 ──
     _RECOVERY_2_TO_1: float = 0.45               # engagement above this recovers to phase 1
     _PHASE_2_TO_3_ENG: float = 0.32              # engagement below this advances to phase 3
+    _SHOCK_SEVERITY_THRESHOLD: float = 0.7       # shock magnitude above this triggers phase 2→3
 
     # ── phase 3 → 2 / 3 → 4 ──
     _RECOVERY_3_TO_2: float = 0.40               # engagement above this recovers to phase 2
@@ -128,8 +129,10 @@ class BaulkeDropoutPhase:
                 state.memory.append({"week": week, "event_type": "recovery",
                                     "details": "Renewed commitment, thoughts of quitting subsided",
                                     "impact": self._IMPACT_RECOVERY_2_TO_1})
-            # Phase 2 -> 3: Deliberation (requires sustained decline)
-            elif eng < self._PHASE_2_TO_3_ENG and len(history) >= 2 and history[-1] < history[-2]:
+            # Phase 2 -> 3: Deliberation (requires sustained decline or severe life shock)
+            elif (eng < self._PHASE_2_TO_3_ENG and len(history) >= 2 and history[-1] < history[-2]
+                    or (state.env_shock_remaining > 0
+                        and state.env_shock_magnitude > self._SHOCK_SEVERITY_THRESHOLD)):
                 state.dropout_phase = 3
                 state.memory.append({"week": week, "event_type": "dropout_phase",
                                     "details": "Deliberation: actively weighing whether to continue",

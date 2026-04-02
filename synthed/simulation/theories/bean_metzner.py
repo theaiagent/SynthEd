@@ -25,6 +25,16 @@ class BeanMetznerPressure:
     _COPING_REG_WEIGHT: float = 0.60       # self-regulation weight in coping aptitude
     _COPING_CONSC_WEIGHT: float = 0.40     # conscientiousness weight in coping aptitude
 
+    # ── Environmental shocks ──
+    _SHOCK_BASE_PROB: float = 0.04
+    _SHOCK_EMPLOY_WEIGHT: float = 0.3
+    _SHOCK_FAMILY_WEIGHT: float = 0.3
+    _SHOCK_STRESS_WEIGHT: float = 0.4
+    _SHOCK_MIN_DURATION: int = 1
+    _SHOCK_MAX_DURATION: int = 3
+    _SHOCK_MIN_MAGNITUDE: float = 0.3
+    _SHOCK_MAX_MAGNITUDE: float = 1.0
+
     def calculate_environmental_pressure(
         self, student: StudentPersona, coping_factor: float = 0.0,
     ) -> float:
@@ -44,6 +54,26 @@ class BeanMetznerPressure:
         if student.disability_severity > 0:
             env_pressure -= self._DISABILITY_PENALTY * student.disability_severity
         return env_pressure * (1.0 - coping_factor)
+
+    def stochastic_pressure_event(
+        self, student: StudentPersona, rng: np.random.Generator,
+    ) -> tuple[int, float]:
+        """Generate a stochastic environmental shock.
+
+        Returns (duration, magnitude) or (0, 0.0) if no shock occurs.
+        Risk is modulated by employment status, family responsibilities, and financial stress.
+        """
+        risk_score = (
+            (1.0 if student.is_employed else 0.0) * self._SHOCK_EMPLOY_WEIGHT
+            + (1.0 if student.has_family_responsibilities else 0.0) * self._SHOCK_FAMILY_WEIGHT
+            + student.financial_stress * self._SHOCK_STRESS_WEIGHT
+        )
+        shock_prob = self._SHOCK_BASE_PROB * risk_score
+        if rng.random() >= shock_prob:
+            return 0, 0.0
+        duration = int(rng.integers(self._SHOCK_MIN_DURATION, self._SHOCK_MAX_DURATION + 1))
+        magnitude = float(rng.uniform(self._SHOCK_MIN_MAGNITUDE, self._SHOCK_MAX_MAGNITUDE))
+        return duration, magnitude
 
     def update_coping(self, student: StudentPersona, state: SimulationState) -> None:
         """Advance coping_factor based on student aptitude (weekly call).
