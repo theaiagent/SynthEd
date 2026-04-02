@@ -223,16 +223,16 @@ md = gen.generate_report(output_dir="./benchmarks")  # writes benchmark_report.m
 
 | Profile | Scenario | Expected Dropout |
 |---------|----------|-----------------|
-| `high_dropout_developing` | Developing country ODL | 50-66% |
+| `high_dropout_developing` | Developing country ODL | 55-80% |
 | `moderate_dropout_western` | Western university | 15-35% |
-| `low_dropout_corporate` | Corporate training | 5-25% |
-| `mega_university` | Mega university | 35-55% |
+| `low_dropout_corporate` | Corporate training | 2-25% |
+| `mega_university` | Mega university | 35-60% |
 
 ---
 
 ## 🔬 Calibration Pipeline
 
-Three-phase pipeline for tuning SynthEd parameters against real data (e.g., OULAD).
+Four-phase pipeline for tuning SynthEd parameters against real data (e.g., OULAD).
 
 ### Phase 1: Sobol Sensitivity Analysis
 
