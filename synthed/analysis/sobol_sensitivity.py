@@ -94,6 +94,9 @@ SOBOL_PARAMETER_SPACE: tuple[SobolParameter, ...] = (
     SobolParameter("kember._QUALITY_FACTOR", 0.01, 0.08, "Quality → cost-benefit sensitivity"),
     SobolParameter("kember._MISSED_PENALTY", 0.01, 0.06, "Missed assignment → cost-benefit"),
     SobolParameter("kember._GPA_CB_FACTOR", 0.003, 0.02, "GPA → cost-benefit sensitivity"),
+    SobolParameter("kember._OC_FACTOR", 0.005, 0.03, "Opportunity cost pressure per week"),
+    SobolParameter("kember._OC_STRESS_THRESHOLD", 0.3, 0.7, "Financial stress threshold for OC"),
+    SobolParameter("kember._TIME_DISCOUNT_FACTOR", 0.003, 0.015, "Time-based CB erosion"),
 
     # ── Baulke: Dropout phase thresholds ──
     SobolParameter("baulke._NONFIT_ENG_THRESHOLD", 0.30, 0.55, "Non-fit perception trigger"),

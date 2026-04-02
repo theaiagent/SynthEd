@@ -21,6 +21,9 @@ class KemberCostBenefit:
     _COI_COMPOSITE_FACTOR: float = 0.02      # CoI composite influence on value
     _GPA_CB_FACTOR: float = 0.01             # cost-benefit sensitivity to cumulative GPA
     _GPA_SCALE: float = 4.0                   # GPA scale denominator
+    _OC_FACTOR: float = 0.015              # opportunity cost pressure per week
+    _OC_STRESS_THRESHOLD: float = 0.5      # financial_stress above this triggers OC
+    _TIME_DISCOUNT_FACTOR: float = 0.008   # time-based CB erosion per week
     _CLIP_LO: float = 0.05                   # cost-benefit lower bound
     _CLIP_HI: float = 0.95                   # cost-benefit upper bound
 
@@ -31,6 +34,8 @@ class KemberCostBenefit:
         context: dict,
         records: list[InteractionRecord],
         avg_td: float,
+        week: int | None = None,
+        total_weeks: int | None = None,
     ) -> None:
         """
         Recalculate cost-benefit perception after academic events.
@@ -66,5 +71,17 @@ class KemberCostBenefit:
         if state.perceived_mastery_count > 0:
             mastery = state.perceived_mastery
             state.perceived_cost_benefit += (mastery - 0.5) * self._GPA_CB_FACTOR
+
+        # Kember (1989): opportunity cost — employed students with financial pressure
+        # experience "what else could I be doing with this time/money?"
+        if (student is not None and week is not None and total_weeks is not None
+                and student.is_employed
+                and student.financial_stress > self._OC_STRESS_THRESHOLD):
+            oc_pressure = student.financial_stress * self._OC_FACTOR
+            semester_progress = week / total_weeks
+            oc_pressure *= (0.5 + 0.5 * semester_progress)
+            state.perceived_cost_benefit -= oc_pressure
+            if student.has_family_responsibilities:
+                state.perceived_cost_benefit -= self._OC_FACTOR * 0.3
 
         state.perceived_cost_benefit = float(np.clip(state.perceived_cost_benefit, self._CLIP_LO, self._CLIP_HI))

@@ -31,7 +31,7 @@ class BenchmarkProfile:
 PROFILES: dict[str, BenchmarkProfile] = {
     "high_dropout_developing": BenchmarkProfile(
         name="high_dropout_developing",
-        description="Developing country ODL: high dropout (50-66%), high employment, low digital literacy",
+        description="Developing country ODL: high dropout (55-75%), high employment, low digital literacy",
         persona_config=PersonaConfig(
             employment_rate=0.85,
             financial_stress_mean=0.65,
@@ -40,10 +40,10 @@ PROFILES: dict[str, BenchmarkProfile] = {
             dropout_base_rate=0.92,
         ),
         environment=ODLEnvironment(total_weeks=14),
-        reference_stats=ReferenceStatistics(dropout_rate=0.58),
+        reference_stats=ReferenceStatistics(dropout_rate=0.65),
         n_students=500,
         seed=42,
-        expected_dropout_range=(0.50, 0.66),
+        expected_dropout_range=(0.55, 0.75),
     ),
     "moderate_dropout_western": BenchmarkProfile(
         name="moderate_dropout_western",
