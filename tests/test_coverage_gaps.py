@@ -73,6 +73,8 @@ class TestBaulkeEdgeCases:
             current_engagement=0.15,
             cumulative_gpa=1.0,
             gpa_count=3,
+            perceived_mastery_sum=0.0,
+            perceived_mastery_count=3,
             dropout_phase=0,
         )
 

@@ -79,6 +79,8 @@ class SimulationState:
     cumulative_gpa: float = 0.0
     gpa_points_sum: float = 0.0  # running sum of quality scores scaled to 4.0
     gpa_count: int = 0           # number of graded items (assignments + exams)
+    perceived_mastery_sum: float = 0.0   # running sum of raw quality (uninflated)
+    perceived_mastery_count: int = 0     # number of graded items for mastery track
     courses_active: list[str] = field(default_factory=list)
     has_dropped_out: bool = False
     dropout_week: int | None = None
@@ -96,6 +98,13 @@ class SimulationState:
     coping_factor: float = 0.0  # 0.0-0.5; reduces environmental pressure impact
     # Temporal memory (moved from StudentPersona to avoid mutating input)
     memory: list[dict[str, Any]] = field(default_factory=list)
+
+    @property
+    def perceived_mastery(self) -> float:
+        """Raw quality average (uninflated by grade floor). Returns 0.5 when no items recorded."""
+        if self.perceived_mastery_count == 0:
+            return 0.5
+        return self.perceived_mastery_sum / self.perceived_mastery_count
 
 
 class SimulationEngine:
@@ -353,6 +362,8 @@ class SimulationEngine:
         state.gpa_points_sum += graded * self._GPA_SCALE
         state.gpa_count += 1
         state.cumulative_gpa = state.gpa_points_sum / state.gpa_count
+        state.perceived_mastery_sum += quality
+        state.perceived_mastery_count += 1
 
     def _simulate_student_week(
         self, student: StudentPersona, state: SimulationState,

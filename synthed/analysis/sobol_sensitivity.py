@@ -97,6 +97,8 @@ SOBOL_PARAMETER_SPACE: tuple[SobolParameter, ...] = (
 
     # ── Baulke: Dropout phase thresholds ──
     SobolParameter("baulke._NONFIT_ENG_THRESHOLD", 0.30, 0.55, "Non-fit perception trigger"),
+    SobolParameter("baulke._NONFIT_MASTERY_THRESHOLD", 0.25, 0.55, "Mastery below this → non-fit"),
+    SobolParameter("baulke._TRIGGER_MASTERY_THRESHOLD", 0.15, 0.45, "Mastery below this → phase 4-5 trigger"),
     SobolParameter("baulke._DECISION_RISK_MULTIPLIER", 0.10, 0.50, "Phase 5 risk multiplier"),
     SobolParameter("baulke._PHASE_2_TO_3_ENG", 0.20, 0.45, "Phase 2→3 threshold"),
     SobolParameter("baulke._PHASE_3_TO_4_ENG", 0.15, 0.35, "Phase 3→4 threshold"),
