@@ -107,10 +107,10 @@ class SDTMotivationDynamics:
 
         # Self-efficacy provides a small buffer
         competence_delta += (student.self_efficacy - 0.5) * self._COMPETENCE_EFFICACY_FACTOR
-        # Cumulative GPA anchors competence belief to overall trajectory
-        if state.gpa_count > 0:
-            gpa_normalized = state.cumulative_gpa / self._GPA_SCALE
-            competence_delta += (gpa_normalized - 0.5) * self._COMPETENCE_GPA_FACTOR
+        # Perceived mastery anchors competence belief to actual understanding
+        if state.perceived_mastery_count > 0:
+            mastery = state.perceived_mastery
+            competence_delta += (mastery - 0.5) * self._COMPETENCE_GPA_FACTOR
         needs.competence = float(np.clip(needs.competence + competence_delta, self._NEED_CLIP_LO, self._NEED_CLIP_HI))
 
         # ── Relatedness ──

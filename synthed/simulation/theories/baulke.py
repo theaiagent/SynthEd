@@ -29,6 +29,8 @@ class BaulkeDropoutPhase:
     _NONFIT_GPA_MIN_ITEMS: int = 2             # minimum graded items for non-fit GPA signal
     _TRIGGER_GPA_THRESHOLD: float = 1.2        # GPA below this is an additional phase 4->5 trigger
     _TRIGGER_GPA_MIN_ITEMS: int = 2            # minimum graded items for phase 4->5 GPA trigger
+    _NONFIT_MASTERY_THRESHOLD: float = 0.4    # perceived mastery below this contributes to non-fit
+    _TRIGGER_MASTERY_THRESHOLD: float = 0.3   # perceived mastery below this is phase 4->5 trigger
 
     # ── phase 1 → 0 / 1 → 2 ──
     _RECOVERY_1_TO_0: float = 0.50               # engagement above this recovers to phase 0
@@ -96,8 +98,8 @@ class BaulkeDropoutPhase:
                     or (eng < self._NONFIT_ENG_SOFT and avg_td > self._NONFIT_TD_THRESHOLD)
                     or (eng < self._NONFIT_ENG_SOFT and exhausted)
                     or (eng < self._NONFIT_ENG_SOFT
-                        and state.gpa_count >= self._NONFIT_GPA_MIN_ITEMS
-                        and state.cumulative_gpa < self._NONFIT_GPA_THRESHOLD)):
+                        and state.perceived_mastery_count >= self._NONFIT_GPA_MIN_ITEMS
+                        and state.perceived_mastery < self._NONFIT_MASTERY_THRESHOLD)):
                 state.dropout_phase = 1
                 state.memory.append({"week": week, "event_type": "dropout_phase",
                                     "details": "Non-fit perception: questioning fit with program",
@@ -165,9 +167,9 @@ class BaulkeDropoutPhase:
                     triggers += 1  # Bean & Metzner: environmental crisis
                 if exhausted:
                     triggers += 1  # Gonzalez: academic exhaustion crisis
-                if (state.gpa_count >= self._TRIGGER_GPA_MIN_ITEMS
-                        and state.cumulative_gpa < self._TRIGGER_GPA_THRESHOLD):
-                    triggers += 1  # Academic failure: GPA below recoverable threshold
+                if (state.perceived_mastery_count >= self._TRIGGER_GPA_MIN_ITEMS
+                        and state.perceived_mastery < self._TRIGGER_MASTERY_THRESHOLD):
+                    triggers += 1  # Academic failure: mastery below recoverable threshold
                 # Withdrawal deadline at ~70% of semester (Kember)
                 withdrawal_week = int(env.total_weeks * self._WITHDRAWAL_WEEK_FRACTION)
                 if week == withdrawal_week:

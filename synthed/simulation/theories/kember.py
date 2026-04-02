@@ -62,9 +62,9 @@ class KemberCostBenefit:
         ) / 3
         state.perceived_cost_benefit += (coi_composite - 0.4) * self._COI_COMPOSITE_FACTOR
 
-        # GPA -> Kember: cumulative academic outcomes modulate perceived value
-        if state.gpa_count > 0:
-            gpa_normalized = state.cumulative_gpa / self._GPA_SCALE
-            state.perceived_cost_benefit += (gpa_normalized - 0.5) * self._GPA_CB_FACTOR
+        # Perceived mastery -> Kember: student's actual understanding modulates perceived value
+        if state.perceived_mastery_count > 0:
+            mastery = state.perceived_mastery
+            state.perceived_cost_benefit += (mastery - 0.5) * self._GPA_CB_FACTOR
 
         state.perceived_cost_benefit = float(np.clip(state.perceived_cost_benefit, self._CLIP_LO, self._CLIP_HI))
