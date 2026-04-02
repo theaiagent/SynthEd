@@ -143,7 +143,7 @@ SynthEd/
 │   │   └── validator.py         # 21 statistical validation tests
 │   ├── analysis/
 │   │   ├── sensitivity.py       # OAT parameter sweeps
-│   │   ├── sobol_sensitivity.py # Sobol variance decomposition (55 params)
+│   │   ├── sobol_sensitivity.py # Sobol variance decomposition (61 params)
 │   │   ├── trait_calibrator.py  # Optuna Bayesian optimization
 │   │   ├── oulad_targets.py     # OULAD reference data extraction
 │   │   ├── oulad_validator.py   # Held-out module validation
@@ -159,7 +159,7 @@ SynthEd/
 │   │   └── validation.py        # Input validation utilities
 │   ├── calibration.py           # CalibrationMap: target dropout -> params
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                       # 489 pytest tests across 29 files
+├── tests/                       # 520 pytest tests across 30 files
 ├── docs/
 │   ├── GUIDE.md                 # User guide
 │   └── THEORY.md                # This file
@@ -188,7 +188,7 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 
 ## 🧪 Test Suite
 
-489 pytest tests across 29 files:
+520 pytest tests across 30 files:
 
 | Test File | Tests | Coverage |
 |-----------|-------|----------|
@@ -215,6 +215,8 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 | `test_oulad_export.py` | 35 | Mappings, 7-table export, schema, determinism |
 | `test_benchmarks.py` | 15 | Profiles, generator, report formatting, error handling |
 | `test_dual_track_gpa.py` | 12 | Perceived mastery fields, dual-track recording, theory module switching |
+| `test_opportunity_cost.py` | 5 | Opportunity cost pressure, time discount, backward compat |
+| `test_environmental_shocks.py` | 26 | Shock generation, engine integration, Baulke phase advance |
 | `test_environment.py` | 4 | Courses, exam weeks, positive events |
 | `test_utils.py` | 14 | Validation helpers, logging config |
 | `test_network_scaling.py` | 4 | Degree cap, sampling threshold |

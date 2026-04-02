@@ -28,7 +28,7 @@
 ## Key Features
 
 - **11 Theory Modules** -- Tinto, Bean & Metzner, Kember, SDT, Garrison CoI, Moore, Rovai, Baulke, Epstein & Axtell, Gonzalez, Unavoidable Withdrawal
-- **Trait-Based Calibration** -- Sobol sensitivity (55 params) + Optuna Bayesian optimization against real OULAD data, validated Grade B on held-out modules
+- **Trait-Based Calibration** -- Sobol sensitivity (61 params) + Optuna Bayesian optimization against real OULAD data, validated Grade B on held-out modules
 - **Multi-Semester Simulation** -- Carry-over mechanics for engagement, GPA, coping, dropout phases
 - **GPA Feedback Loop** -- Cumulative GPA anchors cost-benefit, non-fit perception, and competence beliefs
 - **OULAD-Compatible Export** -- 7-table CSV matching the Open University Learning Analytics Dataset schema
@@ -36,7 +36,7 @@
 - **5-Level Validation Suite** -- 21 statistical tests (distributions, correlations, temporal coherence, privacy, backstory)
 - **Optional LLM Enrichment** -- Persona-grounded narrative backstories via OpenAI, Ollama, or any compatible provider
 - **4 Benchmark Profiles** -- Developing, Western, Corporate, Mega University with CLI report generation
-- **489 Tests** -- 98% coverage, CI across Python 3.10/3.11/3.12
+- **520 Tests** -- 98% coverage, CI across Python 3.10/3.11/3.12
 
 ---
 
