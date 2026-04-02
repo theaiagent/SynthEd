@@ -39,6 +39,7 @@ def run_simulation_with_overrides(
     n_students: int,
     seed: int,
     default_config: PersonaConfig,
+    calibration_mode: bool = False,
 ) -> dict[str, float]:
     """
     Run a single SynthEd simulation with parameter overrides.
@@ -81,6 +82,7 @@ def run_simulation_with_overrides(
             output_dir=tmp_dir,
             seed=seed,
             institutional_config=inst_config,
+            _calibration_mode=calibration_mode,
         )
         _apply_engine_overrides(pipeline, engine_overrides, theory_overrides)
         report = pipeline.run(n_students=n_students)
