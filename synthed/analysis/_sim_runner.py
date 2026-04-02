@@ -15,6 +15,7 @@ from dataclasses import fields, replace
 
 from ..agents.persona import PersonaConfig
 from ..pipeline import SynthEdPipeline
+from ..simulation.institutional import InstitutionalConfig
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +39,7 @@ def run_simulation_with_overrides(
     n_students: int,
     seed: int,
     default_config: PersonaConfig,
+    calibration_mode: bool = False,
 ) -> dict[str, float]:
     """
     Run a single SynthEd simulation with parameter overrides.
@@ -57,6 +59,7 @@ def run_simulation_with_overrides(
     config_overrides: dict[str, float] = {}
     engine_overrides: dict[str, float] = {}
     theory_overrides: dict[str, dict[str, float]] = {}
+    inst_overrides: dict[str, float] = {}
 
     for key, value in overrides.items():
         prefix, _, attr = key.partition(".")
@@ -64,10 +67,13 @@ def run_simulation_with_overrides(
             config_overrides[attr] = value
         elif prefix == "engine":
             engine_overrides[attr] = value
+        elif prefix == "inst":
+            inst_overrides[attr] = value
         else:
             theory_overrides.setdefault(prefix, {})[attr] = value
 
     config = _build_config(default_config, config_overrides)
+    inst_config = replace(InstitutionalConfig(), **inst_overrides) if inst_overrides else None
 
     tmp_dir = tempfile.mkdtemp(prefix="synthed_analysis_")
     try:
@@ -75,6 +81,8 @@ def run_simulation_with_overrides(
             persona_config=config,
             output_dir=tmp_dir,
             seed=seed,
+            institutional_config=inst_config,
+            _calibration_mode=calibration_mode,
         )
         _apply_engine_overrides(pipeline, engine_overrides, theory_overrides)
         report = pipeline.run(n_students=n_students)

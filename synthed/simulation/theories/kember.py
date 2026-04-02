@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from ..institutional import InstitutionalConfig, scale_by
+
 if TYPE_CHECKING:
     from ...agents.persona import StudentPersona
     from ..engine import InteractionRecord, SimulationState
@@ -36,6 +38,7 @@ class KemberCostBenefit:
         avg_td: float,
         week: int | None = None,
         total_weeks: int | None = None,
+        inst: InstitutionalConfig | None = None,
     ) -> None:
         """
         Recalculate cost-benefit perception after academic events.
@@ -49,7 +52,11 @@ class KemberCostBenefit:
                           if r.interaction_type in ("assignment_submit", "exam") and r.quality_score > 0]
         if recent_quality:
             avg_q = np.mean(recent_quality)
-            state.perceived_cost_benefit += (avg_q - 0.5) * self._QUALITY_FACTOR
+            effective_qf = scale_by(
+                self._QUALITY_FACTOR,
+                inst.instructional_design_quality if inst else 0.5,
+            )  # [inst: instructional_design_quality]
+            state.perceived_cost_benefit += (avg_q - 0.5) * effective_qf
         elif state.missed_assignments_streak >= 2:
             state.perceived_cost_benefit -= self._MISSED_PENALTY
 

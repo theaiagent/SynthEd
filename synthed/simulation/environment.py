@@ -56,14 +56,6 @@ class ODLEnvironment:
     total_weeks: int = 14
     courses: list[Course] = field(default_factory=list)
 
-    # Institutional parameters
-    lms_availability: float = 0.98  # Platform uptime probability
-    support_responsiveness: float = 0.7  # How quickly support responds (0-1)
-    peer_interaction_density: float = 0.5  # How active the student community is
-
-    # Moore (1993): Institutional dialogue capacity
-    institutional_dialogue_norm: float = 0.4  # 0-1; baseline dialogue culture
-
     # Events that occur at specific weeks (week -> event description)
     scheduled_events: dict[int, str] = field(default_factory=dict)
 

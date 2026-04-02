@@ -22,6 +22,7 @@ from .agents.factory import StudentFactory
 from .calibration import CalibrationMap
 from .simulation.environment import ODLEnvironment
 from .simulation.engine import SimulationEngine
+from .simulation.institutional import InstitutionalConfig
 from .data_output.exporter import DataExporter
 from .data_output.oulad_exporter import OuladExporter
 from .validation.validator import SyntheticDataValidator, ReferenceStatistics
@@ -49,6 +50,7 @@ class SynthEdPipeline:
         self,
         persona_config: PersonaConfig | None = None,
         environment: ODLEnvironment | None = None,
+        institutional_config: InstitutionalConfig | None = None,
         reference_stats: ReferenceStatistics | None = None,
         output_dir: str = "./output",
         llm_model: str = "gpt-4o-mini",
@@ -61,9 +63,11 @@ class SynthEdPipeline:
         cost_threshold: float = _DEFAULT_COST_THRESHOLD_USD,
         confirm_callback: Callable[[str], bool] | None = None,
         export_oulad: bool = False,
+        _calibration_mode: bool = False,
     ):
         self.persona_config = persona_config or PersonaConfig()
         self.environment = environment or ODLEnvironment()
+        self.institutional_config = institutional_config or InstitutionalConfig()
         self.reference = reference_stats or ReferenceStatistics()
         self.output_dir = Path(output_dir)
         self.use_llm = use_llm
@@ -74,6 +78,7 @@ class SynthEdPipeline:
         self.cost_threshold = cost_threshold
         self.confirm_callback = confirm_callback
         self.export_oulad = export_oulad
+        self._calibration_mode = _calibration_mode
         self._calibration_estimate = None
 
         # Apply calibration when a target dropout range is provided
@@ -88,6 +93,7 @@ class SynthEdPipeline:
             llm_client=self.llm,
             seed=seed,
             unavoidable_withdrawal_rate=self.persona_config.unavoidable_withdrawal_rate,
+            institutional_config=self.institutional_config,
         )
         self.exporter = DataExporter(output_dir=str(self.output_dir))
         self.validator = SyntheticDataValidator(reference=self.reference)
@@ -188,6 +194,7 @@ class SynthEdPipeline:
         return cls(
             persona_config=profile.persona_config,
             environment=profile.environment,
+            institutional_config=profile.institutional_config,
             reference_stats=profile.reference_stats,
             output_dir=output_dir,
             use_llm=use_llm,
@@ -293,21 +300,24 @@ class SynthEdPipeline:
                     len(records), report['simulation_summary']['dropout_rate'] * 100)
 
         # Stage 3: Export Data
-        logger.info("[3/4] Exporting datasets to %s/...", self.output_dir)
-        t0 = time.time()
-        file_paths = self.exporter.export_all(students, records, states, network)
-        report["timing"]["export_sec"] = round(time.time() - t0, 2)
-        report["exported_files"] = file_paths
-        logger.info("      Done. Files: %s", ', '.join(Path(p).name for p in file_paths.values()))
+        if not self._calibration_mode:
+            logger.info("[3/4] Exporting datasets to %s/...", self.output_dir)
+            t0 = time.time()
+            file_paths = self.exporter.export_all(students, records, states, network)
+            report["timing"]["export_sec"] = round(time.time() - t0, 2)
+            report["exported_files"] = file_paths
+            logger.info("      Done. Files: %s", ', '.join(Path(p).name for p in file_paths.values()))
 
-        # Stage 4: OULAD export (optional)
-        if self.export_oulad:
-            oulad_exporter = OuladExporter(str(self.output_dir), seed=self.seed)
-            oulad_paths = oulad_exporter.export_all(
-                students, records, states, self.environment,
-            )
-            report["exported_files"]["oulad"] = oulad_paths
-            logger.info("OULAD-compatible export completed: 7 tables")
+            # Stage 4: OULAD export (optional)
+            if self.export_oulad:
+                oulad_exporter = OuladExporter(str(self.output_dir), seed=self.seed)
+                oulad_paths = oulad_exporter.export_all(
+                    students, records, states, self.environment,
+                )
+                report["exported_files"]["oulad"] = oulad_paths
+                logger.info("OULAD-compatible export completed: 7 tables")
+        else:
+            report["exported_files"] = {}
 
         # Stage 5: Validate
         logger.info("[4/4] Running validation suite...")
