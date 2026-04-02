@@ -132,6 +132,28 @@ report = pipeline.run(n_students=300)
 
 ---
 
+## 🏛️ Institutional Configuration
+
+`InstitutionalConfig` models 5 institution-level quality parameters that modulate theory constants via multiplicative scaling (identity at 0.5):
+
+```python
+from synthed.simulation.institutional import InstitutionalConfig
+
+ic = InstitutionalConfig(
+    instructional_design_quality=0.7,   # Course design clarity
+    teaching_presence_baseline=0.6,     # Instructor presence
+    support_services_quality=0.8,       # Tutoring, counseling
+    technology_quality=0.9,             # LMS usability
+    curriculum_flexibility=0.6,         # Course adaptability
+)
+pipeline = SynthEdPipeline(institutional_config=ic, seed=42)
+report = pipeline.run(n_students=300)
+```
+
+All values range 0-1 (default 0.5 = neutral). Values above 0.5 improve student outcomes; below 0.5 degrade them.
+
+---
+
 ## 🎯 Dropout Targeting
 
 Instead of manually tuning `dropout_base_rate`, specify the desired range:
@@ -281,6 +303,21 @@ params = auto_bounds(config=my_config, margin=0.3)
 | `include_theories` | True | Include theory module constants |
 | `exclude` | `frozenset()` | Specific parameters to skip |
 
+### Phase 4: NSGA-II Multi-Objective Calibration
+
+When dropout and GPA objectives conflict, NSGA-II explores the Pareto front instead of collapsing to a single weighted loss:
+
+```python
+from synthed.analysis.nsga2_calibrator import NSGAIICalibrator
+
+calibrator = NSGAIICalibrator(n_students=100, seed=42)
+result = calibrator.run("moderate_dropout_western", n_trials=8000)
+print(f"Pareto front: {len(result.pareto_front)} solutions")
+print(f"Knee-point dropout error: {result.knee_point.dropout_error:.4f}")
+```
+
+The knee-point solution balances both objectives and is recommended as the default starting point for further tuning.
+
 ---
 
 ## 📊 Custom Reference Data
@@ -415,6 +452,7 @@ metrics = run_simulation_with_overrides(
 | `garrison.*` | GarrisonCoI | `garrison._SOCIAL_DECAY` |
 | `gonzalez.*` | GonzalezExhaustion | `gonzalez._ENGAGEMENT_IMPACT` |
 | `moore.*` | MooreTransactionalDistance | `moore._STRUCTURE_WEIGHT` |
+| `inst.*` | InstitutionalConfig | `inst.technology_quality` |
 
 ---
 

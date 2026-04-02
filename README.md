@@ -36,6 +36,8 @@
 - **5-Level Validation Suite** -- 21 statistical tests (distributions, correlations, temporal coherence, privacy, backstory)
 - **Optional LLM Enrichment** -- Persona-grounded narrative backstories via OpenAI, Ollama, or any compatible provider
 - **4 Benchmark Profiles** -- Developing, Western, Corporate, Mega University with CLI report generation
+- **InstitutionalConfig** -- 5 institution-level quality parameters that modulate theory constants
+- **NSGA-II Calibration** -- Multi-objective optimization with Pareto front exploration
 - **565 Tests** -- 98% coverage, CI across Python 3.10/3.11/3.12
 
 ---
@@ -88,6 +90,8 @@ print(f"Dropout: {report['simulation_summary']['dropout_rate']:.1%}")
 - [x] OULAD-compatible 7-table export
 - [x] LLM enrichment with cost control and streaming
 - [x] Disability severity (Beta distribution)
+- [x] InstitutionalConfig (5 quality parameters modulating theory constants)
+- [x] NSGA-II multi-objective calibration with Pareto front
 - [ ] Spectrum refactoring (binary -> continuous for family/internet)
 - [ ] GraphRAG integration (curriculum modeling)
 - [ ] LLM-augmented mode (forum posts, assignment text)
