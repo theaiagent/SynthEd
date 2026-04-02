@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from ..institutional import InstitutionalConfig, scale_by
+
 if TYPE_CHECKING:
     from ..engine import InteractionRecord, SimulationState
     from ...agents.persona import StudentPersona
@@ -61,6 +63,7 @@ class GonzalezExhaustion:
         week: int,
         context: dict,
         records: list[InteractionRecord],
+        inst: InstitutionalConfig | None = None,
     ) -> None:
         """Advance exhaustion for one student-week."""
         ex = state.exhaustion
@@ -68,7 +71,11 @@ class GonzalezExhaustion:
 
         # 1. Assignment load this week
         active_assignments = len(context.get("active_assignments", []))
-        accumulation += active_assignments * self._ASSIGNMENT_LOAD_WEIGHT
+        effective_alw = scale_by(
+            self._ASSIGNMENT_LOAD_WEIGHT,
+            1.0 - (inst.curriculum_flexibility if inst else 0.5),
+        )  # [inst: curriculum_flexibility] inverted
+        accumulation += active_assignments * effective_alw
 
         # 2. Environmental stressors (Bean & Metzner overlap)
         if student.is_employed:
@@ -82,7 +89,11 @@ class GonzalezExhaustion:
 
         # ── Recovery ──
         resilience = (student.self_regulation + student.personality.conscientiousness) / 2.0
-        recovery = self._RECOVERY_BASE * resilience * ex.recovery_capacity
+        effective_rb = scale_by(
+            self._RECOVERY_BASE,
+            inst.support_services_quality if inst else 0.5,
+        )  # [inst: support_services_quality]
+        recovery = effective_rb * resilience * ex.recovery_capacity
 
         # Positive events grant a bonus recovery burst
         if context.get("positive_event"):

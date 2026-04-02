@@ -329,7 +329,8 @@ class SimulationEngine:
                 self.garrison.update_presences(student, state, week, week_records, active_courses)
                 self.sdt.update_needs(student, state, week, week_records)
                 state.current_motivation_type = self.sdt.evaluate_motivation_shift(state)
-                self.gonzalez.update_exhaustion(student, state, week, week_context, week_records)
+                self.gonzalez.update_exhaustion(student, state, week, week_context, week_records,
+                                                inst=self.inst)
                 self._update_engagement(student, state, week, week_context, week_records)
 
             # ── Phase 2: Social network + peer influence (Epstein & Axtell) ──
@@ -605,7 +606,8 @@ class SimulationEngine:
         )
         if context.get("is_exam_week") or state.missed_assignments_streak >= 2 or has_graded_item:
             self.kember.recalculate(student, state, context, records, avg_td,
-                                    week=week, total_weeks=self.env.total_weeks)
+                                    week=week, total_weeks=self.env.total_weeks,
+                                    inst=self.inst)
             # Cost-benefit feeds back into engagement
             engagement += (state.perceived_cost_benefit - 0.5) * self._CB_FEEDBACK_FACTOR
 
