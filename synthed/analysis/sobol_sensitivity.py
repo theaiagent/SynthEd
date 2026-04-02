@@ -21,6 +21,7 @@ from SALib.analyze import sobol as sobol_analyze
 from SALib.sample import sobol as sobol_sample
 
 from ..agents.persona import PersonaConfig
+from ..simulation.institutional import InstitutionalConfig
 from ._sim_runner import MODULE_ALIASES, run_simulation_with_overrides
 
 logger = logging.getLogger(__name__)
@@ -60,8 +61,9 @@ class SobolParameter:
 #   "gonzalez." → engine.gonzalez attribute
 #   "moore."    → engine.moore attribute
 #   "epstein."  → engine.epstein_axtell attribute
+#   "inst."     → InstitutionalConfig field (frozen, use replace())
 
-# Full parameter space: 52 parameters selected for theoretical importance
+# Full parameter space: 57 parameters selected for theoretical importance
 # and empirical impact on dropout/engagement/GPA outcomes.
 SOBOL_PARAMETER_SPACE: tuple[SobolParameter, ...] = (
     # ── PersonaConfig: Population characteristics ──
@@ -148,6 +150,18 @@ SOBOL_PARAMETER_SPACE: tuple[SobolParameter, ...] = (
     SobolParameter("engine._EXAM_EFFICACY_WEIGHT", 0.05, 0.35, "Self-efficacy → exam quality"),
     SobolParameter("engine._ASSIGN_SUBMIT_BASE", 0.15, 0.50, "Base assignment submission probability"),
     SobolParameter("engine._GRADE_FLOOR", 0.30, 0.55, "Structural grade floor (partial credit)"),
+
+    # ── InstitutionalConfig (Phase 3.5) ──
+    SobolParameter("inst.instructional_design_quality", 0.0, 1.0,
+                   "Course design clarity and scaffolding quality"),
+    SobolParameter("inst.teaching_presence_baseline", 0.2, 0.8,
+                   "Baseline teaching presence from institutional design"),
+    SobolParameter("inst.support_services_quality", 0.0, 1.0,
+                   "Counseling, tutoring, advising effectiveness"),
+    SobolParameter("inst.technology_quality", 0.0, 1.0,
+                   "LMS usability and platform reliability"),
+    SobolParameter("inst.curriculum_flexibility", 0.0, 1.0,
+                   "Course adaptability for diverse learners"),
 )
 
 
@@ -231,6 +245,11 @@ class SobolAnalyzer:
             elif prefix == "engine":
                 if not hasattr(engine, attr):
                     raise ValueError(f"Unknown engine attribute: '{attr}' in {p.name}")
+            elif prefix == "inst":
+                from dataclasses import fields as dc_fields
+                inst_fields = {f.name for f in dc_fields(InstitutionalConfig)}
+                if attr not in inst_fields:
+                    raise ValueError(f"Unknown InstitutionalConfig field: '{attr}'")
             elif prefix in MODULE_ALIASES:
                 module = getattr(engine, MODULE_ALIASES[prefix])
                 if not hasattr(module, attr):
