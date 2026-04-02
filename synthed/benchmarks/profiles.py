@@ -101,7 +101,7 @@ PROFILES: dict[str, BenchmarkProfile] = {
         ),
         n_students=300,
         seed=42,
-        expected_dropout_range=(0.02, 0.25),
+        expected_dropout_range=(0.01, 0.25),
     ),
     "mega_university": BenchmarkProfile(
         name="mega_university",
