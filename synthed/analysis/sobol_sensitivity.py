@@ -89,6 +89,9 @@ SOBOL_PARAMETER_SPACE: tuple[SobolParameter, ...] = (
     SobolParameter("bean._FAMILY_PENALTY", 0.005, 0.04, "Family responsibility penalty"),
     SobolParameter("bean._FINANCIAL_PENALTY", 0.005, 0.03, "Financial stress penalty"),
     SobolParameter("bean._DISABILITY_PENALTY", 0.005, 0.03, "Disability engagement erosion"),
+    SobolParameter("bean._SHOCK_BASE_PROB", 0.02, 0.08, "Weekly shock probability"),
+    SobolParameter("bean._SHOCK_EMPLOY_WEIGHT", 0.1, 0.5, "Employment → shock risk"),
+    SobolParameter("bean._SHOCK_STRESS_WEIGHT", 0.2, 0.6, "Financial stress → shock risk"),
 
     # ── Kember: Cost-benefit ──
     SobolParameter("kember._QUALITY_FACTOR", 0.01, 0.08, "Quality → cost-benefit sensitivity"),
