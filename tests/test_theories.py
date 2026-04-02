@@ -183,6 +183,8 @@ class TestKemberGPAFeedback:
             missed_assignments_streak=0,
             cumulative_gpa=1.2,
             gpa_count=5,
+            perceived_mastery_sum=0.0,
+            perceived_mastery_count=5,
         )
         records = [
             InteractionRecord(student_id="test", week=1, course_id="CS101",
@@ -215,6 +217,8 @@ class TestBaulkeGPAFeedback:
             dropout_phase=0,
             cumulative_gpa=1.4,
             gpa_count=3,
+            perceived_mastery_sum=0.0,
+            perceived_mastery_count=3,
         )
         env = ODLEnvironment()
         rng = np.random.default_rng(42)
@@ -262,6 +266,8 @@ class TestSDTGPAFeedback:
         state = _make_state(
             cumulative_gpa=3.6,
             gpa_count=5,
+            perceived_mastery_sum=4.091,
+            perceived_mastery_count=5,
         )
         state.sdt_needs = SDTNeedSatisfaction(competence=0.5)
         records = [
@@ -278,6 +284,8 @@ class TestSDTGPAFeedback:
         state = _make_state(
             cumulative_gpa=1.2,
             gpa_count=5,
+            perceived_mastery_sum=0.0,
+            perceived_mastery_count=5,
         )
         state.sdt_needs = SDTNeedSatisfaction(competence=0.5)
         records = [
