@@ -1,0 +1,48 @@
+{
+  "profile": "low_dropout_corporate",
+  "pareto_size": 2,
+  "n_evaluations": 500,
+  "calibration_time_s": 69.1,
+  "knee_point": {
+    "dropout_error": 0.01,
+    "gpa_error": 0.5034,
+    "achieved_dropout": 0.14,
+    "achieved_gpa": 2.8034,
+    "achieved_engagement": 0.1234,
+    "params": {
+      "engine._TINTO_ACADEMIC_WEIGHT": 0.023143,
+      "engine._TINTO_DECAY_BASE": 0.097593,
+      "bean._FINANCIAL_PENALTY": 0.017461,
+      "kember._MISSED_PENALTY": 0.041655,
+      "baulke._DECISION_RISK_MULTIPLIER": 0.358069,
+      "rovai._REGULATION_FACTOR": 0.01917,
+      "rovai._FLOOR_SCALE": 0.509093,
+      "moore._STRUCTURE_WEIGHT": 0.399263,
+      "moore._DIALOGUE_WEIGHT": 0.154318,
+      "engine._ASSIGN_SUBMIT_BASE": 0.191134
+    }
+  },
+  "validation": {
+    "dropout_mean": 0.132,
+    "dropout_std": 0.0102,
+    "gpa_mean": 2.8487,
+    "gpa_std": 0.0061,
+    "in_range": true,
+    "expected_range": [
+      0.02,
+      0.25
+    ]
+  },
+  "parameter_names": [
+    "engine._TINTO_ACADEMIC_WEIGHT",
+    "engine._TINTO_DECAY_BASE",
+    "bean._FINANCIAL_PENALTY",
+    "kember._MISSED_PENALTY",
+    "baulke._DECISION_RISK_MULTIPLIER",
+    "rovai._REGULATION_FACTOR",
+    "rovai._FLOOR_SCALE",
+    "moore._STRUCTURE_WEIGHT",
+    "moore._DIALOGUE_WEIGHT",
+    "engine._ASSIGN_SUBMIT_BASE"
+  ]
+}
