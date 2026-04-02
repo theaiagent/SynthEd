@@ -14,6 +14,8 @@ authors:
     given-names: Evrim
     orcid: "https://orcid.org/0000-0002-2568-8054"
     affiliation: "Anadolu University"
+version: "1.0.0"
+date-released: "2026-04-02"
 keywords:
   - synthetic data
   - agent-based simulation
