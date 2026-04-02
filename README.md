@@ -1,6 +1,6 @@
 # SynthEd: From synthetic data to simulated learners
 
-[![Status: Active Development](https://img.shields.io/badge/status-active%20development-orange.svg)](https://github.com/theaiagent/SynthEd/releases)
+[![Status: v1.0.0](https://img.shields.io/badge/status-v1.0.0-brightgreen.svg)](https://github.com/theaiagent/SynthEd/releases/tag/v1.0.0)
 [![CI](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml/badge.svg)](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml)
 [![pytest](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/theaiagent/cbf1abd6cdc2134e7e26374de286f2c9/raw/synthed-test-badge.json)](#test-suite)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
@@ -9,7 +9,12 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19334118.svg)](https://doi.org/10.5281/zenodo.19334118)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Agent-based simulation environment for Open & Distance Learning (ODL) research.** SynthEd generates behaviorally grounded and temporally coherent learning trajectories by combining persona-driven agent modeling with 11 established theoretical frameworks.
+**Agent-based simulation environment for Open & Distance Learning (ODL) research.** SynthEd generates behaviorally grounded and temporally coherent learning trajectories by combining persona-driven agent modeling with 11 established theoretical frameworks. Built for researchers in learning analytics, educational data mining, and dropout prediction.
+
+```bash
+pip install -e ".[dev]"
+python run_pipeline.py --n 200
+```
 
 > **From statistical similarity to behavioral fidelity.** Traditional synthetic data methods optimize for distributional match. SynthEd optimizes for *behavioral coherence* -- each data point emerges from a simulated student's evolving motivations, decisions, and life context.
 
