@@ -144,11 +144,11 @@ pipeline = SynthEdPipeline(
 report = pipeline.run(n_students=300)
 ```
 
-| Semesters | Default Dropout Rate | Quality |
-|-----------|---------------------|---------|
-| 1 (14 weeks) | ~46% | A (Excellent) |
-| 2 (28 weeks) | ~76% | B (Good) |
-| 4 (56 weeks) | ~96% | B (Good) |
+| Semesters | Default Dropout Rate (base=0.80) | Quality |
+|-----------|----------------------------------|---------|
+| 1 (14 weeks) | ~41% | A (Excellent) |
+| 2 (28 weeks) | ~69% | B (Good) |
+| 4 (56 weeks) | ~92% | B (Good) |
 
 ---
 
@@ -180,19 +180,31 @@ report = pipeline.run(n_students=300)
 
 ## 🏛️ Benchmark Profiles
 
-Pre-defined institutional contexts:
+Pre-defined institutional contexts with CLI support:
+
+```bash
+python run_pipeline.py --benchmark                                     # All 4 profiles + comparison report
+python run_pipeline.py --benchmark --benchmark-profile mega_university # Single profile
+```
 
 ```python
+from synthed.pipeline import SynthEdPipeline
+
 pipeline = SynthEdPipeline.from_profile("high_dropout_developing")
 report = pipeline.run(n_students=500)
+
+# Generate comparison report for all profiles
+from synthed.benchmarks.generator import BenchmarkGenerator
+gen = BenchmarkGenerator()
+md = gen.generate_report(output_dir="./benchmarks")  # writes benchmark_report.md + benchmark_results.json
 ```
 
 | Profile | Scenario | Expected Dropout |
 |---------|----------|-----------------|
-| `high_dropout_developing` | Developing country ODL | 60-90% |
-| `moderate_dropout_western` | Western university | 30-60% |
-| `low_dropout_corporate` | Corporate training | 5-30% |
-| `mega_university` | Mega university | 55-85% |
+| `high_dropout_developing` | Developing country ODL | 50-66% |
+| `moderate_dropout_western` | Western university | 15-35% |
+| `low_dropout_corporate` | Corporate training | 5-25% |
+| `mega_university` | Mega university | 35-55% |
 
 ---
 

@@ -151,7 +151,7 @@ SynthEd/
 │   │   └── _sim_runner.py       # Shared simulation runner
 │   ├── benchmarks/
 │   │   ├── profiles.py          # 4 institutional profiles
-│   │   └── generator.py         # Benchmark dataset generator
+│   │   └── generator.py         # Benchmark dataset generator + report
 │   ├── utils/
 │   │   ├── llm.py               # OpenAI wrapper with cache, cost, streaming
 │   │   ├── llm_memory.py        # Immutable ConversationMemory
@@ -159,7 +159,7 @@ SynthEd/
 │   │   └── validation.py        # Input validation utilities
 │   ├── calibration.py           # CalibrationMap: target dropout -> params
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                       # 472 pytest tests across 28 files
+├── tests/                       # 477 pytest tests across 28 files
 ├── docs/
 │   ├── GUIDE.md                 # User guide
 │   └── THEORY.md                # This file
@@ -188,7 +188,7 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 
 ## 🧪 Test Suite
 
-472 pytest tests across 28 files:
+477 pytest tests across 28 files:
 
 | Test File | Tests | Coverage |
 |-----------|-------|----------|
@@ -213,7 +213,7 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 | `test_validator.py` | 10 | Report structure, z-test, grades, dropout range |
 | `test_calibration.py` | 11 | Interpolation, clamping, confidence, range estimation |
 | `test_oulad_export.py` | 35 | Mappings, 7-table export, schema, determinism |
-| `test_benchmarks.py` | 10 | Profiles, generator, error handling |
+| `test_benchmarks.py` | 15 | Profiles, generator, report formatting, error handling |
 | `test_environment.py` | 4 | Courses, exam weeks, positive events |
 | `test_utils.py` | 14 | Validation helpers, logging config |
 | `test_network_scaling.py` | 4 | Degree cap, sampling threshold |

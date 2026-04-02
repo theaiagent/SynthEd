@@ -35,7 +35,8 @@
 - **Adaptive Parameter Bounds** -- `auto_bounds()` adjusts calibration space when demographics change
 - **5-Level Validation Suite** -- 21 statistical tests (distributions, correlations, temporal coherence, privacy, backstory)
 - **Optional LLM Enrichment** -- Persona-grounded narrative backstories via OpenAI, Ollama, or any compatible provider
-- **472 Tests** -- 98% coverage, CI across Python 3.10/3.11/3.12
+- **4 Benchmark Profiles** -- Developing, Western, Corporate, Mega University with CLI report generation
+- **477 Tests** -- 98% coverage, CI across Python 3.10/3.11/3.12
 
 ---
 
@@ -48,6 +49,7 @@ pip install -e ".[dev]"
 python run_pipeline.py              # 200 students, 14 weeks
 python run_pipeline.py --n 500      # Custom population
 python run_pipeline.py --oulad      # OULAD-compatible export
+python run_pipeline.py --benchmark  # Run all 4 benchmark profiles
 ```
 
 ```python
@@ -82,6 +84,7 @@ print(f"Dropout: {report['simulation_summary']['dropout_rate']:.1%}")
 - [x] Multi-semester simulation with carry-over
 - [x] 11 theory modules (Tinto, Bean & Metzner, Kember, SDT, Garrison, Moore, Rovai, Baulke, Epstein & Axtell, Gonzalez, Unavoidable Withdrawal)
 - [x] Trait-based calibration (Sobol + Optuna + OULAD validation)
+- [x] Benchmark reports with CLI (`--benchmark`)
 - [x] OULAD-compatible 7-table export
 - [x] LLM enrichment with cost control and streaming
 - [x] Disability severity (Beta distribution)
