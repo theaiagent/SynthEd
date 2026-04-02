@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="synthed",
+    name="synthedu",
     use_scm_version={
         "fallback_version": "0.0.0-dev",
         "version_scheme": "guess-next-dev",
@@ -28,7 +28,7 @@ setup(
         "dev": ["pytest", "pytest-cov", "ruff"],
     },
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Science/Research",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Programming Language :: Python :: 3.10",
