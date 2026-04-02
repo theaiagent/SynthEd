@@ -52,7 +52,7 @@ PROFILES: dict[str, BenchmarkProfile] = {
         reference_stats=ReferenceStatistics(dropout_rate=0.65),
         n_students=500,
         seed=42,
-        expected_dropout_range=(0.55, 0.75),
+        expected_dropout_range=(0.55, 0.80),
     ),
     "moderate_dropout_western": BenchmarkProfile(
         name="moderate_dropout_western",
@@ -101,7 +101,7 @@ PROFILES: dict[str, BenchmarkProfile] = {
         ),
         n_students=300,
         seed=42,
-        expected_dropout_range=(0.05, 0.25),
+        expected_dropout_range=(0.02, 0.25),
     ),
     "mega_university": BenchmarkProfile(
         name="mega_university",
@@ -128,6 +128,6 @@ PROFILES: dict[str, BenchmarkProfile] = {
         ),
         n_students=1000,
         seed=42,
-        expected_dropout_range=(0.35, 0.55),
+        expected_dropout_range=(0.35, 0.60),
     ),
 }

@@ -78,3 +78,28 @@ class TestEngineInstitutionalIntegration:
             f"High quality ({dropout_high:.1%}) should have lower dropout "
             f"than low quality ({dropout_low:.1%})"
         )
+
+
+class TestBenchmarkProfilesWithInstitutionalConfig:
+    """Verify all 4 benchmark profiles stay in target range."""
+
+    @pytest.mark.parametrize("profile_name", [
+        "high_dropout_developing",
+        "moderate_dropout_western",
+        "mega_university",
+        "low_dropout_corporate",
+    ])
+    def test_profile_in_expected_dropout_range(self, profile_name, tmp_path):
+        from synthed.pipeline import SynthEdPipeline
+        from synthed.benchmarks.profiles import PROFILES
+
+        profile = PROFILES[profile_name]
+        pipeline = SynthEdPipeline.from_profile(
+            profile_name, output_dir=str(tmp_path),
+        )
+        report = pipeline.run(n_students=profile.n_students)
+        dropout = report["simulation_summary"]["dropout_rate"]
+        lo, hi = profile.expected_dropout_range
+        assert lo <= dropout <= hi, (
+            f"{profile_name}: dropout {dropout:.1%} outside [{lo:.0%}, {hi:.0%}]"
+        )
