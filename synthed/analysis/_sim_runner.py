@@ -15,6 +15,7 @@ from dataclasses import fields, replace
 
 from ..agents.persona import PersonaConfig
 from ..pipeline import SynthEdPipeline
+from ..simulation.institutional import InstitutionalConfig
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +72,7 @@ def run_simulation_with_overrides(
             theory_overrides.setdefault(prefix, {})[attr] = value
 
     config = _build_config(default_config, config_overrides)
+    inst_config = replace(InstitutionalConfig(), **inst_overrides) if inst_overrides else None
 
     tmp_dir = tempfile.mkdtemp(prefix="synthed_analysis_")
     try:
@@ -78,10 +80,9 @@ def run_simulation_with_overrides(
             persona_config=config,
             output_dir=tmp_dir,
             seed=seed,
+            institutional_config=inst_config,
         )
         _apply_engine_overrides(pipeline, engine_overrides, theory_overrides)
-        if inst_overrides:
-            pipeline.engine.inst = replace(pipeline.engine.inst, **inst_overrides)
         report = pipeline.run(n_students=n_students)
 
         summary = report["simulation_summary"]

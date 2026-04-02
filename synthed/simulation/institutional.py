@@ -19,7 +19,9 @@ class InstitutionalConfig:
     """
 
     instructional_design_quality: float = 0.5   # [inst] Kember _QUALITY_FACTOR
-    teaching_presence_baseline: float = 0.5     # [inst] CoI state init (direct)
+    # [inst] CoI state init (direct, not via scale_by — safe at boundaries
+    # because downstream CoI arithmetic is additive with small deltas)
+    teaching_presence_baseline: float = 0.5
     support_services_quality: float = 0.5       # [inst] Gonzalez _RECOVERY_BASE
     technology_quality: float = 0.5             # [inst] Engine literacy floors
     curriculum_flexibility: float = 0.5         # [inst] Gonzalez _ASSIGNMENT_LOAD_WEIGHT (inverted)

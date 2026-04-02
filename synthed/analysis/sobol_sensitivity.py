@@ -63,7 +63,7 @@ class SobolParameter:
 #   "epstein."  → engine.epstein_axtell attribute
 #   "inst."     → InstitutionalConfig field (frozen, use replace())
 
-# Full parameter space: 57 parameters selected for theoretical importance
+# Full parameter space: 66 parameters selected for theoretical importance
 # and empirical impact on dropout/engagement/GPA outcomes.
 SOBOL_PARAMETER_SPACE: tuple[SobolParameter, ...] = (
     # ── PersonaConfig: Population characteristics ──
@@ -246,8 +246,7 @@ class SobolAnalyzer:
                 if not hasattr(engine, attr):
                     raise ValueError(f"Unknown engine attribute: '{attr}' in {p.name}")
             elif prefix == "inst":
-                from dataclasses import fields as dc_fields
-                inst_fields = {f.name for f in dc_fields(InstitutionalConfig)}
+                inst_fields = {f.name for f in fields(InstitutionalConfig)}
                 if attr not in inst_fields:
                     raise ValueError(f"Unknown InstitutionalConfig field: '{attr}'")
             elif prefix in MODULE_ALIASES:
@@ -272,7 +271,7 @@ class SobolAnalyzer:
         Generate Sobol (Saltelli) sample matrix.
 
         With calc_second_order=False, total = n_samples * (D + 2).
-        Default: 128 * (44 + 2) = 5,888 simulations.
+        Default: 128 * (66 + 2) = 8,704 simulations.
         """
         return sobol_sample.sample(self._problem, n_samples, calc_second_order=False)
 

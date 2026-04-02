@@ -105,7 +105,7 @@ PROFILES: dict[str, BenchmarkProfile] = {
     ),
     "mega_university": BenchmarkProfile(
         name="mega_university",
-        description="Mega university: very high enrollment, elevated dropout (35-55%)",
+        description="Mega university: very high enrollment, elevated dropout (35-60%)",
         persona_config=PersonaConfig(
             age_range=(18, 60),
             employment_rate=0.80,

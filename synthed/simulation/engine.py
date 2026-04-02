@@ -388,7 +388,7 @@ class SimulationEngine:
                 continue
 
             # ── LMS Logins (Rovai: accessibility) ──
-            effective_login_floor = scale_by(self._LOGIN_LITERACY_FLOOR, self.inst.technology_quality)
+            effective_login_floor = scale_by(self._LOGIN_LITERACY_FLOOR, self.inst.technology_quality)  # [inst: technology_quality]
             login_rate = engagement * self._LOGIN_ENG_MULTIPLIER * (effective_login_floor + self._LOGIN_LITERACY_SCALE * student.digital_literacy)
             n_logins = max(0, int(self.rng.poisson(login_rate)))
             for _ in range(n_logins):
@@ -408,7 +408,7 @@ class SimulationEngine:
 
             # ── Forum Activity (Tinto: social integration) ──
             if course.has_forum:
-                effective_forum_floor = scale_by(self._FORUM_READ_LITERACY_FLOOR, self.inst.technology_quality)
+                effective_forum_floor = scale_by(self._FORUM_READ_LITERACY_FLOOR, self.inst.technology_quality)  # [inst: technology_quality]
                 read_prob = engagement * self._FORUM_READ_ENG_FACTOR * (effective_forum_floor + self._FORUM_READ_LITERACY_SCALE * student.digital_literacy)
                 if self.rng.random() < read_prob:
                     records.append(InteractionRecord(
