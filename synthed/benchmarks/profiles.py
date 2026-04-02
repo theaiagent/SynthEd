@@ -12,6 +12,7 @@ from dataclasses import dataclass
 
 from ..agents.persona import PersonaConfig
 from ..simulation.environment import ODLEnvironment
+from ..simulation.institutional import InstitutionalConfig
 from ..validation.validator import ReferenceStatistics
 
 
@@ -21,6 +22,7 @@ class BenchmarkProfile:
     name: str
     description: str
     persona_config: PersonaConfig
+    institutional_config: InstitutionalConfig
     environment: ODLEnvironment
     reference_stats: ReferenceStatistics
     n_students: int
@@ -39,6 +41,13 @@ PROFILES: dict[str, BenchmarkProfile] = {
             self_regulation_mean=0.35,
             dropout_base_rate=0.92,
         ),
+        institutional_config=InstitutionalConfig(
+            instructional_design_quality=0.30,
+            teaching_presence_baseline=0.35,
+            support_services_quality=0.25,
+            technology_quality=0.35,
+            curriculum_flexibility=0.25,
+        ),
         environment=ODLEnvironment(total_weeks=14),
         reference_stats=ReferenceStatistics(dropout_rate=0.65),
         n_students=500,
@@ -54,6 +63,13 @@ PROFILES: dict[str, BenchmarkProfile] = {
             digital_literacy_mean=0.65,
             self_regulation_mean=0.45,
             dropout_base_rate=0.65,
+        ),
+        institutional_config=InstitutionalConfig(
+            instructional_design_quality=0.65,
+            teaching_presence_baseline=0.60,
+            support_services_quality=0.65,
+            technology_quality=0.75,
+            curriculum_flexibility=0.60,
         ),
         environment=ODLEnvironment(total_weeks=14),
         reference_stats=ReferenceStatistics(dropout_rate=0.25, age_mean=26.0),
@@ -71,6 +87,13 @@ PROFILES: dict[str, BenchmarkProfile] = {
             self_regulation_mean=0.65,
             dropout_base_rate=0.25,
             has_family_rate=0.45,
+        ),
+        institutional_config=InstitutionalConfig(
+            instructional_design_quality=0.85,
+            teaching_presence_baseline=0.80,
+            support_services_quality=0.90,
+            technology_quality=0.90,
+            curriculum_flexibility=0.80,
         ),
         environment=ODLEnvironment(total_weeks=14),
         reference_stats=ReferenceStatistics(
@@ -91,6 +114,13 @@ PROFILES: dict[str, BenchmarkProfile] = {
             digital_literacy_mean=0.45,
             self_regulation_mean=0.40,
             dropout_base_rate=0.90,
+        ),
+        institutional_config=InstitutionalConfig(
+            instructional_design_quality=0.50,
+            teaching_presence_baseline=0.45,
+            support_services_quality=0.40,
+            technology_quality=0.60,
+            curriculum_flexibility=0.40,
         ),
         environment=ODLEnvironment(total_weeks=14),
         reference_stats=ReferenceStatistics(

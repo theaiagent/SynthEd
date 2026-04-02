@@ -22,6 +22,7 @@ from .agents.factory import StudentFactory
 from .calibration import CalibrationMap
 from .simulation.environment import ODLEnvironment
 from .simulation.engine import SimulationEngine
+from .simulation.institutional import InstitutionalConfig
 from .data_output.exporter import DataExporter
 from .data_output.oulad_exporter import OuladExporter
 from .validation.validator import SyntheticDataValidator, ReferenceStatistics
@@ -49,6 +50,7 @@ class SynthEdPipeline:
         self,
         persona_config: PersonaConfig | None = None,
         environment: ODLEnvironment | None = None,
+        institutional_config: InstitutionalConfig | None = None,
         reference_stats: ReferenceStatistics | None = None,
         output_dir: str = "./output",
         llm_model: str = "gpt-4o-mini",
@@ -64,6 +66,7 @@ class SynthEdPipeline:
     ):
         self.persona_config = persona_config or PersonaConfig()
         self.environment = environment or ODLEnvironment()
+        self.institutional_config = institutional_config or InstitutionalConfig()
         self.reference = reference_stats or ReferenceStatistics()
         self.output_dir = Path(output_dir)
         self.use_llm = use_llm
@@ -88,6 +91,7 @@ class SynthEdPipeline:
             llm_client=self.llm,
             seed=seed,
             unavoidable_withdrawal_rate=self.persona_config.unavoidable_withdrawal_rate,
+            institutional_config=self.institutional_config,
         )
         self.exporter = DataExporter(output_dir=str(self.output_dir))
         self.validator = SyntheticDataValidator(reference=self.reference)
@@ -188,6 +192,7 @@ class SynthEdPipeline:
         return cls(
             persona_config=profile.persona_config,
             environment=profile.environment,
+            institutional_config=profile.institutional_config,
             reference_stats=profile.reference_stats,
             output_dir=output_dir,
             use_llm=use_llm,
