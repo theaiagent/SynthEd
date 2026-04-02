@@ -132,6 +132,28 @@ report = pipeline.run(n_students=300)
 
 ---
 
+## 🏛️ Institutional Configuration
+
+`InstitutionalConfig` models 5 institution-level quality parameters that modulate theory constants via multiplicative scaling (identity at 0.5):
+
+```python
+from synthed.simulation.institutional import InstitutionalConfig
+
+ic = InstitutionalConfig(
+    instructional_design_quality=0.7,   # Course design clarity
+    teaching_presence_baseline=0.6,     # Instructor presence
+    support_services_quality=0.8,       # Tutoring, counseling
+    technology_quality=0.9,             # LMS usability
+    curriculum_flexibility=0.6,         # Course adaptability
+)
+pipeline = SynthEdPipeline(institutional_config=ic, seed=42)
+report = pipeline.run(n_students=300)
+```
+
+All values range 0-1 (default 0.5 = neutral). Values above 0.5 improve student outcomes; below 0.5 degrade them.
+
+---
+
 ## 🎯 Dropout Targeting
 
 Instead of manually tuning `dropout_base_rate`, specify the desired range:
@@ -201,16 +223,16 @@ md = gen.generate_report(output_dir="./benchmarks")  # writes benchmark_report.m
 
 | Profile | Scenario | Expected Dropout |
 |---------|----------|-----------------|
-| `high_dropout_developing` | Developing country ODL | 50-66% |
+| `high_dropout_developing` | Developing country ODL | 55-80% |
 | `moderate_dropout_western` | Western university | 15-35% |
-| `low_dropout_corporate` | Corporate training | 5-25% |
-| `mega_university` | Mega university | 35-55% |
+| `low_dropout_corporate` | Corporate training | 2-25% |
+| `mega_university` | Mega university | 35-60% |
 
 ---
 
 ## 🔬 Calibration Pipeline
 
-Three-phase pipeline for tuning SynthEd parameters against real data (e.g., OULAD).
+Four-phase pipeline for tuning SynthEd parameters against real data (e.g., OULAD).
 
 ### Phase 1: Sobol Sensitivity Analysis
 
@@ -280,6 +302,21 @@ params = auto_bounds(config=my_config, margin=0.3)
 | `include_engine` | True | Include engine constants |
 | `include_theories` | True | Include theory module constants |
 | `exclude` | `frozenset()` | Specific parameters to skip |
+
+### Phase 4: NSGA-II Multi-Objective Calibration
+
+When dropout and GPA objectives conflict, NSGA-II explores the Pareto front instead of collapsing to a single weighted loss:
+
+```python
+from synthed.analysis.nsga2_calibrator import NSGAIICalibrator
+
+calibrator = NSGAIICalibrator(n_students=100, seed=42)
+result = calibrator.run("moderate_dropout_western", n_trials=8000)
+print(f"Pareto front: {len(result.pareto_front)} solutions")
+print(f"Knee-point dropout error: {result.knee_point.dropout_error:.4f}")
+```
+
+The knee-point solution balances both objectives and is recommended as the default starting point for further tuning.
 
 ---
 
@@ -415,6 +452,7 @@ metrics = run_simulation_with_overrides(
 | `garrison.*` | GarrisonCoI | `garrison._SOCIAL_DECAY` |
 | `gonzalez.*` | GonzalezExhaustion | `gonzalez._ENGAGEMENT_IMPACT` |
 | `moore.*` | MooreTransactionalDistance | `moore._STRUCTURE_WEIGHT` |
+| `inst.*` | InstitutionalConfig | `inst.technology_quality` |
 
 ---
 

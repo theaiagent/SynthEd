@@ -19,6 +19,7 @@
 flowchart TD
     CM["CalibrationMap\ntarget dropout range -> params"]
     BP["Benchmark Profiles / JSON Config"]
+    IC["InstitutionalConfig\n5 quality parameters"]
     PC["PersonaConfig\nadjusted parameters"]
 
     CM --> PC
@@ -26,6 +27,7 @@ flowchart TD
 
     SF["Student Factory\n4 clusters (Rovai 2003)\nBig Five, SDT, Bean & Metzner, Moore"]
     PC --> SF
+    IC --> engine
 
     SF -->|"N students\nwith UUIDv7 id + display_id"| engine
 
@@ -120,6 +122,22 @@ Unlike static persona-based theories, Epstein & Axtell's ABSS framework produces
 
 ---
 
+## 🏛️ Institutional Quality
+
+Non-academic institutional factors are a major driver of student outcomes. Gonzalez et al. (2025) found that 86.4% of dropout variance is explained by non-academic mechanisms -- including institutional support, technology infrastructure, and course design quality. SynthEd captures this through five institution-level parameters in `InstitutionalConfig`:
+
+| Parameter | Theoretical Grounding |
+|-----------|----------------------|
+| `instructional_design_quality` | Garrison CoI teaching presence, Moore structure |
+| `teaching_presence_baseline` | Garrison CoI, Rovai persistence |
+| `support_services_quality` | Bean & Metzner environmental factors |
+| `technology_quality` | Moore transactional distance, Rovai digital access |
+| `curriculum_flexibility` | Moore dialogue, Kember cost-benefit |
+
+Each parameter ranges 0-1 with 0.5 as neutral. The `scale_by()` method applies multiplicative modulation to theory constants: values above 0.5 improve the constant (e.g., stronger teaching presence, lower transactional distance), while values below 0.5 degrade it. At 0.5 the modulation is identity -- theory constants remain unchanged, preserving backward compatibility with existing calibrations.
+
+---
+
 ## 📁 Project Structure
 
 ```
@@ -134,6 +152,7 @@ SynthEd/
 │   │   ├── environment.py       # ODL course structure + positive events
 │   │   ├── social_network.py    # Peer network with link decay
 │   │   ├── semester.py          # Multi-semester with carry-over
+│   │   ├── institutional.py     # InstitutionalConfig (5 quality parameters)
 │   │   └── theories/            # 11 modules, one per theoretical framework
 │   ├── data_output/
 │   │   ├── exporter.py          # CSV export (4 standard files)
@@ -148,6 +167,8 @@ SynthEd/
 │   │   ├── oulad_targets.py     # OULAD reference data extraction
 │   │   ├── oulad_validator.py   # Held-out module validation
 │   │   ├── auto_bounds.py       # Adaptive parameter bounds
+│   │   ├── nsga2_calibrator.py  # NSGA-II multi-objective calibration
+│   │   ├── pareto_utils.py      # Pareto front utilities
 │   │   └── _sim_runner.py       # Shared simulation runner
 │   ├── benchmarks/
 │   │   ├── profiles.py          # 4 institutional profiles
@@ -159,7 +180,7 @@ SynthEd/
 │   │   └── validation.py        # Input validation utilities
 │   ├── calibration.py           # CalibrationMap: target dropout -> params
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                       # 520 pytest tests across 30 files
+├── tests/                       # 565 pytest tests across 36 files
 ├── docs/
 │   ├── GUIDE.md                 # User guide
 │   └── THEORY.md                # This file
@@ -188,7 +209,7 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 
 ## 🧪 Test Suite
 
-520 pytest tests across 30 files:
+565 pytest tests (562 `def test_` definitions, expanded by `@pytest.mark.parametrize`) across 36 files:
 
 | Test File | Tests | Coverage |
 |-----------|-------|----------|
@@ -207,10 +228,10 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 | `test_backstory_templates.py` | 17 | Templates, life events, regional contexts |
 | `test_name_pools.py` | 11 | Name pools, determinism, country context |
 | `test_sobol.py` | 26 | Parameter space, sampling, overrides, ranking, validation |
-| `test_trait_calibration.py` | 40 | OULAD targets, Optuna, loss functions, held-out validation |
+| `test_trait_calibration.py` | 39 | OULAD targets, Optuna, loss functions, held-out validation |
 | `test_auto_bounds.py` | 20 | Generation, clipping, filtering, compatibility, edge cases |
 | `test_sensitivity.py` | 2 | OAT sweep, tornado chart |
-| `test_validator.py` | 10 | Report structure, z-test, grades, dropout range |
+| `test_validator.py` | 9 | Report structure, z-test, grades, dropout range |
 | `test_calibration.py` | 11 | Interpolation, clamping, confidence, range estimation |
 | `test_oulad_export.py` | 35 | Mappings, 7-table export, schema, determinism |
 | `test_benchmarks.py` | 15 | Profiles, generator, report formatting, error handling |
@@ -221,6 +242,11 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 | `test_utils.py` | 14 | Validation helpers, logging config |
 | `test_network_scaling.py` | 4 | Degree cap, sampling threshold |
 | `test_coverage_boost.py` | 37 | Edge cases, pipeline branches, Baulke phases |
+| `test_coverage_gaps.py` | 8 | Additional coverage edge cases |
+| `test_institutional_config.py` | 15 | InstitutionalConfig validation, scale_by, defaults |
+| `test_institutional_integration.py` | 5 | Pipeline integration with InstitutionalConfig |
+| `test_nsga2_calibrator.py` | 12 | NSGA-II calibration, Pareto front, knee-point |
+| `test_pareto_utils.py` | 10 | Pareto dominance, front extraction, utilities |
 | `test_unavoidable_withdrawal.py` | 9 | Withdrawal probability, event types |
 | `test_gpa.py` | 9 | GPA accumulation, bounds, feedback loop |
 
