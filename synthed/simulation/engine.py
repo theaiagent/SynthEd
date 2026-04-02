@@ -575,7 +575,8 @@ class SimulationEngine:
             r.interaction_type in ("assignment_submit", "exam") for r in records
         )
         if context.get("is_exam_week") or state.missed_assignments_streak >= 2 or has_graded_item:
-            self.kember.recalculate(student, state, context, records, avg_td)
+            self.kember.recalculate(student, state, context, records, avg_td,
+                                    week=week, total_weeks=self.env.total_weeks)
             # Cost-benefit feeds back into engagement
             engagement += (state.perceived_cost_benefit - 0.5) * self._CB_FEEDBACK_FACTOR
 
