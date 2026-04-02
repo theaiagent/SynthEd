@@ -26,6 +26,7 @@ import numpy as np
 
 from ..agents.persona import StudentPersona
 from .environment import ODLEnvironment
+from .institutional import InstitutionalConfig, scale_by
 from .social_network import SocialNetwork
 from ..utils.llm import LLMClient
 from .theories import (
@@ -223,8 +224,10 @@ class SimulationEngine:
         seed: int = 42,
         mode: str = "rule_based",
         unavoidable_withdrawal_rate: float = 0.0,
+        institutional_config: InstitutionalConfig | None = None,
     ):
         self.env = environment
+        self.inst = institutional_config or InstitutionalConfig()
         self.llm = llm_client
         self.rng = np.random.default_rng(seed)
         self.mode = mode
@@ -286,6 +289,9 @@ class SimulationEngine:
                 social_integration=student.social_integration,
                 perceived_cost_benefit=student.perceived_cost_benefit,
                 courses_active=course_ids,
+                coi_state=CommunityOfInquiryState(
+                    teaching_presence=self.inst.teaching_presence_baseline,
+                ),
                 sdt_needs=SDTNeedSatisfaction(
                     autonomy=student.learner_autonomy,
                     competence=student.self_efficacy,
@@ -381,7 +387,8 @@ class SimulationEngine:
                 continue
 
             # ── LMS Logins (Rovai: accessibility) ──
-            login_rate = engagement * self._LOGIN_ENG_MULTIPLIER * (self._LOGIN_LITERACY_FLOOR + self._LOGIN_LITERACY_SCALE * student.digital_literacy)
+            effective_login_floor = scale_by(self._LOGIN_LITERACY_FLOOR, self.inst.technology_quality)
+            login_rate = engagement * self._LOGIN_ENG_MULTIPLIER * (effective_login_floor + self._LOGIN_LITERACY_SCALE * student.digital_literacy)
             n_logins = max(0, int(self.rng.poisson(login_rate)))
             for _ in range(n_logins):
                 if student.is_employed:
@@ -400,7 +407,8 @@ class SimulationEngine:
 
             # ── Forum Activity (Tinto: social integration) ──
             if course.has_forum:
-                read_prob = engagement * self._FORUM_READ_ENG_FACTOR * (self._FORUM_READ_LITERACY_FLOOR + self._FORUM_READ_LITERACY_SCALE * student.digital_literacy)
+                effective_forum_floor = scale_by(self._FORUM_READ_LITERACY_FLOOR, self.inst.technology_quality)
+                read_prob = engagement * self._FORUM_READ_ENG_FACTOR * (effective_forum_floor + self._FORUM_READ_LITERACY_SCALE * student.digital_literacy)
                 if self.rng.random() < read_prob:
                     records.append(InteractionRecord(
                         student_id=student.id, week=week, course_id=course_id,
