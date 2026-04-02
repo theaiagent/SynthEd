@@ -107,12 +107,7 @@ class NSGAIICalibrator:
 
         # Targets and fixed overrides
         target_dropout = profile.reference_stats.dropout_rate
-        target_gpa = (
-            profile.reference_stats.gpa_mean
-            if hasattr(profile.reference_stats, "gpa_mean")
-            and profile.reference_stats.gpa_mean is not None
-            else 2.5
-        )
+        target_gpa = profile.reference_stats.gpa_mean
         fixed_overrides = self._build_fixed_overrides(profile)
         lo, hi = profile.expected_dropout_range
 
@@ -236,6 +231,7 @@ class NSGAIICalibrator:
                 n_students=n_students,
                 seed=s,
                 default_config=profile.persona_config,
+                calibration_mode=True,
             )
             dropouts.append(result["dropout_rate"])
             gpas.append(result["mean_gpa"])

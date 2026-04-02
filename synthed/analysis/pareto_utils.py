@@ -2,12 +2,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 import numpy as np
-
-if TYPE_CHECKING:
-    from ..benchmarks.profiles import BenchmarkProfile
 
 
 @dataclass(frozen=True)
@@ -43,6 +39,8 @@ def find_knee_point(front: tuple[ParetoSolution, ...]) -> ParetoSolution:
     Sorts by dropout_error first (Optuna best_trials are unordered).
     Uses scalar cross product to avoid np.cross deprecation in NumPy 2.x.
     """
+    if not front:
+        raise ValueError("find_knee_point requires at least one solution")
     if len(front) <= 2:
         return front[0]
 
@@ -68,14 +66,3 @@ def find_knee_point(front: tuple[ParetoSolution, ...]) -> ParetoSolution:
         line_vec[0] * diffs[:, 1] - line_vec[1] * diffs[:, 0]
     ) / line_len
     return sorted_front[int(np.argmax(distances))]
-
-
-def apply_pareto_to_profile(
-    profile: BenchmarkProfile,
-    result: ParetoResult,
-) -> dict[str, float]:
-    """Extract knee-point engine/theory overrides for a profile.
-
-    Returns the parameter dict to apply via run_simulation_with_overrides().
-    """
-    return dict(result.knee_point.params)

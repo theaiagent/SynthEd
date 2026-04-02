@@ -143,7 +143,7 @@ SynthEd/
 │   │   └── validator.py         # 21 statistical validation tests
 │   ├── analysis/
 │   │   ├── sensitivity.py       # OAT parameter sweeps
-│   │   ├── sobol_sensitivity.py # Sobol variance decomposition (61 params)
+│   │   ├── sobol_sensitivity.py # Sobol variance decomposition (66 params)
 │   │   ├── trait_calibrator.py  # Optuna Bayesian optimization
 │   │   ├── oulad_targets.py     # OULAD reference data extraction
 │   │   ├── oulad_validator.py   # Held-out module validation

@@ -63,6 +63,10 @@ class TestParetoResult:
 
 
 class TestFindKneePoint:
+    def test_empty_front_raises(self):
+        with pytest.raises(ValueError, match="at least one"):
+            find_knee_point(())
+
     def test_single_solution(self):
         sol = _sol(0.1, 0.2)
         assert find_knee_point((sol,)) is sol
