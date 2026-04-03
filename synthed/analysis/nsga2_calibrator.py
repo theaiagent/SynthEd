@@ -128,6 +128,8 @@ class NSGAIICalibrator:
             trial.set_user_attr("achieved_dropout", result["dropout_rate"])
             trial.set_user_attr("achieved_gpa", result["mean_gpa"])
             trial.set_user_attr("achieved_engagement", result["mean_engagement"])
+            trial.set_user_attr("pass_rate", result.get("pass_rate", 0.0))
+            trial.set_user_attr("distinction_rate", result.get("distinction_rate", 0.0))
 
             dropout_error = abs(result["dropout_rate"] - target_dropout)
             gpa_error = abs(result["mean_gpa"] - target_gpa)

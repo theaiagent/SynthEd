@@ -15,6 +15,7 @@ from dataclasses import fields, replace
 
 from ..agents.persona import PersonaConfig
 from ..pipeline import SynthEdPipeline
+from ..simulation.grading import GradingConfig
 from ..simulation.institutional import InstitutionalConfig
 
 logger = logging.getLogger(__name__)
@@ -60,6 +61,7 @@ def run_simulation_with_overrides(
     engine_overrides: dict[str, float] = {}
     theory_overrides: dict[str, dict[str, float]] = {}
     inst_overrides: dict[str, float] = {}
+    grading_overrides: dict[str, float] = {}
 
     for key, value in overrides.items():
         prefix, _, attr = key.partition(".")
@@ -69,11 +71,14 @@ def run_simulation_with_overrides(
             engine_overrides[attr] = value
         elif prefix == "inst":
             inst_overrides[attr] = value
+        elif prefix == "grading":
+            grading_overrides[attr] = value
         else:
             theory_overrides.setdefault(prefix, {})[attr] = value
 
     config = _build_config(default_config, config_overrides)
     inst_config = replace(InstitutionalConfig(), **inst_overrides) if inst_overrides else None
+    grading_config = replace(GradingConfig(), **grading_overrides) if grading_overrides else None
 
     tmp_dir = tempfile.mkdtemp(prefix="synthed_analysis_")
     try:
@@ -82,6 +87,7 @@ def run_simulation_with_overrides(
             output_dir=tmp_dir,
             seed=seed,
             institutional_config=inst_config,
+            grading_config=grading_config,
             _calibration_mode=calibration_mode,
         )
         _apply_engine_overrides(pipeline, engine_overrides, theory_overrides)
@@ -103,6 +109,9 @@ def run_simulation_with_overrides(
             "mean_engagement": float(engagement),
             "mean_gpa": float(gpa),
             "std_engagement": float(engagement_std) if engagement_std is not None else 0.0,
+            "pass_rate": float(summary.get("pass_rate", 0.0)),
+            "distinction_rate": float(summary.get("distinction_rate", 0.0)),
+            "fail_rate": float(summary.get("fail_rate", 0.0)),
         }
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)

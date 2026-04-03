@@ -37,7 +37,7 @@ class TestParameterSpace:
         known_prefixes = {
             "config", "engine", "tinto", "bean", "kember",
             "baulke", "sdt", "rovai", "garrison", "gonzalez",
-            "moore", "epstein", "inst",
+            "moore", "epstein", "inst", "grading",
         }
         for p in SOBOL_PARAMETER_SPACE:
             prefix = p.name.split(".")[0]

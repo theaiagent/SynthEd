@@ -14,7 +14,7 @@ from synthed.analysis.sobol_sensitivity import SobolRanking
 class TestSelectNsga2Parameters:
     def _make_rankings(self) -> list[SobolRanking]:
         return [
-            SobolRanking(parameter="engine._GRADE_FLOOR", s1=0.2, st=0.3, interaction=0.1, rank=1),
+            SobolRanking(parameter="grading.grade_floor", s1=0.2, st=0.3, interaction=0.1, rank=1),
             SobolRanking(parameter="config.employment_rate", s1=0.15, st=0.25, interaction=0.1, rank=2),
             SobolRanking(parameter="inst.technology_quality", s1=0.1, st=0.2, interaction=0.1, rank=3),
             SobolRanking(parameter="kember._QUALITY_FACTOR", s1=0.08, st=0.15, interaction=0.07, rank=4),
@@ -33,7 +33,7 @@ class TestSelectNsga2Parameters:
         rankings = self._make_rankings()
         result = select_nsga2_parameters(rankings, top_n=3)
         names = [p.name for p in result]
-        assert "engine._GRADE_FLOOR" in names
+        assert "grading.grade_floor" in names
 
     def test_returns_tuple_of_sobol_parameters(self):
         rankings = self._make_rankings()
@@ -117,7 +117,7 @@ class TestNSGAIIIntegration:
         )
 
         rankings = [
-            SobolRanking(parameter="engine._GRADE_FLOOR", s1=0.2, st=0.3, interaction=0.1, rank=1),
+            SobolRanking(parameter="grading.grade_floor", s1=0.2, st=0.3, interaction=0.1, rank=1),
             SobolRanking(parameter="kember._QUALITY_FACTOR", s1=0.15, st=0.25, interaction=0.1, rank=2),
             SobolRanking(parameter="gonzalez._RECOVERY_BASE", s1=0.1, st=0.2, interaction=0.1, rank=3),
             SobolRanking(parameter="baulke._DECISION_RISK_MULTIPLIER", s1=0.08, st=0.15, interaction=0.07, rank=4),
@@ -145,7 +145,7 @@ class TestNSGAIIIntegration:
         """Test validate_solution returns (dropout_mean, dropout_std, gpa_mean, gpa_std)."""
         cal = NSGAIICalibrator(n_students=30, seed=42)
         solution = ParetoSolution(
-            params={"engine._GRADE_FLOOR": 0.45},
+            params={"grading.grade_floor": 0.45},
             dropout_error=0.05,
             gpa_error=0.1,
             engagement_error=0.05,
