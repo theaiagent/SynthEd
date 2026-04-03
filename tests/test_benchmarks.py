@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import warnings
 
 import pytest
 
@@ -36,20 +35,6 @@ class TestBenchmarkProfiles:
         expected = {"default"}
         assert set(PROFILES.keys()) == expected
 
-    def test_deprecated_alias_warns(self):
-        """Accessing 'mega_university' should emit DeprecationWarning."""
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            profile = PROFILES["mega_university"]
-            assert len(w) == 1
-            assert issubclass(w[0].category, DeprecationWarning)
-            assert "renamed" in str(w[0].message)
-            assert profile.name == "default"
-
-    def test_removed_profile_raises(self):
-        """Accessing removed profiles should raise KeyError."""
-        with pytest.raises(KeyError, match="has been removed"):
-            PROFILES["high_dropout_developing"]
 
 
 class TestBenchmarkGenerator:
@@ -88,7 +73,6 @@ class TestBenchmarkGenerator:
 
     def test_unknown_profile_raises(self):
         """generate() with unknown profile name should raise ValueError."""
-        import pytest
         gen = BenchmarkGenerator()
         with pytest.raises(ValueError, match="Unknown profile"):
             gen.generate("nonexistent_profile", output_dir="/tmp/test")

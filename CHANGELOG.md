@@ -20,9 +20,9 @@ All notable changes to SynthEd are documented here.
 - Sobol space: removed dead dist_alpha/dist_beta, added outcome-affecting params (69 total)
 - T-score standardization uses population std (ddof=0) instead of sample std
 
-### Deprecated
-- Profile names "high_dropout_developing", "moderate_dropout_western", "low_dropout_corporate" removed. Use "default" and customize directly.
-- "mega_university" alias emits DeprecationWarning, will be removed in v2.0.
+### Removed
+- Benchmark profiles "high_dropout_developing", "moderate_dropout_western", "low_dropout_corporate", "mega_university" replaced by single "default" profile
+- `_DeprecatedProfileDict` backward compatibility wrapper
 
 ### Fixed
 - Grade floor now applied before outcome classification (was comparing raw quality against transcript-scale thresholds)
