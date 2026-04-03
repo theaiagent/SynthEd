@@ -49,9 +49,9 @@ class GradingConfig:
     midterm_components: dict[str, float] = field(
         default_factory=lambda: {"exam": 0.50, "assignment": 0.30, "forum": 0.20}
     )
-    distribution: str = "beta"
-    dist_alpha: float = 5.0
-    dist_beta: float = 3.0
+    distribution: str = "beta"  # Used by sample_base_quality() (not called by engine)
+    dist_alpha: float = 5.0     # Used by sample_base_quality() (not called by engine)
+    dist_beta: float = 3.0      # Used by sample_base_quality() (not called by engine)
     grading_method: str = "absolute"
     grade_floor: float = 0.45
     pass_threshold: float = 0.64
@@ -60,7 +60,7 @@ class GradingConfig:
     component_pass_thresholds: dict[str, float] = field(default_factory=dict)
     exam_eligibility_threshold: float | None = None
     late_penalty: float = 0.05
-    noise_std: float = 0.05
+    noise_std: float = 0.05  # Used by compute_grade() only (not called by engine)
     missing_policy: str = "zero"
 
     def __post_init__(self) -> None:
@@ -149,7 +149,12 @@ def compute_grade(
     config: GradingConfig,
     rng: np.random.Generator | None = None,
 ) -> float:
-    """Apply grade floor, measurement noise, and scale conversion."""
+    """Apply grade floor, measurement noise, and scale conversion.
+
+    Note: Not called by SimulationEngine. The engine applies grade_floor
+    in _record_graded_item and _assign_outcomes separately. Available for
+    external use and Sobol analysis.
+    """
     graded = config.grade_floor + (1.0 - config.grade_floor) * quality
     if rng is not None and config.noise_std > 0:
         graded += rng.normal(0.0, config.noise_std)
@@ -158,7 +163,11 @@ def compute_grade(
 
 
 def sample_base_quality(config: GradingConfig, rng: np.random.Generator) -> float:
-    """Sample base quality from institution's grade distribution."""
+    """Sample base quality from institution's grade distribution.
+
+    Note: Not called by SimulationEngine. The engine computes quality
+    directly from persona traits. Available for external use and future versions.
+    """
     if config.distribution == "beta":
         raw = rng.beta(config.dist_alpha, config.dist_beta)
     elif config.distribution == "normal":
@@ -178,6 +187,9 @@ def apply_relative_grading(raw_scores: list[float]) -> list[float]:
 
     Returns 50.0 for single-student, identical-score, or n<2 cases.
     Warns if n < 30.
+
+    Note: Not wired to engine (grading_method='relative' is rejected).
+    Reserved for future implementation.
     """
     if len(raw_scores) < 2:
         return [50.0] * len(raw_scores)
