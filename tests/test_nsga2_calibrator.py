@@ -61,23 +61,23 @@ class TestNSGAIICalibrator:
     def test_build_fixed_overrides_includes_float_fields(self):
         from synthed.benchmarks.profiles import PROFILES
         cal = NSGAIICalibrator()
-        profile = PROFILES["moderate_dropout_western"]
+        profile = PROFILES["default"]
         overrides = cal._build_fixed_overrides(profile)
         assert "config.employment_rate" in overrides
         assert "inst.technology_quality" in overrides
-        assert overrides["inst.technology_quality"] == 0.75
+        assert overrides["inst.technology_quality"] == 0.60
 
     def test_build_fixed_overrides_excludes_bool_fields(self):
         from synthed.benchmarks.profiles import PROFILES
         cal = NSGAIICalibrator()
-        profile = PROFILES["moderate_dropout_western"]
+        profile = PROFILES["default"]
         overrides = cal._build_fixed_overrides(profile)
         assert "config.generate_names" not in overrides
 
     def test_build_fixed_overrides_all_values_are_float(self):
         from synthed.benchmarks.profiles import PROFILES
         cal = NSGAIICalibrator()
-        profile = PROFILES["moderate_dropout_western"]
+        profile = PROFILES["default"]
         overrides = cal._build_fixed_overrides(profile)
         for key, val in overrides.items():
             assert isinstance(val, float), f"{key} is not float: {type(val)}"
@@ -106,7 +106,7 @@ class TestNSGAIIIntegration:
 
         def _mock_sim(**kwargs):
             return {
-                "dropout_rate": 0.15 + rng.random() * 0.20,  # 0.15-0.35
+                "dropout_rate": 0.35 + rng.random() * 0.25,  # 0.35-0.60
                 "mean_gpa": 2.0 + rng.random() * 1.5,        # 2.0-3.5
                 "mean_engagement": 0.3 + rng.random() * 0.4,  # 0.3-0.7
             }
@@ -126,7 +126,7 @@ class TestNSGAIIIntegration:
 
         cal = NSGAIICalibrator(n_students=30, seed=42)
         result = cal.run(
-            profile_name="moderate_dropout_western",
+            profile="default",
             pop_size=5,
             n_trials=20,
             sobol_rankings=rankings,
@@ -134,7 +134,7 @@ class TestNSGAIIIntegration:
         )
 
         assert isinstance(result, ParetoResult)
-        assert result.profile_name == "moderate_dropout_western"
+        assert result.profile_name == "default"
         assert len(result.pareto_front) > 0
         assert result.knee_point is not None
         assert result.n_evaluations == 20
@@ -155,7 +155,7 @@ class TestNSGAIIIntegration:
         )
         d_mean, d_std, g_mean, g_std = cal.validate_solution(
             solution,
-            profile_name="moderate_dropout_western",
+            profile="default",
             n_students=30,
             seeds=(42, 123),
         )

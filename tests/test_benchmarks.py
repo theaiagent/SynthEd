@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import json
+import warnings
+
+import pytest
 
 from synthed.benchmarks.profiles import PROFILES, BenchmarkProfile
 from synthed.benchmarks.generator import BenchmarkGenerator
@@ -12,8 +15,8 @@ class TestBenchmarkProfiles:
     """Tests for the pre-defined benchmark profile registry."""
 
     def test_profiles_exist(self):
-        """PROFILES dict should have 4 entries."""
-        assert len(PROFILES) == 4
+        """PROFILES dict should have 1 entry."""
+        assert len(PROFILES) == 1
 
     def test_profile_structure(self):
         """Each profile should have required attributes."""
@@ -30,13 +33,23 @@ class TestBenchmarkProfiles:
 
     def test_profile_names(self):
         """Expected profile names should be present."""
-        expected = {
-            "high_dropout_developing",
-            "moderate_dropout_western",
-            "low_dropout_corporate",
-            "mega_university",
-        }
+        expected = {"default"}
         assert set(PROFILES.keys()) == expected
+
+    def test_deprecated_alias_warns(self):
+        """Accessing 'mega_university' should emit DeprecationWarning."""
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            profile = PROFILES["mega_university"]
+            assert len(w) == 1
+            assert issubclass(w[0].category, DeprecationWarning)
+            assert "renamed" in str(w[0].message)
+            assert profile.name == "default"
+
+    def test_removed_profile_raises(self):
+        """Accessing removed profiles should raise KeyError."""
+        with pytest.raises(KeyError, match="has been removed"):
+            PROFILES["high_dropout_developing"]
 
 
 class TestBenchmarkGenerator:
@@ -44,7 +57,7 @@ class TestBenchmarkGenerator:
 
     def test_generator_runs(self, tmp_path):
         """generate() with overridden small n_students should return valid report."""
-        profile = PROFILES["moderate_dropout_western"]
+        profile = PROFILES["default"]
 
         # Use the pipeline directly with small n_students
         from synthed.pipeline import SynthEdPipeline
@@ -67,7 +80,7 @@ class TestBenchmarkGenerator:
         profiles = gen.list_profiles()
 
         assert isinstance(profiles, dict)
-        assert len(profiles) == 4
+        assert len(profiles) == 1
         for name, desc in profiles.items():
             assert isinstance(name, str)
             assert isinstance(desc, str)
@@ -85,7 +98,7 @@ class TestBenchmarkGenerator:
         from unittest.mock import patch
 
         mock_report = {
-            "simulation_summary": {"dropout_rate": 0.15},
+            "simulation_summary": {"dropout_rate": 0.45},
         }
         with patch(
             "synthed.benchmarks.generator.SynthEdPipeline"
@@ -93,15 +106,15 @@ class TestBenchmarkGenerator:
             MockPipeline.return_value.run.return_value = mock_report
             gen = BenchmarkGenerator()
             report = gen.generate(
-                "low_dropout_corporate",
+                "default",
                 output_dir=str(tmp_path / "benchmark"),
             )
 
         assert "benchmark_validation" in report
         bv = report["benchmark_validation"]
-        assert bv["profile"] == "low_dropout_corporate"
-        assert bv["actual_dropout_rate"] == 0.15
-        # 0.15 is within (0.05, 0.30)
+        assert bv["profile"] == "default"
+        assert bv["actual_dropout_rate"] == 0.45
+        # 0.45 is within (0.35, 0.60)
         assert bv["in_expected_range"] is True
 
     def test_generate_valid_profile_out_of_range(self, tmp_path):
@@ -117,12 +130,12 @@ class TestBenchmarkGenerator:
             MockPipeline.return_value.run.return_value = mock_report
             gen = BenchmarkGenerator()
             report = gen.generate(
-                "low_dropout_corporate",
+                "default",
                 output_dir=str(tmp_path / "benchmark"),
             )
 
         bv = report["benchmark_validation"]
-        # 0.95 is outside (0.05, 0.30)
+        # 0.95 is outside (0.35, 0.60)
         assert bv["in_expected_range"] is False
 
     def test_generate_default_output_dir(self):
@@ -137,7 +150,7 @@ class TestBenchmarkGenerator:
         ) as MockPipeline:
             MockPipeline.return_value.run.return_value = mock_report
             gen = BenchmarkGenerator()
-            report = gen.generate("moderate_dropout_western")
+            report = gen.generate("default")
 
         assert "benchmark_validation" in report
 
@@ -192,12 +205,9 @@ class TestBenchmarkReport:
         }
 
     def test_format_report_contains_all_profiles(self):
-        """_format_report should mention every profile name."""
+        """_format_report should mention the default profile name."""
         results = [
-            self._make_mock_report("high_dropout_developing", dropout=0.72),
-            self._make_mock_report("moderate_dropout_western", dropout=0.45),
-            self._make_mock_report("low_dropout_corporate", dropout=0.15),
-            self._make_mock_report("mega_university", dropout=0.68),
+            self._make_mock_report("default", dropout=0.45),
         ]
         md = BenchmarkGenerator._format_report(results, elapsed=5.0)
 
@@ -206,7 +216,7 @@ class TestBenchmarkReport:
 
     def test_format_report_markdown_structure(self):
         """Report should have expected headers and table."""
-        results = [self._make_mock_report("moderate_dropout_western")]
+        results = [self._make_mock_report("default")]
         md = BenchmarkGenerator._format_report(results, elapsed=1.0)
 
         assert "# SynthEd Benchmark Report" in md
@@ -218,8 +228,8 @@ class TestBenchmarkReport:
     def test_format_report_in_range_flag(self):
         """YES/NO flags should match expected range."""
         results = [
-            self._make_mock_report("low_dropout_corporate", dropout=0.15),
-            self._make_mock_report("low_dropout_corporate", dropout=0.95),
+            self._make_mock_report("default", dropout=0.45),
+            self._make_mock_report("default", dropout=0.95),
         ]
         # Override the second to be out of range
         results[1]["benchmark_validation"]["in_expected_range"] = False
@@ -230,7 +240,7 @@ class TestBenchmarkReport:
 
     def test_format_report_handles_none_gpa(self):
         """Report should not crash when GPA or engagement is None."""
-        report = self._make_mock_report("moderate_dropout_western")
+        report = self._make_mock_report("default")
         report["simulation_summary"]["mean_final_gpa"] = None
         report["simulation_summary"]["mean_final_engagement"] = None
         report["simulation_summary"]["mean_dropout_week"] = None
@@ -243,7 +253,7 @@ class TestBenchmarkReport:
         """generate_report should write .md and .json files."""
         from unittest.mock import patch
 
-        mock_report = self._make_mock_report("moderate_dropout_western")
+        mock_report = self._make_mock_report("default")
         with patch(
             "synthed.benchmarks.generator.SynthEdPipeline"
         ) as MockPipeline:
@@ -259,7 +269,7 @@ class TestBenchmarkReport:
         # Verify JSON is valid
         data = json.loads((tmp_path / "benchmark_results.json").read_text())
         assert isinstance(data, list)
-        assert len(data) == 4
+        assert len(data) == 1
 
         # Verify markdown returned
         assert "# SynthEd Benchmark Report" in md

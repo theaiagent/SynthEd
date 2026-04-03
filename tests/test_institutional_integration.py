@@ -84,10 +84,7 @@ class TestBenchmarkProfilesWithInstitutionalConfig:
     """Verify all 4 benchmark profiles stay in target range."""
 
     @pytest.mark.parametrize("profile_name", [
-        "high_dropout_developing",
-        "moderate_dropout_western",
-        "mega_university",
-        "low_dropout_corporate",
+        "default",
     ])
     def test_profile_in_expected_dropout_range(self, profile_name, tmp_path):
         from synthed.pipeline import SynthEdPipeline
