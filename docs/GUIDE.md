@@ -8,6 +8,7 @@ Practical guide for generating synthetic ODL data, calibrating against instituti
 - [CLI Usage](#-cli-usage)
 - [Python API](#-python-api)
 - [Population Configuration](#-population-configuration)
+- [Grading Configuration](#-grading-configuration)
 - [Dropout Targeting](#-dropout-targeting)
 - [Multi-Semester Simulation](#-multi-semester-simulation)
 - [Benchmark Profiles](#-benchmark-profiles)
@@ -151,6 +152,50 @@ report = pipeline.run(n_students=300)
 ```
 
 All values range 0-1 (default 0.5 = neutral). Values above 0.5 improve student outcomes; below 0.5 degrade them.
+
+---
+
+## 📊 Grading Configuration
+
+`GradingConfig` controls institution-level grading policy: grade distribution, semester weighting, pass/fail thresholds, and outcome classification.
+
+```python
+from synthed.simulation.grading import GradingConfig, GradingScale
+
+# Default: 100-point scale, 40/60 midterm/final, Beta(5,3)
+config = GradingConfig()
+
+# 4.0 GPA scale with piecewise conversion
+config = GradingConfig(scale=GradingScale.SCALE_4)
+
+# Corporate exam-only
+config = GradingConfig(
+    assessment_mode="exam_only",
+    midterm_weight=0.0, final_weight=1.0,
+    midterm_components={},
+    pass_threshold=0.85,
+)
+
+# Use in pipeline
+from synthed.pipeline import SynthEdPipeline
+pipeline = SynthEdPipeline(grading_config=config)
+```
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `scale` | `GradingScale.SCALE_100` | Grading scale (100-point or 4.0 GPA) |
+| `distribution` | `"beta"` | Grade distribution: `"beta"`, `"normal"`, `"uniform"` |
+| `midterm_weight` | `0.4` | Midterm contribution to semester grade |
+| `final_weight` | `0.6` | Final exam contribution to semester grade |
+| `pass_threshold` | `0.50` | Minimum transcript score to pass |
+| `distinction_threshold` | `0.85` | Minimum transcript score for distinction |
+| `grade_floor` | `0.45` | Floor applied to transcript GPA (not perceived mastery) |
+| `assessment_mode` | `"continuous"` | `"continuous"` (midterm+final) or `"exam_only"` |
+
+**Notes:**
+- `grade_floor` affects transcript GPA and outcome classification only. Theory modules (Kember, SDT, Baulke) use `perceived_mastery` (raw, no floor) for dropout signals.
+- Sobol sensitivity analysis uses the `grading.*` prefix for GradingConfig parameters.
+- GradingConfig is a frozen dataclass -- use `dataclasses.replace()` for overrides.
 
 ---
 
