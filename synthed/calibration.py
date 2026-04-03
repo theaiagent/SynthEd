@@ -37,25 +37,25 @@ class CalibrationEstimate:
 
 
 # Empirically measured calibration data (N=500, 5 seeds averaged per point).
-# Measured 2026-04-01 post grade-floor addition (engine._GRADE_FLOOR = 0.45).
+# Measured 2026-04-03 post GradingConfig addition.
 # IMPORTANT: Re-measure if theory modules, engine weights, or RNG-consuming
 #            code paths change (even non-dropout features shift RNG sequence).
 # TODO: Warn when n_students is small (e.g. <100) — stochastic variance
 #       makes calibration estimates unreliable at low N.
 CALIBRATION_DATA: tuple[CalibrationPoint, ...] = (
     # 1-semester sweep across dropout_base_rate values
-    CalibrationPoint(1, 0.20, 0.189, 500, 5),
-    CalibrationPoint(1, 0.30, 0.259, 500, 5),
-    CalibrationPoint(1, 0.40, 0.317, 500, 5),
-    CalibrationPoint(1, 0.50, 0.350, 500, 5),
-    CalibrationPoint(1, 0.60, 0.363, 500, 5),
-    CalibrationPoint(1, 0.70, 0.402, 500, 5),
-    CalibrationPoint(1, 0.80, 0.414, 500, 5),
-    CalibrationPoint(1, 0.90, 0.436, 500, 5),
-    CalibrationPoint(1, 0.95, 0.445, 500, 5),
+    CalibrationPoint(1, 0.20, 0.278, 500, 5),
+    CalibrationPoint(1, 0.30, 0.344, 500, 5),
+    CalibrationPoint(1, 0.40, 0.390, 500, 5),
+    CalibrationPoint(1, 0.50, 0.442, 500, 5),
+    CalibrationPoint(1, 0.60, 0.468, 500, 5),
+    CalibrationPoint(1, 0.70, 0.512, 500, 5),
+    CalibrationPoint(1, 0.80, 0.530, 500, 5),
+    CalibrationPoint(1, 0.90, 0.535, 500, 5),
+    CalibrationPoint(1, 0.95, 0.563, 500, 5),
     # Multi-semester at default rate (0.80)
-    CalibrationPoint(2, 0.80, 0.690, 500, 5),
-    CalibrationPoint(4, 0.80, 0.917, 500, 5),
+    CalibrationPoint(2, 0.80, 0.796, 500, 5),
+    CalibrationPoint(4, 0.80, 0.956, 500, 5),
 )
 
 # Bounds for dropout_base_rate

@@ -149,7 +149,11 @@ SOBOL_PARAMETER_SPACE: tuple[SobolParameter, ...] = (
     SobolParameter("engine._EXAM_ENG_WEIGHT", 0.05, 0.35, "Engagement → exam quality"),
     SobolParameter("engine._EXAM_EFFICACY_WEIGHT", 0.05, 0.35, "Self-efficacy → exam quality"),
     SobolParameter("engine._ASSIGN_SUBMIT_BASE", 0.15, 0.50, "Base assignment submission probability"),
-    SobolParameter("engine._GRADE_FLOOR", 0.30, 0.55, "Structural grade floor (partial credit)"),
+
+    # ── GradingConfig (Phase 5) ──
+    SobolParameter("grading.grade_floor", 0.30, 0.55, "Structural grade floor (partial credit)"),
+    SobolParameter("grading.dist_alpha", 2.0, 10.0, "Beta distribution α (grade quality shape)"),
+    SobolParameter("grading.dist_beta", 1.0, 8.0, "Beta distribution β (grade quality shape)"),
 
     # ── InstitutionalConfig (Phase 3.5) ──
     SobolParameter("inst.instructional_design_quality", 0.0, 1.0,
@@ -249,6 +253,11 @@ class SobolAnalyzer:
                 inst_fields = {f.name for f in fields(InstitutionalConfig)}
                 if attr not in inst_fields:
                     raise ValueError(f"Unknown InstitutionalConfig field: '{attr}'")
+            elif prefix == "grading":
+                from ..simulation.grading import GradingConfig as _GC
+                grading_fields = {f.name for f in fields(_GC)}
+                if attr not in grading_fields:
+                    raise ValueError(f"Unknown GradingConfig field: '{attr}' in {p.name}")
             elif prefix in MODULE_ALIASES:
                 module = getattr(engine, MODULE_ALIASES[prefix])
                 if not hasattr(module, attr):

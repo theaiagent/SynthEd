@@ -15,6 +15,7 @@ from dataclasses import fields, replace
 
 from ..agents.persona import PersonaConfig
 from ..pipeline import SynthEdPipeline
+from ..simulation.grading import GradingConfig
 from ..simulation.institutional import InstitutionalConfig
 
 logger = logging.getLogger(__name__)
@@ -54,12 +55,14 @@ def run_simulation_with_overrides(
         default_config: Base PersonaConfig to apply config overrides onto.
 
     Returns:
-        Dict with keys: dropout_rate, mean_engagement, mean_gpa.
+        Dict with keys: dropout_rate, mean_engagement, mean_gpa, std_engagement,
+        pass_rate, distinction_rate, fail_rate.
     """
     config_overrides: dict[str, float] = {}
     engine_overrides: dict[str, float] = {}
     theory_overrides: dict[str, dict[str, float]] = {}
     inst_overrides: dict[str, float] = {}
+    grading_overrides: dict[str, float] = {}
 
     for key, value in overrides.items():
         prefix, _, attr = key.partition(".")
@@ -69,11 +72,22 @@ def run_simulation_with_overrides(
             engine_overrides[attr] = value
         elif prefix == "inst":
             inst_overrides[attr] = value
+        elif prefix == "grading":
+            grading_overrides[attr] = value
         else:
             theory_overrides.setdefault(prefix, {})[attr] = value
 
     config = _build_config(default_config, config_overrides)
     inst_config = replace(InstitutionalConfig(), **inst_overrides) if inst_overrides else None
+    if grading_overrides:
+        _grading_fields = {f.name for f in fields(GradingConfig)}
+        for attr in grading_overrides:
+            if attr not in _grading_fields:
+                logger.warning("grading override '%s' not in GradingConfig — ignored", attr)
+        filtered_grading = {k: v for k, v in grading_overrides.items() if k in _grading_fields}
+        grading_config = replace(GradingConfig(), **filtered_grading) if filtered_grading else None
+    else:
+        grading_config = None
 
     tmp_dir = tempfile.mkdtemp(prefix="synthed_analysis_")
     try:
@@ -82,6 +96,7 @@ def run_simulation_with_overrides(
             output_dir=tmp_dir,
             seed=seed,
             institutional_config=inst_config,
+            grading_config=grading_config,
             _calibration_mode=calibration_mode,
         )
         _apply_engine_overrides(pipeline, engine_overrides, theory_overrides)
@@ -103,6 +118,9 @@ def run_simulation_with_overrides(
             "mean_engagement": float(engagement),
             "mean_gpa": float(gpa),
             "std_engagement": float(engagement_std) if engagement_std is not None else 0.0,
+            "pass_rate": float(summary.get("pass_rate", 0.0)),
+            "distinction_rate": float(summary.get("distinction_rate", 0.0)),
+            "fail_rate": float(summary.get("fail_rate", 0.0)),
         }
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)

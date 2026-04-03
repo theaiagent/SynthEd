@@ -42,6 +42,7 @@ python run_pipeline.py --n 200
 - **Optional LLM Enrichment** -- Persona-grounded narrative backstories via OpenAI, Ollama, or any compatible provider
 - **4 Benchmark Profiles** -- Developing, Western, Corporate, Mega University with CLI report generation
 - **InstitutionalConfig** -- 5 institution-level quality parameters that modulate theory constants
+- **GradingConfig** -- Configurable grading policy: Beta/Normal/Uniform grade distributions, weighted semester grades (midterm/final), dual-hurdle pass requirements, exam-only and continuous assessment modes, floor-adjusted transcript scale for outcome classification (Distinction/Pass/Fail)
 - **NSGA-II Calibration** -- Multi-objective optimization with Pareto front exploration
 - **565 Tests** -- 98% coverage, CI across Python 3.10/3.11/3.12
 
