@@ -26,8 +26,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest-cov setuptools-scm
+          pip install -e ".[dev,llm]"
 
       - name: Run tests with coverage
         run: |
@@ -85,10 +84,10 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install ruff
+          pip install -e ".[dev,llm]"
 
       - name: Lint with ruff
-        run: ruff check synthed/ tests/ --select E,F,W --ignore E501
+        run: ruff check synthed/ tests/
 
   doc-health:
     runs-on: ubuntu-latest
@@ -105,8 +104,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install setuptools-scm
+          pip install -e ".[dev,llm]"
 
       - name: Check documentation consistency
         run: python -m synthed.doc_facts
@@ -127,8 +125,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install setuptools-scm
+          pip install -e ".[dev,llm]"
 
       - name: Run pipeline smoke test (single semester)
         run: |

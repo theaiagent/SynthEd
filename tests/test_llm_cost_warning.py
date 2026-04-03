@@ -18,7 +18,7 @@ from synthed.pipeline import SynthEdPipeline, _DEFAULT_COST_THRESHOLD_USD
 @pytest.fixture
 def mock_openai():
     """Mock OpenAI client to avoid real API calls."""
-    with patch("synthed.utils.llm.OpenAI") as mock_cls:
+    with patch("openai.OpenAI") as mock_cls:
         mock_cls.return_value = MagicMock()
         yield mock_cls
 

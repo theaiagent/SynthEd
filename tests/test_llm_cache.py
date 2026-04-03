@@ -18,7 +18,7 @@ from synthed.utils.llm import (
 @pytest.fixture
 def mock_openai():
     """Mock OpenAI client with a successful response."""
-    with patch("synthed.utils.llm.OpenAI") as mock_cls:
+    with patch("openai.OpenAI") as mock_cls:
         mock_client = MagicMock()
         mock_cls.return_value = mock_client
 

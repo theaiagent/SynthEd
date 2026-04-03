@@ -22,7 +22,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install build tools
-        run: pip install build setuptools-scm
+        run: pip install build "setuptools-scm>=8.0"
 
       - name: Build package
         run: python -m build

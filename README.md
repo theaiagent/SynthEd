@@ -1,6 +1,6 @@
 # SynthEd: From synthetic data to simulated learners
 
-[![Status: v1.0.0](https://img.shields.io/badge/status-v1.0.0-brightgreen.svg)](https://github.com/theaiagent/SynthEd/releases/tag/v1.0.0)
+[![GitHub release](https://img.shields.io/github/v/release/theaiagent/SynthEd)](https://github.com/theaiagent/SynthEd/releases/latest)
 [![CI](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml/badge.svg)](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml)
 [![pytest](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/theaiagent/cbf1abd6cdc2134e7e26374de286f2c9/raw/synthed-test-badge.json)](#test-suite)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
@@ -13,7 +13,7 @@
 
 ```bash
 pip install -e ".[dev]"
-python run_pipeline.py --n 200
+python run_pipeline.py --n 200      # or: pip install synthedu
 ```
 
 > **From statistical similarity to behavioral fidelity.** Traditional synthetic data methods optimize for distributional match. SynthEd optimizes for *behavioral coherence* -- each data point emerges from a simulated student's evolving motivations, decisions, and life context.
@@ -33,18 +33,18 @@ python run_pipeline.py --n 200
 ## Key Features
 
 - **11 Theory Modules** -- Tinto, Bean & Metzner, Kember, SDT, Garrison CoI, Moore, Rovai, Baulke, Epstein & Axtell, Gonzalez, Unavoidable Withdrawal
-- **Trait-Based Calibration** -- Sobol sensitivity (66 params) + Optuna Bayesian optimization against real OULAD data, validated Grade B on held-out modules
+- **Trait-Based Calibration** -- Sobol sensitivity (69 params) + NSGA-II multi-objective optimization against real OULAD data
 - **Multi-Semester Simulation** -- Carry-over mechanics for engagement, GPA, coping, dropout phases
 - **GPA Feedback Loop** -- Cumulative GPA anchors cost-benefit, non-fit perception, and competence beliefs
 - **OULAD-Compatible Export** -- 7-table CSV matching the Open University Learning Analytics Dataset schema
 - **Adaptive Parameter Bounds** -- `auto_bounds()` adjusts calibration space when demographics change
 - **5-Level Validation Suite** -- 21 statistical tests (distributions, correlations, temporal coherence, privacy, backstory)
 - **Optional LLM Enrichment** -- Persona-grounded narrative backstories via OpenAI, Ollama, or any compatible provider
-- **4 Benchmark Profiles** -- Developing, Western, Corporate, Mega University with CLI report generation
+- **Default Benchmark Profile** -- Customizable via PersonaConfig, InstitutionalConfig, GradingConfig with CLI report generation
 - **InstitutionalConfig** -- 5 institution-level quality parameters that modulate theory constants
 - **GradingConfig** -- Configurable grading policy: Beta/Normal/Uniform grade distributions, weighted semester grades (midterm/final), dual-hurdle pass requirements, exam-only and continuous assessment modes, floor-adjusted transcript scale for outcome classification (Distinction/Pass/Fail)
 - **NSGA-II Calibration** -- Multi-objective optimization with Pareto front exploration
-- **565 Tests** -- 98% coverage, CI across Python 3.10/3.11/3.12
+- **615 Tests** -- 94% branch coverage, CI across Python 3.10/3.11/3.12
 
 ---
 
@@ -53,11 +53,12 @@ python run_pipeline.py --n 200
 ```bash
 git clone https://github.com/theaiagent/SynthEd.git
 cd SynthEd
-pip install -e ".[dev]"
+pip install -e ".[dev]"              # Dev install (no LLM)
+pip install -e ".[dev,llm]"          # Dev install with LLM support
 python run_pipeline.py              # 200 students, 14 weeks
 python run_pipeline.py --n 500      # Custom population
 python run_pipeline.py --oulad      # OULAD-compatible export
-python run_pipeline.py --benchmark  # Run all 4 benchmark profiles
+python run_pipeline.py --benchmark  # Run default benchmark profile
 ```
 
 ```python
@@ -102,7 +103,7 @@ print(f"Dropout: {report['simulation_summary']['dropout_rate']:.1%}")
 - [ ] GraphRAG integration (curriculum modeling)
 - [ ] LLM-augmented mode (forum posts, assignment text)
 - [ ] Parquet/Arrow export
-- [ ] PyPI package publication
+- [x] PyPI package publication (`pip install synthedu`)
 - [ ] Interactive dashboard
 
 ---
@@ -120,7 +121,7 @@ See full [Legal Disclaimer](docs/GUIDE.md#%EF%B8%8F-legal-disclaimer) and [Respo
 Contributions welcome! See the [User Guide](docs/GUIDE.md) for development setup.
 
 ```bash
-ruff check synthed/ tests/ --select E,F,W --ignore E501
+ruff check synthed/ tests/
 python -m pytest tests/ -v --tb=short
 ```
 
