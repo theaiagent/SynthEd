@@ -507,6 +507,55 @@ class SyntheticDataValidator:
                         f"dropout target: {self.reference.dropout_rate:.0%}",
             ))
 
+        # ── Outcome distribution: pass_rate / distinction_rate ──
+        if self.reference.pass_rate is not None or self.reference.distinction_rate is not None:
+            outcome_counts: dict[str, int] = {}
+            for o in outcomes:
+                oc = o.get("outcome")
+                if oc:
+                    outcome_counts[oc] = outcome_counts.get(oc, 0) + 1
+            n_total = sum(outcome_counts.values()) if outcome_counts else 1
+            if self.reference.pass_rate is not None:
+                synth_pass = outcome_counts.get("Pass", 0) / n_total
+                results.append(ValidationResult(
+                    test_name="outcome_pass_rate",
+                    metric="Pass rate",
+                    synthetic_value=synth_pass,
+                    reference_value=self.reference.pass_rate,
+                    passed=abs(synth_pass - self.reference.pass_rate) < 0.15,
+                    details=f"Pass rate: {synth_pass:.1%} (ref: {self.reference.pass_rate:.1%}, tolerance ±15pp)",
+                ))
+            if self.reference.distinction_rate is not None:
+                synth_dist = outcome_counts.get("Distinction", 0) / n_total
+                results.append(ValidationResult(
+                    test_name="outcome_distinction_rate",
+                    metric="Distinction rate",
+                    synthetic_value=synth_dist,
+                    reference_value=self.reference.distinction_rate,
+                    passed=abs(synth_dist - self.reference.distinction_rate) < 0.15,
+                    details=f"Distinction rate: {synth_dist:.1%} (ref: {self.reference.distinction_rate:.1%}, tolerance ±15pp)",
+                ))
+
+        # ── Engagement-GPA positive correlation ──
+        eng_xs: list[float] = []
+        gpa_ys_eng: list[float] = []
+        for o in outcomes:
+            eng = o.get("mean_engagement")
+            gpa = o.get("final_gpa")
+            if eng is not None and gpa is not None:
+                eng_xs.append(float(eng))
+                gpa_ys_eng.append(float(gpa))
+        if len(eng_xs) > 10:
+            corr, p_val = stats.pearsonr(eng_xs, gpa_ys_eng)
+            results.append(ValidationResult(
+                test_name="engagement_gpa_correlation",
+                metric="Pearson r",
+                synthetic_value=float(corr), reference_value=0.2,
+                statistic=float(corr), p_value=float(p_val),
+                passed=corr > 0,
+                details=f"Engagement-GPA: r={corr:.3f} (expected positive: higher engagement → higher GPA)",
+            ))
+
         return results
 
     def _validate_temporal(
