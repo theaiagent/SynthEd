@@ -117,7 +117,7 @@ class SimulationState:
     assignment_scores: list[float] = field(default_factory=list)
     forum_scores: list[float] = field(default_factory=list)
     final_score: float | None = None
-    semester_grade: float | None = None
+    semester_grade: float | None = None  # raw quality [0-1], NOT floor-adjusted
     outcome: str | None = None
     n_total_assignments: int = 0
     n_total_forums: int = 0
@@ -394,6 +394,9 @@ class SimulationEngine:
         Applies a structural grade floor before scaling to GPA. In real courses
         students earn baseline marks from assignment templates, partial credit,
         and easy initial portions — this floor captures that effect.
+
+        Note: In exam_only mode, cumulative_gpa includes all graded items
+        (midterm exams + assignments) while semester_grade uses only final_score.
         """
         floor = self.grading_config.grade_floor
         graded = floor + (1.0 - floor) * quality

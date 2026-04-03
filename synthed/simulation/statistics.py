@@ -58,7 +58,7 @@ def summary_statistics(
 
     # Outcome distribution
     outcomes = [s.outcome for s in states.values() if s.outcome is not None]
-    n_outcomes = len(outcomes) if outcomes else total
+    n_outcomes = max(len(outcomes) if outcomes else total, 1)
     if n_outcomes < total:
         logger.warning("Only %d/%d students have an assigned outcome", n_outcomes, total)
     outcome_counts: dict[str, int] = {}

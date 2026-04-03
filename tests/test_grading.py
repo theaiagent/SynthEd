@@ -205,11 +205,14 @@ class TestRelativeGrading:
     def test_identical_scores(self):
         assert all(s == 50.0 for s in apply_relative_grading([60.0, 60.0, 60.0]))
 
-    def test_uses_sample_std(self):
-        """ddof=1 for sample standard deviation."""
+    def test_uses_population_std(self):
+        """ddof=0: population std (cohort is the population)."""
         scores = [40.0, 60.0]
         adjusted = apply_relative_grading(scores)
         assert len(adjusted) == 2
+        # With ddof=0: std=10.0, T = 50 + 10*(x-50)/10 → [40.0, 60.0]
+        # With ddof=1: std=14.14, T ≈ [42.93, 57.07]
+        assert abs(adjusted[0] - 40.0) < 0.01  # confirms ddof=0
 
 
 class TestCalculateSemesterGrade:

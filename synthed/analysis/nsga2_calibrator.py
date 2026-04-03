@@ -297,6 +297,14 @@ class NSGAIICalibrator:
                     gpa_error = abs(result["mean_gpa"] - target_gpa)
                     study.tell(trial, (dropout_error, gpa_error))
 
+                # Safety: mark any untold trials as FAIL
+                for trial in trials:
+                    if trial.number not in results_map:
+                        try:
+                            study.tell(trial, state=optuna.trial.TrialState.FAIL)
+                        except RuntimeError:
+                            pass  # already told as FAIL in the as_completed loop
+
                 completed += batch_size
                 if completed % (pop_size * 5) == 0:
                     logger.info("Progress: %d/%d trials", completed, n_trials)
