@@ -63,7 +63,7 @@ class SobolParameter:
 #   "epstein."  → engine.epstein_axtell attribute
 #   "inst."     → InstitutionalConfig field (frozen, use replace())
 
-# Full parameter space: 66 parameters selected for theoretical importance
+# Full parameter space: 68 parameters selected for theoretical importance
 # and empirical impact on dropout/engagement/GPA outcomes.
 SOBOL_PARAMETER_SPACE: tuple[SobolParameter, ...] = (
     # ── PersonaConfig: Population characteristics ──
@@ -280,7 +280,7 @@ class SobolAnalyzer:
         Generate Sobol (Saltelli) sample matrix.
 
         With calc_second_order=False, total = n_samples * (D + 2).
-        Default: 128 * (66 + 2) = 8,704 simulations.
+        Default: 128 * (68 + 2) = 8,960 simulations.
         """
         return sobol_sample.sample(self._problem, n_samples, calc_second_order=False)
 
