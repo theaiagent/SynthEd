@@ -2,6 +2,35 @@
 
 All notable changes to SynthEd are documented here.
 
+## [1.1.0] - 2026-04-03
+
+### Added
+- **GradingConfig**: Configurable institution-level grading policy (18 parameters) — Beta/Normal/Uniform distributions, weighted semester grades, dual-hurdle pass requirements, exam-only and continuous assessment modes, late penalty, exam eligibility threshold
+- **Outcome classification**: Distinction/Pass/Fail/Withdrawn assignment at end of simulation run, with floor-adjusted transcript scale thresholds
+- **ProcessPoolExecutor parallelism** for NSGA-II calibration — 4-8x speedup via Optuna ask/tell API
+- **Sobol grading parameters**: pass_threshold, distinction_threshold, late_penalty in sensitivity analysis
+- **Validation tests**: outcome distribution (pass_rate/distinction_rate) and engagement-GPA correlation
+- **CodeRabbit** automated PR review configuration
+
+### Changed
+- Consolidated 4 benchmark profiles into single "default" profile (mega university parameters) — users customize via PersonaConfig/InstitutionalConfig/GradingConfig
+- `summary_statistics` extracted to `synthed/simulation/statistics.py` (engine.py 800→740 lines)
+- Default pass_threshold=0.64, distinction_threshold=0.73 (empirically calibrated from simulation percentiles)
+- CalibrationMap re-measured post engine changes (forum quality RNG, scale_by modulation)
+- Sobol space: removed dead dist_alpha/dist_beta, added outcome-affecting params (69 total)
+- T-score standardization uses population std (ddof=0) instead of sample std
+
+### Deprecated
+- Profile names "high_dropout_developing", "moderate_dropout_western", "low_dropout_corporate" removed. Use "default" and customize directly.
+- "mega_university" alias emits DeprecationWarning, will be removed in v2.0.
+
+### Fixed
+- Grade floor now applied before outcome classification (was comparing raw quality against transcript-scale thresholds)
+- Division-by-zero guard in summary_statistics for empty states
+- dual_hurdle with final_score=None now fails the hurdle (was silently passing)
+- grading_method="relative" rejected with clear error (was silently ignored)
+- Float tolerance for weight sums: 1e-9 → 1e-6 (prevents false rejection of valid floats)
+
 ## [1.0.0] - 2026-04-02
 
 ### Added
