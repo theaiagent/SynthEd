@@ -40,6 +40,10 @@ class ReferenceStatistics:
     dropout_rate: float = 0.43
     dropout_range: tuple[float, float] | None = (0.35, 0.55)
 
+    # Grading outcomes
+    pass_rate: float | None = None
+    distinction_rate: float | None = None
+
     # Engagement (if available)
     avg_weekly_logins: float | None = None
     avg_forum_posts_per_student: float | None = None

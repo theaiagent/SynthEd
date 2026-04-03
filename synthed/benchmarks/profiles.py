@@ -12,6 +12,7 @@ from dataclasses import dataclass
 
 from ..agents.persona import PersonaConfig
 from ..simulation.environment import ODLEnvironment
+from ..simulation.grading import GradingConfig
 from ..simulation.institutional import InstitutionalConfig
 from ..validation.validator import ReferenceStatistics
 
@@ -28,6 +29,7 @@ class BenchmarkProfile:
     n_students: int
     seed: int
     expected_dropout_range: tuple[float, float]
+    grading_config: GradingConfig = GradingConfig()
 
 
 PROFILES: dict[str, BenchmarkProfile] = {
@@ -47,6 +49,12 @@ PROFILES: dict[str, BenchmarkProfile] = {
             support_services_quality=0.25,
             technology_quality=0.35,
             curriculum_flexibility=0.25,
+        ),
+        grading_config=GradingConfig(
+            distribution="beta", dist_alpha=3.0, dist_beta=4.0,
+            midterm_weight=0.30, final_weight=0.70,
+            midterm_components={"exam": 0.60, "assignment": 0.40},
+            exam_eligibility_threshold=0.30,
         ),
         environment=ODLEnvironment(total_weeks=14),
         reference_stats=ReferenceStatistics(dropout_rate=0.65),
@@ -71,6 +79,13 @@ PROFILES: dict[str, BenchmarkProfile] = {
             technology_quality=0.75,
             curriculum_flexibility=0.60,
         ),
+        grading_config=GradingConfig(
+            distribution="beta", dist_alpha=6.0, dist_beta=2.0,
+            midterm_weight=0.50, final_weight=0.50,
+            midterm_components={"assignment": 1.0},
+            dual_hurdle=True,
+            component_pass_thresholds={"midterm": 0.40, "final": 0.40},
+        ),
         environment=ODLEnvironment(total_weeks=14),
         reference_stats=ReferenceStatistics(dropout_rate=0.25, age_mean=26.0),
         n_students=500,
@@ -94,6 +109,14 @@ PROFILES: dict[str, BenchmarkProfile] = {
             support_services_quality=0.90,
             technology_quality=0.90,
             curriculum_flexibility=0.80,
+        ),
+        grading_config=GradingConfig(
+            assessment_mode="exam_only",
+            midterm_weight=0.0, final_weight=1.0,
+            midterm_components={},
+            distribution="beta", dist_alpha=8.0, dist_beta=2.0,
+            pass_threshold=0.65,
+            distinction_threshold=0.90,
         ),
         environment=ODLEnvironment(total_weeks=14),
         reference_stats=ReferenceStatistics(
@@ -121,6 +144,11 @@ PROFILES: dict[str, BenchmarkProfile] = {
             support_services_quality=0.40,
             technology_quality=0.60,
             curriculum_flexibility=0.40,
+        ),
+        grading_config=GradingConfig(
+            distribution="beta", dist_alpha=3.0, dist_beta=3.0,
+            midterm_weight=0.30, final_weight=0.70,
+            midterm_components={"exam": 0.60, "assignment": 0.40},
         ),
         environment=ODLEnvironment(total_weeks=14),
         reference_stats=ReferenceStatistics(

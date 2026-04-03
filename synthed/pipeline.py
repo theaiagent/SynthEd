@@ -22,6 +22,7 @@ from .agents.factory import StudentFactory
 from .calibration import CalibrationMap
 from .simulation.environment import ODLEnvironment
 from .simulation.engine import SimulationEngine
+from .simulation.grading import GradingConfig
 from .simulation.institutional import InstitutionalConfig
 from .data_output.exporter import DataExporter
 from .data_output.oulad_exporter import OuladExporter
@@ -62,12 +63,14 @@ class SynthEdPipeline:
         target_dropout_range: tuple[float, float] | None = None,
         cost_threshold: float = _DEFAULT_COST_THRESHOLD_USD,
         confirm_callback: Callable[[str], bool] | None = None,
+        grading_config: GradingConfig | None = None,
         export_oulad: bool = False,
         _calibration_mode: bool = False,
     ):
         self.persona_config = persona_config or PersonaConfig()
         self.environment = environment or ODLEnvironment()
         self.institutional_config = institutional_config or InstitutionalConfig()
+        self.grading_config = grading_config or GradingConfig()
         self.reference = reference_stats or ReferenceStatistics()
         self.output_dir = Path(output_dir)
         self.use_llm = use_llm
@@ -94,6 +97,7 @@ class SynthEdPipeline:
             seed=seed,
             unavoidable_withdrawal_rate=self.persona_config.unavoidable_withdrawal_rate,
             institutional_config=self.institutional_config,
+            grading_config=self.grading_config,
         )
         self.exporter = DataExporter(output_dir=str(self.output_dir))
         self.validator = SyntheticDataValidator(reference=self.reference)
@@ -195,6 +199,7 @@ class SynthEdPipeline:
             persona_config=profile.persona_config,
             environment=profile.environment,
             institutional_config=profile.institutional_config,
+            grading_config=profile.grading_config,
             reference_stats=profile.reference_stats,
             output_dir=output_dir,
             use_llm=use_llm,

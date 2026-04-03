@@ -749,6 +749,13 @@ class SimulationEngine:
         gpa_values = [s.cumulative_gpa for s in states.values() if s.gpa_count > 0]
         mean_final_gpa = float(np.mean(gpa_values)) if gpa_values else None
 
+        # Outcome distribution
+        outcomes = [s.outcome for s in states.values() if s.outcome is not None]
+        n_outcomes = len(outcomes) if outcomes else 1
+        outcome_counts: dict[str, int] = {}
+        for o in outcomes:
+            outcome_counts[o] = outcome_counts.get(o, 0) + 1
+
         return {
             "total_students": total,
             "dropout_count": dropouts,
@@ -765,4 +772,10 @@ class SimulationEngine:
             },
             "unavoidable_withdrawal_count": withdrawal_count,
             "unavoidable_withdrawal_reasons": withdrawal_reasons,
+            "pass_rate": outcome_counts.get("Pass", 0) / n_outcomes,
+            "distinction_rate": outcome_counts.get("Distinction", 0) / n_outcomes,
+            "fail_rate": outcome_counts.get("Fail", 0) / n_outcomes,
+            "withdrawn_rate": outcome_counts.get("Withdrawn", 0) / n_outcomes,
+            "outcome_distribution": outcome_counts,
+            "grading_scale": self.grading_config.scale.value,
         }
