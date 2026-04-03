@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from synthed.simulation.engine import SimulationEngine, SimulationState
 from synthed.simulation.environment import ODLEnvironment
