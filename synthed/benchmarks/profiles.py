@@ -115,8 +115,8 @@ PROFILES: dict[str, BenchmarkProfile] = {
             midterm_weight=0.0, final_weight=1.0,
             midterm_components={},
             distribution="beta", dist_alpha=8.0, dist_beta=2.0,
-            pass_threshold=0.85,
-            distinction_threshold=0.97,
+            pass_threshold=0.70,
+            distinction_threshold=0.80,
         ),
         environment=ODLEnvironment(total_weeks=14),
         reference_stats=ReferenceStatistics(
