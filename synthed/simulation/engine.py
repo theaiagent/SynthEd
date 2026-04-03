@@ -26,6 +26,12 @@ import numpy as np
 
 from ..agents.persona import StudentPersona
 from .environment import ODLEnvironment
+from .grading import (
+    GradingConfig,
+    calculate_semester_grade,
+    check_dual_hurdle_pass,
+    classify_outcome as _classify_outcome,
+)
 from .institutional import InstitutionalConfig, scale_by
 from .social_network import SocialNetwork
 from ..utils.llm import LLMClient
@@ -102,6 +108,15 @@ class SimulationState:
     env_shock_magnitude: float = 0.0    # engagement penalty per week during shock
     # Temporal memory (moved from StudentPersona to avoid mutating input)
     memory: list[dict[str, Any]] = field(default_factory=list)
+    # ── Grading state ──
+    midterm_exam_scores: list[float] = field(default_factory=list)
+    assignment_scores: list[float] = field(default_factory=list)
+    forum_scores: list[float] = field(default_factory=list)
+    final_score: float | None = None
+    semester_grade: float | None = None
+    outcome: str | None = None
+    n_total_assignments: int = 0
+    n_total_forums: int = 0
 
     @property
     def perceived_mastery(self) -> float:
@@ -212,6 +227,10 @@ class SimulationEngine:
     _ENGAGEMENT_CLIP_LO: float = 0.01         # engagement lower bound
     _ENGAGEMENT_CLIP_HI: float = 0.99         # engagement upper bound
 
+    # ── Institutional quality effect on grades ──
+    _INST_QUALITY_SCALE_LOW: float = 0.7
+    _INST_QUALITY_SCALE_HIGH: float = 1.3
+
     # ── Phase 2: social network constants ──
     _NETWORK_DECAY_RATE: float = 0.02         # weekly link decay rate
     _COI_DEGREE_FACTOR: float = 0.005         # social presence boost per network degree
@@ -225,9 +244,11 @@ class SimulationEngine:
         mode: str = "rule_based",
         unavoidable_withdrawal_rate: float = 0.0,
         institutional_config: InstitutionalConfig | None = None,
+        grading_config: GradingConfig | None = None,
     ):
         self.env = environment
         self.inst = institutional_config or InstitutionalConfig()
+        self.grading_config = grading_config or GradingConfig()
         self.llm = llm_client
         self.rng = np.random.default_rng(seed)
         self.mode = mode
@@ -359,6 +380,9 @@ class SimulationEngine:
                     state.has_dropped_out = True
                     state.dropout_week = week
 
+        # ── End-of-run: semester grade and outcome assignment ──
+        self._assign_outcomes(states)
+
         return all_records, states, self.network
 
     def _record_graded_item(self, state: SimulationState, quality: float) -> None:
@@ -368,12 +392,65 @@ class SimulationEngine:
         students earn baseline marks from assignment templates, partial credit,
         and easy initial portions — this floor captures that effect.
         """
-        graded = self._GRADE_FLOOR + (1.0 - self._GRADE_FLOOR) * quality
+        floor = self.grading_config.grade_floor
+        graded = floor + (1.0 - floor) * quality
         state.gpa_points_sum += graded * self._GPA_SCALE
         state.gpa_count += 1
         state.cumulative_gpa = state.gpa_points_sum / state.gpa_count
         state.perceived_mastery_sum += quality
         state.perceived_mastery_count += 1
+
+    def _compute_midterm_aggregate(self, state: SimulationState, cfg: GradingConfig) -> float:
+        """Compute weighted midterm aggregate from component scores."""
+        component_data: dict[str, tuple[list[float], int]] = {
+            "exam": (state.midterm_exam_scores, len(state.midterm_exam_scores)),
+            "assignment": (state.assignment_scores, max(state.n_total_assignments, len(state.assignment_scores))),
+            "forum": (state.forum_scores, max(state.n_total_forums, len(state.forum_scores))),
+        }
+        total = 0.0
+        for comp_name, weight in cfg.midterm_components.items():
+            scores, n = component_data.get(comp_name, ([], 0))
+            comp_mean = sum(scores) / max(n, 1) if scores else 0.0
+            total += comp_mean * weight
+        return total
+
+    def _assign_outcomes(self, states: dict[str, SimulationState]) -> None:
+        """Assign semester_grade and outcome to each student at end of run."""
+        cfg = self.grading_config
+        for state in states.values():
+            if state.has_dropped_out:
+                state.outcome = "Withdrawn"
+                continue
+            if state.gpa_count == 0:
+                state.outcome = "Fail"
+                continue
+
+            # Exam eligibility check
+            if cfg.exam_eligibility_threshold is not None:
+                midterm_agg = self._compute_midterm_aggregate(state, cfg)
+                if midterm_agg < cfg.exam_eligibility_threshold:
+                    state.outcome = "Fail"
+                    continue
+
+            state.semester_grade = calculate_semester_grade(
+                cfg,
+                midterm_exam_scores=state.midterm_exam_scores,
+                assignment_scores=state.assignment_scores,
+                forum_scores=state.forum_scores,
+                final_score=state.final_score,
+                n_total_assignments=state.n_total_assignments,
+                n_total_forums=state.n_total_forums,
+            )
+
+            if state.semester_grade is not None:
+                midterm_agg = self._compute_midterm_aggregate(state, cfg)
+                passes_hurdle = check_dual_hurdle_pass(cfg, midterm_agg, state.final_score)
+                if passes_hurdle:
+                    state.outcome = _classify_outcome(state.semester_grade, cfg)
+                else:
+                    state.outcome = "Fail"
+            else:
+                state.outcome = "Fail"
 
     def _simulate_student_week(
         self, student: StudentPersona, state: SimulationState,
@@ -422,10 +499,18 @@ class SimulationEngine:
                              * (self._FORUM_POST_EXTRA_FLOOR + self._FORUM_POST_EXTRA_WEIGHT * student.personality.extraversion
                                 + self._FORUM_POST_SOCIAL_WEIGHT * state.social_integration))
                 if self.rng.random() < post_prob:
+                    # Forum post quality (social engagement proxy)
+                    forum_quality = float(np.clip(
+                        0.4 * engagement + 0.3 * student.social_integration + 0.3 * self.rng.normal(0.5, 0.15),
+                        0.0, 1.0
+                    ))
+                    state.forum_scores.append(forum_quality)
+                    state.n_total_forums += 1
                     records.append(InteractionRecord(
                         student_id=student.id, week=week, course_id=course_id,
                         interaction_type="forum_post",
                         duration_minutes=round(float(self.rng.normal(self._FORUM_POST_DURATION_MEAN, self._FORUM_POST_DURATION_STD)), 1),
+                        quality_score=round(forum_quality, 2),
                         metadata={"post_length": int(self.rng.normal(self._FORUM_POST_LENGTH_MEAN, self._FORUM_POST_LENGTH_STD))},
                     ))
 
@@ -439,14 +524,20 @@ class SimulationEngine:
 
                 if submitted:
                     quality = float(np.clip(
-                        self._ASSIGN_GPA_WEIGHT * (student.prior_gpa / self._GPA_SCALE)
-                        + self._ASSIGN_ENG_WEIGHT * engagement
+                        scale_by(self._ASSIGN_GPA_WEIGHT, self.inst.instructional_design_quality,
+                                 self._INST_QUALITY_SCALE_LOW, self._INST_QUALITY_SCALE_HIGH)
+                        * (student.prior_gpa / self._GPA_SCALE)
+                        + scale_by(self._ASSIGN_ENG_WEIGHT, self.inst.instructional_design_quality,
+                                   self._INST_QUALITY_SCALE_LOW, self._INST_QUALITY_SCALE_HIGH)
+                        * engagement
                         + self._ASSIGN_EFFICACY_WEIGHT * student.self_efficacy
                         + self._ASSIGN_READING_WEIGHT * student.academic_reading_writing
                         + self._ASSIGN_NOISE_WEIGHT * self.rng.normal(0.5, self._ASSIGN_NOISE_STD),
                         0.0, 1.0
                     ))
                     is_late = self.rng.random() > student.time_management
+                    if is_late:
+                        quality = max(0.0, quality - self.grading_config.late_penalty)
                     records.append(InteractionRecord(
                         student_id=student.id, week=week, course_id=course_id,
                         interaction_type="assignment_submit",
@@ -454,11 +545,14 @@ class SimulationEngine:
                         metadata={"is_late": is_late, "assignment_week": week},
                     ))
                     self._record_graded_item(state, quality)
+                    state.assignment_scores.append(quality)
+                    state.n_total_assignments += 1
                     state.missed_assignments_streak = 0
                     state.memory.append({"week": week, "event_type": "assignment",
                                         "details": f"Submitted {'late ' if is_late else ''}assignment for {course_id} ({quality:.0%})",
                                         "impact": quality - 0.5})
                 else:
+                    state.n_total_assignments += 1
                     state.missed_assignments_streak += 1
                     state.memory.append({"week": week, "event_type": "missed_assignment",
                                         "details": f"Missed assignment for {course_id} (streak: {state.missed_assignments_streak})",
@@ -482,8 +576,12 @@ class SimulationEngine:
                 take_prob = self._EXAM_TAKE_HIGH_ENG_PROB if engagement > self._EXAM_TAKE_ENG_THRESHOLD else engagement * self._EXAM_TAKE_LOW_MULTIPLIER
                 if self.rng.random() < take_prob:
                     exam_quality = float(np.clip(
-                        self._EXAM_GPA_WEIGHT * (student.prior_gpa / self._GPA_SCALE)
-                        + self._EXAM_ENG_WEIGHT * engagement
+                        scale_by(self._EXAM_GPA_WEIGHT, self.inst.instructional_design_quality,
+                                 self._INST_QUALITY_SCALE_LOW, self._INST_QUALITY_SCALE_HIGH)
+                        * (student.prior_gpa / self._GPA_SCALE)
+                        + scale_by(self._EXAM_ENG_WEIGHT, self.inst.instructional_design_quality,
+                                   self._INST_QUALITY_SCALE_LOW, self._INST_QUALITY_SCALE_HIGH)
+                        * engagement
                         + self._EXAM_EFFICACY_WEIGHT * student.self_efficacy
                         + self._EXAM_REG_WEIGHT * student.self_regulation
                         + self._EXAM_READING_WEIGHT * student.academic_reading_writing
@@ -497,6 +595,10 @@ class SimulationEngine:
                         metadata={"exam_type": exam_type},
                     ))
                     self._record_graded_item(state, exam_quality)
+                    if exam_type == "midterm":
+                        state.midterm_exam_scores.append(exam_quality)
+                    elif exam_type == "final":
+                        state.final_score = exam_quality
                     state.memory.append({"week": week, "event_type": "exam",
                                         "details": f"{exam_type.title()} for {course_id} ({exam_quality:.0%})",
                                         "impact": exam_quality - 0.5})
