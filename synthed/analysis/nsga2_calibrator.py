@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import logging
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import fields
+from functools import partial
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -22,6 +24,9 @@ if TYPE_CHECKING:
     from ..benchmarks.profiles import BenchmarkProfile
 
 logger = logging.getLogger(__name__)
+
+_TARGET_ENGAGEMENT: float = 0.5
+_WORKER_TIMEOUT_S: int = 300
 
 
 class NSGAIICalibrationError(RuntimeError):
@@ -49,12 +54,16 @@ class NSGAIICalibrator:
     """Multi-objective calibrator using Optuna NSGAIISampler.
 
     Fixes config.* and inst.* parameters to profile values and optimizes
-    only engine/theory constants. Two objectives (dropout_error, gpa_error)
-    with three hard constraints (engagement floor, dropout range).
+    only engine/theory/grading constants. Two objectives (dropout_error,
+    gpa_error) with three hard constraints (engagement floor, dropout range).
 
-    NOTE: n_workers maps to Optuna's n_jobs (ThreadPoolExecutor).
-    For CPU-bound simulations, thread-based parallelism gives limited
-    benefit due to GIL.
+    When ``n_workers > 1``, simulations run in separate processes via
+    ``ProcessPoolExecutor`` to bypass the GIL. Uses Optuna's ask/tell API
+    with batch size = ``pop_size`` (one NSGA-II generation per batch) to
+    preserve generational selection semantics.
+
+    Windows note: Entry-point scripts calling this class with ``n_workers > 1``
+    must be protected with ``if __name__ == "__main__":``.
     """
 
     def __init__(
@@ -111,7 +120,7 @@ class NSGAIICalibrator:
         fixed_overrides = self._build_fixed_overrides(profile)
         lo, hi = profile.expected_dropout_range
 
-        # Objective
+        # Objective (used in sequential mode only)
         def objective(trial: optuna.Trial) -> tuple[float, float]:
             overrides = dict(fixed_overrides)
             for p in params:
@@ -159,12 +168,17 @@ class NSGAIICalibrator:
             sampler=sampler,
         )
         logger.info(
-            "Starting NSGA-II: %d trials, pop_size=%d, %d params",
-            n_trials, pop_size, len(params),
+            "Starting NSGA-II: %d trials, pop_size=%d, %d params, %d workers",
+            n_trials, pop_size, len(params), self._n_workers,
         )
-        study.optimize(
-            objective, n_trials=n_trials, n_jobs=self._n_workers,
-        )
+
+        if self._n_workers > 1:
+            self._run_parallel(
+                study, params, fixed_overrides, profile,
+                target_dropout, target_gpa, n_trials, pop_size,
+            )
+        else:
+            study.optimize(objective, n_trials=n_trials, n_jobs=1)
 
         # Extract Pareto front
         best_trials = study.best_trials
@@ -175,14 +189,13 @@ class NSGAIICalibrator:
                 f"or widening parameter bounds."
             )
 
-        target_engagement = 0.5
         pareto_solutions = tuple(
             ParetoSolution(
                 params={p.name: t.params[p.name] for p in params},
                 dropout_error=t.values[0],
                 gpa_error=t.values[1],
                 engagement_error=abs(
-                    t.user_attrs["achieved_engagement"] - target_engagement
+                    t.user_attrs["achieved_engagement"] - _TARGET_ENGAGEMENT
                 ),
                 achieved_dropout=t.user_attrs["achieved_dropout"],
                 achieved_gpa=t.user_attrs["achieved_gpa"],
@@ -208,6 +221,88 @@ class NSGAIICalibrator:
             parameter_names=param_names,
         )
 
+    def _run_parallel(
+        self,
+        study: optuna.Study,
+        params: tuple[SobolParameter, ...],
+        fixed_overrides: dict[str, float],
+        profile: BenchmarkProfile,
+        target_dropout: float,
+        target_gpa: float,
+        n_trials: int,
+        pop_size: int,
+    ) -> None:
+        """Run trials with ProcessPoolExecutor for GIL bypass.
+
+        Uses Optuna's ask/tell API: ask for a batch of trials, build
+        override dicts in the main process, submit the top-level
+        ``run_simulation_with_overrides`` to the pool (picklable),
+        then tell results back to Optuna.
+
+        Pool is created once and reused across all generations to avoid
+        repeated process spawn overhead on Windows.
+        """
+        worker = partial(
+            run_simulation_with_overrides,
+            n_students=self._n_students,
+            seed=self._seed,
+            default_config=profile.persona_config,
+            calibration_mode=True,
+        )
+        completed = 0
+        pool = ProcessPoolExecutor(max_workers=self._n_workers)
+        try:
+            while completed < n_trials:
+                batch_size = min(pop_size, n_trials - completed)
+                trials = [study.ask() for _ in range(batch_size)]
+
+                # Build override dicts in main process (no closures to pickle)
+                override_dicts = []
+                for trial in trials:
+                    overrides = dict(fixed_overrides)
+                    for p in params:
+                        overrides[p.name] = trial.suggest_float(
+                            p.name, p.lower, p.upper, log=p.log_scale,
+                        )
+                    override_dicts.append(overrides)
+
+                # Submit top-level function to pool (pickle-safe)
+                future_to_trial = {
+                    pool.submit(worker, overrides=od): trial
+                    for od, trial in zip(override_dicts, trials)
+                }
+
+                # Collect with as_completed for max throughput
+                results_map: dict[int, dict] = {}
+                for future in as_completed(future_to_trial, timeout=_WORKER_TIMEOUT_S * batch_size):
+                    trial = future_to_trial[future]
+                    try:
+                        results_map[trial.number] = future.result(timeout=_WORKER_TIMEOUT_S)
+                    except Exception as e:
+                        logger.warning("Trial %d failed: %s", trial.number, e)
+                        study.tell(trial, state=optuna.trial.TrialState.FAIL)
+
+                # Tell Optuna in trial order (preserves generational semantics)
+                for trial in trials:
+                    if trial.number not in results_map:
+                        continue
+                    result = results_map[trial.number]
+                    trial.set_user_attr("achieved_dropout", result["dropout_rate"])
+                    trial.set_user_attr("achieved_gpa", result["mean_gpa"])
+                    trial.set_user_attr("achieved_engagement", result["mean_engagement"])
+                    trial.set_user_attr("pass_rate", result.get("pass_rate", 0.0))
+                    trial.set_user_attr("distinction_rate", result.get("distinction_rate", 0.0))
+
+                    dropout_error = abs(result["dropout_rate"] - target_dropout)
+                    gpa_error = abs(result["mean_gpa"] - target_gpa)
+                    study.tell(trial, (dropout_error, gpa_error))
+
+                completed += batch_size
+                if completed % (pop_size * 5) == 0:
+                    logger.info("Progress: %d/%d trials", completed, n_trials)
+        finally:
+            pool.shutdown(wait=False, cancel_futures=True)
+
     def validate_solution(
         self,
         solution: ParetoSolution,
@@ -218,6 +313,7 @@ class NSGAIICalibrator:
         """Re-evaluate with full population + multiple seeds.
 
         Returns (dropout_mean, dropout_std, gpa_mean, gpa_std).
+        Runs sequentially — pool overhead exceeds benefit for few seeds.
         """
         from ..benchmarks.profiles import PROFILES
 
