@@ -27,7 +27,7 @@ class TestGradingConfig:
         assert cfg.distribution == "beta"
         assert cfg.grade_floor == 0.45
         assert cfg.pass_threshold == 0.64
-        assert cfg.distinction_threshold == 0.72
+        assert cfg.distinction_threshold == 0.73
         assert cfg.noise_std == 0.05
         assert cfg.late_penalty == 0.05
         assert cfg.dual_hurdle is False

@@ -55,6 +55,7 @@ PROFILES: dict[str, BenchmarkProfile] = {
             midterm_weight=0.30, final_weight=0.70,
             midterm_components={"exam": 0.60, "assignment": 0.40},
             exam_eligibility_threshold=0.30,
+            pass_threshold=0.63, distinction_threshold=0.71,
         ),
         environment=ODLEnvironment(total_weeks=14),
         reference_stats=ReferenceStatistics(dropout_rate=0.65),
@@ -85,6 +86,7 @@ PROFILES: dict[str, BenchmarkProfile] = {
             midterm_components={"assignment": 1.0},
             dual_hurdle=True,
             component_pass_thresholds={"midterm": 0.40, "final": 0.40},
+            pass_threshold=0.58, distinction_threshold=0.67,
         ),
         environment=ODLEnvironment(total_weeks=14),
         reference_stats=ReferenceStatistics(dropout_rate=0.25, age_mean=26.0),
@@ -116,7 +118,7 @@ PROFILES: dict[str, BenchmarkProfile] = {
             midterm_components={},
             distribution="beta", dist_alpha=8.0, dist_beta=2.0,
             pass_threshold=0.70,
-            distinction_threshold=0.80,
+            distinction_threshold=0.79,
         ),
         environment=ODLEnvironment(total_weeks=14),
         reference_stats=ReferenceStatistics(
@@ -149,6 +151,7 @@ PROFILES: dict[str, BenchmarkProfile] = {
             distribution="beta", dist_alpha=3.0, dist_beta=3.0,
             midterm_weight=0.30, final_weight=0.70,
             midterm_components={"exam": 0.60, "assignment": 0.40},
+            pass_threshold=0.65, distinction_threshold=0.73,
         ),
         environment=ODLEnvironment(total_weeks=14),
         reference_stats=ReferenceStatistics(
