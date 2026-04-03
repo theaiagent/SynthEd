@@ -8,7 +8,7 @@ educational data for Open and Distance Learning (ODL) research.
 
 try:
     from importlib.metadata import version
-    __version__ = version("synthed")
+    __version__ = version("synthedu")
 except Exception:
     try:
         from setuptools_scm import get_version

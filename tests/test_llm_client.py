@@ -13,7 +13,7 @@ from synthed.utils.llm import LLMClient, LLMError, LLMResponseError, LLMRateLimi
 @pytest.fixture
 def mock_openai():
     """Mock OpenAI client with a successful response."""
-    with patch("synthed.utils.llm.OpenAI") as mock_cls:
+    with patch("openai.OpenAI") as mock_cls:
         mock_client = MagicMock()
         mock_cls.return_value = mock_client
 
@@ -152,7 +152,7 @@ class TestLLMClientCostReport:
 class TestLLMClientBaseUrl:
     def test_base_url_none_default(self):
         """OpenAI() called with base_url=None when not provided."""
-        with patch("synthed.utils.llm.OpenAI") as mock_cls:
+        with patch("openai.OpenAI") as mock_cls:
             mock_cls.return_value = MagicMock()
             LLMClient(api_key="test-key")
             mock_cls.assert_called_once_with(
@@ -162,7 +162,7 @@ class TestLLMClientBaseUrl:
 
     def test_base_url_custom(self):
         """OpenAI() called with the provided base URL."""
-        with patch("synthed.utils.llm.OpenAI") as mock_cls:
+        with patch("openai.OpenAI") as mock_cls:
             mock_cls.return_value = MagicMock()
             url = "http://localhost:11434/v1"
             LLMClient(api_key="test-key", base_url=url)
@@ -173,7 +173,7 @@ class TestLLMClientBaseUrl:
 
     def test_unknown_model_with_base_url_logs_info(self, caplog):
         """Info message logged for non-standard model with custom base_url."""
-        with patch("synthed.utils.llm.OpenAI") as mock_cls:
+        with patch("openai.OpenAI") as mock_cls:
             mock_cls.return_value = MagicMock()
             with caplog.at_level(logging.INFO, logger="synthed.utils.llm"):
                 LLMClient(
@@ -188,19 +188,19 @@ class TestLLMClientBaseUrl:
 class TestLLMClientBaseUrlValidation:
     def test_invalid_scheme_raises(self):
         """base_url with non-http/https scheme is rejected."""
-        with patch("synthed.utils.llm.OpenAI"):
+        with patch("openai.OpenAI"):
             with pytest.raises(ValueError, match="http or https"):
                 LLMClient(api_key="test-key", base_url="ftp://example.com/v1")
 
     def test_missing_host_raises(self):
         """base_url without a host is rejected."""
-        with patch("synthed.utils.llm.OpenAI"):
+        with patch("openai.OpenAI"):
             with pytest.raises(ValueError, match="must include a host"):
                 LLMClient(api_key="test-key", base_url="http://")
 
     def test_http_with_api_key_warns(self, caplog):
         """Plain HTTP base_url with API key logs a warning."""
-        with patch("synthed.utils.llm.OpenAI") as mock_cls:
+        with patch("openai.OpenAI") as mock_cls:
             mock_cls.return_value = MagicMock()
             with caplog.at_level(logging.WARNING, logger="synthed.utils.llm"):
                 LLMClient(api_key="test-key", base_url="http://localhost:11434/v1")

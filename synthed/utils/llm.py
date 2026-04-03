@@ -12,9 +12,6 @@ import time
 from pathlib import Path
 from typing import Iterator
 
-from openai import OpenAI
-
-
 logger = logging.getLogger(__name__)
 
 
@@ -87,6 +84,14 @@ class LLMClient:
                 raise ValueError(f"base_url must include a host: {base_url!r}")
             if parsed.scheme == "http" and (api_key or os.getenv("OPENAI_API_KEY")):
                 logger.warning("base_url uses plain HTTP — API key will be transmitted unencrypted")
+
+        try:
+            from openai import OpenAI
+        except ImportError:
+            raise ImportError(
+                "The 'openai' package is required for LLM features. "
+                "Install it with: pip install synthedu[llm]"
+            ) from None
 
         self.client = OpenAI(
             api_key=api_key or os.getenv("OPENAI_API_KEY"),
