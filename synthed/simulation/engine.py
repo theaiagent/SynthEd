@@ -417,8 +417,14 @@ class SimulationEngine:
         return total
 
     def _assign_outcomes(self, states: dict[str, SimulationState]) -> None:
-        """Assign semester_grade and outcome to each student at end of run."""
+        """Assign semester_grade and outcome to each student at end of run.
+
+        Thresholds (pass_threshold, distinction_threshold, component_pass_thresholds)
+        are on the transcript scale (floor-adjusted). Raw quality is converted via
+        ``floor + (1 - floor) * raw`` before comparison.
+        """
         cfg = self.grading_config
+        floor = cfg.grade_floor
         for state in states.values():
             if state.has_dropped_out:
                 state.outcome = "Withdrawn"
@@ -427,10 +433,11 @@ class SimulationEngine:
                 state.outcome = "Fail"
                 continue
 
-            # Exam eligibility check
+            # Exam eligibility check (on floor-adjusted scale)
             if cfg.exam_eligibility_threshold is not None:
                 midterm_agg = self._compute_midterm_aggregate(state, cfg)
-                if midterm_agg < cfg.exam_eligibility_threshold:
+                adjusted_midterm = floor + (1.0 - floor) * midterm_agg
+                if adjusted_midterm < cfg.exam_eligibility_threshold:
                     state.outcome = "Fail"
                     continue
 
@@ -445,10 +452,17 @@ class SimulationEngine:
             )
 
             if state.semester_grade is not None:
+                # Floor-adjust for classification (thresholds are on transcript scale)
+                adjusted_grade = floor + (1.0 - floor) * state.semester_grade
+
+                # Dual-hurdle check (also on floor-adjusted scale)
                 midterm_agg = self._compute_midterm_aggregate(state, cfg)
-                passes_hurdle = check_dual_hurdle_pass(cfg, midterm_agg, state.final_score)
+                adjusted_midterm = floor + (1.0 - floor) * midterm_agg
+                adjusted_final = (floor + (1.0 - floor) * state.final_score) if state.final_score is not None else None
+                passes_hurdle = check_dual_hurdle_pass(cfg, adjusted_midterm, adjusted_final)
+
                 if passes_hurdle:
-                    state.outcome = _classify_outcome(state.semester_grade, cfg)
+                    state.outcome = _classify_outcome(adjusted_grade, cfg)
                 else:
                     state.outcome = "Fail"
             else:

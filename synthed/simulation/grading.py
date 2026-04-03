@@ -54,7 +54,7 @@ class GradingConfig:
     dist_beta: float = 3.0
     grading_method: str = "absolute"
     grade_floor: float = 0.45
-    pass_threshold: float = 0.40
+    pass_threshold: float = 0.50
     distinction_threshold: float = 0.85
     dual_hurdle: bool = False
     component_pass_thresholds: dict[str, float] = field(default_factory=dict)

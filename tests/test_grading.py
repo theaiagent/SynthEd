@@ -26,7 +26,7 @@ class TestGradingConfig:
         assert cfg.final_weight == 0.60
         assert cfg.distribution == "beta"
         assert cfg.grade_floor == 0.45
-        assert cfg.pass_threshold == 0.40
+        assert cfg.pass_threshold == 0.50
         assert cfg.distinction_threshold == 0.85
         assert cfg.noise_std == 0.05
         assert cfg.late_penalty == 0.05
@@ -143,7 +143,10 @@ class TestClassifyOutcome:
         assert classify_outcome(0.30, GradingConfig()) == "Fail"
 
     def test_boundary_pass(self):
-        assert classify_outcome(0.40, GradingConfig()) == "Pass"
+        assert classify_outcome(0.50, GradingConfig()) == "Pass"
+
+    def test_boundary_fail(self):
+        assert classify_outcome(0.49, GradingConfig()) == "Fail"
 
     def test_custom_thresholds(self):
         cfg = GradingConfig(pass_threshold=0.50, distinction_threshold=0.90)
