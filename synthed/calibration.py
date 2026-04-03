@@ -37,7 +37,7 @@ class CalibrationEstimate:
 
 
 # Empirically measured calibration data (N=500, 5 seeds averaged per point).
-# Measured 2026-04-01 post grade-floor addition (engine._GRADE_FLOOR = 0.45).
+# Measured 2026-04-01 post grade-floor addition (GradingConfig.grade_floor = 0.45).
 # IMPORTANT: Re-measure if theory modules, engine weights, or RNG-consuming
 #            code paths change (even non-dropout features shift RNG sequence).
 # TODO: Warn when n_students is small (e.g. <100) — stochastic variance

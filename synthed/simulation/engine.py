@@ -185,7 +185,6 @@ class SimulationEngine:
     _ASSIGN_NOISE_WEIGHT: float = 0.15        # random noise weight in quality
     _ASSIGN_NOISE_STD: float = 0.15           # std dev of assignment quality noise
     _GPA_SCALE: float = 4.0                   # GPA denominator for normalisation
-    _GRADE_FLOOR: float = 0.45               # structural grade floor (easy marks, partial credit)
     _MISSED_IMPACT: float = -0.3              # memory impact of missed assignment
 
     # Live sessions
