@@ -8,7 +8,6 @@ datasets for research comparison.
 
 from __future__ import annotations
 
-import warnings
 from dataclasses import dataclass
 
 from ..agents.persona import PersonaConfig
@@ -33,35 +32,7 @@ class BenchmarkProfile:
     grading_config: GradingConfig = GradingConfig()
 
 
-class _DeprecatedProfileDict(dict):
-    """Dict that warns on access to removed profile names."""
-
-    _ALIASES = {"mega_university": "default"}
-    _REMOVED = {"high_dropout_developing", "moderate_dropout_western", "low_dropout_corporate"}
-
-    def __getitem__(self, key):
-        if key in self._ALIASES:
-            warnings.warn(
-                f"Profile '{key}' renamed to '{self._ALIASES[key]}'. "
-                f"Use '{self._ALIASES[key]}' instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            return super().__getitem__(self._ALIASES[key])
-        if key in self._REMOVED:
-            raise KeyError(
-                f"Profile '{key}' has been removed. Use 'default' and "
-                f"customize via PersonaConfig/InstitutionalConfig/GradingConfig."
-            )
-        return super().__getitem__(key)
-
-    def __contains__(self, key):
-        if key in self._ALIASES:
-            return True
-        return super().__contains__(key)
-
-
-PROFILES: dict[str, BenchmarkProfile] = _DeprecatedProfileDict({
+PROFILES: dict[str, BenchmarkProfile] = {
     "default": BenchmarkProfile(
         name="default",
         description="Default ODL profile: large-scale, diverse student population",
@@ -95,4 +66,4 @@ PROFILES: dict[str, BenchmarkProfile] = _DeprecatedProfileDict({
         seed=42,
         expected_dropout_range=(0.35, 0.60),
     ),
-})
+}
