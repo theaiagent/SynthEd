@@ -18,6 +18,7 @@ Engagement and dropout mechanics map to established theoretical frameworks:
 
 from __future__ import annotations
 
+import logging
 import random
 from dataclasses import dataclass, field
 from typing import Any
@@ -51,6 +52,8 @@ from .theories import (
     ExhaustionState,
     UnavoidableWithdrawal,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -751,7 +754,9 @@ class SimulationEngine:
 
         # Outcome distribution
         outcomes = [s.outcome for s in states.values() if s.outcome is not None]
-        n_outcomes = len(outcomes) if outcomes else 1
+        n_outcomes = len(outcomes) if outcomes else total
+        if n_outcomes < total:
+            logger.warning("Only %d/%d students have an assigned outcome", n_outcomes, total)
         outcome_counts: dict[str, int] = {}
         for o in outcomes:
             outcome_counts[o] = outcome_counts.get(o, 0) + 1

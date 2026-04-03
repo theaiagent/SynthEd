@@ -66,12 +66,12 @@ class GradingConfig:
     def __post_init__(self) -> None:
         # Weight sum
         total = self.midterm_weight + self.final_weight
-        if not math.isclose(total, 1.0, abs_tol=1e-9):
+        if not math.isclose(total, 1.0, abs_tol=1e-6):
             raise ValueError(f"midterm_weight + final_weight must sum to 1.0, got {total}")
         # Component sum
         if self.midterm_components:
             comp_total = sum(self.midterm_components.values())
-            if not math.isclose(comp_total, 1.0, abs_tol=1e-9):
+            if not math.isclose(comp_total, 1.0, abs_tol=1e-6):
                 raise ValueError(f"midterm_components must sum to 1.0, got {comp_total}")
             invalid = set(self.midterm_components) - _VALID_COMPONENT_KEYS
             if invalid:
@@ -104,6 +104,13 @@ class GradingConfig:
             raise ValueError(f"Invalid assessment_mode: '{self.assessment_mode}'")
         if self.missing_policy not in _VALID_MISSING_POLICIES:
             raise ValueError(f"Invalid missing_policy: '{self.missing_policy}'")
+        if self.grading_method not in _VALID_GRADING_METHODS:
+            raise ValueError(f"Invalid grading_method: '{self.grading_method}'")
+        if self.grading_method == "relative":
+            raise ValueError("grading_method='relative' is not yet implemented; use 'absolute'")
+        # Dual-hurdle consistency
+        if self.dual_hurdle and not self.component_pass_thresholds:
+            raise ValueError("dual_hurdle=True requires at least one entry in component_pass_thresholds")
         # Defensive copy of mutable dicts
         object.__setattr__(self, "midterm_components", dict(self.midterm_components))
         object.__setattr__(self, "component_pass_thresholds", dict(self.component_pass_thresholds))
@@ -175,7 +182,7 @@ def apply_relative_grading(raw_scores: list[float]) -> list[float]:
     if len(raw_scores) < 2:
         return [50.0] * len(raw_scores)
     arr = np.array(raw_scores, dtype=float)
-    std = float(np.std(arr, ddof=1))  # sample std
+    std = float(np.std(arr, ddof=0))  # population std (cohort IS the population)
     if std < 1e-9:
         return [50.0] * len(raw_scores)
     if len(raw_scores) < _MIN_T_SCORE_N:
@@ -229,8 +236,11 @@ def calculate_semester_grade(
         active_weight += weight
 
     # Redistribute if needed
-    if config.missing_policy == "redistribute" and active_weight > 0 and active_weight < 1.0:
-        midterm_total /= active_weight
+    if config.missing_policy == "redistribute":
+        if active_weight == 0.0:
+            return None
+        if active_weight < 1.0:
+            midterm_total /= active_weight
 
     semester = midterm_total * config.midterm_weight
     if config.assessment_mode != "continuous" and final_score is not None:
@@ -250,7 +260,7 @@ def check_dual_hurdle_pass(
     if "midterm" in config.component_pass_thresholds:
         if midterm_aggregate < config.component_pass_thresholds["midterm"]:
             return False
-    if "final" in config.component_pass_thresholds and final_score is not None:
-        if final_score < config.component_pass_thresholds["final"]:
+    if "final" in config.component_pass_thresholds:
+        if final_score is None or final_score < config.component_pass_thresholds["final"]:
             return False
     return True

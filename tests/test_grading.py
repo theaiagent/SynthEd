@@ -78,6 +78,23 @@ class TestGradingConfig:
         with pytest.raises(ValueError, match="dist_alpha.*dist_beta"):
             GradingConfig(distribution="uniform", dist_alpha=0.8, dist_beta=0.2)
 
+    def test_relative_grading_method_rejected(self):
+        with pytest.raises(ValueError, match="not yet implemented"):
+            GradingConfig(grading_method="relative")
+
+    def test_invalid_grading_method_rejected(self):
+        with pytest.raises(ValueError, match="Invalid grading_method"):
+            GradingConfig(grading_method="curved")
+
+    def test_dual_hurdle_requires_thresholds(self):
+        with pytest.raises(ValueError, match="component_pass_thresholds"):
+            GradingConfig(dual_hurdle=True)
+
+    def test_float_tolerance_for_weights(self):
+        """Independently set float weights should not crash on precision."""
+        cfg = GradingConfig(midterm_weight=0.3, final_weight=0.7)
+        assert cfg.midterm_weight == 0.3
+
 
 class TestPiecewiseGPA:
     def test_zero(self):
