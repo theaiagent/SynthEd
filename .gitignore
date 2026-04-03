@@ -14,6 +14,14 @@ venv/
 # Output
 output/
 *.csv
+benchmarks/
+oulad/
+
+# Test artifacts
+test_output*/
+test_out_*/
+test_final_*/
+.coverage
 
 # IDE
 .vscode/
@@ -25,6 +33,10 @@ output/
 
 # LLM cache
 .llm_cache/
+
+# Local notes
+suggestions.md
+docs/superpowers/
 
 # Claude Code
 .claude/
