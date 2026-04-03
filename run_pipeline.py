@@ -7,8 +7,8 @@ Usage:
     python run_pipeline.py --n 500             # 500 students
     python run_pipeline.py --n 100 --llm       # 100 students with LLM enrichment
     python run_pipeline.py --config configs/default.json
-    python run_pipeline.py --benchmark         # Run all 4 benchmark profiles
-    python run_pipeline.py --benchmark --benchmark-profile moderate_dropout_western
+    python run_pipeline.py --benchmark         # Run default benchmark profile
+    python run_pipeline.py --benchmark --benchmark-profile default
 """
 
 import argparse
@@ -63,7 +63,7 @@ def main():
     )
     parser.add_argument(
         "--benchmark-profile", type=str, default=None,
-        help="Run a specific benchmark profile (default: all profiles)",
+        help="Run a specific benchmark profile (available: 'default')",
     )
     args = parser.parse_args()
 

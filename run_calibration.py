@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-"""Run NSGA-II calibration for all 4 benchmark profiles.
+"""Run NSGA-II calibration for the default benchmark profile.
 
 Usage:
-    python run_calibration.py                    # Full run (~3.5h)
+    python run_calibration.py                    # Full run
     python run_calibration.py --quick            # Quick test (~20 min)
-    python run_calibration.py --profile mega_university  # Single profile
+    python run_calibration.py --profile default  # Single profile (only 'default' available)
 """
 from __future__ import annotations
 
@@ -24,12 +24,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-PROFILE_NAMES = [
-    "high_dropout_developing",
-    "moderate_dropout_western",
-    "low_dropout_corporate",
-    "mega_university",
-]
+PROFILE_NAMES = ["default"]
 
 OUTPUT_DIR = Path("calibration_output")
 
@@ -61,7 +56,7 @@ def calibrate_profile(
 
     t0 = time.time()
     result = cal.run(
-        profile_name=profile_name,
+        profile=profile_name,
         pop_size=pop_size,
         n_trials=n_trials,
         sobol_rankings=rankings,
@@ -73,7 +68,7 @@ def calibrate_profile(
     logger.info("Validating knee-point (n=500, 3 seeds)...")
     d_mean, d_std, g_mean, g_std = cal.validate_solution(
         result.knee_point,
-        profile_name,
+        profile=profile_name,
         n_students=500,
         seeds=(42, 123, 456),
     )
@@ -120,14 +115,14 @@ def calibrate_profile(
 def main():
     parser = argparse.ArgumentParser(description="NSGA-II benchmark calibration")
     parser.add_argument("--quick", action="store_true", help="Quick test run")
-    parser.add_argument("--profile", type=str, help="Single profile name")
+    parser.add_argument("--profile", type=str, help="Profile name (default: 'default')")
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
     if args.quick:
         n_students, pop_size, n_trials, sobol_top_n = 50, 20, 500, 10
     else:
-        n_students, pop_size, n_trials, sobol_top_n = 100, 80, 8000, 20
+        n_students, pop_size, n_trials, sobol_top_n = 100, 160, 12800, 20
 
     profiles = [args.profile] if args.profile else PROFILE_NAMES
     OUTPUT_DIR.mkdir(exist_ok=True)

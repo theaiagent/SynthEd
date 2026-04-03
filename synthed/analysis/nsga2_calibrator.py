@@ -5,7 +5,6 @@ import logging
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import fields
 from functools import partial
-from typing import TYPE_CHECKING
 
 import numpy as np
 import optuna
@@ -20,8 +19,7 @@ from .sobol_sensitivity import (
     SOBOL_PARAMETER_SPACE,
 )
 
-if TYPE_CHECKING:
-    from ..benchmarks.profiles import BenchmarkProfile
+from ..benchmarks.profiles import BenchmarkProfile
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +76,7 @@ class NSGAIICalibrator:
 
     def run(
         self,
-        profile_name: str,
+        profile: str | BenchmarkProfile,
         pop_size: int = 80,
         n_trials: int = 8000,
         sobol_rankings: list[SobolRanking] | None = None,
@@ -87,13 +85,17 @@ class NSGAIICalibrator:
         """Run NSGA-II calibration for a benchmark profile."""
         from ..benchmarks.profiles import PROFILES
 
-        if profile_name not in PROFILES:
-            raise NSGAIICalibrationError(
-                f"Unknown profile '{profile_name}'. "
-                f"Available: {list(PROFILES)}"
-            )
-
-        profile = PROFILES[profile_name]
+        if isinstance(profile, str):
+            if profile not in PROFILES:
+                raise NSGAIICalibrationError(
+                    f"Unknown profile '{profile}'. "
+                    f"Available: {list(PROFILES)}"
+                )
+            resolved = PROFILES[profile]
+            profile_name = profile
+        else:
+            resolved = profile
+            profile_name = resolved.name
 
         # Parameter selection
         if sobol_rankings is None:
@@ -115,10 +117,10 @@ class NSGAIICalibrator:
         )
 
         # Targets and fixed overrides
-        target_dropout = profile.reference_stats.dropout_rate
-        target_gpa = profile.reference_stats.gpa_mean
-        fixed_overrides = self._build_fixed_overrides(profile)
-        lo, hi = profile.expected_dropout_range
+        target_dropout = resolved.reference_stats.dropout_rate
+        target_gpa = resolved.reference_stats.gpa_mean
+        fixed_overrides = self._build_fixed_overrides(resolved)
+        lo, hi = resolved.expected_dropout_range
 
         # Objective (used in sequential mode only)
         def objective(trial: optuna.Trial) -> tuple[float, float]:
@@ -131,7 +133,7 @@ class NSGAIICalibrator:
                 overrides=overrides,
                 n_students=self._n_students,
                 seed=self._seed,
-                default_config=profile.persona_config,
+                default_config=resolved.persona_config,
                 calibration_mode=True,
             )
             trial.set_user_attr("achieved_dropout", result["dropout_rate"])
@@ -174,7 +176,7 @@ class NSGAIICalibrator:
 
         if self._n_workers > 1:
             self._run_parallel(
-                study, params, fixed_overrides, profile,
+                study, params, fixed_overrides, resolved,
                 target_dropout, target_gpa, n_trials, pop_size,
             )
         else:
@@ -314,7 +316,7 @@ class NSGAIICalibrator:
     def validate_solution(
         self,
         solution: ParetoSolution,
-        profile_name: str,
+        profile: str | BenchmarkProfile,
         n_students: int = 500,
         seeds: tuple[int, ...] = (42, 123, 456),
     ) -> tuple[float, float, float, float]:
@@ -325,8 +327,11 @@ class NSGAIICalibrator:
         """
         from ..benchmarks.profiles import PROFILES
 
-        profile = PROFILES[profile_name]
-        fixed = self._build_fixed_overrides(profile)
+        if isinstance(profile, str):
+            resolved = PROFILES[profile]
+        else:
+            resolved = profile
+        fixed = self._build_fixed_overrides(resolved)
 
         dropouts: list[float] = []
         gpas: list[float] = []
@@ -336,7 +341,7 @@ class NSGAIICalibrator:
                 overrides=overrides,
                 n_students=n_students,
                 seed=s,
-                default_config=profile.persona_config,
+                default_config=resolved.persona_config,
                 calibration_mode=True,
             )
             dropouts.append(result["dropout_rate"])

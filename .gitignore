@@ -14,7 +14,7 @@ venv/
 # Output
 output/
 *.csv
-benchmarks/
+/benchmarks/
 oulad/
 
 # Test artifacts

@@ -81,11 +81,11 @@ class TestPipelineFromProfile:
     def test_from_profile_valid(self, tmp_path):
         """from_profile with a valid profile creates a properly configured pipeline."""
         pipeline = SynthEdPipeline.from_profile(
-            "low_dropout_corporate",
+            "default",
             output_dir=str(tmp_path),
         )
         assert pipeline._calibration_estimate is not None
-        assert pipeline.target_dropout_range == (0.01, 0.25)
+        assert pipeline.target_dropout_range == (0.35, 0.60)
         # Run to ensure it works end-to-end
         report = pipeline.run(n_students=20)
         assert "simulation_summary" in report
