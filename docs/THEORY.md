@@ -149,6 +149,9 @@ SynthEd/
 │   │   └── backstory_templates.py  # 7 templates, 12 life events, 8 contexts
 │   ├── simulation/
 │   │   ├── engine.py            # Orchestrator (delegates to theories/)
+│   │   ├── engine_config.py     # EngineConfig frozen dataclass (70 constants)
+│   │   ├── grading.py           # GradingConfig + outcome classification
+│   │   ├── statistics.py        # summary_statistics (extracted from engine)
 │   │   ├── environment.py       # ODL course structure + positive events
 │   │   ├── social_network.py    # Peer network with link decay
 │   │   ├── semester.py          # Multi-semester with carry-over
@@ -162,7 +165,7 @@ SynthEd/
 │   │   └── validator.py         # 21 statistical validation tests
 │   ├── analysis/
 │   │   ├── sensitivity.py       # OAT parameter sweeps
-│   │   ├── sobol_sensitivity.py # Sobol variance decomposition (66 params)
+│   │   ├── sobol_sensitivity.py # Sobol variance decomposition (69 params)
 │   │   ├── trait_calibrator.py  # Optuna Bayesian optimization
 │   │   ├── oulad_targets.py     # OULAD reference data extraction
 │   │   ├── oulad_validator.py   # Held-out module validation
@@ -171,7 +174,7 @@ SynthEd/
 │   │   ├── pareto_utils.py      # Pareto front utilities
 │   │   └── _sim_runner.py       # Shared simulation runner
 │   ├── benchmarks/
-│   │   ├── profiles.py          # 4 institutional profiles
+│   │   ├── profiles.py          # Default benchmark profile
 │   │   └── generator.py         # Benchmark dataset generator + report
 │   ├── utils/
 │   │   ├── llm.py               # OpenAI wrapper with cache, cost, streaming
@@ -180,7 +183,7 @@ SynthEd/
 │   │   └── validation.py        # Input validation utilities
 │   ├── calibration.py           # CalibrationMap: target dropout -> params
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                       # 565 pytest tests across 36 files
+├── tests/                       # 635 pytest tests across 39 files
 ├── docs/
 │   ├── GUIDE.md                 # User guide
 │   └── THEORY.md                # This file
@@ -209,7 +212,7 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 
 ## 🧪 Test Suite
 
-565 pytest tests (562 `def test_` definitions, expanded by `@pytest.mark.parametrize`) across 36 files:
+635 pytest tests across 39 files:
 
 | Test File | Tests | Coverage |
 |-----------|-------|----------|
@@ -249,5 +252,8 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 | `test_pareto_utils.py` | 10 | Pareto dominance, front extraction, utilities |
 | `test_unavoidable_withdrawal.py` | 9 | Withdrawal probability, event types |
 | `test_gpa.py` | 9 | GPA accumulation, bounds, feedback loop |
+| `test_grading.py` | 47 | GradingConfig, outcome classification, semester grades |
+| `test_engine_grading.py` | 6 | Engine grading integration, floor-adjusted outcomes |
+| `test_engine_config.py` | 19 | EngineConfig frozen dataclass, validation, replace |
 
 CI runs tests across **Python 3.10, 3.11, and 3.12** via [GitHub Actions](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml).

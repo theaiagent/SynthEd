@@ -43,8 +43,9 @@ python run_pipeline.py --n 200      # or: pip install synthedu
 - **Default Benchmark Profile** -- Customizable via PersonaConfig, InstitutionalConfig, GradingConfig with CLI report generation
 - **InstitutionalConfig** -- 5 institution-level quality parameters that modulate theory constants
 - **GradingConfig** -- Configurable grading policy: Beta/Normal/Uniform grade distributions, weighted semester grades (midterm/final), dual-hurdle pass requirements, exam-only and continuous assessment modes, floor-adjusted transcript scale for outcome classification (Distinction/Pass/Fail)
-- **NSGA-II Calibration** -- Multi-objective optimization with Pareto front exploration
-- **615 Tests** -- 94% branch coverage, CI across Python 3.10/3.11/3.12
+- **EngineConfig** -- 70 frozen engine constants with validation (weight sums, ordering, positivity), overridable via `dataclasses.replace()`
+- **NSGA-II Calibration** -- Multi-objective optimization with Pareto front, parallel `--workers N` support
+- **635 Tests** -- 94% branch coverage, CI across Python 3.10/3.11/3.12
 
 ---
 
@@ -59,6 +60,7 @@ python run_pipeline.py              # 200 students, 14 weeks
 python run_pipeline.py --n 500      # Custom population
 python run_pipeline.py --oulad      # OULAD-compatible export
 python run_pipeline.py --benchmark  # Run default benchmark profile
+python run_calibration.py --workers 4  # Parallel NSGA-II calibration
 ```
 
 ```python
