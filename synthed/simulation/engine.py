@@ -26,6 +26,7 @@ from typing import Any
 import numpy as np
 
 from ..agents.persona import StudentPersona
+from .engine_config import EngineConfig
 from .environment import ODLEnvironment
 from .grading import (
     GradingConfig,
@@ -150,95 +151,6 @@ class SimulationEngine:
     - Phase 5 (Final Decision): Dropout occurs
     """
 
-    # ── _simulate_student_week constants ──
-
-    # LMS login generation
-    _LOGIN_ENG_MULTIPLIER: float = 5          # base login count scales with engagement
-    _LOGIN_LITERACY_FLOOR: float = 0.5        # digital literacy floor for login rate
-    _LOGIN_LITERACY_SCALE: float = 0.5        # digital literacy scaling for login rate
-    _LOGIN_DURATION_MEAN_FACTOR: float = 25   # mean login duration scales with engagement
-    _LOGIN_DURATION_STD: float = 12           # std dev of login duration
-    _LOGIN_DURATION_MIN: float = 5            # minimum login duration in minutes
-
-    # Forum activity
-    _FORUM_READ_ENG_FACTOR: float = 0.7       # engagement factor for forum read probability
-    _FORUM_READ_LITERACY_FLOOR: float = 0.5   # digital literacy floor for forum reads
-    _FORUM_READ_LITERACY_SCALE: float = 0.5   # digital literacy scaling for forum reads
-    _FORUM_READ_EXP_MEAN: float = 10          # mean of exponential distribution for read duration
-    _FORUM_POST_ENG_FACTOR: float = 0.25      # engagement factor for forum post probability
-    _FORUM_POST_EXTRA_FLOOR: float = 0.4      # base component of post probability
-    _FORUM_POST_EXTRA_WEIGHT: float = 0.3     # weight of extraversion in post probability
-    _FORUM_POST_SOCIAL_WEIGHT: float = 0.3    # weight of social integration in post probability
-    _FORUM_POST_DURATION_MEAN: float = 15     # mean post duration in minutes
-    _FORUM_POST_DURATION_STD: float = 5       # std dev of post duration
-    _FORUM_POST_LENGTH_MEAN: float = 80       # mean post length in characters
-    _FORUM_POST_LENGTH_STD: float = 30        # std dev of post length
-
-    # Assignment submission
-    _ASSIGN_SUBMIT_REG_WEIGHT: float = 0.3    # self-regulation weight in submit probability
-    _ASSIGN_SUBMIT_TIME_WEIGHT: float = 0.2   # time management weight in submit probability
-    _ASSIGN_SUBMIT_CONSC_WEIGHT: float = 0.2  # conscientiousness weight in submit probability
-    _ASSIGN_SUBMIT_BASE: float = 0.3          # base probability component for submission
-    _ASSIGN_GPA_WEIGHT: float = 0.25          # prior GPA weight in assignment quality
-    _ASSIGN_ENG_WEIGHT: float = 0.25          # engagement weight in assignment quality
-    _ASSIGN_EFFICACY_WEIGHT: float = 0.20     # self-efficacy weight in assignment quality
-    _ASSIGN_READING_WEIGHT: float = 0.15      # reading/writing skill weight
-    _ASSIGN_NOISE_WEIGHT: float = 0.15        # random noise weight in quality
-    _ASSIGN_NOISE_STD: float = 0.15           # std dev of assignment quality noise
-    _GPA_SCALE: float = 4.0                   # GPA denominator for normalisation
-    _MISSED_IMPACT: float = -0.3              # memory impact of missed assignment
-
-    # Live sessions
-    _LIVE_ENG_FACTOR: float = 0.5             # engagement factor for live attendance
-    _LIVE_EMPLOYED_PENALTY: float = 0.4       # Bean & Metzner: work conflict penalty
-    _LIVE_DURATION_MEAN: float = 55           # mean live session duration in minutes
-    _LIVE_DURATION_STD: float = 10            # std dev of live session duration
-
-    # Exams
-    _EXAM_TAKE_HIGH_ENG_PROB: float = 0.95    # exam take probability when engagement > threshold
-    _EXAM_TAKE_ENG_THRESHOLD: float = 0.3     # engagement threshold for high exam probability
-    _EXAM_TAKE_LOW_MULTIPLIER: float = 2.5    # multiplier for low-engagement exam probability
-    _EXAM_GPA_WEIGHT: float = 0.20            # prior GPA weight in exam quality
-    _EXAM_ENG_WEIGHT: float = 0.20            # engagement weight in exam quality
-    _EXAM_EFFICACY_WEIGHT: float = 0.20       # self-efficacy weight in exam quality
-    _EXAM_REG_WEIGHT: float = 0.15            # self-regulation weight in exam quality
-    _EXAM_READING_WEIGHT: float = 0.10        # reading/writing skill weight
-    _EXAM_NOISE_WEIGHT: float = 0.15          # random noise weight in exam quality
-    _EXAM_NOISE_STD: float = 0.18             # std dev of exam quality noise
-
-    # ── _update_engagement constants ──
-
-    _DECAY_DAMPING_FACTOR: float = 0.5        # controls how quickly decay attenuates over weeks
-    _TINTO_ACADEMIC_WEIGHT: float = 0.06      # academic integration weight in engagement
-    _TINTO_SOCIAL_WEIGHT: float = 0.02        # social integration weight in engagement
-    _TINTO_DECAY_BASE: float = 0.05           # base weekly decay attenuated over time
-    _MOTIVATION_INTRINSIC_BOOST: float = 0.02  # engagement boost for intrinsic motivation
-    _MOTIVATION_AMOTIVATION_PENALTY: float = 0.025  # engagement penalty for amotivation
-    _TD_EFFECT_FACTOR: float = 0.03           # transactional distance effect on engagement
-    _COI_SOCIAL_WEIGHT: float = 0.01          # CoI social presence effect weight
-    _COI_COGNITIVE_WEIGHT: float = 0.02       # CoI cognitive presence effect weight
-    _COI_TEACHING_WEIGHT: float = 0.01        # CoI teaching presence effect weight
-    _COI_BASELINE_OFFSET: float = 0.02        # CoI baseline offset (subtracted)
-    _HIGH_QUALITY_THRESHOLD: float = 0.7      # quality above this boosts engagement
-    _HIGH_QUALITY_BOOST: float = 0.025        # engagement boost for high-quality work
-    _LOW_QUALITY_THRESHOLD: float = 0.3       # quality below this penalises engagement
-    _LOW_QUALITY_PENALTY: float = 0.035       # engagement penalty for low-quality work
-    _MISSED_STREAK_PENALTY: float = 0.04      # per-streak engagement erosion
-    _MISSED_STREAK_CAP: int = 3               # max streak multiplier
-    _NEUROTICISM_EXAM_FACTOR: float = 0.04    # neuroticism effect during exam weeks
-    _CB_FEEDBACK_FACTOR: float = 0.02         # cost-benefit feedback into engagement
-    _ENGAGEMENT_CLIP_LO: float = 0.01         # engagement lower bound
-    _ENGAGEMENT_CLIP_HI: float = 0.99         # engagement upper bound
-
-    # ── Institutional quality effect on grades ──
-    _INST_QUALITY_SCALE_LOW: float = 0.7
-    _INST_QUALITY_SCALE_HIGH: float = 1.3
-
-    # ── Phase 2: social network constants ──
-    _NETWORK_DECAY_RATE: float = 0.02         # weekly link decay rate
-    _COI_DEGREE_FACTOR: float = 0.005         # social presence boost per network degree
-    _COI_DEGREE_CAP: float = 0.03             # max social presence boost from network
-
     def __init__(
         self,
         environment: ODLEnvironment,
@@ -248,8 +160,10 @@ class SimulationEngine:
         unavoidable_withdrawal_rate: float = 0.0,
         institutional_config: InstitutionalConfig | None = None,
         grading_config: GradingConfig | None = None,
+        engine_config: EngineConfig | None = None,
     ):
         self.env = environment
+        self.cfg = engine_config or EngineConfig()
         self.inst = institutional_config or InstitutionalConfig()
         self.grading_config = grading_config or GradingConfig()
         self.llm = llm_client
@@ -358,7 +272,7 @@ class SimulationEngine:
                 self._update_engagement(student, state, week, week_context, week_records)
 
             # ── Phase 2: Social network + peer influence (Epstein & Axtell) ──
-            self.network.decay_links(decay_rate=self._NETWORK_DECAY_RATE)
+            self.network.decay_links(decay_rate=self.cfg._NETWORK_DECAY_RATE)
             self.epstein_axtell.update_network(week, week_records_by_student, self.network, rng=self.rng)
             for student in students:
                 state = states[student.id]
@@ -367,9 +281,9 @@ class SimulationEngine:
                 self.epstein_axtell.apply_peer_influence(student, state, states, self.network)
                 # CoI social_presence boosted by network degree
                 degree = self.network.get_degree(student.id)
-                state.coi_state.social_presence += min(degree * self._COI_DEGREE_FACTOR, self._COI_DEGREE_CAP)
+                state.coi_state.social_presence += min(degree * self.cfg._COI_DEGREE_FACTOR, self.cfg._COI_DEGREE_CAP)
                 state.coi_state.social_presence = float(
-                    np.clip(state.coi_state.social_presence, self._ENGAGEMENT_CLIP_LO, self._ENGAGEMENT_CLIP_HI)
+                    np.clip(state.coi_state.social_presence, self.cfg._ENGAGEMENT_CLIP_LO, self.cfg._ENGAGEMENT_CLIP_HI)
                 )
                 # Record engagement AFTER peer influence (data integrity)
                 state.weekly_engagement_history.append(state.current_engagement)
@@ -400,7 +314,7 @@ class SimulationEngine:
         """
         floor = self.grading_config.grade_floor
         graded = floor + (1.0 - floor) * quality
-        state.gpa_points_sum += graded * self._GPA_SCALE
+        state.gpa_points_sum += graded * self.cfg._GPA_SCALE
         state.gpa_count += 1
         state.cumulative_gpa = state.gpa_points_sum / state.gpa_count
         state.perceived_mastery_sum += quality
@@ -485,8 +399,8 @@ class SimulationEngine:
                 continue
 
             # ── LMS Logins (Rovai: accessibility) ──
-            effective_login_floor = scale_by(self._LOGIN_LITERACY_FLOOR, self.inst.technology_quality)  # [inst: technology_quality]
-            login_rate = engagement * self._LOGIN_ENG_MULTIPLIER * (effective_login_floor + self._LOGIN_LITERACY_SCALE * student.digital_literacy)
+            effective_login_floor = scale_by(self.cfg._LOGIN_LITERACY_FLOOR, self.inst.technology_quality)  # [inst: technology_quality]
+            login_rate = engagement * self.cfg._LOGIN_ENG_MULTIPLIER * (effective_login_floor + self.cfg._LOGIN_LITERACY_SCALE * student.digital_literacy)
             n_logins = max(0, int(self.rng.poisson(login_rate)))
             for _ in range(n_logins):
                 if student.is_employed:
@@ -494,7 +408,7 @@ class SimulationEngine:
                 else:
                     hour = float(self.rng.uniform(8, 22))
                 day = self.rng.integers(0, 7)
-                duration = float(max(self._LOGIN_DURATION_MIN, self.rng.normal(self._LOGIN_DURATION_MEAN_FACTOR * engagement, self._LOGIN_DURATION_STD)))
+                duration = float(max(self.cfg._LOGIN_DURATION_MIN, self.rng.normal(self.cfg._LOGIN_DURATION_MEAN_FACTOR * engagement, self.cfg._LOGIN_DURATION_STD)))
                 records.append(InteractionRecord(
                     student_id=student.id, week=week, course_id=course_id,
                     interaction_type="lms_login",
@@ -505,19 +419,19 @@ class SimulationEngine:
 
             # ── Forum Activity (Tinto: social integration) ──
             if course.has_forum:
-                effective_forum_floor = scale_by(self._FORUM_READ_LITERACY_FLOOR, self.inst.technology_quality)  # [inst: technology_quality]
-                read_prob = engagement * self._FORUM_READ_ENG_FACTOR * (effective_forum_floor + self._FORUM_READ_LITERACY_SCALE * student.digital_literacy)
+                effective_forum_floor = scale_by(self.cfg._FORUM_READ_LITERACY_FLOOR, self.inst.technology_quality)  # [inst: technology_quality]
+                read_prob = engagement * self.cfg._FORUM_READ_ENG_FACTOR * (effective_forum_floor + self.cfg._FORUM_READ_LITERACY_SCALE * student.digital_literacy)
                 if self.rng.random() < read_prob:
                     records.append(InteractionRecord(
                         student_id=student.id, week=week, course_id=course_id,
                         interaction_type="forum_read",
-                        duration_minutes=round(float(self.rng.exponential(self._FORUM_READ_EXP_MEAN)), 1),
+                        duration_minutes=round(float(self.rng.exponential(self.cfg._FORUM_READ_EXP_MEAN)), 1),
                     ))
 
                 # Posting: extraversion + social integration drive this
-                post_prob = (engagement * self._FORUM_POST_ENG_FACTOR
-                             * (self._FORUM_POST_EXTRA_FLOOR + self._FORUM_POST_EXTRA_WEIGHT * student.personality.extraversion
-                                + self._FORUM_POST_SOCIAL_WEIGHT * state.social_integration))
+                post_prob = (engagement * self.cfg._FORUM_POST_ENG_FACTOR
+                             * (self.cfg._FORUM_POST_EXTRA_FLOOR + self.cfg._FORUM_POST_EXTRA_WEIGHT * student.personality.extraversion
+                                + self.cfg._FORUM_POST_SOCIAL_WEIGHT * state.social_integration))
                 if self.rng.random() < post_prob:
                     # Forum post quality (social engagement proxy)
                     forum_quality = float(np.clip(
@@ -529,30 +443,30 @@ class SimulationEngine:
                     records.append(InteractionRecord(
                         student_id=student.id, week=week, course_id=course_id,
                         interaction_type="forum_post",
-                        duration_minutes=round(float(self.rng.normal(self._FORUM_POST_DURATION_MEAN, self._FORUM_POST_DURATION_STD)), 1),
+                        duration_minutes=round(float(self.rng.normal(self.cfg._FORUM_POST_DURATION_MEAN, self.cfg._FORUM_POST_DURATION_STD)), 1),
                         quality_score=round(forum_quality, 2),
-                        metadata={"post_length": int(self.rng.normal(self._FORUM_POST_LENGTH_MEAN, self._FORUM_POST_LENGTH_STD))},
+                        metadata={"post_length": int(self.rng.normal(self.cfg._FORUM_POST_LENGTH_MEAN, self.cfg._FORUM_POST_LENGTH_STD))},
                     ))
 
             # ── Assignment Submission (Rovai: self-regulation + time management) ──
             if week in course.assignment_weeks:
                 submit_prob = (engagement
-                               * (self._ASSIGN_SUBMIT_BASE + self._ASSIGN_SUBMIT_REG_WEIGHT * student.self_regulation
-                                  + self._ASSIGN_SUBMIT_TIME_WEIGHT * student.time_management
-                                  + self._ASSIGN_SUBMIT_CONSC_WEIGHT * student.personality.conscientiousness))
+                               * (self.cfg._ASSIGN_SUBMIT_BASE + self.cfg._ASSIGN_SUBMIT_REG_WEIGHT * student.self_regulation
+                                  + self.cfg._ASSIGN_SUBMIT_TIME_WEIGHT * student.time_management
+                                  + self.cfg._ASSIGN_SUBMIT_CONSC_WEIGHT * student.personality.conscientiousness))
                 submitted = self.rng.random() < submit_prob
 
                 if submitted:
                     quality = float(np.clip(
-                        scale_by(self._ASSIGN_GPA_WEIGHT, self.inst.instructional_design_quality,
-                                 self._INST_QUALITY_SCALE_LOW, self._INST_QUALITY_SCALE_HIGH)
-                        * (student.prior_gpa / self._GPA_SCALE)
-                        + scale_by(self._ASSIGN_ENG_WEIGHT, self.inst.instructional_design_quality,
-                                   self._INST_QUALITY_SCALE_LOW, self._INST_QUALITY_SCALE_HIGH)
+                        scale_by(self.cfg._ASSIGN_GPA_WEIGHT, self.inst.instructional_design_quality,
+                                 self.cfg._INST_QUALITY_SCALE_LOW, self.cfg._INST_QUALITY_SCALE_HIGH)
+                        * (student.prior_gpa / self.cfg._GPA_SCALE)
+                        + scale_by(self.cfg._ASSIGN_ENG_WEIGHT, self.inst.instructional_design_quality,
+                                   self.cfg._INST_QUALITY_SCALE_LOW, self.cfg._INST_QUALITY_SCALE_HIGH)
                         * engagement
-                        + self._ASSIGN_EFFICACY_WEIGHT * student.self_efficacy
-                        + self._ASSIGN_READING_WEIGHT * student.academic_reading_writing
-                        + self._ASSIGN_NOISE_WEIGHT * self.rng.normal(0.5, self._ASSIGN_NOISE_STD),
+                        + self.cfg._ASSIGN_EFFICACY_WEIGHT * student.self_efficacy
+                        + self.cfg._ASSIGN_READING_WEIGHT * student.academic_reading_writing
+                        + self.cfg._ASSIGN_NOISE_WEIGHT * self.rng.normal(0.5, self.cfg._ASSIGN_NOISE_STD),
                         0.0, 1.0
                     ))
                     is_late = self.rng.random() > student.time_management
@@ -576,36 +490,36 @@ class SimulationEngine:
                     state.missed_assignments_streak += 1
                     state.memory.append({"week": week, "event_type": "missed_assignment",
                                         "details": f"Missed assignment for {course_id} (streak: {state.missed_assignments_streak})",
-                                        "impact": self._MISSED_IMPACT})
+                                        "impact": self.cfg._MISSED_IMPACT})
 
             # ── Live Sessions ──
             if course.has_live_sessions:
-                attend_prob = engagement * self._LIVE_ENG_FACTOR * student.time_management
+                attend_prob = engagement * self.cfg._LIVE_ENG_FACTOR * student.time_management
                 if student.is_employed:
-                    attend_prob *= self._LIVE_EMPLOYED_PENALTY  # Bean & Metzner: work conflict
+                    attend_prob *= self.cfg._LIVE_EMPLOYED_PENALTY  # Bean & Metzner: work conflict
                 if self.rng.random() < attend_prob:
                     records.append(InteractionRecord(
                         student_id=student.id, week=week, course_id=course_id,
                         interaction_type="live_session",
-                        duration_minutes=round(float(self.rng.normal(self._LIVE_DURATION_MEAN, self._LIVE_DURATION_STD)), 1),
+                        duration_minutes=round(float(self.rng.normal(self.cfg._LIVE_DURATION_MEAN, self.cfg._LIVE_DURATION_STD)), 1),
                     ))
 
             # ── Exams ──
             if week == course.midterm_week or week == course.final_week:
                 exam_type = "midterm" if week == course.midterm_week else "final"
-                take_prob = self._EXAM_TAKE_HIGH_ENG_PROB if engagement > self._EXAM_TAKE_ENG_THRESHOLD else engagement * self._EXAM_TAKE_LOW_MULTIPLIER
+                take_prob = self.cfg._EXAM_TAKE_HIGH_ENG_PROB if engagement > self.cfg._EXAM_TAKE_ENG_THRESHOLD else engagement * self.cfg._EXAM_TAKE_LOW_MULTIPLIER
                 if self.rng.random() < take_prob:
                     exam_quality = float(np.clip(
-                        scale_by(self._EXAM_GPA_WEIGHT, self.inst.instructional_design_quality,
-                                 self._INST_QUALITY_SCALE_LOW, self._INST_QUALITY_SCALE_HIGH)
-                        * (student.prior_gpa / self._GPA_SCALE)
-                        + scale_by(self._EXAM_ENG_WEIGHT, self.inst.instructional_design_quality,
-                                   self._INST_QUALITY_SCALE_LOW, self._INST_QUALITY_SCALE_HIGH)
+                        scale_by(self.cfg._EXAM_GPA_WEIGHT, self.inst.instructional_design_quality,
+                                 self.cfg._INST_QUALITY_SCALE_LOW, self.cfg._INST_QUALITY_SCALE_HIGH)
+                        * (student.prior_gpa / self.cfg._GPA_SCALE)
+                        + scale_by(self.cfg._EXAM_ENG_WEIGHT, self.inst.instructional_design_quality,
+                                   self.cfg._INST_QUALITY_SCALE_LOW, self.cfg._INST_QUALITY_SCALE_HIGH)
                         * engagement
-                        + self._EXAM_EFFICACY_WEIGHT * student.self_efficacy
-                        + self._EXAM_REG_WEIGHT * student.self_regulation
-                        + self._EXAM_READING_WEIGHT * student.academic_reading_writing
-                        + self._EXAM_NOISE_WEIGHT * self.rng.normal(0.5, self._EXAM_NOISE_STD),
+                        + self.cfg._EXAM_EFFICACY_WEIGHT * student.self_efficacy
+                        + self.cfg._EXAM_REG_WEIGHT * student.self_regulation
+                        + self.cfg._EXAM_READING_WEIGHT * student.academic_reading_writing
+                        + self.cfg._EXAM_NOISE_WEIGHT * self.rng.normal(0.5, self.cfg._EXAM_NOISE_STD),
                         0.0, 1.0
                     ))
                     records.append(InteractionRecord(
@@ -642,13 +556,13 @@ class SimulationEngine:
         engagement = state.current_engagement
 
         # ── Adaptive baseline decay ──
-        decay_attenuation = 1.0 / (1.0 + self._DECAY_DAMPING_FACTOR * (week - 1) ** 0.5)
+        decay_attenuation = 1.0 / (1.0 + self.cfg._DECAY_DAMPING_FACTOR * (week - 1) ** 0.5)
 
         # ── Tinto: Integration effect ──
         integration_effect = (
-            state.academic_integration * self._TINTO_ACADEMIC_WEIGHT
-            + state.social_integration * self._TINTO_SOCIAL_WEIGHT
-            - self._TINTO_DECAY_BASE * decay_attenuation
+            state.academic_integration * self.cfg._TINTO_ACADEMIC_WEIGHT
+            + state.social_integration * self.cfg._TINTO_SOCIAL_WEIGHT
+            - self.cfg._TINTO_DECAY_BASE * decay_attenuation
         )
         engagement += integration_effect
 
@@ -684,22 +598,22 @@ class SimulationEngine:
 
         # ── SDT (Deci & Ryan, 1985): Motivation type effect ──
         motivation_effect = {
-            "intrinsic": self._MOTIVATION_INTRINSIC_BOOST, "extrinsic": 0.0, "amotivation": -self._MOTIVATION_AMOTIVATION_PENALTY
+            "intrinsic": self.cfg._MOTIVATION_INTRINSIC_BOOST, "extrinsic": 0.0, "amotivation": -self.cfg._MOTIVATION_AMOTIVATION_PENALTY
         }.get(state.current_motivation_type, 0.0)
         engagement += motivation_effect
 
         # ── Moore (1993): Transactional distance effect ──
         avg_td = self.moore.average(student, state, self.env)
-        td_effect = -(avg_td - 0.5) * self._TD_EFFECT_FACTOR
+        td_effect = -(avg_td - 0.5) * self.cfg._TD_EFFECT_FACTOR
         engagement += td_effect
 
         # ── Garrison et al. (2000): Community of Inquiry effect ──
         coi = state.coi_state
         coi_effect = (
-            coi.social_presence * self._COI_SOCIAL_WEIGHT
-            + coi.cognitive_presence * self._COI_COGNITIVE_WEIGHT
-            + coi.teaching_presence * self._COI_TEACHING_WEIGHT
-            - self._COI_BASELINE_OFFSET
+            coi.social_presence * self.cfg._COI_SOCIAL_WEIGHT
+            + coi.cognitive_presence * self.cfg._COI_COGNITIVE_WEIGHT
+            + coi.teaching_presence * self.cfg._COI_TEACHING_WEIGHT
+            - self.cfg._COI_BASELINE_OFFSET
         )
         engagement += coi_effect
 
@@ -709,18 +623,18 @@ class SimulationEngine:
         # ── Academic outcomes this week ──
         for r in records:
             if r.interaction_type in ("assignment_submit", "exam"):
-                if r.quality_score > self._HIGH_QUALITY_THRESHOLD:
-                    engagement += self._HIGH_QUALITY_BOOST
-                elif r.quality_score < self._LOW_QUALITY_THRESHOLD:
-                    engagement -= self._LOW_QUALITY_PENALTY
+                if r.quality_score > self.cfg._HIGH_QUALITY_THRESHOLD:
+                    engagement += self.cfg._HIGH_QUALITY_BOOST
+                elif r.quality_score < self.cfg._LOW_QUALITY_THRESHOLD:
+                    engagement -= self.cfg._LOW_QUALITY_PENALTY
 
         # Missed assignments compound (Bäulke: perceived misfit grows)
         if state.missed_assignments_streak >= 2:
-            engagement -= self._MISSED_STREAK_PENALTY * min(state.missed_assignments_streak - 1, self._MISSED_STREAK_CAP)
+            engagement -= self.cfg._MISSED_STREAK_PENALTY * min(state.missed_assignments_streak - 1, self.cfg._MISSED_STREAK_CAP)
 
         # ── Exam week stress (Neuroticism moderator) ──
         if context.get("is_exam_week"):
-            engagement -= student.personality.neuroticism * self._NEUROTICISM_EXAM_FACTOR
+            engagement -= student.personality.neuroticism * self.cfg._NEUROTICISM_EXAM_FACTOR
 
         # ── Kember: Cost-benefit recalculation after major events ──
         has_graded_item = any(
@@ -731,12 +645,12 @@ class SimulationEngine:
                                     week=week, total_weeks=self.env.total_weeks,
                                     inst=self.inst)
             # Cost-benefit feeds back into engagement
-            engagement += (state.perceived_cost_benefit - 0.5) * self._CB_FEEDBACK_FACTOR
+            engagement += (state.perceived_cost_benefit - 0.5) * self.cfg._CB_FEEDBACK_FACTOR
 
         # ── Persona-based engagement floor (Rovai) ──
         engagement = max(engagement, self.rovai.engagement_floor(student))
 
-        state.current_engagement = float(np.clip(engagement, self._ENGAGEMENT_CLIP_LO, self._ENGAGEMENT_CLIP_HI))
+        state.current_engagement = float(np.clip(engagement, self.cfg._ENGAGEMENT_CLIP_LO, self.cfg._ENGAGEMENT_CLIP_HI))
 
     def summary_statistics(self, states: dict[str, SimulationState]) -> dict[str, Any]:
         """Compute aggregate statistics from simulation states."""

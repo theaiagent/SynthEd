@@ -22,6 +22,7 @@ from .agents.factory import StudentFactory
 from .calibration import CalibrationMap
 from .simulation.environment import ODLEnvironment
 from .simulation.engine import SimulationEngine
+from .simulation.engine_config import EngineConfig
 from .simulation.grading import GradingConfig
 from .simulation.institutional import InstitutionalConfig
 from .data_output.exporter import DataExporter
@@ -64,6 +65,7 @@ class SynthEdPipeline:
         cost_threshold: float = _DEFAULT_COST_THRESHOLD_USD,
         confirm_callback: Callable[[str], bool] | None = None,
         grading_config: GradingConfig | None = None,
+        engine_config: EngineConfig | None = None,
         export_oulad: bool = False,
         _calibration_mode: bool = False,
     ):
@@ -98,6 +100,7 @@ class SynthEdPipeline:
             unavoidable_withdrawal_rate=self.persona_config.unavoidable_withdrawal_rate,
             institutional_config=self.institutional_config,
             grading_config=self.grading_config,
+            engine_config=engine_config,
         )
         self.exporter = DataExporter(output_dir=str(self.output_dir))
         self.validator = SyntheticDataValidator(reference=self.reference)
@@ -180,6 +183,7 @@ class SynthEdPipeline:
         llm_base_url: str | None = None,
         cost_threshold: float = _DEFAULT_COST_THRESHOLD_USD,
         confirm_callback: Callable[[str], bool] | None = None,
+        engine_config: EngineConfig | None = None,
     ) -> SynthEdPipeline:
         """Create a pipeline from a named benchmark profile.
 
@@ -200,6 +204,7 @@ class SynthEdPipeline:
             environment=profile.environment,
             institutional_config=profile.institutional_config,
             grading_config=profile.grading_config,
+            engine_config=engine_config,
             reference_stats=profile.reference_stats,
             output_dir=output_dir,
             use_llm=use_llm,
