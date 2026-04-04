@@ -85,6 +85,11 @@ def run_simulation_with_overrides(
             if attr not in _grading_fields:
                 logger.warning("grading override '%s' not in GradingConfig — ignored", attr)
         filtered_grading = {k: v for k, v in grading_overrides.items() if k in _grading_fields}
+        # Ensure distinction > pass when both are sampled independently
+        if "pass_threshold" in filtered_grading and "distinction_threshold" in filtered_grading:
+            lo, hi = sorted([filtered_grading["pass_threshold"], filtered_grading["distinction_threshold"]])
+            filtered_grading["pass_threshold"] = lo
+            filtered_grading["distinction_threshold"] = hi
         grading_config = replace(GradingConfig(), **filtered_grading) if filtered_grading else None
     else:
         grading_config = None

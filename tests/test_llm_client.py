@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import builtins
 import logging
 from unittest.mock import MagicMock, patch
 
@@ -285,3 +286,17 @@ class TestLLMClientCache:
         # Should fall back to API call
         result = client.chat(msgs)
         assert result == '{"result": "test"}'
+
+
+def test_missing_openai_package():
+    """LLMClient raises ImportError with install hint when openai is not installed."""
+    real_import = builtins.__import__
+
+    def block_openai(name, *args, **kwargs):
+        if name == "openai":
+            raise ImportError("No module named 'openai'")
+        return real_import(name, *args, **kwargs)
+
+    with patch("builtins.__import__", side_effect=block_openai):
+        with pytest.raises(ImportError, match="pip install synthedu\\[llm\\]"):
+            LLMClient(api_key="test-key")

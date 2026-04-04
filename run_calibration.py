@@ -116,6 +116,7 @@ def main():
     parser = argparse.ArgumentParser(description="NSGA-II benchmark calibration")
     parser.add_argument("--quick", action="store_true", help="Quick test run")
     parser.add_argument("--profile", type=str, help="Profile name (default: 'default')")
+    parser.add_argument("--workers", type=int, default=1, help="Parallel workers")
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
@@ -131,7 +132,7 @@ def main():
     rankings = run_sobol(n_students=n_students, seed=args.seed)
 
     # Step 2: Calibrate each profile
-    cal = NSGAIICalibrator(n_students=n_students, seed=args.seed)
+    cal = NSGAIICalibrator(n_students=n_students, seed=args.seed, n_workers=args.workers)
     all_results = []
     total_t0 = time.time()
 
