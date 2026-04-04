@@ -248,8 +248,8 @@ class SobolAnalyzer:
                 if attr not in config_fields:
                     raise ValueError(f"Unknown PersonaConfig field: '{attr}' in {p.name}")
             elif prefix == "engine":
-                if not hasattr(engine, attr):
-                    raise ValueError(f"Unknown engine attribute: '{attr}' in {p.name}")
+                if not hasattr(engine.cfg, attr):
+                    raise ValueError(f"Unknown EngineConfig field: '{attr}' in {p.name}")
             elif prefix == "inst":
                 inst_fields = {f.name for f in fields(InstitutionalConfig)}
                 if attr not in inst_fields:

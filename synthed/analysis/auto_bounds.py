@@ -120,7 +120,7 @@ def auto_bounds(
     engine = SimulationEngine(environment=ODLEnvironment(), seed=0)
 
     if include_engine:
-        params.extend(_bounds_from_constants(engine, "engine", margin))
+        params.extend(_bounds_from_constants(engine.cfg, "engine", margin))
 
     if include_theories:
         for alias, engine_attr in MODULE_ALIASES.items():

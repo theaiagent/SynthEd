@@ -15,10 +15,15 @@ from dataclasses import fields, replace
 
 from ..agents.persona import PersonaConfig
 from ..pipeline import SynthEdPipeline
+from ..simulation.engine_config import EngineConfig
 from ..simulation.grading import GradingConfig
 from ..simulation.institutional import InstitutionalConfig
 
 logger = logging.getLogger(__name__)
+
+# Cached field name sets for override validation
+_ENGINE_FIELDS: frozenset[str] = frozenset(f.name for f in fields(EngineConfig))
+_INST_FIELDS: frozenset[str] = frozenset(f.name for f in fields(InstitutionalConfig))
 
 # Theory module alias → SimulationEngine attribute name
 MODULE_ALIASES: dict[str, str] = {
@@ -78,7 +83,16 @@ def run_simulation_with_overrides(
             theory_overrides.setdefault(prefix, {})[attr] = value
 
     config = _build_config(default_config, config_overrides)
-    inst_config = replace(InstitutionalConfig(), **inst_overrides) if inst_overrides else None
+    if inst_overrides:
+        filtered_inst = {}
+        for attr in inst_overrides:
+            if attr in _INST_FIELDS:
+                filtered_inst[attr] = inst_overrides[attr]
+            else:
+                logger.warning("inst override '%s' not in InstitutionalConfig — ignored", attr)
+        inst_config = replace(InstitutionalConfig(), **filtered_inst) if filtered_inst else None
+    else:
+        inst_config = None
     if grading_overrides:
         _grading_fields = {f.name for f in fields(GradingConfig)}
         for attr in grading_overrides:
@@ -154,15 +168,21 @@ def _apply_engine_overrides(
     """
     Apply parameter overrides to the pipeline's engine and theory modules.
 
-    Sets instance-level attributes that shadow class defaults without
-    mutating the class itself. Safe because callers always create a fresh
-    SynthEdPipeline (and therefore fresh engine + theory instances) per
-    simulation call — instance shadows do not persist across runs.
+    Engine constants live in a frozen ``EngineConfig`` on ``engine.cfg``.
+    Overrides are applied via ``dataclasses.replace()`` — the engine object
+    itself is mutable, so reassigning ``engine.cfg`` is safe.
     """
     engine = pipeline.engine
 
-    for attr, value in engine_overrides.items():
-        setattr(engine, attr, value)
+    if engine_overrides:
+        filtered = {}
+        for attr, value in engine_overrides.items():
+            if attr in _ENGINE_FIELDS:
+                filtered[attr] = value
+            else:
+                logger.warning("engine override '%s' not in EngineConfig — ignored", attr)
+        if filtered:
+            engine.cfg = replace(engine.cfg, **filtered)
 
     for module_alias, attrs in theory_overrides.items():
         engine_attr = MODULE_ALIASES.get(module_alias)
@@ -171,4 +191,10 @@ def _apply_engine_overrides(
             continue
         module = getattr(engine, engine_attr)
         for attr, value in attrs.items():
+            if attr.startswith("__") or not hasattr(module, attr):
+                logger.warning(
+                    "theory override '%s.%s' not a known attribute — ignored",
+                    module_alias, attr,
+                )
+                continue
             setattr(module, attr, value)

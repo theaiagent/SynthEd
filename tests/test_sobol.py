@@ -78,7 +78,7 @@ class TestParameterValidation:
 
     def test_invalid_engine_attr_raises(self):
         bad = (SobolParameter("engine._NONEXISTENT_WEIGHT", 0.1, 0.9, "test"),)
-        with pytest.raises(ValueError, match="Unknown engine attribute"):
+        with pytest.raises(ValueError, match="Unknown EngineConfig field"):
             SobolAnalyzer(n_students=10, parameters=bad)
 
     def test_invalid_theory_attr_raises(self):
@@ -166,19 +166,19 @@ class TestOverrides:
         assert config.dropout_base_rate == 0.80
 
     def test_engine_override_applies(self, tmp_path):
-        """Engine-level constants can be overridden via setattr."""
+        """Engine-level constants can be overridden via EngineConfig replace."""
         from synthed.pipeline import SynthEdPipeline
         from synthed.analysis._sim_runner import _apply_engine_overrides
+        from synthed.simulation.engine_config import EngineConfig
         pipeline = SynthEdPipeline(output_dir=str(tmp_path), seed=42)
-        original = pipeline.engine._TINTO_ACADEMIC_WEIGHT
+        original = pipeline.engine.cfg._TINTO_ACADEMIC_WEIGHT
         _apply_engine_overrides(
             pipeline,
             {"_TINTO_ACADEMIC_WEIGHT": 0.999},
             {},
         )
-        assert pipeline.engine._TINTO_ACADEMIC_WEIGHT == 0.999
-        from synthed.simulation.engine import SimulationEngine
-        assert SimulationEngine._TINTO_ACADEMIC_WEIGHT == original
+        assert pipeline.engine.cfg._TINTO_ACADEMIC_WEIGHT == 0.999
+        assert EngineConfig()._TINTO_ACADEMIC_WEIGHT == original
 
     def test_theory_override_applies(self, tmp_path):
         """Theory module constants can be overridden."""
