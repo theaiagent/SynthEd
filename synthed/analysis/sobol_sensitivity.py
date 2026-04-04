@@ -63,7 +63,7 @@ class SobolParameter:
 #   "epstein."  → engine.epstein_axtell attribute
 #   "inst."     → InstitutionalConfig field (frozen, use replace())
 
-# Full parameter space: 68 parameters selected for theoretical importance
+# Full parameter space: 69 parameters selected for theoretical importance
 # and empirical impact on dropout/engagement/GPA outcomes.
 SOBOL_PARAMETER_SPACE: tuple[SobolParameter, ...] = (
     # ── PersonaConfig: Population characteristics ──
@@ -152,8 +152,9 @@ SOBOL_PARAMETER_SPACE: tuple[SobolParameter, ...] = (
 
     # ── GradingConfig (Phase 5) ──
     SobolParameter("grading.grade_floor", 0.30, 0.55, "Structural grade floor (partial credit)"),
-    SobolParameter("grading.dist_alpha", 2.0, 10.0, "Beta distribution α (grade quality shape)"),
-    SobolParameter("grading.dist_beta", 1.0, 8.0, "Beta distribution β (grade quality shape)"),
+    SobolParameter("grading.pass_threshold", 0.50, 0.72, "Pass/fail classification threshold (transcript scale)"),
+    SobolParameter("grading.distinction_threshold", 0.65, 0.85, "Distinction classification threshold (transcript scale)"),
+    SobolParameter("grading.late_penalty", 0.00, 0.15, "Quality penalty for late assignment submission"),
 
     # ── InstitutionalConfig (Phase 3.5) ──
     SobolParameter("inst.instructional_design_quality", 0.0, 1.0,
@@ -280,7 +281,7 @@ class SobolAnalyzer:
         Generate Sobol (Saltelli) sample matrix.
 
         With calc_second_order=False, total = n_samples * (D + 2).
-        Default: 128 * (68 + 2) = 8,960 simulations.
+        Default: 128 * (69 + 2) = 9,088 simulations.
         """
         return sobol_sample.sample(self._problem, n_samples, calc_second_order=False)
 
