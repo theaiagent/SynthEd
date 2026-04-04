@@ -2,9 +2,13 @@
 
 Run as: python -m synthed.doc_facts
 Exits 1 if any documentation file has stale numbers.
+
+Use --fix to auto-update stale numbers in-place:
+    python -m synthed.doc_facts --fix
 """
 from __future__ import annotations
 
+import argparse
 import ast
 import re
 from dataclasses import dataclass
@@ -42,9 +46,80 @@ def collect() -> DocFacts:
     )
 
 
-_DOC_CHECKS: list[tuple[str, str, str]] = [
-    # (file_glob, regex_pattern, metric_name)
-    # Each regex must have ONE capture group with the number
+@dataclass(frozen=True)
+class DocCheck:
+    """A pattern to verify in a documentation file."""
+    file: str            # relative to _ROOT
+    pattern: str         # regex with ONE capture group containing the number
+    metric: str          # which DocFacts field to compare against
+    description: str     # human-readable context
+
+
+_DOC_CHECKS: list[DocCheck] = [
+    # sobol_sensitivity.py header
+    DocCheck(
+        "synthed/analysis/sobol_sensitivity.py",
+        r"Full parameter space:\s*(\d+)\s+parameters",
+        "sobol_param_count",
+        "Sobol header comment",
+    ),
+    DocCheck(
+        "synthed/analysis/sobol_sensitivity.py",
+        r"Default:\s*128\s*\*\s*\((\d+)\s*\+\s*2\)",
+        "sobol_param_count",
+        "Sobol sample size comment",
+    ),
+    # README.md
+    DocCheck(
+        "README.md",
+        r"\*\*(\d+)\s+Tests\*\*",
+        "test_count",
+        "README test count",
+    ),
+    # docs/THEORY.md
+    DocCheck(
+        "docs/THEORY.md",
+        r"sobol_sensitivity\.py\s*#.*\((\d+)\s+params?\)",
+        "sobol_param_count",
+        "THEORY Sobol param count",
+    ),
+    DocCheck(
+        "docs/THEORY.md",
+        r"#\s*(\d+)\s+pytest\s+tests\s+across",
+        "test_count",
+        "THEORY test count (project structure)",
+    ),
+    DocCheck(
+        "docs/THEORY.md",
+        r"pytest\s+tests\s+across\s+(\d+)\s+files",
+        "test_file_count",
+        "THEORY test file count",
+    ),
+    DocCheck(
+        "docs/THEORY.md",
+        r"^(\d+)\s+pytest\s+tests",
+        "test_count",
+        "THEORY test suite heading",
+    ),
+    # .zenodo.json (HTML-encoded)
+    DocCheck(
+        ".zenodo.json",
+        r"Sobol sensitivity analysis \((\d+) parameters\)",
+        "sobol_param_count",
+        "Zenodo Sobol param count",
+    ),
+    DocCheck(
+        ".zenodo.json",
+        r"<strong>Quality:</strong>\s*(\d+)\s+tests",
+        "test_count",
+        "Zenodo quality test count",
+    ),
+    DocCheck(
+        ".zenodo.json",
+        r"(\d+)\s+tests,\s*\d+%\s*coverage</li></ul>",
+        "test_count",
+        "Zenodo capability list test count",
+    ),
 ]
 
 
@@ -54,33 +129,84 @@ class Discrepancy:
     metric: str
     expected: int
     found: int
+    description: str
 
 
 def verify() -> list[Discrepancy]:
     facts = collect()
     problems: list[Discrepancy] = []
 
-    # Check sobol_sensitivity.py header comment
-    sobol_file = _ROOT / "synthed" / "analysis" / "sobol_sensitivity.py"
-    sobol_text = sobol_file.read_text(encoding="utf-8")
-    for match in re.finditer(r"Full parameter space:\s*(\d+)\s+parameters", sobol_text):
-        found = int(match.group(1))
-        if found != facts.sobol_param_count:
-            problems.append(Discrepancy("sobol_sensitivity.py", "sobol_param_count", facts.sobol_param_count, found))
+    for check in _DOC_CHECKS:
+        filepath = _ROOT / check.file
+        if not filepath.exists():
+            continue
+        text = filepath.read_text(encoding="utf-8")
+        for match in re.finditer(check.pattern, text, re.MULTILINE):
+            found = int(match.group(1))
+            expected = getattr(facts, check.metric)
+            if found != expected:
+                problems.append(Discrepancy(
+                    check.file, check.metric, expected, found, check.description,
+                ))
 
     return problems
 
 
+def fix() -> list[str]:
+    """Auto-fix stale numbers in documentation files. Returns list of fixed files."""
+    facts = collect()
+    fixed_files: list[str] = []
+
+    for check in _DOC_CHECKS:
+        filepath = _ROOT / check.file
+        if not filepath.exists():
+            continue
+        text = filepath.read_text(encoding="utf-8")
+        expected = getattr(facts, check.metric)
+
+        def _replacer(m: re.Match) -> str:
+            original = m.group(0)
+            old_num = m.group(1)
+            if int(old_num) == expected:
+                return original
+            return original.replace(old_num, str(expected), 1)
+
+        new_text = re.sub(check.pattern, _replacer, text, flags=re.MULTILINE)
+        if new_text != text:
+            filepath.write_text(new_text, encoding="utf-8")
+            if check.file not in fixed_files:
+                fixed_files.append(check.file)
+
+    return fixed_files
+
+
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Verify/fix documentation metrics")
+    parser.add_argument("--fix", action="store_true", help="Auto-fix stale numbers")
+    args = parser.parse_args()
+
     facts = collect()
     print(f"Tests:        {facts.test_count} across {facts.test_file_count} files")
     print(f"Sobol params: {facts.sobol_param_count}")
     print()
+
+    if args.fix:
+        fixed = fix()
+        if fixed:
+            print(f"FIXED {len(fixed)} file(s):")
+            for f in fixed:
+                print(f"  {f}")
+        else:
+            print("Nothing to fix — all docs consistent.")
+        return
+
     problems = verify()
     if problems:
         print(f"STALE DOCS ({len(problems)} discrepancies):")
         for p in problems:
-            print(f"  {p.file}: {p.metric} says {p.found}, should be {p.expected}")
+            print(f"  {p.file}: {p.description} says {p.found}, should be {p.expected}")
+        print()
+        print("Run with --fix to auto-update.")
         raise SystemExit(1)
     print("All docs consistent with source.")
 
