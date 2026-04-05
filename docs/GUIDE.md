@@ -197,6 +197,18 @@ pipeline = SynthEdPipeline(grading_config=config)
 - Sobol sensitivity analysis uses the `grading.*` prefix for GradingConfig parameters.
 - GradingConfig is a frozen dataclass -- use `dataclasses.replace()` for overrides.
 
+### Relative Grading (Curve-Based)
+
+```python
+# Relative grading (curve-based)
+pipeline = SynthEdPipeline(
+    grading_config=GradingConfig(grading_method="relative"),
+    output_dir="./output", seed=42,
+)
+```
+
+Relative mode applies t-score standardization across the cohort. Students are classified by their standing relative to peers rather than fixed thresholds. Falls back to absolute grading for cohorts smaller than 2 or with zero variance.
+
 ---
 
 ## 🎯 Dropout Targeting
