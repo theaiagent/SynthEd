@@ -26,8 +26,13 @@ class DataExporter:
     4. weekly_engagement.csv — Week-by-week engagement trajectories
     """
 
-    def __init__(self, output_dir: str = "./output"):
-        self.output_dir = Path(output_dir)
+    def __init__(self, output_dir: str | None = "./output"):
+        self.output_dir = Path(output_dir) if output_dir is not None else None
+
+    def _ensure_output_dir(self) -> None:
+        """Create the output directory if it does not yet exist."""
+        if self.output_dir is None:
+            raise RuntimeError("DataExporter.output_dir is None — cannot write files")
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
     def export_all(
@@ -36,6 +41,7 @@ class DataExporter:
         states: dict[str, SimulationState],
         network: SocialNetwork | None = None,
     ) -> dict[str, str]:
+        self._ensure_output_dir()
         paths = {}
         display_id_map = {s.id: s.display_id for s in students}
         paths["students"] = self.export_students(students)

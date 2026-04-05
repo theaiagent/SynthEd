@@ -54,7 +54,7 @@ class SynthEdPipeline:
         environment: ODLEnvironment | None = None,
         institutional_config: InstitutionalConfig | None = None,
         reference_stats: ReferenceStatistics | None = None,
-        output_dir: str = "./output",
+        output_dir: str | None = "./output",
         llm_model: str = "gpt-4o-mini",
         llm_base_url: str | None = None,
         use_llm: bool = False,
@@ -74,7 +74,7 @@ class SynthEdPipeline:
         self.institutional_config = institutional_config or InstitutionalConfig()
         self.grading_config = grading_config or GradingConfig()
         self.reference = reference_stats or ReferenceStatistics()
-        self.output_dir = Path(output_dir)
+        self.output_dir = Path(output_dir) if output_dir is not None else None
         self.use_llm = use_llm
         self.seed = seed
         self.n_semesters = n_semesters
@@ -102,7 +102,9 @@ class SynthEdPipeline:
             grading_config=self.grading_config,
             engine_config=engine_config,
         )
-        self.exporter = DataExporter(output_dir=str(self.output_dir))
+        self.exporter = DataExporter(
+            output_dir=str(self.output_dir) if self.output_dir is not None else None
+        )
         self.validator = SyntheticDataValidator(reference=self.reference)
 
     def _apply_calibration(
@@ -233,6 +235,14 @@ class SynthEdPipeline:
         """
         if not isinstance(n_students, int) or n_students <= 0:
             raise ValueError(f"n_students must be a positive integer, got {n_students}")
+
+        if n_students < 100:
+            logger.warning(
+                "n_students=%d is small — stochastic variance may make "
+                "calibration and validation results unreliable. "
+                "Consider n_students >= 100 for stable results.",
+                n_students,
+            )
 
         report: dict[str, Any] = {
             "pipeline": f"SynthEd v{__version__}",
@@ -408,14 +418,17 @@ class SynthEdPipeline:
                     validation_report['summary']['passed'],
                     validation_report['summary']['total_tests'])
 
-        # Save full report
-        report_path = self.output_dir / "pipeline_report.json"
-        report_path.write_text(json.dumps(report, indent=2, default=str))
-        report["report_path"] = str(report_path)
+        # Save full report (skipped in calibration mode when no output dir)
+        if self.output_dir is not None:
+            report_path = self.output_dir / "pipeline_report.json"
+            report_path.write_text(json.dumps(report, indent=2, default=str))
+            report["report_path"] = str(report_path)
+            logger.info("Pipeline complete. Report saved to %s", report_path)
+        else:
+            logger.info("Pipeline complete (calibration mode — no report written to disk)")
 
         # LLM cost report
         if self.llm:
             report["llm_costs"] = self.llm.cost_report()
 
-        logger.info("Pipeline complete. Report saved to %s", report_path)
         return report

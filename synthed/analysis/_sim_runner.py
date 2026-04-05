@@ -108,6 +108,39 @@ def run_simulation_with_overrides(
     else:
         grading_config = None
 
+    if calibration_mode:
+        pipeline = SynthEdPipeline(
+            persona_config=config,
+            output_dir=None,
+            seed=seed,
+            institutional_config=inst_config,
+            grading_config=grading_config,
+            _calibration_mode=True,
+        )
+        _apply_engine_overrides(pipeline, engine_overrides, theory_overrides)
+        report = pipeline.run(n_students=n_students)
+
+        summary = report["simulation_summary"]
+        engagement = summary.get("mean_final_engagement")
+        gpa = summary.get("mean_final_gpa")
+        engagement_std = summary.get("std_final_engagement")
+        if engagement is None:
+            logger.warning("mean_final_engagement missing from summary; defaulting to 0.0")
+            engagement = 0.0
+        if gpa is None:
+            logger.warning("mean_final_gpa missing from summary; defaulting to 0.0")
+            gpa = 0.0
+
+        return {
+            "dropout_rate": summary["dropout_rate"],
+            "mean_engagement": float(engagement),
+            "mean_gpa": float(gpa),
+            "std_engagement": float(engagement_std) if engagement_std is not None else 0.0,
+            "pass_rate": float(summary.get("pass_rate", 0.0)),
+            "distinction_rate": float(summary.get("distinction_rate", 0.0)),
+            "fail_rate": float(summary.get("fail_rate", 0.0)),
+        }
+
     tmp_dir = tempfile.mkdtemp(prefix="synthed_analysis_")
     try:
         pipeline = SynthEdPipeline(
@@ -116,7 +149,7 @@ def run_simulation_with_overrides(
             seed=seed,
             institutional_config=inst_config,
             grading_config=grading_config,
-            _calibration_mode=calibration_mode,
+            _calibration_mode=False,
         )
         _apply_engine_overrides(pipeline, engine_overrides, theory_overrides)
         report = pipeline.run(n_students=n_students)

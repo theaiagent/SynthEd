@@ -323,3 +323,43 @@ class TestSobolIntegration:
 
         # Higher risk multiplier should produce more dropouts
         assert result_high["dropout_rate"] >= result_low["dropout_rate"]
+
+
+class TestSimRunnerCalibrationMode:
+    """Tests for calibration_mode=True skipping temp directory creation."""
+
+    def test_calibration_mode_does_not_create_tmpdir(self):
+        """tempfile.mkdtemp must NOT be called when calibration_mode=True."""
+        from unittest.mock import patch
+        from synthed.agents.persona import PersonaConfig
+        from synthed.analysis._sim_runner import run_simulation_with_overrides
+
+        default_config = PersonaConfig()
+        with patch("synthed.analysis._sim_runner.tempfile.mkdtemp") as mock_mkdtemp:
+            run_simulation_with_overrides(
+                {},
+                n_students=20,
+                seed=42,
+                default_config=default_config,
+                calibration_mode=True,
+            )
+        mock_mkdtemp.assert_not_called()
+
+    def test_calibration_mode_returns_expected_keys(self):
+        """calibration_mode=True run returns same dict structure as normal run."""
+        from synthed.agents.persona import PersonaConfig
+        from synthed.analysis._sim_runner import run_simulation_with_overrides
+
+        default_config = PersonaConfig()
+        result = run_simulation_with_overrides(
+            {},
+            n_students=20,
+            seed=42,
+            default_config=default_config,
+            calibration_mode=True,
+        )
+        expected_keys = {
+            "dropout_rate", "mean_engagement", "mean_gpa",
+            "std_engagement", "pass_rate", "distinction_rate", "fail_rate",
+        }
+        assert expected_keys == set(result.keys())
