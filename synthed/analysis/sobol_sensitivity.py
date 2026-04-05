@@ -219,13 +219,15 @@ class SobolAnalyzer:
 
     def __init__(
         self,
+        parameters: tuple[SobolParameter, ...] | None = None,
         n_students: int = 200,
         seed: int = 42,
-        parameters: tuple[SobolParameter, ...] | None = None,
+        n_workers: int = 1,
     ):
         self.n_students = n_students
         self.seed = seed
         self.parameters = parameters or SOBOL_PARAMETER_SPACE
+        self._n_workers = max(1, n_workers)
         self._problem = self._build_problem()
         self._default_config = PersonaConfig()  # cached to avoid repeated construction
         self._validate_parameters()
@@ -381,19 +383,54 @@ class SobolAnalyzer:
 
     def _run_simulations(self, samples: np.ndarray) -> list[dict]:
         """Run one simulation per sample row, collecting output metrics."""
-        outputs = []
         n_total = len(samples)
-        log_interval = max(1, n_total // 20)  # log every 5%
+        log_interval = max(1, n_total // 20)
 
-        for i, row in enumerate(samples):
-            overrides = dict(zip(self._problem["names"], row))
-            result = run_simulation_with_overrides(
-                overrides, self.n_students, self.seed, self._default_config,
-            )
-            outputs.append(result)
+        override_list = [
+            dict(zip(self._problem["names"], row)) for row in samples
+        ]
 
-            if (i + 1) % log_interval == 0:
-                pct = (i + 1) / n_total * 100
-                logger.info("  Progress: %d/%d (%.0f%%)", i + 1, n_total, pct)
+        if self._n_workers <= 1:
+            # Sequential (deterministic, default)
+            outputs = []
+            for i, overrides in enumerate(override_list):
+                result = run_simulation_with_overrides(
+                    overrides, self.n_students, self.seed, self._default_config,
+                )
+                outputs.append(result)
+                if (i + 1) % log_interval == 0:
+                    logger.info("  Progress: %d/%d (%.0f%%)", i + 1, n_total, (i + 1) / n_total * 100)
+            return outputs
+
+        # Parallel execution (follows nsga2_calibrator._run_parallel pattern)
+        from concurrent.futures import ProcessPoolExecutor, as_completed
+        from functools import partial
+
+        worker = partial(
+            run_simulation_with_overrides,
+            n_students=self.n_students,
+            seed=self.seed,
+            default_config=self._default_config,
+            calibration_mode=True,
+        )
+
+        logger.info("Running %d simulations with %d workers...", n_total, self._n_workers)
+        outputs: list[dict | None] = [None] * n_total
+
+        pool = ProcessPoolExecutor(max_workers=self._n_workers)
+        try:
+            future_to_idx = {
+                pool.submit(worker, overrides=od): i
+                for i, od in enumerate(override_list)
+            }
+            completed = 0
+            for future in as_completed(future_to_idx):
+                idx = future_to_idx[future]
+                outputs[idx] = future.result()
+                completed += 1
+                if completed % log_interval == 0:
+                    logger.info("  Progress: %d/%d (%.0f%%)", completed, n_total, completed / n_total * 100)
+        finally:
+            pool.shutdown(wait=False, cancel_futures=True)
 
         return outputs
