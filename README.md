@@ -87,6 +87,7 @@ print(f"Dropout: {report['simulation_summary']['dropout_rate']:.1%}")
 |----------|---------|
 | **[User Guide](docs/GUIDE.md)** | Installation, configuration, calibration pipeline, OULAD export, LLM enrichment, troubleshooting |
 | **[Theory & Architecture](docs/THEORY.md)** | 11 theoretical anchors, factor clusters, architecture diagram, project structure, validation suite, test inventory |
+| **[Developer Wiki](docs/wiki/index.md)** | Pipeline internals, simulation loop, engagement formula, theory modules, dropout mechanics, grading, calibration, data export |
 
 ---
 
