@@ -106,8 +106,6 @@ class GradingConfig:
             raise ValueError(f"Invalid missing_policy: '{self.missing_policy}'")
         if self.grading_method not in _VALID_GRADING_METHODS:
             raise ValueError(f"Invalid grading_method: '{self.grading_method}'")
-        if self.grading_method == "relative":
-            raise ValueError("grading_method='relative' is not yet implemented; use 'absolute'")
         # Dual-hurdle consistency
         if self.dual_hurdle and not self.component_pass_thresholds:
             raise ValueError("dual_hurdle=True requires at least one entry in component_pass_thresholds")
@@ -188,11 +186,12 @@ def apply_relative_grading(raw_scores: list[float]) -> list[float]:
     Returns 50.0 for single-student, identical-score, or n<2 cases.
     Warns if n < 30.
 
-    Note: Not wired to engine (grading_method='relative' is rejected).
-    Reserved for future implementation.
+    Used by engine when grading_method='relative'.
     """
     if len(raw_scores) < 2:
         return [50.0] * len(raw_scores)
+    if not all(math.isfinite(s) for s in raw_scores):
+        raise ValueError("apply_relative_grading received non-finite score(s)")
     arr = np.array(raw_scores, dtype=float)
     std = float(np.std(arr, ddof=0))  # population std (cohort IS the population)
     if std < 1e-9:
@@ -202,6 +201,14 @@ def apply_relative_grading(raw_scores: list[float]) -> list[float]:
     mean = float(np.mean(arr))
     t_scores = 50.0 + 10.0 * (arr - mean) / std
     return [float(np.clip(s, 0.0, 100.0)) for s in t_scores]
+
+
+def normalize_t_scores(t_scores: list[float]) -> list[float]:
+    """Convert t-scores (0-100) to 0-1 scale for classify_outcome."""
+    for s in t_scores:
+        if not math.isfinite(s):
+            raise ValueError(f"normalize_t_scores received non-finite value: {s!r}")
+    return [s / 100.0 for s in t_scores]
 
 
 def calculate_semester_grade(
