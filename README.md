@@ -45,6 +45,7 @@ python run_pipeline.py --n 200      # or: pip install synthedu
 - **GradingConfig** -- Configurable grading policy: Beta/Normal/Uniform grade distributions, weighted semester grades (midterm/final), dual-hurdle pass requirements, exam-only and continuous assessment modes, floor-adjusted transcript scale for outcome classification (Distinction/Pass/Fail)
 - **EngineConfig** -- 70 frozen engine constants with validation (weight sums, ordering, positivity), overridable via `dataclasses.replace()`
 - **NSGA-II Calibration** -- Multi-objective optimization with Pareto front, parallel `--workers N` support
+- **Relative Grading** -- grading_method="relative" with t-score cohort normalization, automatic fallback for small/homogeneous cohorts
 
 ---
 
