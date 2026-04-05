@@ -392,151 +392,187 @@ class SimulationEngine:
     ) -> list[InteractionRecord]:
         records = []
         engagement = state.current_engagement
-
         for course_id in state.courses_active:
             course = self.env.get_course_by_id(course_id)
             if not course:
                 continue
+            # Order preserved for RNG determinism
+            records.extend(self._sim_lms_logins(student, state, course, engagement, week))
+            records.extend(self._sim_forum_activity(student, state, course, engagement, week))
+            records.extend(self._sim_assignment(student, state, course, engagement, week))
+            records.extend(self._sim_live_session(student, state, course, engagement, week))
+            records.extend(self._sim_exam(student, state, course, engagement, week))
+        return records
 
-            # ── LMS Logins (Rovai: accessibility) ──
-            effective_login_floor = scale_by(self.cfg._LOGIN_LITERACY_FLOOR, self.inst.technology_quality)  # [inst: technology_quality]
-            login_rate = engagement * self.cfg._LOGIN_ENG_MULTIPLIER * (effective_login_floor + self.cfg._LOGIN_LITERACY_SCALE * student.digital_literacy)
-            n_logins = max(0, int(self.rng.poisson(login_rate)))
-            for _ in range(n_logins):
-                if student.is_employed:
-                    hour = float(self.rng.choice([*range(18, 24), *range(0, 2)]) + self.rng.uniform(0, 1))
-                else:
-                    hour = float(self.rng.uniform(8, 22))
-                day = self.rng.integers(0, 7)
-                duration = float(max(self.cfg._LOGIN_DURATION_MIN, self.rng.normal(self.cfg._LOGIN_DURATION_MEAN_FACTOR * engagement, self.cfg._LOGIN_DURATION_STD)))
-                records.append(InteractionRecord(
-                    student_id=student.id, week=week, course_id=course_id,
-                    interaction_type="lms_login",
-                    timestamp_offset_hours=day * 24 + hour,
-                    duration_minutes=round(duration, 1),
-                    metadata={"device": student.device_type},
-                ))
+    def _sim_lms_logins(
+        self, student: StudentPersona, state: SimulationState,
+        course: Any, engagement: float, week: int,
+    ) -> list[InteractionRecord]:
+        """LMS Logins (Rovai: accessibility)."""
+        records: list[InteractionRecord] = []
+        effective_login_floor = scale_by(self.cfg._LOGIN_LITERACY_FLOOR, self.inst.technology_quality)  # [inst: technology_quality]
+        login_rate = engagement * self.cfg._LOGIN_ENG_MULTIPLIER * (effective_login_floor + self.cfg._LOGIN_LITERACY_SCALE * student.digital_literacy)
+        n_logins = max(0, int(self.rng.poisson(login_rate)))
+        for _ in range(n_logins):
+            if student.is_employed:
+                hour = float(self.rng.choice([*range(18, 24), *range(0, 2)]) + self.rng.uniform(0, 1))
+            else:
+                hour = float(self.rng.uniform(8, 22))
+            day = self.rng.integers(0, 7)
+            duration = float(max(self.cfg._LOGIN_DURATION_MIN, self.rng.normal(self.cfg._LOGIN_DURATION_MEAN_FACTOR * engagement, self.cfg._LOGIN_DURATION_STD)))
+            records.append(InteractionRecord(
+                student_id=student.id, week=week, course_id=course.id,
+                interaction_type="lms_login",
+                timestamp_offset_hours=day * 24 + hour,
+                duration_minutes=round(duration, 1),
+                metadata={"device": student.device_type},
+            ))
+        return records
 
-            # ── Forum Activity (Tinto: social integration) ──
-            if course.has_forum:
-                effective_forum_floor = scale_by(self.cfg._FORUM_READ_LITERACY_FLOOR, self.inst.technology_quality)  # [inst: technology_quality]
-                read_prob = engagement * self.cfg._FORUM_READ_ENG_FACTOR * (effective_forum_floor + self.cfg._FORUM_READ_LITERACY_SCALE * student.digital_literacy)
-                if self.rng.random() < read_prob:
-                    records.append(InteractionRecord(
-                        student_id=student.id, week=week, course_id=course_id,
-                        interaction_type="forum_read",
-                        duration_minutes=round(float(self.rng.exponential(self.cfg._FORUM_READ_EXP_MEAN)), 1),
-                    ))
+    def _sim_forum_activity(
+        self, student: StudentPersona, state: SimulationState,
+        course: Any, engagement: float, week: int,
+    ) -> list[InteractionRecord]:
+        """Forum Activity (Tinto: social integration)."""
+        records: list[InteractionRecord] = []
+        if not course.has_forum:
+            return records
+        effective_forum_floor = scale_by(self.cfg._FORUM_READ_LITERACY_FLOOR, self.inst.technology_quality)  # [inst: technology_quality]
+        read_prob = engagement * self.cfg._FORUM_READ_ENG_FACTOR * (effective_forum_floor + self.cfg._FORUM_READ_LITERACY_SCALE * student.digital_literacy)
+        if self.rng.random() < read_prob:
+            records.append(InteractionRecord(
+                student_id=student.id, week=week, course_id=course.id,
+                interaction_type="forum_read",
+                duration_minutes=round(float(self.rng.exponential(self.cfg._FORUM_READ_EXP_MEAN)), 1),
+            ))
+        # Posting: extraversion + social integration drive this
+        post_prob = (engagement * self.cfg._FORUM_POST_ENG_FACTOR
+                     * (self.cfg._FORUM_POST_EXTRA_FLOOR + self.cfg._FORUM_POST_EXTRA_WEIGHT * student.personality.extraversion
+                        + self.cfg._FORUM_POST_SOCIAL_WEIGHT * state.social_integration))
+        if self.rng.random() < post_prob:
+            # Forum post quality (social engagement proxy)
+            forum_quality = float(np.clip(
+                0.4 * engagement + 0.3 * student.social_integration + 0.3 * self.rng.normal(0.5, 0.15),
+                0.0, 1.0
+            ))
+            state.forum_scores.append(forum_quality)
+            state.n_total_forums += 1
+            records.append(InteractionRecord(
+                student_id=student.id, week=week, course_id=course.id,
+                interaction_type="forum_post",
+                duration_minutes=round(float(self.rng.normal(self.cfg._FORUM_POST_DURATION_MEAN, self.cfg._FORUM_POST_DURATION_STD)), 1),
+                quality_score=round(forum_quality, 2),
+                metadata={"post_length": int(self.rng.normal(self.cfg._FORUM_POST_LENGTH_MEAN, self.cfg._FORUM_POST_LENGTH_STD))},
+            ))
+        return records
 
-                # Posting: extraversion + social integration drive this
-                post_prob = (engagement * self.cfg._FORUM_POST_ENG_FACTOR
-                             * (self.cfg._FORUM_POST_EXTRA_FLOOR + self.cfg._FORUM_POST_EXTRA_WEIGHT * student.personality.extraversion
-                                + self.cfg._FORUM_POST_SOCIAL_WEIGHT * state.social_integration))
-                if self.rng.random() < post_prob:
-                    # Forum post quality (social engagement proxy)
-                    forum_quality = float(np.clip(
-                        0.4 * engagement + 0.3 * student.social_integration + 0.3 * self.rng.normal(0.5, 0.15),
-                        0.0, 1.0
-                    ))
-                    state.forum_scores.append(forum_quality)
-                    state.n_total_forums += 1
-                    records.append(InteractionRecord(
-                        student_id=student.id, week=week, course_id=course_id,
-                        interaction_type="forum_post",
-                        duration_minutes=round(float(self.rng.normal(self.cfg._FORUM_POST_DURATION_MEAN, self.cfg._FORUM_POST_DURATION_STD)), 1),
-                        quality_score=round(forum_quality, 2),
-                        metadata={"post_length": int(self.rng.normal(self.cfg._FORUM_POST_LENGTH_MEAN, self.cfg._FORUM_POST_LENGTH_STD))},
-                    ))
+    def _sim_assignment(
+        self, student: StudentPersona, state: SimulationState,
+        course: Any, engagement: float, week: int,
+    ) -> list[InteractionRecord]:
+        """Assignment Submission (Rovai: self-regulation + time management)."""
+        records: list[InteractionRecord] = []
+        if week not in course.assignment_weeks:
+            return records
+        submit_prob = (engagement
+                       * (self.cfg._ASSIGN_SUBMIT_BASE + self.cfg._ASSIGN_SUBMIT_REG_WEIGHT * student.self_regulation
+                          + self.cfg._ASSIGN_SUBMIT_TIME_WEIGHT * student.time_management
+                          + self.cfg._ASSIGN_SUBMIT_CONSC_WEIGHT * student.personality.conscientiousness))
+        submitted = self.rng.random() < submit_prob
+        if submitted:
+            quality = float(np.clip(
+                scale_by(self.cfg._ASSIGN_GPA_WEIGHT, self.inst.instructional_design_quality,
+                         self.cfg._INST_QUALITY_SCALE_LOW, self.cfg._INST_QUALITY_SCALE_HIGH)
+                * (student.prior_gpa / self.cfg._GPA_SCALE)
+                + scale_by(self.cfg._ASSIGN_ENG_WEIGHT, self.inst.instructional_design_quality,
+                           self.cfg._INST_QUALITY_SCALE_LOW, self.cfg._INST_QUALITY_SCALE_HIGH)
+                * engagement
+                + self.cfg._ASSIGN_EFFICACY_WEIGHT * student.self_efficacy
+                + self.cfg._ASSIGN_READING_WEIGHT * student.academic_reading_writing
+                + self.cfg._ASSIGN_NOISE_WEIGHT * self.rng.normal(0.5, self.cfg._ASSIGN_NOISE_STD),
+                0.0, 1.0
+            ))
+            is_late = self.rng.random() > student.time_management
+            if is_late:
+                quality = max(0.0, quality - self.grading_config.late_penalty)
+            records.append(InteractionRecord(
+                student_id=student.id, week=week, course_id=course.id,
+                interaction_type="assignment_submit",
+                quality_score=round(quality, 2),
+                metadata={"is_late": is_late, "assignment_week": week},
+            ))
+            self._record_graded_item(state, quality)
+            state.assignment_scores.append(quality)
+            state.n_total_assignments += 1
+            state.missed_assignments_streak = 0
+            state.memory.append({"week": week, "event_type": "assignment",
+                                 "details": f"Submitted {'late ' if is_late else ''}assignment for {course.id} ({quality:.0%})",
+                                 "impact": quality - 0.5})
+        else:
+            state.n_total_assignments += 1
+            state.missed_assignments_streak += 1
+            state.memory.append({"week": week, "event_type": "missed_assignment",
+                                 "details": f"Missed assignment for {course.id} (streak: {state.missed_assignments_streak})",
+                                 "impact": self.cfg._MISSED_IMPACT})
+        return records
 
-            # ── Assignment Submission (Rovai: self-regulation + time management) ──
-            if week in course.assignment_weeks:
-                submit_prob = (engagement
-                               * (self.cfg._ASSIGN_SUBMIT_BASE + self.cfg._ASSIGN_SUBMIT_REG_WEIGHT * student.self_regulation
-                                  + self.cfg._ASSIGN_SUBMIT_TIME_WEIGHT * student.time_management
-                                  + self.cfg._ASSIGN_SUBMIT_CONSC_WEIGHT * student.personality.conscientiousness))
-                submitted = self.rng.random() < submit_prob
+    def _sim_live_session(
+        self, student: StudentPersona, state: SimulationState,
+        course: Any, engagement: float, week: int,
+    ) -> list[InteractionRecord]:
+        """Live Sessions."""
+        records: list[InteractionRecord] = []
+        if not course.has_live_sessions:
+            return records
+        attend_prob = engagement * self.cfg._LIVE_ENG_FACTOR * student.time_management
+        if student.is_employed:
+            attend_prob *= self.cfg._LIVE_EMPLOYED_PENALTY  # Bean & Metzner: work conflict
+        if self.rng.random() < attend_prob:
+            records.append(InteractionRecord(
+                student_id=student.id, week=week, course_id=course.id,
+                interaction_type="live_session",
+                duration_minutes=round(float(self.rng.normal(self.cfg._LIVE_DURATION_MEAN, self.cfg._LIVE_DURATION_STD)), 1),
+            ))
+        return records
 
-                if submitted:
-                    quality = float(np.clip(
-                        scale_by(self.cfg._ASSIGN_GPA_WEIGHT, self.inst.instructional_design_quality,
-                                 self.cfg._INST_QUALITY_SCALE_LOW, self.cfg._INST_QUALITY_SCALE_HIGH)
-                        * (student.prior_gpa / self.cfg._GPA_SCALE)
-                        + scale_by(self.cfg._ASSIGN_ENG_WEIGHT, self.inst.instructional_design_quality,
-                                   self.cfg._INST_QUALITY_SCALE_LOW, self.cfg._INST_QUALITY_SCALE_HIGH)
-                        * engagement
-                        + self.cfg._ASSIGN_EFFICACY_WEIGHT * student.self_efficacy
-                        + self.cfg._ASSIGN_READING_WEIGHT * student.academic_reading_writing
-                        + self.cfg._ASSIGN_NOISE_WEIGHT * self.rng.normal(0.5, self.cfg._ASSIGN_NOISE_STD),
-                        0.0, 1.0
-                    ))
-                    is_late = self.rng.random() > student.time_management
-                    if is_late:
-                        quality = max(0.0, quality - self.grading_config.late_penalty)
-                    records.append(InteractionRecord(
-                        student_id=student.id, week=week, course_id=course_id,
-                        interaction_type="assignment_submit",
-                        quality_score=round(quality, 2),
-                        metadata={"is_late": is_late, "assignment_week": week},
-                    ))
-                    self._record_graded_item(state, quality)
-                    state.assignment_scores.append(quality)
-                    state.n_total_assignments += 1
-                    state.missed_assignments_streak = 0
-                    state.memory.append({"week": week, "event_type": "assignment",
-                                        "details": f"Submitted {'late ' if is_late else ''}assignment for {course_id} ({quality:.0%})",
-                                        "impact": quality - 0.5})
-                else:
-                    state.n_total_assignments += 1
-                    state.missed_assignments_streak += 1
-                    state.memory.append({"week": week, "event_type": "missed_assignment",
-                                        "details": f"Missed assignment for {course_id} (streak: {state.missed_assignments_streak})",
-                                        "impact": self.cfg._MISSED_IMPACT})
-
-            # ── Live Sessions ──
-            if course.has_live_sessions:
-                attend_prob = engagement * self.cfg._LIVE_ENG_FACTOR * student.time_management
-                if student.is_employed:
-                    attend_prob *= self.cfg._LIVE_EMPLOYED_PENALTY  # Bean & Metzner: work conflict
-                if self.rng.random() < attend_prob:
-                    records.append(InteractionRecord(
-                        student_id=student.id, week=week, course_id=course_id,
-                        interaction_type="live_session",
-                        duration_minutes=round(float(self.rng.normal(self.cfg._LIVE_DURATION_MEAN, self.cfg._LIVE_DURATION_STD)), 1),
-                    ))
-
-            # ── Exams ──
-            if week == course.midterm_week or week == course.final_week:
-                exam_type = "midterm" if week == course.midterm_week else "final"
-                take_prob = self.cfg._EXAM_TAKE_HIGH_ENG_PROB if engagement > self.cfg._EXAM_TAKE_ENG_THRESHOLD else engagement * self.cfg._EXAM_TAKE_LOW_MULTIPLIER
-                if self.rng.random() < take_prob:
-                    exam_quality = float(np.clip(
-                        scale_by(self.cfg._EXAM_GPA_WEIGHT, self.inst.instructional_design_quality,
-                                 self.cfg._INST_QUALITY_SCALE_LOW, self.cfg._INST_QUALITY_SCALE_HIGH)
-                        * (student.prior_gpa / self.cfg._GPA_SCALE)
-                        + scale_by(self.cfg._EXAM_ENG_WEIGHT, self.inst.instructional_design_quality,
-                                   self.cfg._INST_QUALITY_SCALE_LOW, self.cfg._INST_QUALITY_SCALE_HIGH)
-                        * engagement
-                        + self.cfg._EXAM_EFFICACY_WEIGHT * student.self_efficacy
-                        + self.cfg._EXAM_REG_WEIGHT * student.self_regulation
-                        + self.cfg._EXAM_READING_WEIGHT * student.academic_reading_writing
-                        + self.cfg._EXAM_NOISE_WEIGHT * self.rng.normal(0.5, self.cfg._EXAM_NOISE_STD),
-                        0.0, 1.0
-                    ))
-                    records.append(InteractionRecord(
-                        student_id=student.id, week=week, course_id=course_id,
-                        interaction_type="exam",
-                        quality_score=round(exam_quality, 2),
-                        metadata={"exam_type": exam_type},
-                    ))
-                    self._record_graded_item(state, exam_quality)
-                    if exam_type == "midterm":
-                        state.midterm_exam_scores.append(exam_quality)
-                    elif exam_type == "final":
-                        state.final_score = exam_quality
-                    state.memory.append({"week": week, "event_type": "exam",
-                                        "details": f"{exam_type.title()} for {course_id} ({exam_quality:.0%})",
-                                        "impact": exam_quality - 0.5})
-
+    def _sim_exam(
+        self, student: StudentPersona, state: SimulationState,
+        course: Any, engagement: float, week: int,
+    ) -> list[InteractionRecord]:
+        """Exams."""
+        records: list[InteractionRecord] = []
+        if week != course.midterm_week and week != course.final_week:
+            return records
+        exam_type = "midterm" if week == course.midterm_week else "final"
+        take_prob = self.cfg._EXAM_TAKE_HIGH_ENG_PROB if engagement > self.cfg._EXAM_TAKE_ENG_THRESHOLD else engagement * self.cfg._EXAM_TAKE_LOW_MULTIPLIER
+        if self.rng.random() < take_prob:
+            exam_quality = float(np.clip(
+                scale_by(self.cfg._EXAM_GPA_WEIGHT, self.inst.instructional_design_quality,
+                         self.cfg._INST_QUALITY_SCALE_LOW, self.cfg._INST_QUALITY_SCALE_HIGH)
+                * (student.prior_gpa / self.cfg._GPA_SCALE)
+                + scale_by(self.cfg._EXAM_ENG_WEIGHT, self.inst.instructional_design_quality,
+                           self.cfg._INST_QUALITY_SCALE_LOW, self.cfg._INST_QUALITY_SCALE_HIGH)
+                * engagement
+                + self.cfg._EXAM_EFFICACY_WEIGHT * student.self_efficacy
+                + self.cfg._EXAM_REG_WEIGHT * student.self_regulation
+                + self.cfg._EXAM_READING_WEIGHT * student.academic_reading_writing
+                + self.cfg._EXAM_NOISE_WEIGHT * self.rng.normal(0.5, self.cfg._EXAM_NOISE_STD),
+                0.0, 1.0
+            ))
+            records.append(InteractionRecord(
+                student_id=student.id, week=week, course_id=course.id,
+                interaction_type="exam",
+                quality_score=round(exam_quality, 2),
+                metadata={"exam_type": exam_type},
+            ))
+            self._record_graded_item(state, exam_quality)
+            if exam_type == "midterm":
+                state.midterm_exam_scores.append(exam_quality)
+            elif exam_type == "final":
+                state.final_score = exam_quality
+            state.memory.append({"week": week, "event_type": "exam",
+                                 "details": f"{exam_type.title()} for {course.id} ({exam_quality:.0%})",
+                                 "impact": exam_quality - 0.5})
         return records
 
     # ── ENGAGEMENT UPDATE (Multi-theory composer) ──
