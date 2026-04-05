@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import time
 from pathlib import Path
 
@@ -116,9 +117,11 @@ def main():
     parser = argparse.ArgumentParser(description="NSGA-II benchmark calibration")
     parser.add_argument("--quick", action="store_true", help="Quick test run")
     parser.add_argument("--profile", type=str, help="Profile name (default: 'default')")
-    parser.add_argument("--workers", type=int, default=1, help="Parallel workers")
+    parser.add_argument("--workers", type=int, default=1,
+                        help="Parallel workers (capped at CPU count)")
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
+    args.workers = max(1, min(args.workers, os.cpu_count() or 8))
 
     if args.quick:
         n_students, pop_size, n_trials, sobol_top_n = 50, 20, 500, 10
