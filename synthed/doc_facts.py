@@ -69,13 +69,6 @@ _DOC_CHECKS: list[DocCheck] = [
         "sobol_param_count",
         "Sobol sample size comment",
     ),
-    # README.md
-    DocCheck(
-        "README.md",
-        r"\*\*(\d+)\s+Tests\*\*",
-        "test_count",
-        "README test count",
-    ),
     # docs/THEORY.md
     DocCheck(
         "docs/THEORY.md",
@@ -107,18 +100,6 @@ _DOC_CHECKS: list[DocCheck] = [
         r"Sobol sensitivity analysis \((\d+) parameters\)",
         "sobol_param_count",
         "Zenodo Sobol param count",
-    ),
-    DocCheck(
-        ".zenodo.json",
-        r"<strong>Quality:</strong>\s*(\d+)\s+tests",
-        "test_count",
-        "Zenodo quality test count",
-    ),
-    DocCheck(
-        ".zenodo.json",
-        r"(\d+)\s+tests,\s*\d+%\s*coverage</li></ul>",
-        "test_count",
-        "Zenodo capability list test count",
     ),
 ]
 

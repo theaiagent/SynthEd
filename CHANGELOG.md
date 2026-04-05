@@ -2,7 +2,7 @@
 
 All notable changes to SynthEd are documented here.
 
-## [Unreleased]
+## [1.2.0] - 2026-04-05
 
 ### Added
 - **EngineConfig**: Frozen dataclass holding all 70 engine tuning constants — assignment/exam quality weights, engagement deltas, interaction parameters — with `__post_init__` validation (weight sums, ordering constraints, positivity guards)
