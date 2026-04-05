@@ -18,7 +18,7 @@ from pathlib import Path
 from synthed.utils.log_config import configure_logging
 
 from synthed.agents.persona import PersonaConfig
-from synthed.validation.validator import ReferenceStatistics
+from synthed.validation import ReferenceStatistics
 from synthed.pipeline import SynthEdPipeline
 
 

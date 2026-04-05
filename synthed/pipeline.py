@@ -27,7 +27,7 @@ from .simulation.grading import GradingConfig
 from .simulation.institutional import InstitutionalConfig
 from .data_output.exporter import DataExporter
 from .data_output.oulad_exporter import OuladExporter
-from .validation.validator import SyntheticDataValidator, ReferenceStatistics
+from .validation import SyntheticDataValidator, ReferenceStatistics
 from .utils.llm import LLMClient
 
 logger = logging.getLogger(__name__)
@@ -112,11 +112,7 @@ class SynthEdPipeline:
         target_range: tuple[float, float],
         n_semesters: int,
     ) -> None:
-        """Use CalibrationMap to set dropout_base_rate from target dropout range.
-
-        TODO: Warn when n_students < 100 — stochastic variance makes
-              calibration estimates unreliable at small population sizes.
-        """
+        """Use CalibrationMap to set dropout_base_rate from target dropout range."""
         calibration_map = CalibrationMap()
         estimate = calibration_map.estimate_from_range(target_range, n_semesters)
         self._calibration_estimate = estimate

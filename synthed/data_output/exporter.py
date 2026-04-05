@@ -57,6 +57,7 @@ class DataExporter:
         perceived_cost_benefit reflect the student's initial state before
         simulation. For evolved/final values, see outcomes.csv.
         """
+        self._ensure_output_dir()
         filepath = self.output_dir / "students.csv"
         fieldnames = [
             # Identity
@@ -131,6 +132,7 @@ class DataExporter:
         self, records: list[InteractionRecord],
         display_id_map: dict[str, str] | None = None,
     ) -> str:
+        self._ensure_output_dir()
         filepath = self.output_dir / "interactions.csv"
         _display_map = display_id_map or {}
         fieldnames = [
@@ -161,6 +163,7 @@ class DataExporter:
         self, students: list[StudentPersona], states: dict[str, SimulationState],
         network: SocialNetwork | None = None,
     ) -> str:
+        self._ensure_output_dir()
         filepath = self.output_dir / "outcomes.csv"
         fieldnames = [
             "student_id", "display_id", "has_dropped_out", "dropout_week", "withdrawal_reason", "final_dropout_phase",
@@ -224,6 +227,7 @@ class DataExporter:
     def export_weekly_engagement(
         self, students: list[StudentPersona], states: dict[str, SimulationState],
     ) -> str:
+        self._ensure_output_dir()
         filepath = self.output_dir / "weekly_engagement.csv"
         max_weeks = max((len(s.weekly_engagement_history) for s in states.values()), default=0)
         fieldnames = ["student_id", "display_id"] + [f"week_{w}" for w in range(1, max_weeks + 1)]
