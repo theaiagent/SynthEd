@@ -27,3 +27,23 @@ class TestODLEnvironment:
         assert course is not None
         assert course.name == "Introduction to Computer Science"
         assert env.get_course_by_id("NONEXIST") is None
+
+    def test_get_course_by_id_returns_correct_course(self):
+        env = ODLEnvironment()
+        course = env.get_course_by_id("MATH201")
+        assert course is not None
+        assert course.id == "MATH201"
+        assert course.name == "Statistics for Social Sciences"
+
+    def test_course_index_exists(self):
+        env = ODLEnvironment()
+        assert hasattr(env, "_course_index")
+        assert isinstance(env._course_index, dict)
+        assert len(env._course_index) == len(env.courses)
+        for c in env.courses:
+            assert c.id in env._course_index
+
+    def test_get_course_by_id_nonexistent_returns_none(self):
+        env = ODLEnvironment()
+        assert env.get_course_by_id("DOES_NOT_EXIST") is None
+        assert env.get_course_by_id("") is None
