@@ -13,7 +13,7 @@ SynthEd has two entry points:
 
 ```python
 from synthed.pipeline import SynthEdPipeline
-pipeline = SynthEdPipeline(output_dir="./output", seed=42)
+pipeline = SynthEdPipeline(output_dir="./output", seed=42)  # All parameters are optional
 report = pipeline.run(n_students=200)
 ```
 
