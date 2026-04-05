@@ -229,6 +229,55 @@ class SyntheticDataValidator:
 
         return results
 
+    def _correlation_test(
+        self,
+        students: list[dict],
+        outcome_map: dict[str, dict],
+        attr_key: str,
+        outcome_key: str,
+        test_name: str,
+        expected_direction: str,
+        reference_value: float,
+        description: str,
+        continuous: bool = True,
+    ) -> ValidationResult | None:
+        """Run a single correlation test and return a ValidationResult or None."""
+        xs, ys = [], []
+        for s in students:
+            sid = s.get("student_id")
+            if sid in outcome_map and attr_key in s:
+                val = outcome_map[sid].get(outcome_key)
+                if val is not None and val != "":
+                    xs.append(s[attr_key])
+                    ys.append(float(val) if continuous else int(val))
+        if len(xs) <= 10:
+            return None
+
+        if continuous:
+            corr, p_val = stats.pearsonr(xs, ys)
+            metric = "Pearson r"
+        else:
+            corr, p_val = stats.pointbiserialr(ys, xs)
+            metric = "Point-biserial r"
+
+        if expected_direction == "positive":
+            passed = corr > 0
+        elif expected_direction == "negative":
+            passed = corr < 0
+        else:
+            passed = True
+
+        return ValidationResult(
+            test_name=test_name,
+            metric=metric,
+            synthetic_value=float(corr),
+            reference_value=reference_value,
+            statistic=float(corr),
+            p_value=float(p_val),
+            passed=passed,
+            details=f"{description}: r={corr:.3f}",
+        )
+
     def _validate_correlations(
         self, students: list[dict], outcomes: list[dict]
     ) -> list[ValidationResult]:
@@ -245,134 +294,65 @@ class SyntheticDataValidator:
         results = []
         outcome_map = {o["student_id"]: o for o in outcomes}
 
-        # Helper to extract paired data
-        def _get_pairs(attr_key, outcome_key, continuous=True):
-            xs, ys = [], []
-            for s in students:
-                sid = s.get("student_id")
-                if sid in outcome_map and attr_key in s:
-                    val = outcome_map[sid].get(outcome_key)
-                    if val is not None and val != "":
-                        xs.append(s[attr_key])
-                        ys.append(float(val) if continuous else int(val))
-            return xs, ys
+        # ── Standard correlation tests (declarative table) ──
+        # Columns: attr_key, outcome_key, test_name, expected_direction,
+        #          reference_value, description, continuous
+        _STANDARD_TESTS: list[tuple] = [
+            (
+                "conscientiousness", "has_dropped_out",
+                "tinto_conscientiousness_dropout", "negative", -0.2,
+                "Conscientiousness-dropout (Poropat 2009: expected negative)", False,
+            ),
+            (
+                "self_efficacy", "final_engagement",
+                "bandura_self_efficacy_engagement", "positive", 0.3,
+                "Self-efficacy-engagement (Bandura 1997: expected positive)", True,
+            ),
+            (
+                "self_regulation", "final_engagement",
+                "rovai_self_regulation_engagement", "positive", 0.25,
+                "Self-regulation-engagement (Rovai 2003: expected positive)", True,
+            ),
+            (
+                "financial_stress", "has_dropped_out",
+                "bean_metzner_financial_stress_dropout", "positive", 0.15,
+                "Financial stress-dropout (Bean & Metzner 1985: expected positive)", False,
+            ),
+            (
+                "goal_commitment", "final_engagement",
+                "tinto_goal_commitment_engagement", "positive", 0.2,
+                "Goal commitment-engagement (Tinto 1975: expected positive)", True,
+            ),
+            (
+                "learner_autonomy", "final_engagement",
+                "moore_autonomy_engagement", "positive", 0.2,
+                "Learner autonomy-engagement (Moore 1993: expected positive)", True,
+            ),
+            (
+                "coi_composite", "final_engagement",
+                "garrison_coi_engagement", "positive", 0.3,
+                "CoI composite-engagement (Garrison 2000: expected positive)", True,
+            ),
+            (
+                "network_degree", "final_engagement",
+                "epstein_network_degree_engagement", "positive", 0.2,
+                "Network degree-engagement (Epstein & Axtell 1996: expected positive)", True,
+            ),
+            (
+                "perceived_cost_benefit", "final_engagement",
+                "kember_cost_benefit_engagement", "positive", 0.25,
+                "Cost-benefit-engagement (Kember 1989: expected positive)", True,
+            ),
+        ]
 
-        # ── Tinto: Conscientiousness → dropout (negative) ──
-        xs, ys = _get_pairs("conscientiousness", "has_dropped_out", continuous=False)
-        if len(xs) > 10:
-            corr, p_val = stats.pointbiserialr(ys, xs)
-            results.append(ValidationResult(
-                test_name="tinto_conscientiousness_dropout",
-                metric="Point-biserial r",
-                synthetic_value=float(corr), reference_value=-0.2,
-                statistic=float(corr), p_value=float(p_val),
-                passed=corr < 0,
-                details=f"Conscientiousness-dropout: r={corr:.3f} (Poropat 2009: expected negative)",
-            ))
-
-        # ── Bandura: Self-efficacy → engagement (positive) ──
-        xs, ys = _get_pairs("self_efficacy", "final_engagement")
-        if len(xs) > 10:
-            corr, p_val = stats.pearsonr(xs, ys)
-            results.append(ValidationResult(
-                test_name="bandura_self_efficacy_engagement",
-                metric="Pearson r",
-                synthetic_value=float(corr), reference_value=0.3,
-                statistic=float(corr), p_value=float(p_val),
-                passed=corr > 0,
-                details=f"Self-efficacy-engagement: r={corr:.3f} (Bandura 1997: expected positive)",
-            ))
-
-        # ── Rovai: Self-regulation → engagement (positive) ──
-        xs, ys = _get_pairs("self_regulation", "final_engagement")
-        if len(xs) > 10:
-            corr, p_val = stats.pearsonr(xs, ys)
-            results.append(ValidationResult(
-                test_name="rovai_self_regulation_engagement",
-                metric="Pearson r",
-                synthetic_value=float(corr), reference_value=0.25,
-                statistic=float(corr), p_value=float(p_val),
-                passed=corr > 0,
-                details=f"Self-regulation-engagement: r={corr:.3f} (Rovai 2003: expected positive)",
-            ))
-
-        # ── Bean & Metzner: Financial stress → dropout (positive) ──
-        xs, ys = _get_pairs("financial_stress", "has_dropped_out", continuous=False)
-        if len(xs) > 10:
-            corr, p_val = stats.pointbiserialr(ys, xs)
-            results.append(ValidationResult(
-                test_name="bean_metzner_financial_stress_dropout",
-                metric="Point-biserial r",
-                synthetic_value=float(corr), reference_value=0.15,
-                statistic=float(corr), p_value=float(p_val),
-                passed=corr > 0,
-                details=f"Financial stress-dropout: r={corr:.3f} (Bean & Metzner 1985: expected positive)",
-            ))
-
-        # ── Tinto: Goal commitment → engagement (positive) ──
-        xs, ys = _get_pairs("goal_commitment", "final_engagement")
-        if len(xs) > 10:
-            corr, p_val = stats.pearsonr(xs, ys)
-            results.append(ValidationResult(
-                test_name="tinto_goal_commitment_engagement",
-                metric="Pearson r",
-                synthetic_value=float(corr), reference_value=0.2,
-                statistic=float(corr), p_value=float(p_val),
-                passed=corr > 0,
-                details=f"Goal commitment-engagement: r={corr:.3f} (Tinto 1975: expected positive)",
-            ))
-
-        # ── Moore (1993): Learner autonomy → engagement (positive) ──
-        xs, ys = _get_pairs("learner_autonomy", "final_engagement")
-        if len(xs) > 10:
-            corr, p_val = stats.pearsonr(xs, ys)
-            results.append(ValidationResult(
-                test_name="moore_autonomy_engagement",
-                metric="Pearson r",
-                synthetic_value=float(corr), reference_value=0.2,
-                statistic=float(corr), p_value=float(p_val),
-                passed=corr > 0,
-                details=f"Learner autonomy-engagement: r={corr:.3f} (Moore 1993: expected positive)",
-            ))
-
-        # ── Garrison (2000): CoI composite → engagement (positive) ──
-        xs, ys = _get_pairs("coi_composite", "final_engagement")
-        if len(xs) > 10:
-            corr, p_val = stats.pearsonr(xs, ys)
-            results.append(ValidationResult(
-                test_name="garrison_coi_engagement",
-                metric="Pearson r",
-                synthetic_value=float(corr), reference_value=0.3,
-                statistic=float(corr), p_value=float(p_val),
-                passed=corr > 0,
-                details=f"CoI composite-engagement: r={corr:.3f} (Garrison 2000: expected positive)",
-            ))
-
-        # ── Epstein & Axtell (1996): Network degree → engagement (positive) ──
-        xs, ys = _get_pairs("network_degree", "final_engagement")
-        if len(xs) > 10:
-            corr, p_val = stats.pearsonr(xs, ys)
-            results.append(ValidationResult(
-                test_name="epstein_network_degree_engagement",
-                metric="Pearson r",
-                synthetic_value=float(corr), reference_value=0.2,
-                statistic=float(corr), p_value=float(p_val),
-                passed=corr > 0,
-                details=f"Network degree-engagement: r={corr:.3f} (Epstein & Axtell 1996: expected positive)",
-            ))
-
-        # ── Kember (1989): Perceived cost-benefit → engagement (positive) ──
-        xs, ys = _get_pairs("perceived_cost_benefit", "final_engagement")
-        if len(xs) > 10:
-            corr, p_val = stats.pearsonr(xs, ys)
-            results.append(ValidationResult(
-                test_name="kember_cost_benefit_engagement",
-                metric="Pearson r",
-                synthetic_value=float(corr), reference_value=0.25,
-                statistic=float(corr), p_value=float(p_val),
-                passed=corr > 0,
-                details=f"Cost-benefit-engagement: r={corr:.3f} (Kember 1989: expected positive)",
-            ))
+        for attr_key, outcome_key, test_name, direction, ref_val, desc, continuous in _STANDARD_TESTS:
+            result = self._correlation_test(
+                students, outcome_map,
+                attr_key, outcome_key,
+                test_name, direction, ref_val, desc, continuous,
+            )
+            if result is not None:
+                results.append(result)
 
         # ── SDT (Deci & Ryan, 1985): Intrinsic motivation → higher engagement ──
         intrinsic_eng = [
