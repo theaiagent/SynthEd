@@ -61,7 +61,7 @@ Per-student final state after simulation. Includes theory module outputs.
 | `student_id`, `display_id` | Persona identity | |
 | `has_dropped_out` | `SimulationState.has_dropped_out` | 0 or 1 |
 | `dropout_week` | `SimulationState.dropout_week` | Empty if completed |
-| `withdrawal_reason` | `SimulationState.withdrawal_reason` | `unavoidable` or empty |
+| `withdrawal_reason` | `SimulationState.withdrawal_reason` | One of 7 event codes from `UnavoidableWithdrawal._EVENT_WEIGHTS`: `serious_illness`, `family_emergency`, `forced_relocation`, `career_change`, `military_deployment`, `death`, `legal_issues`; or empty if no withdrawal |
 | `final_dropout_phase` | `SimulationState.dropout_phase` | Baulke phase 0-5 |
 | `final_engagement` | Last value in `weekly_engagement_history` | |
 | `final_gpa` | `SimulationState.cumulative_gpa` | Floor-adjusted transcript GPA |

@@ -127,7 +127,7 @@ else:
 ### Term 5: Positive Events
 
 ```
-engagement += positive_events.apply(context["positive_event"], student, state)
+engagement += positive_events.apply(context.get("positive_event"), student, state)
 ```
 
 | Variable | Source |
@@ -163,7 +163,7 @@ motivation_effect = {
     "intrinsic":  +_MOTIVATION_INTRINSIC_BOOST,
     "extrinsic":   0.0,
     "amotivation": -_MOTIVATION_AMOTIVATION_PENALTY,
-}[current_motivation_type]
+}.get(current_motivation_type, 0.0)
 ```
 
 | Variable | Source | Default |
