@@ -420,7 +420,7 @@ class SimulationEngine:
         floor = cfg.grade_floor
 
         # Pass 1: compute semester_grade for all eligible students
-        eligible: dict[str, float] = {}
+        eligible: dict[str, float] = {}  # values are raw [0-1] semester_grade, NOT floor-adjusted
         for sid, state in states.items():
             if state.has_dropped_out:
                 state.outcome = "Withdrawn"
@@ -485,7 +485,7 @@ class SimulationEngine:
             return
 
         # Classify using normalized t-scores
-        for sid, norm_score in zip(sids, normalized):
+        for sid, norm_score in zip(sids, normalized, strict=True):
             state = states[sid]
             # Dual-hurdle still checks floor-adjusted components (absolute)
             midterm_agg = self._compute_midterm_aggregate(state, cfg)

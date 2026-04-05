@@ -190,6 +190,8 @@ def apply_relative_grading(raw_scores: list[float]) -> list[float]:
     """
     if len(raw_scores) < 2:
         return [50.0] * len(raw_scores)
+    if not all(math.isfinite(s) for s in raw_scores):
+        raise ValueError("apply_relative_grading received non-finite score(s)")
     arr = np.array(raw_scores, dtype=float)
     std = float(np.std(arr, ddof=0))  # population std (cohort IS the population)
     if std < 1e-9:
@@ -203,6 +205,9 @@ def apply_relative_grading(raw_scores: list[float]) -> list[float]:
 
 def normalize_t_scores(t_scores: list[float]) -> list[float]:
     """Convert t-scores (0-100) to 0-1 scale for classify_outcome."""
+    for s in t_scores:
+        if not math.isfinite(s):
+            raise ValueError(f"normalize_t_scores received non-finite value: {s!r}")
     return [s / 100.0 for s in t_scores]
 
 
