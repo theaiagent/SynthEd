@@ -29,11 +29,11 @@ PROFILE_NAMES = ["default"]
 OUTPUT_DIR = Path("calibration_output")
 
 
-def run_sobol(n_students: int, seed: int) -> list[SobolRanking]:
+def run_sobol(n_students: int, seed: int, n_workers: int = 1) -> list[SobolRanking]:
     """Run single Sobol analysis and return dropout rankings."""
-    logger.info("Running Sobol analysis (n_students=%d)...", n_students)
+    logger.info("Running Sobol analysis (n_students=%d, n_workers=%d)...", n_students, n_workers)
     t0 = time.time()
-    analyzer = SobolAnalyzer(n_students=n_students, seed=seed)
+    analyzer = SobolAnalyzer(n_students=n_students, seed=seed, n_workers=n_workers)
     results = analyzer.run()
     dropout_result = next(r for r in results if r.metric == "dropout_rate")
     rankings = analyzer.rank(dropout_result)
@@ -129,7 +129,7 @@ def main():
     OUTPUT_DIR.mkdir(exist_ok=True)
 
     # Step 1: Sobol (once)
-    rankings = run_sobol(n_students=n_students, seed=args.seed)
+    rankings = run_sobol(n_students=n_students, seed=args.seed, n_workers=args.workers)
 
     # Step 2: Calibrate each profile
     cal = NSGAIICalibrator(n_students=n_students, seed=args.seed, n_workers=args.workers)

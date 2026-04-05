@@ -325,6 +325,28 @@ class TestSobolIntegration:
         assert result_high["dropout_rate"] >= result_low["dropout_rate"]
 
 
+# ─────────────────────────────────────────────
+# n_workers parameter tests
+# ─────────────────────────────────────────────
+
+class TestNWorkers:
+    def test_sobol_accepts_n_workers_param(self):
+        from synthed.analysis.sobol_sensitivity import SobolAnalyzer, SOBOL_PARAMETER_SPACE
+        analyzer = SobolAnalyzer(parameters=SOBOL_PARAMETER_SPACE[:3], n_students=10, seed=42, n_workers=2)
+        assert analyzer._n_workers == 2
+
+    def test_sobol_default_n_workers_is_one(self):
+        from synthed.analysis.sobol_sensitivity import SobolAnalyzer, SOBOL_PARAMETER_SPACE
+        analyzer = SobolAnalyzer(parameters=SOBOL_PARAMETER_SPACE[:3], n_students=10, seed=42)
+        assert analyzer._n_workers == 1
+
+    def test_sobol_n_workers_clamped_to_one(self):
+        """n_workers <= 0 is clamped to 1 by max(1, n_workers)."""
+        from synthed.analysis.sobol_sensitivity import SobolAnalyzer, SOBOL_PARAMETER_SPACE
+        analyzer = SobolAnalyzer(parameters=SOBOL_PARAMETER_SPACE[:3], n_students=10, seed=42, n_workers=0)
+        assert analyzer._n_workers == 1
+
+
 class TestSimRunnerCalibrationMode:
     """Tests for calibration_mode=True skipping temp directory creation."""
 

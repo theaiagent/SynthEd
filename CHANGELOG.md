@@ -14,6 +14,7 @@ All notable changes to SynthEd are documented here.
 
 ### Added
 - Warning when `n_students < 100` (calibration reliability)
+- `SobolAnalyzer` parallel execution via `n_workers` parameter (ProcessPoolExecutor)
 
 ## [1.2.0] - 2026-04-05
 
