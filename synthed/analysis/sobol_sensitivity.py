@@ -26,6 +26,8 @@ from ._sim_runner import MODULE_ALIASES, run_simulation_with_overrides
 
 logger = logging.getLogger(__name__)
 
+_WORKER_TIMEOUT_S = 300  # align with nsga2_calibrator
+
 
 # ─────────────────────────────────────────────
 # Parameter space definition
@@ -396,6 +398,7 @@ class SobolAnalyzer:
             for i, overrides in enumerate(override_list):
                 result = run_simulation_with_overrides(
                     overrides, self.n_students, self.seed, self._default_config,
+                    calibration_mode=True,
                 )
                 outputs.append(result)
                 if (i + 1) % log_interval == 0:
@@ -424,9 +427,17 @@ class SobolAnalyzer:
                 for i, od in enumerate(override_list)
             }
             completed = 0
-            for future in as_completed(future_to_idx):
+            for future in as_completed(future_to_idx, timeout=_WORKER_TIMEOUT_S * n_total):
                 idx = future_to_idx[future]
-                outputs[idx] = future.result()
+                try:
+                    outputs[idx] = future.result(timeout=_WORKER_TIMEOUT_S)
+                except Exception as exc:
+                    logger.error("Sobol simulation %d/%d failed: %s", idx + 1, n_total, exc)
+                    outputs[idx] = {
+                        "dropout_rate": 0.0, "mean_engagement": 0.0, "mean_gpa": 0.0,
+                        "std_engagement": 0.0, "pass_rate": 0.0,
+                        "distinction_rate": 0.0, "fail_rate": 0.0,
+                    }
                 completed += 1
                 if completed % log_interval == 0:
                     logger.info("  Progress: %d/%d (%.0f%%)", completed, n_total, completed / n_total * 100)

@@ -15,6 +15,57 @@ from scipy import stats
 
 from .types import ReferenceStatistics, ValidationResult
 
+# ── Standard correlation tests (declarative table) ──
+# Columns: attr_key, outcome_key, test_name, expected_direction,
+#          reference_value, description, continuous
+_STANDARD_TESTS: list[tuple] = [
+    (
+        "conscientiousness", "has_dropped_out",
+        "tinto_conscientiousness_dropout", "negative", -0.2,
+        "Conscientiousness-dropout (Poropat 2009: expected negative)", False,
+    ),
+    (
+        "self_efficacy", "final_engagement",
+        "bandura_self_efficacy_engagement", "positive", 0.3,
+        "Self-efficacy-engagement (Bandura 1997: expected positive)", True,
+    ),
+    (
+        "self_regulation", "final_engagement",
+        "rovai_self_regulation_engagement", "positive", 0.25,
+        "Self-regulation-engagement (Rovai 2003: expected positive)", True,
+    ),
+    (
+        "financial_stress", "has_dropped_out",
+        "bean_metzner_financial_stress_dropout", "positive", 0.15,
+        "Financial stress-dropout (Bean & Metzner 1985: expected positive)", False,
+    ),
+    (
+        "goal_commitment", "final_engagement",
+        "tinto_goal_commitment_engagement", "positive", 0.2,
+        "Goal commitment-engagement (Tinto 1975: expected positive)", True,
+    ),
+    (
+        "learner_autonomy", "final_engagement",
+        "moore_autonomy_engagement", "positive", 0.2,
+        "Learner autonomy-engagement (Moore 1993: expected positive)", True,
+    ),
+    (
+        "coi_composite", "final_engagement",
+        "garrison_coi_engagement", "positive", 0.3,
+        "CoI composite-engagement (Garrison 2000: expected positive)", True,
+    ),
+    (
+        "network_degree", "final_engagement",
+        "epstein_network_degree_engagement", "positive", 0.2,
+        "Network degree-engagement (Epstein & Axtell 1996: expected positive)", True,
+    ),
+    (
+        "perceived_cost_benefit", "final_engagement",
+        "kember_cost_benefit_engagement", "positive", 0.25,
+        "Cost-benefit-engagement (Kember 1989: expected positive)", True,
+    ),
+]
+
 
 class SyntheticDataValidator:
     """
@@ -293,57 +344,6 @@ class SyntheticDataValidator:
         """
         results = []
         outcome_map = {o["student_id"]: o for o in outcomes}
-
-        # ── Standard correlation tests (declarative table) ──
-        # Columns: attr_key, outcome_key, test_name, expected_direction,
-        #          reference_value, description, continuous
-        _STANDARD_TESTS: list[tuple] = [
-            (
-                "conscientiousness", "has_dropped_out",
-                "tinto_conscientiousness_dropout", "negative", -0.2,
-                "Conscientiousness-dropout (Poropat 2009: expected negative)", False,
-            ),
-            (
-                "self_efficacy", "final_engagement",
-                "bandura_self_efficacy_engagement", "positive", 0.3,
-                "Self-efficacy-engagement (Bandura 1997: expected positive)", True,
-            ),
-            (
-                "self_regulation", "final_engagement",
-                "rovai_self_regulation_engagement", "positive", 0.25,
-                "Self-regulation-engagement (Rovai 2003: expected positive)", True,
-            ),
-            (
-                "financial_stress", "has_dropped_out",
-                "bean_metzner_financial_stress_dropout", "positive", 0.15,
-                "Financial stress-dropout (Bean & Metzner 1985: expected positive)", False,
-            ),
-            (
-                "goal_commitment", "final_engagement",
-                "tinto_goal_commitment_engagement", "positive", 0.2,
-                "Goal commitment-engagement (Tinto 1975: expected positive)", True,
-            ),
-            (
-                "learner_autonomy", "final_engagement",
-                "moore_autonomy_engagement", "positive", 0.2,
-                "Learner autonomy-engagement (Moore 1993: expected positive)", True,
-            ),
-            (
-                "coi_composite", "final_engagement",
-                "garrison_coi_engagement", "positive", 0.3,
-                "CoI composite-engagement (Garrison 2000: expected positive)", True,
-            ),
-            (
-                "network_degree", "final_engagement",
-                "epstein_network_degree_engagement", "positive", 0.2,
-                "Network degree-engagement (Epstein & Axtell 1996: expected positive)", True,
-            ),
-            (
-                "perceived_cost_benefit", "final_engagement",
-                "kember_cost_benefit_engagement", "positive", 0.25,
-                "Cost-benefit-engagement (Kember 1989: expected positive)", True,
-            ),
-        ]
 
         for attr_key, outcome_key, test_name, direction, ref_val, desc, continuous in _STANDARD_TESTS:
             result = self._correlation_test(
