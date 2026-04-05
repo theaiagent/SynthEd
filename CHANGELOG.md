@@ -2,6 +2,25 @@
 
 All notable changes to SynthEd are documented here.
 
+## [Unreleased]
+
+### Added
+- **EngineConfig**: Frozen dataclass holding all 70 engine tuning constants — assignment/exam quality weights, engagement deltas, interaction parameters — with `__post_init__` validation (weight sums, ordering constraints, positivity guards)
+- **`--workers N` CLI flag** for `run_calibration.py` — parallel NSGA-II calibration via ProcessPoolExecutor
+- **`doc_facts --fix`**: Auto-update stale numeric metrics (test count, Sobol params) across README, THEORY, .zenodo.json
+- **Codecov coverage test** for `openai` ImportError branch
+
+### Changed
+- Engine override mechanism: `setattr()` replaced with `dataclasses.replace()` on frozen `EngineConfig` — field-name allowlisting prevents arbitrary attribute injection
+- `_sim_runner.py`: Cached `_ENGINE_FIELDS` / `_INST_FIELDS` frozensets at module level (was recomputing per call)
+- Theory module overrides: `__dunder__` and unknown-attribute guards added to `setattr` path
+- `inst_overrides` now validated against `InstitutionalConfig` fields (was unfiltered)
+- Sobol threshold fix: `pass_threshold` and `distinction_threshold` sorted when both sampled independently
+- Calibration output: stale old-profile JSON files removed, new `nsga2_default.json` added (12,800 trials, IN RANGE)
+
+### Fixed
+- Sobol sampling could generate `distinction_threshold < pass_threshold`, violating GradingConfig invariant
+
 ## [1.1.0] - 2026-04-03
 
 ### Added

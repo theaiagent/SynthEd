@@ -352,8 +352,8 @@ When dropout and GPA objectives conflict, NSGA-II explores the Pareto front inst
 ```python
 from synthed.analysis.nsga2_calibrator import NSGAIICalibrator
 
-calibrator = NSGAIICalibrator(n_students=100, seed=42)
-result = calibrator.run("moderate_dropout_western", n_trials=8000)
+calibrator = NSGAIICalibrator(n_students=100, seed=42, n_workers=4)
+result = calibrator.run("default", n_trials=12800)
 print(f"Pareto front: {len(result.pareto_front)} solutions")
 print(f"Knee-point dropout error: {result.knee_point.dropout_error:.4f}")
 ```
@@ -465,6 +465,8 @@ python run_pipeline.py --n 100 --llm
 
 ### Override Engine Constants
 
+Engine constants are stored in a frozen `EngineConfig` dataclass. Overrides are applied internally via `dataclasses.replace()` with field-name validation — unknown fields are logged and ignored.
+
 ```python
 from synthed.analysis._sim_runner import run_simulation_with_overrides
 from synthed.agents.persona import PersonaConfig
@@ -480,12 +482,23 @@ metrics = run_simulation_with_overrides(
 )
 ```
 
+You can also pass `EngineConfig` directly to the pipeline:
+
+```python
+from synthed.pipeline import SynthEdPipeline
+from synthed.simulation.engine_config import EngineConfig
+from dataclasses import replace
+
+custom_cfg = replace(EngineConfig(), _TINTO_DECAY_BASE=0.08, _DECAY_DAMPING_FACTOR=0.7)
+pipeline = SynthEdPipeline(engine_config=custom_cfg, output_dir="./output", seed=42)
+```
+
 ### Parameter Naming Convention
 
 | Prefix | Target | Example |
 |--------|--------|---------|
 | `config.*` | PersonaConfig | `config.employment_rate` |
-| `engine.*` | SimulationEngine | `engine._TINTO_DECAY_BASE` |
+| `engine.*` | EngineConfig | `engine._TINTO_DECAY_BASE` |
 | `tinto.*` | TintoIntegration | `tinto._ACADEMIC_EROSION` |
 | `bean.*` | BeanMetznerPressure | `bean._OVERWORK_PENALTY` |
 | `baulke.*` | BaulkeDropoutPhase | `baulke._DECISION_RISK_MULTIPLIER` |
