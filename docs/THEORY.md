@@ -143,7 +143,7 @@ Each parameter ranges 0-1 with 0.5 as neutral. The `scale_by()` method applies m
 SynthEd supports two grading methods via `GradingConfig`:
 
 - **Absolute grading** (default): Students are classified against fixed thresholds (`pass_threshold`, `distinction_threshold`).
-- **Relative grading** (`grading_method="relative"`): Applies t-score standardization across the cohort. Students are classified by their standing relative to peers rather than fixed thresholds. Automatically falls back to absolute grading for cohorts smaller than 2 or with zero variance.
+- **Relative grading** (`grading_method="relative"`): Applies t-score standardization across the cohort. Students are classified by their standing relative to peers rather than fixed thresholds. Automatically falls back to absolute grading for cohorts smaller than 2 or with zero or near-zero variance (std < 1e-9).
 
 ---
 

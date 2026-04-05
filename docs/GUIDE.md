@@ -207,7 +207,7 @@ pipeline = SynthEdPipeline(
 )
 ```
 
-Relative mode applies t-score standardization across the cohort. Students are classified by their standing relative to peers rather than fixed thresholds. Falls back to absolute grading for cohorts smaller than 2 or with zero variance.
+Relative mode applies t-score standardization across the cohort. Students are classified by their standing relative to peers rather than fixed thresholds. Falls back to absolute grading for cohorts smaller than 2 or with zero or near-zero variance (std < 1e-9).
 
 ---
 
