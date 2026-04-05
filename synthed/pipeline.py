@@ -339,7 +339,47 @@ class SynthEdPipeline:
         logger.info("[4/4] Running validation suite...")
         t0 = time.time()
 
-        # Prepare validation data (all four factor clusters)
+        students_data, outcomes_data, weekly_eng = self._prepare_validation_data(
+            students, states, network
+        )
+
+        validation_report = self.validator.validate_all(
+            students_data, outcomes_data, weekly_eng
+        )
+        report["timing"]["validation_sec"] = round(time.time() - t0, 2)
+        report["validation"] = validation_report
+        logger.info("      Done. Quality: %s (%d/%d tests passed)",
+                    validation_report['summary']['overall_quality'],
+                    validation_report['summary']['passed'],
+                    validation_report['summary']['total_tests'])
+
+        # Save full report (skipped in calibration mode when no output dir)
+        if self.output_dir is not None:
+            report_path = self.output_dir / "pipeline_report.json"
+            report_path.write_text(json.dumps(report, indent=2, default=str))
+            report["report_path"] = str(report_path)
+            logger.info("Pipeline complete. Report saved to %s", report_path)
+        else:
+            logger.info("Pipeline complete (calibration mode — no report written to disk)")
+
+        # LLM cost report
+        if self.llm:
+            report["llm_costs"] = self.llm.cost_report()
+
+        return report
+
+    @staticmethod
+    def _prepare_validation_data(
+        students: list,
+        states: dict,
+        network: Any,
+    ) -> tuple[list, list, dict]:
+        """Build students_data, outcomes_data, and weekly_eng dicts for validation.
+
+        Prepares all four factor clusters (student characteristics, skills,
+        external factors, internal factors) plus Garrison CoI and Epstein-Axtell
+        network degree fields required by SyntheticDataValidator.
+        """
         students_data = []
         for s in students:
             d = {
@@ -404,27 +444,4 @@ class SynthEdPipeline:
             for sid, st in states.items()
         }
 
-        validation_report = self.validator.validate_all(
-            students_data, outcomes_data, weekly_eng
-        )
-        report["timing"]["validation_sec"] = round(time.time() - t0, 2)
-        report["validation"] = validation_report
-        logger.info("      Done. Quality: %s (%d/%d tests passed)",
-                    validation_report['summary']['overall_quality'],
-                    validation_report['summary']['passed'],
-                    validation_report['summary']['total_tests'])
-
-        # Save full report (skipped in calibration mode when no output dir)
-        if self.output_dir is not None:
-            report_path = self.output_dir / "pipeline_report.json"
-            report_path.write_text(json.dumps(report, indent=2, default=str))
-            report["report_path"] = str(report_path)
-            logger.info("Pipeline complete. Report saved to %s", report_path)
-        else:
-            logger.info("Pipeline complete (calibration mode — no report written to disk)")
-
-        # LLM cost report
-        if self.llm:
-            report["llm_costs"] = self.llm.cost_report()
-
-        return report
+        return students_data, outcomes_data, weekly_eng

@@ -8,6 +8,8 @@ All notable changes to SynthEd are documented here.
 - `ODLEnvironment.get_course_by_id`: O(1) dict lookup replaces O(n) linear scan
 - `_sim_runner`: Calibration mode skips temp directory creation (I/O reduction)
 - `ReferenceStatistics` and `ValidationResult` extracted to `synthed/validation/types.py`
+- `SimulationEngine._simulate_student_week` split into 5 focused methods (lms, forum, assignment, live_session, exam)
+- `SynthEdPipeline._prepare_validation_data` extracted from `run()`
 - `_validate_correlations`: 9 standard tests extracted into declarative table via `_correlation_test` helper
 
 ### Added
