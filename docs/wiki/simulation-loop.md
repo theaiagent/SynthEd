@@ -128,7 +128,7 @@ flowchart LR
     style E fill:#ffebee
 ```
 
-> **RNG determinism**: This order is critical. Each generator consumes random draws from `self.rng` (numpy) and `random` (stdlib). Changing the order — or adding a new generator between existing ones — shifts all subsequent random draws, changing the entire simulation trajectory.
+> **RNG determinism**: This order is critical. Each interaction generator consumes random draws from `self.rng` (numpy). Changing the order — or adding a new generator between existing ones — shifts all subsequent numpy draws, changing the entire simulation trajectory. Note: some theory modules separately use `random` (stdlib), which is also seeded for determinism.
 
 ### Step 3: Theory Updates
 

@@ -329,8 +329,8 @@ Weights from `EngineConfig`: `_ASSIGN_GPA_WEIGHT` (0.25) + `_ASSIGN_ENG_WEIGHT` 
   on the 4.0 scale. This is intentional -- it models partial credit and baseline marks from
   assignment templates.
 
-- **Relative grading falls back silently**: If the cohort has fewer than 2 eligible students or
-  zero variance in grades, relative grading silently falls back to absolute with a log warning.
+- **Relative grading falls back automatically**: If the cohort has fewer than 2 eligible students or
+  zero variance in grades, relative grading automatically falls back to absolute with a log warning.
   This can happen in small simulations or when most students drop out.
 
 - **`perceived_mastery` returns 0.5 with no items**: The `@property` returns 0.5 (neutral) when
