@@ -69,6 +69,7 @@ class ODLEnvironment:
             self.scheduled_events = self._default_events()
         if not self.positive_events:
             self.positive_events = self._default_positive_events()
+        self._course_index: dict[str, Course] = {c.id: c for c in self.courses}
 
     def _default_courses(self) -> list[Course]:
         """Generate a default set of ODL courses."""
@@ -145,7 +146,4 @@ class ODLEnvironment:
         }
 
     def get_course_by_id(self, course_id: str) -> Course | None:
-        for c in self.courses:
-            if c.id == course_id:
-                return c
-        return None
+        return self._course_index.get(course_id)

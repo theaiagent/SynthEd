@@ -40,8 +40,6 @@ class CalibrationEstimate:
 # Measured 2026-04-03 post GradingConfig addition.
 # IMPORTANT: Re-measure if theory modules, engine weights, or RNG-consuming
 #            code paths change (even non-dropout features shift RNG sequence).
-# TODO: Warn when n_students is small (e.g. <100) — stochastic variance
-#       makes calibration estimates unreliable at low N.
 CALIBRATION_DATA: tuple[CalibrationPoint, ...] = (
     # 1-semester sweep across dropout_base_rate values
     CalibrationPoint(1, 0.20, 0.278, 500, 5),

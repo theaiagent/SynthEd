@@ -1,5 +1,6 @@
 """Integration tests for the SynthEdPipeline."""
 
+import logging
 import pytest
 
 from synthed.pipeline import SynthEdPipeline
@@ -126,3 +127,26 @@ class TestPipelineMultiSemesterInterim:
         report = pipeline.run(n_students=20)
         # No target_dropout_range => no interim reports
         assert "interim_reports" not in report
+
+
+class TestSmallNWarning:
+    """Tests for small n_students warning (P8)."""
+
+    def test_small_n_emits_warning(self, tmp_path, caplog):
+        """Running with n_students < 100 must emit a warning via the pipeline logger."""
+        pipeline = SynthEdPipeline(output_dir=str(tmp_path), seed=42)
+        with caplog.at_level(logging.WARNING, logger="synthed.pipeline"):
+            pipeline.run(n_students=30)
+        warning_messages = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
+        assert any("n_students=30" in msg and "small" in msg for msg in warning_messages)
+
+    def test_no_warning_for_large_n(self, tmp_path, caplog):
+        """Running with n_students >= 100 must NOT emit a small-n warning."""
+        pipeline = SynthEdPipeline(output_dir=str(tmp_path), seed=42)
+        with caplog.at_level(logging.WARNING, logger="synthed.pipeline"):
+            pipeline.run(n_students=100)
+        small_n_warnings = [
+            r for r in caplog.records
+            if "small" in r.getMessage() and "n_students" in r.getMessage()
+        ]
+        assert len(small_n_warnings) == 0

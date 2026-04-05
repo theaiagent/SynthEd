@@ -2,6 +2,16 @@
 
 All notable changes to SynthEd are documented here.
 
+## [Unreleased]
+
+### Changed
+- `ODLEnvironment.get_course_by_id`: O(1) dict lookup replaces O(n) linear scan
+- `_sim_runner`: Calibration mode skips temp directory creation (I/O reduction)
+- `ReferenceStatistics` and `ValidationResult` extracted to `synthed/validation/types.py`
+
+### Added
+- Warning when `n_students < 100` (calibration reliability)
+
 ## [1.2.0] - 2026-04-05
 
 ### Added

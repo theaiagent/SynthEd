@@ -14,7 +14,7 @@ from ..agents.persona import PersonaConfig
 from ..simulation.environment import ODLEnvironment
 from ..simulation.grading import GradingConfig
 from ..simulation.institutional import InstitutionalConfig
-from ..validation.validator import ReferenceStatistics
+from ..validation import ReferenceStatistics
 
 
 @dataclass(frozen=True)
