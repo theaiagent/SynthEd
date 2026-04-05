@@ -13,6 +13,7 @@ from synthed.simulation.grading import (
     classify_outcome,
     compute_grade,
     convert_scale,
+    normalize_t_scores,
     piecewise_gpa,
     sample_base_quality,
 )
@@ -78,9 +79,9 @@ class TestGradingConfig:
         with pytest.raises(ValueError, match="dist_alpha.*dist_beta"):
             GradingConfig(distribution="uniform", dist_alpha=0.8, dist_beta=0.2)
 
-    def test_relative_grading_method_rejected(self):
-        with pytest.raises(ValueError, match="not yet implemented"):
-            GradingConfig(grading_method="relative")
+    def test_relative_grading_method_accepted(self):
+        cfg = GradingConfig(grading_method="relative")
+        assert cfg.grading_method == "relative"
 
     def test_invalid_grading_method_rejected(self):
         with pytest.raises(ValueError, match="Invalid grading_method"):
@@ -213,6 +214,14 @@ class TestRelativeGrading:
         # With ddof=0: std=10.0, T = 50 + 10*(x-50)/10 → [40.0, 60.0]
         # With ddof=1: std=14.14, T ≈ [42.93, 57.07]
         assert abs(adjusted[0] - 40.0) < 0.01  # confirms ddof=0
+
+
+class TestNormalizeTScores:
+    def test_normalize_t_scores_basic(self):
+        assert normalize_t_scores([0, 50, 100]) == [0.0, 0.5, 1.0]
+
+    def test_normalize_t_scores_empty(self):
+        assert normalize_t_scores([]) == []
 
 
 class TestCalculateSemesterGrade:

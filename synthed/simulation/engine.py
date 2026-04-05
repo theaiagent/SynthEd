@@ -30,9 +30,11 @@ from .engine_config import EngineConfig
 from .environment import ODLEnvironment
 from .grading import (
     GradingConfig,
+    apply_relative_grading,
     calculate_semester_grade,
     check_dual_hurdle_pass,
     classify_outcome as _classify_outcome,
+    normalize_t_scores,
 )
 from .institutional import InstitutionalConfig, scale_by
 from .social_network import SocialNetwork
@@ -334,8 +336,39 @@ class SimulationEngine:
             total += comp_mean * weight
         return total
 
+    def _classify_absolute_single(
+        self, state: SimulationState, cfg: GradingConfig, floor: float,
+        grade: float,
+    ) -> str:
+        """Classify a single student using absolute grading (floor-adjust + hurdle + classify).
+
+        Returns the outcome string: Distinction, Pass, or Fail.
+        """
+        adjusted_grade = floor + (1.0 - floor) * grade
+        midterm_agg = self._compute_midterm_aggregate(state, cfg)
+        adjusted_midterm = floor + (1.0 - floor) * midterm_agg
+        adjusted_final = (
+            (floor + (1.0 - floor) * state.final_score)
+            if state.final_score is not None
+            else None
+        )
+        passes_hurdle = check_dual_hurdle_pass(cfg, adjusted_midterm, adjusted_final)
+        if passes_hurdle:
+            return _classify_outcome(adjusted_grade, cfg)
+        return "Fail"
+
     def _assign_outcomes(self, states: dict[str, SimulationState]) -> None:
         """Assign semester_grade and outcome to each student at end of run.
+
+        Dispatches to absolute or relative grading based on grading_config.
+        """
+        if self.grading_config.grading_method == "relative":
+            self._assign_outcomes_relative(states)
+        else:
+            self._assign_outcomes_absolute(states)
+
+    def _assign_outcomes_absolute(self, states: dict[str, SimulationState]) -> None:
+        """Assign semester_grade and outcome using absolute grading.
 
         Thresholds (pass_threshold, distinction_threshold, component_pass_thresholds)
         are on the transcript scale (floor-adjusted). Raw quality is converted via
@@ -370,19 +403,103 @@ class SimulationEngine:
             )
 
             if state.semester_grade is not None:
-                # Floor-adjust for classification (thresholds are on transcript scale)
-                adjusted_grade = floor + (1.0 - floor) * state.semester_grade
+                state.outcome = self._classify_absolute_single(
+                    state, cfg, floor, state.semester_grade,
+                )
+            else:
+                state.outcome = "Fail"
 
-                # Dual-hurdle check (also on floor-adjusted scale)
+    def _assign_outcomes_relative(self, states: dict[str, SimulationState]) -> None:
+        """Assign semester_grade and outcome using relative (t-score) grading.
+
+        Pass 1: compute semester_grade for all eligible students.
+        Pass 2: apply t-score standardization and classify using normalized scores.
+        Falls back to absolute if fewer than 2 eligible or zero variance.
+        """
+        cfg = self.grading_config
+        floor = cfg.grade_floor
+
+        # Pass 1: compute semester_grade for all eligible students
+        eligible: dict[str, float] = {}
+        for sid, state in states.items():
+            if state.has_dropped_out:
+                state.outcome = "Withdrawn"
+                continue
+            if state.gpa_count == 0:
+                state.outcome = "Fail"
+                continue
+
+            # Exam eligibility check (same as absolute)
+            if cfg.exam_eligibility_threshold is not None:
                 midterm_agg = self._compute_midterm_aggregate(state, cfg)
                 adjusted_midterm = floor + (1.0 - floor) * midterm_agg
-                adjusted_final = (floor + (1.0 - floor) * state.final_score) if state.final_score is not None else None
-                passes_hurdle = check_dual_hurdle_pass(cfg, adjusted_midterm, adjusted_final)
-
-                if passes_hurdle:
-                    state.outcome = _classify_outcome(adjusted_grade, cfg)
-                else:
+                if adjusted_midterm < cfg.exam_eligibility_threshold:
                     state.outcome = "Fail"
+                    continue
+
+            grade = calculate_semester_grade(
+                cfg,
+                midterm_exam_scores=state.midterm_exam_scores,
+                assignment_scores=state.assignment_scores,
+                forum_scores=state.forum_scores,
+                final_score=state.final_score,
+                n_total_assignments=state.n_total_assignments,
+                n_total_forums=state.n_total_forums,
+            )
+            state.semester_grade = grade
+            if grade is not None:
+                eligible[sid] = grade
+            else:
+                state.outcome = "Fail"
+
+        # Fallback: if fewer than 2 eligible, use absolute
+        if len(eligible) < 2:
+            logger.warning(
+                "Relative grading: fewer than 2 eligible students, "
+                "falling back to absolute",
+            )
+            for sid, grade in eligible.items():
+                state = states[sid]
+                state.outcome = self._classify_absolute_single(
+                    state, cfg, floor, grade,
+                )
+            return
+
+        # Pass 2: apply t-score standardization
+        sids = list(eligible.keys())
+        raw_grades = [eligible[sid] for sid in sids]
+        t_scores = apply_relative_grading(raw_grades)
+        normalized = normalize_t_scores(t_scores)
+
+        # Zero-variance check (all t_scores = 50.0 means std was ~0)
+        if all(abs(t - 50.0) < 1e-9 for t in t_scores):
+            logger.warning(
+                "Relative grading: zero variance in semester grades, "
+                "falling back to absolute",
+            )
+            for sid, grade in eligible.items():
+                state = states[sid]
+                state.outcome = self._classify_absolute_single(
+                    state, cfg, floor, grade,
+                )
+            return
+
+        # Classify using normalized t-scores
+        for sid, norm_score in zip(sids, normalized):
+            state = states[sid]
+            # Dual-hurdle still checks floor-adjusted components (absolute)
+            midterm_agg = self._compute_midterm_aggregate(state, cfg)
+            adjusted_midterm = floor + (1.0 - floor) * midterm_agg
+            adjusted_final = (
+                (floor + (1.0 - floor) * state.final_score)
+                if state.final_score is not None
+                else None
+            )
+            passes_hurdle = check_dual_hurdle_pass(
+                cfg, adjusted_midterm, adjusted_final,
+            )
+            if passes_hurdle:
+                state.outcome = _classify_outcome(norm_score, cfg)
             else:
                 state.outcome = "Fail"
 
