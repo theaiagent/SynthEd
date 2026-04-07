@@ -245,19 +245,21 @@ class TestIntegrationDropoutRate:
         return _run
 
     def test_high_ssq_lower_dropout(self, _run_simulation):
-        """SSQ=0.8 should produce lower dropout than SSQ=0.5."""
-        default_rate = _run_simulation(0.5)
-        high_ssq_rate = _run_simulation(0.8)
-        assert high_ssq_rate < default_rate, (
-            f"SSQ=0.8 dropout {high_ssq_rate:.3f} should be < default {default_rate:.3f}"
+        """SSQ=0.8 should produce lower mean dropout than SSQ=0.5 (3 seeds, eps=0.005)."""
+        seeds = [41, 42, 43]
+        default_rate = sum(_run_simulation(0.5, seed=s) for s in seeds) / len(seeds)
+        high_ssq_rate = sum(_run_simulation(0.8, seed=s) for s in seeds) / len(seeds)
+        assert high_ssq_rate <= default_rate - 0.005, (
+            f"SSQ=0.8 mean dropout {high_ssq_rate:.3f} should be < default {default_rate:.3f}"
         )
 
     def test_low_ssq_higher_dropout(self, _run_simulation):
-        """SSQ=0.2 should produce higher dropout than SSQ=0.5."""
-        default_rate = _run_simulation(0.5)
-        low_ssq_rate = _run_simulation(0.2)
-        assert low_ssq_rate > default_rate, (
-            f"SSQ=0.2 dropout {low_ssq_rate:.3f} should be > default {default_rate:.3f}"
+        """SSQ=0.2 should produce higher mean dropout than SSQ=0.5 (3 seeds, eps=0.005)."""
+        seeds = [41, 42, 43]
+        default_rate = sum(_run_simulation(0.5, seed=s) for s in seeds) / len(seeds)
+        low_ssq_rate = sum(_run_simulation(0.2, seed=s) for s in seeds) / len(seeds)
+        assert low_ssq_rate >= default_rate + 0.005, (
+            f"SSQ=0.2 mean dropout {low_ssq_rate:.3f} should be > default {default_rate:.3f}"
         )
 
     def test_dropout_rate_sanity_bounds(self, _run_simulation):
