@@ -15,5 +15,5 @@ def configure_logging(level: int = logging.INFO, verbose: bool = False) -> None:
     ))
     root = logging.getLogger("synthed")
     root.setLevel(effective_level)
-    if not root.handlers:
+    if not root.handlers:  # prevent duplicate handlers; level is always updated above
         root.addHandler(handler)
