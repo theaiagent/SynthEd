@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING, Callable
 
 import numpy as np
 
+from ..institutional import InstitutionalConfig, scale_by
+
 if TYPE_CHECKING:
     from ...agents.persona import StudentPersona
     from ..engine import SimulationState
@@ -67,6 +69,36 @@ class BaulkeDropoutPhase:
     _IMPACT_PHASE_4: float = -0.4
     _IMPACT_DROPOUT: float = -0.8
 
+    def _modulated_thresholds(self, ssq: float) -> dict[str, float]:
+        """Compute phase-transition thresholds scaled by institutional SSQ.
+
+        All thresholds use ``1.0 - ssq`` (inverted) so that higher SSQ
+        (better institution) produces *lower* numeric thresholds.  For
+        forward thresholds this means the student must be in worse shape
+        to advance toward dropout.  For recovery thresholds a lower bar
+        means the student recovers more easily.  Exhaustion is the sole
+        exception — it uses direct ``ssq`` so better institutions raise
+        the bar for what counts as "exhausted".
+
+        At SSQ = 0.5, every value equals its class constant exactly.
+        """
+        inv = 1.0 - ssq
+        return {
+            "nonfit_eng": scale_by(self._NONFIT_ENG_THRESHOLD, inv),
+            "nonfit_eng_soft": scale_by(self._NONFIT_ENG_SOFT, inv),
+            "phase_1_to_2_eng": scale_by(self._PHASE_1_TO_2_ENG, inv),
+            "phase_1_social": scale_by(self._PHASE_1_SOCIAL_THRESHOLD, inv),
+            "phase_2_to_3_eng": scale_by(self._PHASE_2_TO_3_ENG, inv),
+            "phase_3_to_4_eng": scale_by(self._PHASE_3_TO_4_ENG, inv),
+            "trigger_eng": scale_by(self._TRIGGER_ENG_THRESHOLD, inv),
+            "recovery_1_to_0": scale_by(self._RECOVERY_1_TO_0, inv),
+            "recovery_2_to_1": scale_by(self._RECOVERY_2_TO_1, inv),
+            "recovery_3_to_2": scale_by(self._RECOVERY_3_TO_2, inv),
+            "recovery_4_to_3_eng": scale_by(self._RECOVERY_4_TO_3_ENG, inv),
+            "recovery_4_to_3_cb": scale_by(self._RECOVERY_4_TO_3_CB, inv),
+            "exhaustion": scale_by(self._EXHAUSTION_THRESHOLD, ssq),
+        }
+
     def advance_phase(
         self,
         student: StudentPersona,
@@ -75,6 +107,7 @@ class BaulkeDropoutPhase:
         env: ODLEnvironment,
         avg_td_fn: Callable[[StudentPersona, SimulationState], float],
         rng: np.random.Generator,
+        inst: InstitutionalConfig | None = None,
     ) -> None:
         """
         Advance the dropout phase.
@@ -84,21 +117,31 @@ class BaulkeDropoutPhase:
         2 -> 3: Deliberation -- consciously weighing pros/cons of staying vs leaving
         3 -> 4: Information search -- targeted search for alternative options
         4 -> 5: Final decision -- committed to withdraw
+
+        Parameters
+        ----------
+        inst : InstitutionalConfig | None
+            If provided, ``support_services_quality`` modulates phase
+            transition thresholds via :func:`scale_by`.  At the default
+            SSQ = 0.5 all thresholds equal the class constants exactly.
         """
+        ssq = inst.support_services_quality if inst is not None else 0.5
+        t = self._modulated_thresholds(ssq)
+
         eng = state.current_engagement
         history = state.weekly_engagement_history
         avg_td = avg_td_fn(student, state)
 
-        exhausted = hasattr(state, 'exhaustion') and state.exhaustion.exhaustion_level > self._EXHAUSTION_THRESHOLD
+        exhausted = hasattr(state, 'exhaustion') and state.exhaustion.exhaustion_level > t["exhaustion"]
 
         if state.dropout_phase == 0:
             # Phase 0 -> 1: Non-fit perception
             # Gonzalez: high exhaustion accelerates non-fit perception
-            if (eng < self._NONFIT_ENG_THRESHOLD
-                    or (eng < self._NONFIT_ENG_SOFT and state.coi_state.cognitive_presence < self._NONFIT_COG_THRESHOLD)
-                    or (eng < self._NONFIT_ENG_SOFT and avg_td > self._NONFIT_TD_THRESHOLD)
-                    or (eng < self._NONFIT_ENG_SOFT and exhausted)
-                    or (eng < self._NONFIT_ENG_SOFT
+            if (eng < t["nonfit_eng"]
+                    or (eng < t["nonfit_eng_soft"] and state.coi_state.cognitive_presence < self._NONFIT_COG_THRESHOLD)
+                    or (eng < t["nonfit_eng_soft"] and avg_td > self._NONFIT_TD_THRESHOLD)
+                    or (eng < t["nonfit_eng_soft"] and exhausted)
+                    or (eng < t["nonfit_eng_soft"]
                         and state.perceived_mastery_count >= self._NONFIT_GPA_MIN_ITEMS
                         and state.perceived_mastery < self._NONFIT_MASTERY_THRESHOLD)):
                 state.dropout_phase = 1
@@ -108,14 +151,14 @@ class BaulkeDropoutPhase:
 
         elif state.dropout_phase == 1:
             # Recovery back to 0 (harder in ODL -- fewer re-engagement mechanisms)
-            if eng > self._RECOVERY_1_TO_0:
+            if eng > t["recovery_1_to_0"]:
                 state.dropout_phase = 0
                 state.memory.append({"week": week, "event_type": "recovery",
                                     "details": "Re-engaged with program", "impact": self._IMPACT_RECOVERY_1_TO_0})
             # Phase 1 -> 2: Thoughts of quitting
-            elif (eng < self._PHASE_1_TO_2_ENG
+            elif (eng < t["phase_1_to_2_eng"]
                   and (state.missed_assignments_streak >= 1
-                       or state.social_integration < self._PHASE_1_SOCIAL_THRESHOLD)):
+                       or state.social_integration < t["phase_1_social"])):
                 state.dropout_phase = 2
                 state.memory.append({"week": week, "event_type": "dropout_phase",
                                     "details": "Thoughts of quitting: considering alternatives "
@@ -124,13 +167,13 @@ class BaulkeDropoutPhase:
 
         elif state.dropout_phase == 2:
             # Recovery back to 1
-            if eng > self._RECOVERY_2_TO_1:
+            if eng > t["recovery_2_to_1"]:
                 state.dropout_phase = 1
                 state.memory.append({"week": week, "event_type": "recovery",
                                     "details": "Renewed commitment, thoughts of quitting subsided",
                                     "impact": self._IMPACT_RECOVERY_2_TO_1})
             # Phase 2 -> 3: Deliberation (requires sustained decline or severe life shock)
-            elif (eng < self._PHASE_2_TO_3_ENG and len(history) >= 2 and history[-1] < history[-2]
+            elif (eng < t["phase_2_to_3_eng"] and len(history) >= 2 and history[-1] < history[-2]
                     or (state.env_shock_remaining > 0
                         and state.env_shock_magnitude > self._SHOCK_SEVERITY_THRESHOLD)):
                 state.dropout_phase = 3
@@ -140,13 +183,13 @@ class BaulkeDropoutPhase:
 
         elif state.dropout_phase == 3:
             # Recovery back to 2
-            if eng > self._RECOVERY_3_TO_2:
+            if eng > t["recovery_3_to_2"]:
                 state.dropout_phase = 2
                 state.memory.append({"week": week, "event_type": "recovery",
                                     "details": "Stepped back from deliberation to thoughts of quitting",
                                     "impact": self._IMPACT_RECOVERY_3_TO_2})
             # Phase 3 -> 4: Information search
-            elif eng < self._PHASE_3_TO_4_ENG and state.perceived_cost_benefit < self._PHASE_3_TO_4_CB:
+            elif eng < t["phase_3_to_4_eng"] and state.perceived_cost_benefit < self._PHASE_3_TO_4_CB:
                 state.dropout_phase = 4
                 state.memory.append({"week": week, "event_type": "dropout_phase",
                                     "details": "Information search: exploring alternatives "
@@ -155,12 +198,12 @@ class BaulkeDropoutPhase:
 
         elif state.dropout_phase == 4:
             # Recovery still possible but unlikely
-            if eng > self._RECOVERY_4_TO_3_ENG and state.perceived_cost_benefit > self._RECOVERY_4_TO_3_CB:
+            if eng > t["recovery_4_to_3_eng"] and state.perceived_cost_benefit > t["recovery_4_to_3_cb"]:
                 state.dropout_phase = 3
             # Phase 4 -> 5: Final decision -- probabilistic, scaled by triggers
             else:
                 triggers = 0
-                if eng < self._TRIGGER_ENG_THRESHOLD:
+                if eng < t["trigger_eng"]:
                     triggers += 1  # Near-zero engagement
                 if state.missed_assignments_streak >= self._TRIGGER_MISSED_STREAK:
                     triggers += 1  # Academic failure cascade

@@ -153,6 +153,8 @@ report = pipeline.run(n_students=300)
 
 All values range 0-1 (default 0.5 = neutral). Values above 0.5 improve student outcomes; below 0.5 degrade them.
 
+`support_services_quality` directly modulates Baulke dropout phase thresholds: higher values make it harder for students to advance toward dropout and easier to recover. At 0.5, all thresholds match the default class constants exactly.
+
 ---
 
 ## 📊 Grading Configuration

@@ -293,6 +293,7 @@ class SimulationEngine:
                     student, state, week, self.env,
                     lambda s, st: self.moore.average(s, st, self.env),
                     self.rng,
+                    inst=self.inst,
                 )
 
                 if state.dropout_phase >= 5:
