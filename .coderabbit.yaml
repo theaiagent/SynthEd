@@ -1,20 +1,29 @@
 language: en
+tone_instructions: "Focus on architectural patterns, scalability, and long-term maintainability. Flag double-modulation risks in theory modules."
 reviews:
   profile: chill
   high_level_summary: true
+  high_level_summary_in_walkthrough: true
+  sequence_diagrams: true
   poem: false
   review_status: true
+  related_issues: true
+  related_prs: true
+  assess_linked_issues: true
+  estimate_code_review_effort: true
   auto_review:
     enabled: true
     drafts: false
   path_instructions:
     - path: "synthed/simulation/**"
-      instructions: "This is a theory-grounded ODL simulation engine. Check for determinism (RNG consistency), immutability (frozen dataclasses), and theoretical correlation preservation."
+      instructions: "Theory-grounded ODL simulation engine. Check determinism (RNG consistency), immutability (frozen dataclasses), correlation preservation, and double-modulation risks between InstitutionalConfig and theory modules."
     - path: "synthed/validation/**"
       instructions: "Statistical validation with 5 levels (demographics, correlations, temporal, privacy, backstory). Ensure tests use appropriate statistical methods."
     - path: "synthed/analysis/**"
       instructions: "Sobol sensitivity and NSGA-II calibration. Check parameter bounds, pickle safety for multiprocessing, and Optuna API usage."
+    - path: "synthed/pipeline.py"
+      instructions: "End-to-end orchestrator. Check backward compatibility, config wiring, and calibration mode paths."
     - path: "tests/**"
-      instructions: "Minimum 80% coverage. TDD approach. Check for flaky tests (stochastic assertions need tolerance)."
+      instructions: "Minimum 80% coverage. TDD approach. Check for flaky tests (stochastic assertions need tolerance). Integration tests should use multi-seed averaging."
 chat:
   auto_reply: true
