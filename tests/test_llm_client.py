@@ -300,3 +300,4 @@ def test_missing_openai_package():
     with patch("builtins.__import__", side_effect=block_openai):
         with pytest.raises(ImportError, match="pip install synthedu\\[llm\\]"):
             LLMClient(api_key="test-key")
+

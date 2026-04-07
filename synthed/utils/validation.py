@@ -20,3 +20,4 @@ def validate_probability_distribution(dist: dict[str, float], name: str) -> None
     total = sum(dist.values())
     if abs(total - 1.0) > 0.01:
         raise ValueError(f"{name} must sum to 1.0, got {total:.4f}")
+

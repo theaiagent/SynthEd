@@ -173,3 +173,4 @@ class TestGPAComputation:
             assert 0.0 <= state.perceived_cost_benefit <= 1.0
             assert 0.0 <= state.current_engagement <= 1.0
             assert 0.0 <= state.sdt_needs.competence <= 1.0
+

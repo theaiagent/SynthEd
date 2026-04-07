@@ -147,3 +147,4 @@ class ODLEnvironment:
 
     def get_course_by_id(self, course_id: str) -> Course | None:
         return self._course_index.get(course_id)
+

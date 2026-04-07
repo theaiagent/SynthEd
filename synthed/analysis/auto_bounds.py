@@ -226,3 +226,4 @@ def _compute_bounds(default: float, margin: float) -> tuple[float, float]:
         return (default * (1 + margin), default * (1 - margin))
     else:
         return (0.0, 0.0)
+

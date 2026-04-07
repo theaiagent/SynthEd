@@ -163,3 +163,4 @@ class TestNSGAIIIntegration:
         assert d_std >= 0.0
         assert 0.0 <= g_mean <= 4.0
         assert g_std >= 0.0
+

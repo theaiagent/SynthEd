@@ -12,3 +12,4 @@ __all__ = [
     "ParetoSolution",
     "find_knee_point",
 ]
+

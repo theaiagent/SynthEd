@@ -207,3 +207,4 @@ class TestSimulationEngine:
         records = engine._simulate_student_week(student, states[student.id], 1, context)
         # No crash, no records for the nonexistent course
         assert isinstance(records, list)
+

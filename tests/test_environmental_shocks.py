@@ -365,3 +365,4 @@ class TestBaulkeShockPhaseAdvance:
         assert hasattr(baulke, "_SHOCK_SEVERITY_THRESHOLD")
         assert isinstance(baulke._SHOCK_SEVERITY_THRESHOLD, float)
         assert 0.0 < baulke._SHOCK_SEVERITY_THRESHOLD < 1.0
+

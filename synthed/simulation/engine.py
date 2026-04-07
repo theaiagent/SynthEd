@@ -794,3 +794,4 @@ class SimulationEngine:
     def summary_statistics(self, states: dict[str, SimulationState]) -> dict[str, Any]:
         """Compute aggregate statistics from simulation states."""
         return _summary_statistics(states, self.grading_config.scale.value)
+

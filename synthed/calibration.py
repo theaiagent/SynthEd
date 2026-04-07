@@ -171,3 +171,4 @@ class CalibrationMap:
             n_semesters=n_semesters,
             source_data_points=result.source_data_points,
         )
+

@@ -715,3 +715,4 @@ class TestProportionZTestSE0:
             assert p == 1.0
         finally:
             vmod.np.sqrt = original_sqrt
+

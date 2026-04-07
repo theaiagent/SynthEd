@@ -287,3 +287,4 @@ class TestCalculateSemesterGrade:
         assert check_dual_hurdle_pass(cfg, 0.35, 0.50) is True
         assert check_dual_hurdle_pass(cfg, 0.25, 0.50) is False  # midterm fail
         assert check_dual_hurdle_pass(cfg, 0.35, 0.35) is False  # final fail
+

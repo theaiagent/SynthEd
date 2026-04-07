@@ -396,3 +396,4 @@ class StudentFactory:
             "base_engagement_mean": float(np.mean([p.base_engagement_probability for p in personas])),
             "base_dropout_risk_mean": float(np.mean([p.base_dropout_risk for p in personas])),
         }
+

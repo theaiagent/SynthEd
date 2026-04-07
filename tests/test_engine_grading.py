@@ -301,3 +301,4 @@ class TestRelativeGrading:
             assert states_1[sid].outcome == states_2[sid].outcome
             if states_1[sid].semester_grade is not None:
                 assert states_1[sid].semester_grade == states_2[sid].semester_grade
+

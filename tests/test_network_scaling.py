@@ -66,3 +66,4 @@ class TestLargeScaleMeanDegree:
         mean_deg = float(np.mean(degrees))
         assert mean_deg <= SocialNetwork._MAX_DEGREE
         assert max(degrees) <= SocialNetwork._MAX_DEGREE
+

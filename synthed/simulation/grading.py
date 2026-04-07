@@ -283,3 +283,4 @@ def check_dual_hurdle_pass(
         if final_score is None or final_score < config.component_pass_thresholds["final"]:
             return False
     return True
+

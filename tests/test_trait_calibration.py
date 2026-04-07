@@ -439,3 +439,4 @@ class TestValidationIntegration:
         assert isinstance(report, ValidationReport)
         assert report.total_count >= 3
         assert 0.0 <= report.pass_rate <= 1.0
+

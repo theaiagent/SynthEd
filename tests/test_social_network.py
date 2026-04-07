@@ -101,3 +101,4 @@ class TestSocialNetwork:
         # Dropout clustering should be computed
         assert "dropout_neighbor_overlap" in stats
         assert stats["dropout_neighbor_overlap"] >= 1
+

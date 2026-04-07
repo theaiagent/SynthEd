@@ -206,3 +206,4 @@ class TestLLMEnrichment:
         assert len(system_prompts) >= 3, (
             f"Expected varied system prompts, got only {len(system_prompts)} unique"
         )
+

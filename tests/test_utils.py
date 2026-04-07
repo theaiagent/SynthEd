@@ -91,3 +91,4 @@ class TestConfigureLogging:
     def test_configure_logging_verbose(self):
         """configure_logging(verbose=True) should not raise."""
         configure_logging(verbose=True)
+

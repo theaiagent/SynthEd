@@ -122,3 +122,4 @@ class GonzalezExhaustion:
     def exhaustion_accelerates_dropout(self, state: SimulationState) -> bool:
         """Return *True* when exhaustion exceeds the acceleration threshold."""
         return state.exhaustion.exhaustion_level > self._DROPOUT_THRESHOLD
+

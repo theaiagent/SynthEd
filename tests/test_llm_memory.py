@@ -150,3 +150,4 @@ class TestConversationMemory:
             mem.max_turns = 10
         with pytest.raises(AttributeError):
             mem._messages = ()
+

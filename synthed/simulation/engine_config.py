@@ -158,3 +158,4 @@ class EngineConfig:
             val = getattr(self, name)
             if val < 0:
                 raise ValueError(f"{name} must be non-negative, got {val}")
+

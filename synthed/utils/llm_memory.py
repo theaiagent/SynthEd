@@ -74,3 +74,4 @@ class ConversationMemory:
     def message_count(self) -> int:
         """Total number of messages including system."""
         return len(self._messages)
+

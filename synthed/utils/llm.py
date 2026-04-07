@@ -358,3 +358,4 @@ class LLMClient:
             "total_retries": self.total_retries,
             "total_failures": self.total_failures,
         }
+

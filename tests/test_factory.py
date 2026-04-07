@@ -237,3 +237,4 @@ class TestDisabilitySeverityGeneration:
         pop = factory.generate_population(n=50)
         summary = factory.population_summary(pop)
         assert "disability_rate" in summary
+

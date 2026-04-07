@@ -88,3 +88,4 @@ class TestCalibrationMap:
         result = cal.estimate(0.35, n_semesters=1)
         assert 0.30 <= result.estimated_dropout_base_rate <= 0.70
         assert result.confidence == "high"
+

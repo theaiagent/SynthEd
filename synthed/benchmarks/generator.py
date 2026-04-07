@@ -195,3 +195,4 @@ class BenchmarkGenerator:
     def list_profiles() -> dict[str, str]:
         """Return profile names and descriptions."""
         return {name: p.description for name, p in PROFILES.items()}
+

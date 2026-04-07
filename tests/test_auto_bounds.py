@@ -135,3 +135,4 @@ class TestEdgeCases:
         params = auto_bounds(include_engine=False, include_theories=False)
         assert len(params) > 0
         assert all(p.name.startswith("config.") for p in params)
+

@@ -194,3 +194,4 @@ class TestConstants:
     def test_injection_probability_in_range(self):
         assert 0.0 < _LIFE_EVENT_INJECTION_PROBABILITY < 1.0
         assert _LIFE_EVENT_INJECTION_PROBABILITY == pytest.approx(0.4)
+

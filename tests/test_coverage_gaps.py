@@ -122,3 +122,4 @@ class TestLlmEdgeCases:
         # Should not raise — just logs a warning
         client = LLMClient(base_url="http://localhost:9999/v1")
         assert client.base_url == "http://localhost:9999/v1"
+

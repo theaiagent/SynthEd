@@ -445,3 +445,4 @@ class SobolAnalyzer:
             pool.shutdown(wait=False, cancel_futures=True)
 
         return outputs
+

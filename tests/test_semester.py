@@ -365,3 +365,4 @@ class TestCopingCarryOver:
         from synthed.simulation.semester import SemesterCarryOverConfig
         config = SemesterCarryOverConfig()
         assert config.coping_retention == 0.70
+

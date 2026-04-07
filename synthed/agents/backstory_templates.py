@@ -403,3 +403,4 @@ def build_enrichment_prompt(
         {"role": "system", "content": template.system_prompt},
         {"role": "user", "content": user_content},
     ]
+

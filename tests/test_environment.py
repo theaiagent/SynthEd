@@ -47,3 +47,4 @@ class TestODLEnvironment:
         env = ODLEnvironment()
         assert env.get_course_by_id("DOES_NOT_EXIST") is None
         assert env.get_course_by_id("") is None
+

@@ -385,3 +385,4 @@ class TestSimRunnerCalibrationMode:
             "std_engagement", "pass_rate", "distinction_rate", "fail_rate",
         }
         assert expected_keys == set(result.keys())
+

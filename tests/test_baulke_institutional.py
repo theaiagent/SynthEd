@@ -267,3 +267,4 @@ class TestIntegrationDropoutRate:
         for ssq in [0.1, 0.3, 0.5, 0.7, 0.9]:
             rate = _run_simulation(ssq)
             assert 0.01 <= rate <= 0.70, f"SSQ={ssq} dropout {rate:.3f} outside [0.01, 0.70]"
+

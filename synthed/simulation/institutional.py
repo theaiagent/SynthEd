@@ -65,3 +65,4 @@ def scale_by(
         ``constant * (low + (high - low) * inst_param)``
     """
     return constant * (low + (high - low) * inst_param)
+

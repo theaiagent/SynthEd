@@ -76,3 +76,4 @@ class TestSelectCountryContext:
         c1 = select_country_context(np.random.default_rng(99))
         c2 = select_country_context(np.random.default_rng(99))
         assert c1 == c2
+

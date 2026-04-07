@@ -232,3 +232,4 @@ class TestDisabilitySeverity:
             PersonaConfig(disability_rate=-0.1)
         with pytest.raises(ValueError):
             PersonaConfig(disability_rate=1.5)
+

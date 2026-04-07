@@ -190,3 +190,4 @@ def student_id_to_int(display_id: str) -> int:
         return int(display_id.replace("S-", ""))
     except (ValueError, AttributeError):
         return 0
+

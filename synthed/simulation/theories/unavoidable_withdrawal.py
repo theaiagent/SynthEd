@@ -114,3 +114,4 @@ class UnavoidableWithdrawal:
             student.id, week, reason,
         )
         return True
+

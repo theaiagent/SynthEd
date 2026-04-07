@@ -95,3 +95,4 @@ def sample_population():
     """Factory-generated population of 20 students, seed=42."""
     factory = StudentFactory(seed=42)
     return factory.generate_population(n=20)
+

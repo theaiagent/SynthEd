@@ -52,3 +52,4 @@ class TestSensitivityAnalyzer:
         assert "max_dropout" in entry
         assert "base_dropout" in entry
         assert entry["min_dropout"] <= entry["max_dropout"]
+

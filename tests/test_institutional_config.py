@@ -74,3 +74,4 @@ class TestScaleBy:
     def test_preserves_sign(self):
         assert scale_by(0.01, 0.0) > 0
         assert scale_by(0.01, 1.0) > 0
+

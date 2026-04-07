@@ -676,3 +676,4 @@ class SyntheticDataValidator:
             return "D (Poor)"
         else:
             return "F (Unacceptable)"
+

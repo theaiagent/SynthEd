@@ -52,3 +52,4 @@ class MooreTransactionalDistance:
             if course:
                 distances.append(self.calculate(student, course))
         return float(np.mean(distances)) if distances else self._DEFAULT_TD
+

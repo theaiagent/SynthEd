@@ -144,3 +144,4 @@ class TestDefaultConstants:
 
     def test_default_avg_output_tokens(self):
         assert _DEFAULT_AVG_OUTPUT_TOKENS == 200
+

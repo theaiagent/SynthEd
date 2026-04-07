@@ -92,3 +92,4 @@ class TestTimeDiscount:
 
         kember.recalculate(student, state, context={}, records=[], avg_td=0.5)
         assert 0.0 < state.perceived_cost_benefit < 1.0
+

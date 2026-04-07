@@ -257,3 +257,4 @@ class TestBenchmarkReport:
 
         # Verify markdown returned
         assert "# SynthEd Benchmark Report" in md
+

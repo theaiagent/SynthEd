@@ -103,3 +103,4 @@ class TestBenchmarkProfilesWithInstitutionalConfig:
             f"{profile_name}: dropout {dropout:.1%} outside "
             f"[{lo:.0%}, {hi:.0%}] (with {tolerance:.0%} tolerance)"
         )
+

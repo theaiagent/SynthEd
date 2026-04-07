@@ -141,3 +141,4 @@ class TestWithdrawalReasonDefault:
     def test_withdrawal_reason_is_none_by_default(self):
         state = _make_state()
         assert state.withdrawal_reason is None
+

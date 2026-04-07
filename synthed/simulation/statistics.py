@@ -88,3 +88,4 @@ def summary_statistics(
         "outcome_distribution": outcome_counts,
         "grading_scale": grading_scale_value,
     }
+

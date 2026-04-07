@@ -66,3 +66,4 @@ def find_knee_point(front: tuple[ParetoSolution, ...]) -> ParetoSolution:
         line_vec[0] * diffs[:, 1] - line_vec[1] * diffs[:, 0]
     ) / line_len
     return sorted_front[int(np.argmax(distances))]
+

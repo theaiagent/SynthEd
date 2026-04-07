@@ -390,3 +390,4 @@ class StudentPersona:
         personality_data = data.get("personality", {})
         clean["personality"] = BigFiveTraits(**personality_data)
         return cls(**clean)
+

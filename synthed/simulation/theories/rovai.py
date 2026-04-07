@@ -48,3 +48,4 @@ class RovaiPersistence:
             personal_floor *= (1.0 - accessibility_gap * self._DISABILITY_FLOOR_PENALTY * student.disability_severity)
 
         return personal_floor
+

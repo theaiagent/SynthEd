@@ -435,3 +435,4 @@ def _build_interim_report(
         target_range=target_range,
         status=status,
     )
+

@@ -118,3 +118,4 @@ class EpsteinAxtellPeerInfluence:
                 state.social_integration + min(degree * self._SOCIAL_DEGREE_FACTOR, self._SOCIAL_DEGREE_CAP),
                 self._ENGAGEMENT_CLIP_LO, self._SOCIAL_CLIP_HI
             ))
+

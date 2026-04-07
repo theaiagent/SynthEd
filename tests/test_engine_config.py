@@ -115,3 +115,4 @@ class TestEngineConfigOverride:
     def test_invalid_field_in_replace_raises(self):
         with pytest.raises(TypeError):
             dataclasses.replace(EngineConfig(), _NONEXISTENT_FIELD=1.0)
+

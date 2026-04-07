@@ -62,3 +62,4 @@ class TintoIntegration:
 
         state.academic_integration = float(np.clip(state.academic_integration, self._ACADEMIC_CLIP_LO, self._ACADEMIC_CLIP_HI))
         state.social_integration = float(np.clip(state.social_integration, self._SOCIAL_CLIP_LO, self._SOCIAL_CLIP_HI))
+

@@ -79,3 +79,4 @@ class GarrisonCoI:
         coi.social_presence = float(np.clip(coi.social_presence, self._PRESENCE_CLIP_LO, self._PRESENCE_CLIP_HI))
         coi.cognitive_presence = float(np.clip(coi.cognitive_presence, self._PRESENCE_CLIP_LO, self._PRESENCE_CLIP_HI))
         coi.teaching_presence = float(np.clip(coi.teaching_presence, self._PRESENCE_CLIP_LO, self._PRESENCE_CLIP_HI))
+

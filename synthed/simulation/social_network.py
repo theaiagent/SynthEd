@@ -199,3 +199,4 @@ class SocialNetwork:
             "link_type_distribution": link_type_counts,
             "dropout_neighbor_overlap": dropout_neighbor_overlap,
         }
+

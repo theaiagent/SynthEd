@@ -193,3 +193,4 @@ def _compare(
         relative_error=round(rel_error, 4),
         passed=passed,
     )
+

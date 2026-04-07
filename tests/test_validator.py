@@ -116,3 +116,4 @@ class TestDropoutRangeValidation:
             r for r in report2["results"] if r["test"] == "dropout_rate"
         )
         assert dropout_result2["metric"] == "Proportion Z-test"
+

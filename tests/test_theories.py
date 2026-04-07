@@ -444,3 +444,4 @@ class TestBeanMetznerDisability:
         mild = StudentPersona(disability_severity=0.1, is_employed=False)
         severe = StudentPersona(disability_severity=0.8, is_employed=False)
         assert bm.calculate_environmental_pressure(severe) < bm.calculate_environmental_pressure(mild)
+

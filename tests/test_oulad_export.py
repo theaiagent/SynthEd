@@ -224,3 +224,4 @@ class TestOuladExportIntegration:
             content1 = (dir1 / "oulad" / fname).read_text()
             content2 = (dir2 / "oulad" / fname).read_text()
             assert content1 == content2, f"{fname} differs between runs"
+

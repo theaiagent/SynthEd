@@ -194,3 +194,4 @@ class TestBaulkeUsesPerceivedMastery:
         # High mastery → mastery condition not met; other soft conditions not active
         # (no exhaustion, no high TD, cognitive presence is default 0.5 > _NONFIT_COG_THRESHOLD)
         assert state.dropout_phase == 0
+

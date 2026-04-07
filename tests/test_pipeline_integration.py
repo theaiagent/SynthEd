@@ -150,3 +150,4 @@ class TestSmallNWarning:
             if "small" in r.getMessage() and "n_students" in r.getMessage()
         ]
         assert len(small_n_warnings) == 0
+

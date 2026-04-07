@@ -96,3 +96,4 @@ class TestFindKneePoint:
         s3 = _sol(1.0, 0.0)
         knee = find_knee_point((s1, s2, s3))
         assert knee.dropout_error == pytest.approx(0.0)
+

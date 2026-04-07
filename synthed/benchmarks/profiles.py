@@ -67,3 +67,4 @@ PROFILES: dict[str, BenchmarkProfile] = {
         expected_dropout_range=(0.35, 0.60),
     ),
 }
+

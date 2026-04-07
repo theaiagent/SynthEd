@@ -177,3 +177,4 @@ class TestCacheLRUEviction:
 
         remaining = list(cache_dir.glob("*.json"))
         assert len(remaining) == 2
+

@@ -145,3 +145,4 @@ class SensitivityAnalyzer:
             return report["simulation_summary"]["dropout_rate"]
         finally:
             shutil.rmtree(tmp_dir, ignore_errors=True)
+

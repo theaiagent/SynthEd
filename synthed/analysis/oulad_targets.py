@@ -219,3 +219,4 @@ def _read_and_aggregate_engagement(
             vals = list(daily_clicks.values())
             means.append(sum(vals) / len(vals))
     return means
+

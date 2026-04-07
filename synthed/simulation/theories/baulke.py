@@ -228,3 +228,4 @@ class BaulkeDropoutPhase:
                         state.memory.append({"week": week, "event_type": "dropout",
                                             "details": "Decided to withdraw from program",
                                             "impact": self._IMPACT_DROPOUT})
+

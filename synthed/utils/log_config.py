@@ -17,3 +17,4 @@ def configure_logging(level: int = logging.INFO, verbose: bool = False) -> None:
     root.setLevel(effective_level)
     if not root.handlers:
         root.addHandler(handler)
+

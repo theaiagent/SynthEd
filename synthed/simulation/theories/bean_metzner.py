@@ -90,3 +90,4 @@ class BeanMetznerPressure:
         state.coping_factor = float(np.clip(
             state.coping_factor + growth, 0.0, self._COPING_MAX,
         ))
+

@@ -69,3 +69,4 @@ class ValidationResult:
     p_value: float | None = None
     passed: bool = True
     details: str = ""
+
