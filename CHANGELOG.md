@@ -4,6 +4,9 @@ All notable changes to SynthEd are documented here.
 
 ## [Unreleased]
 
+### Added
+- `InstitutionalConfig.support_services_quality` modulates Baulke dropout phase thresholds via `scale_by()` — 13 thresholds scaled, better institutions produce lower dropout
+
 ### Changed
 - `ODLEnvironment.get_course_by_id`: O(1) dict lookup replaces O(n) linear scan
 - `_sim_runner`: Calibration mode skips temp directory creation (I/O reduction)

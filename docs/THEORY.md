@@ -192,7 +192,7 @@ SynthEd/
 │   │   └── validation.py        # Input validation utilities
 │   ├── calibration.py           # CalibrationMap: target dropout -> params
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                       # 655 pytest tests across 39 files
+├── tests/                       # 666 pytest tests across 40 files
 ├── docs/
 │   ├── GUIDE.md                 # User guide
 │   └── THEORY.md                # This file
@@ -221,7 +221,7 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 
 ## 🧪 Test Suite
 
-655 pytest tests across 39 files:
+666 pytest tests across 40 files:
 
 | Test File | Tests | Coverage |
 |-----------|-------|----------|
