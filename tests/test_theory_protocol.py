@@ -14,7 +14,7 @@ class TestDiscovery:
     def test_discover_returns_list(self):
         theories = discover_theories()
         assert isinstance(theories, list)
-        assert len(theories) >= 6
+        assert len(theories) >= 5
 
     def test_excludes_special_modules(self):
         """UnavoidableWithdrawal and PositiveEventHandler excluded."""
@@ -60,9 +60,12 @@ class TestProtocolConformance:
         from synthed.simulation.theories import SDTMotivationDynamics
         assert hasattr(SDTMotivationDynamics, "on_individual_step")
 
-    def test_gonzalez_has_individual_step(self):
+    def test_gonzalez_is_engagement_only(self):
+        """Gonzalez has no phase methods — engine-direct for both update + engagement."""
         from synthed.simulation.theories import GonzalezExhaustion
-        assert hasattr(GonzalezExhaustion, "on_individual_step")
+        assert not hasattr(GonzalezExhaustion, "on_individual_step")
+        assert hasattr(GonzalezExhaustion, "update_exhaustion")
+        assert hasattr(GonzalezExhaustion, "exhaustion_engagement_effect")
 
     def test_epstein_has_network_and_post_peer(self):
         from synthed.simulation.theories import EpsteinAxtellPeerInfluence

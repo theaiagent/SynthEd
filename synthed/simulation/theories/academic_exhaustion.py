@@ -11,7 +11,6 @@ from ..institutional import InstitutionalConfig, scale_by
 if TYPE_CHECKING:
     from ..engine import InteractionRecord, SimulationState
     from ...agents.persona import StudentPersona
-    from .protocol import TheoryContext
 
 
 @dataclass
@@ -123,7 +122,3 @@ class GonzalezExhaustion:
     def exhaustion_accelerates_dropout(self, state: SimulationState) -> bool:
         """Return *True* when exhaustion exceeds the acceleration threshold."""
         return state.exhaustion.exhaustion_level > self._DROPOUT_THRESHOLD
-
-    def on_individual_step(self, ctx: TheoryContext) -> None:
-        """Protocol dispatch: Phase 1 per-student."""
-        self.update_exhaustion(ctx.student, ctx.state, ctx.week, ctx.context, ctx.records, inst=ctx.inst)

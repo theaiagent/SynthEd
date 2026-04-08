@@ -41,21 +41,18 @@ from .social_network import SocialNetwork
 from .statistics import summary_statistics as _summary_statistics
 from ..utils.llm import LLMClient
 from .theories import (
-    TintoIntegration,
     BeanMetznerPressure,
     KemberCostBenefit,
-    BaulkeDropoutPhase,
-    GarrisonCoI,
     MooreTransactionalDistance,
-    EpsteinAxtellPeerInfluence,
     RovaiPersistence,
-    SDTMotivationDynamics,
     SDTNeedSatisfaction,
     PositiveEventHandler,
     GonzalezExhaustion,
     ExhaustionState,
     UnavoidableWithdrawal,
+    discover_theories,
 )
+from .theories.protocol import TheoryContext
 
 logger = logging.getLogger(__name__)
 
@@ -173,21 +170,42 @@ class SimulationEngine:
         self.mode = mode
         random.seed(seed)
 
-        # Theory-specific delegates
-        self.tinto = TintoIntegration()
+        # Protocol-discovered theories (Phase 1/2 dispatch)
+        self.theories = [cls() for cls in discover_theories()]
+
+        # Named theory attributes (backward compat for auto_bounds + _sim_runner)
+        _by_type = {type(t).__name__: t for t in self.theories}
+        self.tinto = _by_type.get("TintoIntegration")
+        self.garrison = _by_type.get("GarrisonCoI")
+        self.sdt = _by_type.get("SDTMotivationDynamics")
+        self.baulke = _by_type.get("BaulkeDropoutPhase")
+        self.epstein_axtell = _by_type.get("EpsteinAxtellPeerInfluence")
+
+        # Engagement-only theories (called inline in _update_engagement)
         self.bean_metzner = BeanMetznerPressure()
         self.kember = KemberCostBenefit()
-        self.baulke = BaulkeDropoutPhase()
-        self.garrison = GarrisonCoI()
         self.moore = MooreTransactionalDistance()
-        self.epstein_axtell = EpsteinAxtellPeerInfluence()
         self.rovai = RovaiPersistence()
-        self.sdt = SDTMotivationDynamics()
-        self.positive_events = PositiveEventHandler()
         self.gonzalez = GonzalezExhaustion()
+        self.positive_events = PositiveEventHandler()
+
+        # Special lifecycle
         self.unavoidable_withdrawal = UnavoidableWithdrawal(
             per_semester_probability=unavoidable_withdrawal_rate,
             total_weeks=environment.total_weeks,
+        )
+
+    def _make_ctx(self, student, state, records, week, context, states, week_records_by_student):
+        """Build a TheoryContext for protocol dispatch."""
+        active = [c for c in self.env.courses if c.id in state.courses_active] if state else []
+        avg_td = self.moore.average(student, state, self.env) if student else 0.0
+        return TheoryContext(
+            student=student, state=state, records=records,
+            week=week, context=context, env=self.env,
+            rng=self.rng, inst=self.inst, network=self.network,
+            all_states=states, week_records_by_student=week_records_by_student,
+            active_courses=active, cfg=self.cfg,
+            total_weeks=self.env.total_weeks, avg_td=avg_td,
         )
 
     def run(
@@ -264,24 +282,34 @@ class SimulationEngine:
                 all_records.extend(week_records)
                 week_records_by_student[student.id] = week_records
 
-                active_courses = [c for c in self.env.courses if c.id in state.courses_active]
-                self.tinto.update_integration(student, state, week, week_context, week_records)
-                self.garrison.update_presences(student, state, week, week_records, active_courses)
-                self.sdt.update_needs(student, state, week, week_records)
-                state.current_motivation_type = self.sdt.evaluate_motivation_shift(state)
+                ctx = self._make_ctx(student, state, week_records, week, week_context,
+                                     states, week_records_by_student)
+                for theory in self.theories:
+                    if hasattr(theory, "on_individual_step"):
+                        theory.on_individual_step(ctx)
                 self.gonzalez.update_exhaustion(student, state, week, week_context, week_records,
                                                 inst=self.inst)
                 self._update_engagement(student, state, week, week_context, week_records)
 
             # ── Phase 2: Social network + peer influence (Epstein & Axtell) ──
             self.network.decay_links(decay_rate=self.cfg._NETWORK_DECAY_RATE)
-            self.epstein_axtell.update_network(week, week_records_by_student, self.network, rng=self.rng)
+            # Network-level step (collective, student=None)
+            net_ctx = self._make_ctx(None, None, None, week, week_context,
+                                     states, week_records_by_student)
+            for theory in self.theories:
+                if hasattr(theory, "on_network_step"):
+                    theory.on_network_step(net_ctx)
+            # Per-student post-peer step
             for student in students:
                 state = states[student.id]
                 if state.has_dropped_out:
                     continue
-                self.epstein_axtell.apply_peer_influence(student, state, states, self.network)
-                # CoI social_presence boosted by network degree
+                peer_ctx = self._make_ctx(student, state, week_records_by_student.get(student.id, []),
+                                          week, week_context, states, week_records_by_student)
+                for theory in self.theories:
+                    if hasattr(theory, "on_post_peer_step"):
+                        theory.on_post_peer_step(peer_ctx)
+                # CoI social_presence boosted by network degree (inline engine logic)
                 degree = self.network.get_degree(student.id)
                 state.coi_state.social_presence += min(degree * self.cfg._COI_DEGREE_FACTOR, self.cfg._COI_DEGREE_CAP)
                 state.coi_state.social_presence = float(
@@ -289,12 +317,6 @@ class SimulationEngine:
                 )
                 # Record engagement AFTER peer influence (data integrity)
                 state.weekly_engagement_history.append(state.current_engagement)
-                self.baulke.advance_phase(
-                    student, state, week, self.env,
-                    lambda s, st: self.moore.average(s, st, self.env),
-                    self.rng,
-                    inst=self.inst,
-                )
 
                 if state.dropout_phase >= 5:
                     state.has_dropped_out = True
