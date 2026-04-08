@@ -8,6 +8,7 @@ import numpy as np
 if TYPE_CHECKING:
     from ...agents.persona import StudentPersona
     from ..engine import InteractionRecord, SimulationState
+    from .protocol import TheoryContext
     from ..environment import Course
 
 
@@ -79,3 +80,7 @@ class GarrisonCoI:
         coi.social_presence = float(np.clip(coi.social_presence, self._PRESENCE_CLIP_LO, self._PRESENCE_CLIP_HI))
         coi.cognitive_presence = float(np.clip(coi.cognitive_presence, self._PRESENCE_CLIP_LO, self._PRESENCE_CLIP_HI))
         coi.teaching_presence = float(np.clip(coi.teaching_presence, self._PRESENCE_CLIP_LO, self._PRESENCE_CLIP_HI))
+
+    def on_individual_step(self, ctx: TheoryContext) -> None:
+        """Protocol dispatch: Phase 1 per-student."""
+        self.update_presences(ctx.student, ctx.state, ctx.week, ctx.records, ctx.active_courses)

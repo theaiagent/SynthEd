@@ -10,6 +10,7 @@ from ..institutional import InstitutionalConfig, scale_by
 if TYPE_CHECKING:
     from ...agents.persona import StudentPersona
     from ..engine import SimulationState
+    from .protocol import TheoryContext
     from ..environment import ODLEnvironment
 
 
@@ -228,3 +229,12 @@ class BaulkeDropoutPhase:
                         state.memory.append({"week": week, "event_type": "dropout",
                                             "details": "Decided to withdraw from program",
                                             "impact": self._IMPACT_DROPOUT})
+
+    def on_post_peer_step(self, ctx: TheoryContext) -> None:
+        """Protocol dispatch: Phase 2 per-student dropout phase advancement."""
+        self.advance_phase(
+            ctx.student, ctx.state, ctx.week, ctx.env,
+            lambda _s, _st: ctx.avg_td,
+            ctx.rng,
+            inst=ctx.inst,
+        )

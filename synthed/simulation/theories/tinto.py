@@ -8,6 +8,7 @@ import numpy as np
 if TYPE_CHECKING:
     from ...agents.persona import StudentPersona
     from ..engine import InteractionRecord, SimulationState
+    from .protocol import TheoryContext
 
 
 class TintoIntegration:
@@ -62,3 +63,7 @@ class TintoIntegration:
 
         state.academic_integration = float(np.clip(state.academic_integration, self._ACADEMIC_CLIP_LO, self._ACADEMIC_CLIP_HI))
         state.social_integration = float(np.clip(state.social_integration, self._SOCIAL_CLIP_LO, self._SOCIAL_CLIP_HI))
+
+    def on_individual_step(self, ctx: TheoryContext) -> None:
+        """Protocol dispatch: Phase 1 per-student."""
+        self.update_integration(ctx.student, ctx.state, ctx.week, ctx.context, ctx.records)
