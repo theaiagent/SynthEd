@@ -65,8 +65,10 @@ python run_calibration.py --workers 4  # Parallel NSGA-II calibration
 
 ```python
 from synthed.pipeline import SynthEdPipeline
+from synthed.pipeline_config import PipelineConfig
 
-pipeline = SynthEdPipeline(output_dir="./output", seed=42)
+config = PipelineConfig(output_dir="./output", seed=42)
+pipeline = SynthEdPipeline(config=config)
 report = pipeline.run(n_students=300)
 print(f"Dropout: {report['simulation_summary']['dropout_rate']:.1%}")
 ```
