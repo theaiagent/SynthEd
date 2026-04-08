@@ -2,7 +2,7 @@
 
 All notable changes to SynthEd are documented here.
 
-## [Unreleased]
+## [1.4.0] - 2026-04-08
 
 ### Added
 - `InstitutionalConfig.support_services_quality` modulates Baulke dropout phase thresholds via `scale_by()` — 13 thresholds scaled, better institutions produce lower dropout
