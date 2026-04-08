@@ -165,7 +165,7 @@ SynthEd/
 │   │   ├── social_network.py    # Peer network with link decay
 │   │   ├── semester.py          # Multi-semester with carry-over
 │   │   ├── institutional.py     # InstitutionalConfig (5 quality parameters)
-│   │   └── theories/            # 10 theory modules + unavoidable withdrawal mechanism
+│   │   └── theories/            # 10 theory modules + unavoidable withdrawal (single-pass, not a weighted theory)
 │   ├── data_output/
 │   │   ├── exporter.py          # CSV export (4 standard files)
 │   │   ├── oulad_exporter.py    # OULAD-compatible 7-table export
