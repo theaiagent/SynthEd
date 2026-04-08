@@ -9,7 +9,7 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19334118.svg)](https://doi.org/10.5281/zenodo.19334118)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Agent-based simulation environment for Open & Distance Learning (ODL) research.** SynthEd generates behaviorally grounded and temporally coherent learning trajectories by combining persona-driven agent modeling with 11 established theoretical frameworks. Built for researchers in learning analytics, educational data mining, and dropout prediction.
+**Agent-based simulation environment for Open & Distance Learning (ODL) research.** SynthEd generates behaviorally grounded and temporally coherent learning trajectories by combining persona-driven agent modeling with 10 established theoretical frameworks. Built for researchers in learning analytics, educational data mining, and dropout prediction.
 
 ```bash
 pip install -e ".[dev]"

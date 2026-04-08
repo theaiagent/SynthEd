@@ -69,7 +69,7 @@ flowchart TD
 
 ## 📚 Theoretical Anchors
 
-SynthEd's persona attributes and simulation mechanics are grounded in eleven established theoretical frameworks from ODE dropout research:
+SynthEd's persona attributes and simulation mechanics are grounded in ten established theoretical frameworks from ODE dropout research:
 
 | # | Anchor | Origin | Role in SynthEd |
 |---|--------|--------|-----------------|
