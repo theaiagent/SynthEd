@@ -46,6 +46,8 @@ python run_pipeline.py --n 200      # or: pip install synthedu
 - **EngineConfig** -- 70 frozen engine constants with validation (weight sums, ordering, positivity), overridable via `dataclasses.replace()`
 - **NSGA-II Calibration** -- Multi-objective optimization with Pareto front, parallel `--workers N` support
 - **Relative Grading** -- grading_method="relative" with t-score cohort normalization, automatic fallback for small/homogeneous cohorts
+- **Baulke Institutional Modulation** -- `support_services_quality` scales 13 dropout phase thresholds, better institutions produce lower dropout
+- **PipelineConfig** -- Frozen dataclass grouping 16 pipeline params with JSON `to_dict()`/`from_dict()` serialization for reproducibility
 
 ---
 
