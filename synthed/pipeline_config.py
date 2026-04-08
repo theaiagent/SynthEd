@@ -144,7 +144,15 @@ class PipelineConfig:
                 f"cost_threshold must be >= 0, got {self.cost_threshold}",
             )
         if self.target_dropout_range is not None:
+            if len(self.target_dropout_range) != 2:
+                raise ValueError(
+                    "target_dropout_range must be a 2-tuple: (lo, hi)",
+                )
             lo, hi = self.target_dropout_range
+            if not (0.0 <= lo <= 1.0 and 0.0 <= hi <= 1.0):
+                raise ValueError(
+                    f"target_dropout_range values must be within [0, 1], got {self.target_dropout_range}",
+                )
             if lo > hi:
                 raise ValueError(
                     f"target_dropout_range must have lo <= hi, got {self.target_dropout_range}",

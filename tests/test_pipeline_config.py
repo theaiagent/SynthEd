@@ -57,6 +57,26 @@ class TestPipelineConfigValidation:
         with pytest.raises(ValueError, match="cost_threshold"):
             PipelineConfig(cost_threshold=-1.0)
 
+    def test_target_dropout_range_ordered_valid(self):
+        from synthed.pipeline_config import PipelineConfig
+        cfg = PipelineConfig(target_dropout_range=(0.35, 0.55))
+        assert cfg.target_dropout_range == (0.35, 0.55)
+
+    def test_target_dropout_range_inverted_raises(self):
+        from synthed.pipeline_config import PipelineConfig
+        with pytest.raises(ValueError, match="lo <= hi"):
+            PipelineConfig(target_dropout_range=(0.60, 0.35))
+
+    def test_target_dropout_range_out_of_domain_raises(self):
+        from synthed.pipeline_config import PipelineConfig
+        with pytest.raises(ValueError, match="within \\[0, 1\\]"):
+            PipelineConfig(target_dropout_range=(-0.1, 0.5))
+
+    def test_target_dropout_range_wrong_length_raises(self):
+        from synthed.pipeline_config import PipelineConfig
+        with pytest.raises(ValueError, match="2-tuple"):
+            PipelineConfig(target_dropout_range=(0.1, 0.3, 0.5))
+
 
 class TestPipelineConfigReplace:
     """dataclasses.replace() produces new instance."""
