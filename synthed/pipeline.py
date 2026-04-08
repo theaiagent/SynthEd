@@ -16,10 +16,13 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any, Callable
 
+import warnings
+
 from . import __version__
 from .agents.persona import PersonaConfig
 from .agents.factory import StudentFactory
 from .calibration import CalibrationMap
+from .pipeline_config import PipelineConfig
 from .simulation.environment import ODLEnvironment
 from .simulation.engine import SimulationEngine
 from .simulation.engine_config import EngineConfig
@@ -33,6 +36,14 @@ from .utils.llm import LLMClient
 logger = logging.getLogger(__name__)
 
 _DEFAULT_COST_THRESHOLD_USD: float = 1.0
+
+# Allowlist of legacy kwargs accepted by the deprecation bridge.
+_LEGACY_PARAMS: frozenset[str] = frozenset({
+    "persona_config", "environment", "institutional_config", "grading_config",
+    "engine_config", "reference_stats", "seed", "n_semesters",
+    "carry_over_config", "target_dropout_range", "output_dir", "export_oulad",
+    "llm_model", "llm_base_url", "use_llm", "cost_threshold",
+})
 
 
 class SynthEdPipeline:
@@ -50,93 +61,182 @@ class SynthEdPipeline:
 
     def __init__(
         self,
-        persona_config: PersonaConfig | None = None,
-        environment: ODLEnvironment | None = None,
-        institutional_config: InstitutionalConfig | None = None,
-        reference_stats: ReferenceStatistics | None = None,
-        output_dir: str | None = "./output",
-        llm_model: str = "gpt-4o-mini",
-        llm_base_url: str | None = None,
-        use_llm: bool = False,
-        seed: int = 42,
-        n_semesters: int = 1,
-        carry_over_config: Any | None = None,
-        target_dropout_range: tuple[float, float] | None = None,
-        cost_threshold: float = _DEFAULT_COST_THRESHOLD_USD,
+        config: PipelineConfig | None = None,
+        *,
         confirm_callback: Callable[[str], bool] | None = None,
-        grading_config: GradingConfig | None = None,
-        engine_config: EngineConfig | None = None,
-        export_oulad: bool = False,
         _calibration_mode: bool = False,
+        **kwargs: Any,
     ):
-        self.persona_config = persona_config or PersonaConfig()
-        self.environment = environment or ODLEnvironment()
-        self.institutional_config = institutional_config or InstitutionalConfig()
-        self.grading_config = grading_config or GradingConfig()
-        self.reference = reference_stats or ReferenceStatistics()
-        self.output_dir = Path(output_dir) if output_dir is not None else None
-        self.use_llm = use_llm
-        self.seed = seed
-        self.n_semesters = n_semesters
-        self.carry_over_config = carry_over_config
-        self.target_dropout_range = target_dropout_range
-        self.cost_threshold = cost_threshold
+        # ── Deprecation bridge ──────────────────────────────────────────
+        if config is not None and kwargs:
+            raise TypeError(
+                "Cannot pass both 'config' and legacy keyword arguments. "
+                "Use PipelineConfig for all configuration."
+            )
+        if kwargs:
+            unknown = set(kwargs) - _LEGACY_PARAMS
+            if unknown:
+                raise TypeError(
+                    f"Unknown keyword arguments: {unknown}. "
+                    f"Valid legacy params: {sorted(_LEGACY_PARAMS)}"
+                )
+            warnings.warn(
+                "Passing individual keyword arguments to SynthEdPipeline is "
+                "deprecated. Use config=PipelineConfig(...) instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            config = PipelineConfig(
+                persona_config=kwargs.get("persona_config") or PersonaConfig(),
+                environment=kwargs.get("environment") or ODLEnvironment(),
+                institutional_config=kwargs.get("institutional_config") or InstitutionalConfig(),
+                grading_config=kwargs.get("grading_config") or GradingConfig(),
+                engine_config=kwargs.get("engine_config") or EngineConfig(),
+                reference_stats=kwargs.get("reference_stats") or ReferenceStatistics(),
+                seed=kwargs.get("seed", 42),
+                n_semesters=kwargs.get("n_semesters", 1),
+                carry_over_config=kwargs.get("carry_over_config"),
+                target_dropout_range=kwargs.get("target_dropout_range"),
+                output_dir=kwargs.get("output_dir", "./output"),
+                export_oulad=kwargs.get("export_oulad", False),
+                llm_model=kwargs.get("llm_model", "gpt-4o-mini"),
+                llm_base_url=kwargs.get("llm_base_url"),
+                use_llm=kwargs.get("use_llm", False),
+                cost_threshold=kwargs.get("cost_threshold", _DEFAULT_COST_THRESHOLD_USD),
+            )
+        elif config is None:
+            config = PipelineConfig()
+
+        # ── Non-serializable / internal args ────────────────────────────
         self.confirm_callback = confirm_callback
-        self.export_oulad = export_oulad
         self._calibration_mode = _calibration_mode
         self._calibration_estimate = None
 
-        # Apply calibration when a target dropout range is provided
-        if target_dropout_range is not None:
-            self._apply_calibration(target_dropout_range, n_semesters)
+        # ── Apply calibration (produces new config via replace) ─────────
+        if config.target_dropout_range is not None:
+            config = self._apply_calibration(config)
 
-        # Initialize components
-        self.llm = LLMClient(model=llm_model, base_url=llm_base_url) if use_llm else None
-        self.factory = StudentFactory(config=self.persona_config, llm_client=self.llm, seed=seed)
+        # ── Store frozen config (single source of truth) ────────────────
+        self.config = config
+
+        # ── Initialize components from self.config ──────────────────────
+        self.llm = (
+            LLMClient(model=self.llm_model, base_url=self.llm_base_url)
+            if self.use_llm else None
+        )
+        self.factory = StudentFactory(
+            config=self.persona_config, llm_client=self.llm, seed=self.seed,
+        )
         self.engine = SimulationEngine(
             environment=self.environment,
             llm_client=self.llm,
-            seed=seed,
+            seed=self.seed,
             unavoidable_withdrawal_rate=self.persona_config.unavoidable_withdrawal_rate,
             institutional_config=self.institutional_config,
             grading_config=self.grading_config,
-            engine_config=engine_config,
+            engine_config=self.engine_config,
         )
         self.exporter = DataExporter(
-            output_dir=str(self.output_dir) if self.output_dir is not None else None
+            output_dir=str(self.output_dir) if self.output_dir is not None else None,
         )
         self.validator = SyntheticDataValidator(reference=self.reference)
 
-    def _apply_calibration(
-        self,
-        target_range: tuple[float, float],
-        n_semesters: int,
-    ) -> None:
-        """Use CalibrationMap to set dropout_base_rate from target dropout range."""
+    # ── @property delegates to self.config ──────────────────────────────
+
+    @property
+    def persona_config(self) -> PersonaConfig:
+        return self.config.persona_config
+
+    @property
+    def environment(self) -> ODLEnvironment:
+        return self.config.environment
+
+    @property
+    def institutional_config(self) -> InstitutionalConfig:
+        return self.config.institutional_config
+
+    @property
+    def grading_config(self) -> GradingConfig:
+        return self.config.grading_config
+
+    @property
+    def engine_config(self) -> EngineConfig:
+        return self.config.engine_config
+
+    @property
+    def reference(self) -> ReferenceStatistics:
+        return self.config.reference_stats
+
+    @property
+    def seed(self) -> int:
+        return self.config.seed
+
+    @property
+    def n_semesters(self) -> int:
+        return self.config.n_semesters
+
+    @property
+    def carry_over_config(self) -> Any | None:
+        return self.config.carry_over_config
+
+    @property
+    def target_dropout_range(self) -> tuple[float, float] | None:
+        return self.config.target_dropout_range
+
+    @property
+    def output_dir(self) -> Path | None:
+        od = self.config.output_dir
+        return Path(od) if od is not None else None
+
+    @property
+    def export_oulad(self) -> bool:
+        return self.config.export_oulad
+
+    @property
+    def use_llm(self) -> bool:
+        return self.config.use_llm
+
+    @property
+    def llm_model(self) -> str:
+        return self.config.llm_model
+
+    @property
+    def llm_base_url(self) -> str | None:
+        return self.config.llm_base_url
+
+    @property
+    def cost_threshold(self) -> float:
+        return self.config.cost_threshold
+
+    def _apply_calibration(self, config: PipelineConfig) -> PipelineConfig:
+        """Return a new PipelineConfig with calibrated dropout params."""
         calibration_map = CalibrationMap()
-        estimate = calibration_map.estimate_from_range(target_range, n_semesters)
+        estimate = calibration_map.estimate_from_range(
+            config.target_dropout_range, config.n_semesters,
+        )
         self._calibration_estimate = estimate
 
-        # Update PersonaConfig with calibrated dropout_base_rate
-        self.persona_config = replace(
-            self.persona_config,
-            dropout_base_rate=estimate.estimated_dropout_base_rate,
-        )
-
-        # Update ReferenceStatistics with target range for validation
-        midpoint = (target_range[0] + target_range[1]) / 2
-        self.reference = replace(
-            self.reference,
-            dropout_rate=midpoint,
-            dropout_range=target_range,
+        midpoint = (config.target_dropout_range[0] + config.target_dropout_range[1]) / 2
+        new_config = replace(
+            config,
+            persona_config=replace(
+                config.persona_config,
+                dropout_base_rate=estimate.estimated_dropout_base_rate,
+            ),
+            reference_stats=replace(
+                config.reference_stats,
+                dropout_rate=midpoint,
+                dropout_range=config.target_dropout_range,
+            ),
         )
 
         logger.info(
             "Calibration: targeting %s dropout, estimated base_rate=%.2f (confidence: %s)",
-            target_range,
+            config.target_dropout_range,
             estimate.estimated_dropout_base_rate,
             estimate.confidence,
         )
+        return new_config
 
     def _check_cost_before_enrichment(self, n_students: int) -> bool:
         """Estimate LLM cost and warn/prompt if above threshold.

@@ -98,6 +98,29 @@ pipeline = SynthEdPipeline(
 report = pipeline.run(n_students=300)
 ```
 
+### PipelineConfig (Recommended)
+
+All pipeline configuration can be grouped into a frozen `PipelineConfig` dataclass for cleaner API, JSON serialization, and reproducibility:
+
+```python
+from synthed.pipeline import SynthEdPipeline
+from synthed.pipeline_config import PipelineConfig
+
+config = PipelineConfig(
+    output_dir="./output",
+    seed=42,
+    target_dropout_range=(0.40, 0.55),
+)
+pipeline = SynthEdPipeline(config=config)
+report = pipeline.run(n_students=300)
+
+# Serialize config for reproducibility
+import json
+json.dump(config.to_dict(), open("config.json", "w"))
+```
+
+Legacy keyword arguments still work but emit a `DeprecationWarning`. Migrate by wrapping kwargs in `PipelineConfig(...)`.
+
 ---
 
 ## ⚙️ Population Configuration

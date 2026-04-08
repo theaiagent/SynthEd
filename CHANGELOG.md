@@ -6,6 +6,8 @@ All notable changes to SynthEd are documented here.
 
 ### Added
 - `InstitutionalConfig.support_services_quality` modulates Baulke dropout phase thresholds via `scale_by()` — 13 thresholds scaled, better institutions produce lower dropout
+- `PipelineConfig` frozen dataclass — groups 16 pipeline params with JSON `to_dict()`/`from_dict()` serialization
+- Deprecation bridge: legacy `SynthEdPipeline(seed=42)` kwargs still work with `DeprecationWarning`
 
 ## [1.2.0] - 2026-04-05
 
