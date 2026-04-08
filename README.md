@@ -32,7 +32,7 @@ python run_pipeline.py --n 200      # or: pip install synthedu
 
 ## Key Features
 
-- **11 Theory Modules** -- Tinto, Bean & Metzner, Kember, SDT, Garrison CoI, Moore, Rovai, Baulke, Epstein & Axtell, Gonzalez, Unavoidable Withdrawal
+- **10 Theory Modules** -- Tinto, Bean & Metzner, Kember, SDT, Garrison CoI, Moore, Rovai, Baulke, Epstein & Axtell, Gonzalez (+ unavoidable withdrawal mechanism)
 - **Trait-Based Calibration** -- Sobol sensitivity (69 params) + NSGA-II multi-objective optimization against real OULAD data
 - **Multi-Semester Simulation** -- Carry-over mechanics for engagement, GPA, coping, dropout phases
 - **GPA Feedback Loop** -- Cumulative GPA anchors cost-benefit, non-fit perception, and competence beliefs
@@ -90,14 +90,14 @@ print(f"Dropout: {report['simulation_summary']['dropout_rate']:.1%}")
 | Document | Content |
 |----------|---------|
 | **[User Guide](docs/GUIDE.md)** | Installation, configuration, calibration pipeline, OULAD export, LLM enrichment, troubleshooting |
-| **[Theory & Architecture](docs/THEORY.md)** | 11 theoretical anchors, factor clusters, architecture diagram, project structure, validation suite, test inventory |
+| **[Theory & Architecture](docs/THEORY.md)** | 10 theoretical anchors, factor clusters, architecture diagram, project structure, validation suite, test inventory |
 
 ---
 
 ## Roadmap
 
 - [x] Multi-semester simulation with carry-over
-- [x] 11 theory modules (Tinto, Bean & Metzner, Kember, SDT, Garrison, Moore, Rovai, Baulke, Epstein & Axtell, Gonzalez, Unavoidable Withdrawal)
+- [x] 10 theory modules (Tinto, Bean & Metzner, Kember, SDT, Garrison, Moore, Rovai, Baulke, Epstein & Axtell, Gonzalez)
 - [x] Trait-based calibration (Sobol + Optuna + OULAD validation)
 - [x] Benchmark reports with CLI (`--benchmark`)
 - [x] OULAD-compatible 7-table export

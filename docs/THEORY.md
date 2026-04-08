@@ -74,7 +74,7 @@ SynthEd's persona attributes and simulation mechanics are grounded in eleven est
 | # | Anchor | Origin | Role in SynthEd |
 |---|--------|--------|-----------------|
 | 1 | **Tinto's Student Integration Model** (1975) | Sociology (Durkheim) | Academic & social integration drive engagement. Social integration weighted lower in ODE context. |
-| 2 | **Bean & Metzner** (1985) | Non-traditional students | Environmental factors (work, family, finances) are the **dominant** dropout predictors in ODE. |
+| 2 | **Bean & Metzner** (1985) | Non-traditional students | Environmental factors (work, family, finances) are the **dominant** dropout predictors in ODE. Includes stochastic unavoidable withdrawal events (illness, death, relocation) via Lazarus & Folkman's (1984) stress-coping framework. |
 | 3 | **Kember's Process Model** (1989) | Distance education | Dynamic `perceived_cost_benefit` updated weekly based on academic outcomes. |
 | 4 | **Moore's Transactional Distance** (1993) | Distance education | Course structure and dialogue interact with learner autonomy. |
 | 5 | **Self-Determination Theory** (Deci & Ryan, 1985) | Psychology | Intrinsic/extrinsic motivation and amotivation predict persistence. |
@@ -83,7 +83,6 @@ SynthEd's persona attributes and simulation mechanics are grounded in eleven est
 | 8 | **Baulke et al. Phase Model** (2022) | Psychology | 6-phase dropout process: non-fit perception -> thoughts -> deliberation -> info search -> decision. Phase thresholds modulated by `support_services_quality` via `scale_by()`. |
 | 9 | **Epstein & Axtell ABSS** (1996) | Computational social science | Bottom-up emergent behavior: peer networks, engagement contagion, dropout cascades. |
 | 10 | **Academic Exhaustion** (Gonzalez et al., 2025) | Psychology | Exhaustion as mediator between stressors and dropout risk. |
-| 11 | **Unavoidable Withdrawal** | Life-event modeling | Stochastic life events (illness, death, relocation) forcing involuntary withdrawal. |
 
 ---
 
@@ -166,7 +165,7 @@ SynthEd/
 │   │   ├── social_network.py    # Peer network with link decay
 │   │   ├── semester.py          # Multi-semester with carry-over
 │   │   ├── institutional.py     # InstitutionalConfig (5 quality parameters)
-│   │   └── theories/            # 11 modules, one per theoretical framework
+│   │   └── theories/            # 10 theory modules + unavoidable withdrawal mechanism
 │   ├── data_output/
 │   │   ├── exporter.py          # CSV export (4 standard files)
 │   │   ├── oulad_exporter.py    # OULAD-compatible 7-table export
@@ -233,7 +232,7 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 | `test_factory.py` | 26 | Population, seed determinism, attribute ranges, display_id |
 | `test_engine.py` | 12 | State, phases, engagement, dropout, std_engagement |
 | `test_social_network.py` | 11 | Links, degree, peer influence, decay, statistics |
-| `test_theories.py` | 29 | All 11 theory modules, GPA feedback, coping, disability |
+| `test_theories.py` | 29 | All 10 theory modules + unavoidable withdrawal, GPA feedback, coping, disability |
 | `test_pipeline_integration.py` | 11 | Full pipeline, validation, calibration, profiles |
 | `test_semester.py` | 19 | Carry-over, dropout persistence, prior_gpa blend |
 | `test_llm_enrichment.py` | 12 | Mock LLM, backstory export, error handling |
