@@ -1,9 +1,12 @@
 """Integration tests for the SynthEdPipeline."""
 
 import logging
+import warnings
+
 import pytest
 
 from synthed.pipeline import SynthEdPipeline
+from synthed.pipeline_config import PipelineConfig
 
 
 class TestPipelineIntegration:
@@ -150,3 +153,95 @@ class TestSmallNWarning:
             if "small" in r.getMessage() and "n_students" in r.getMessage()
         ]
         assert len(small_n_warnings) == 0
+
+
+class TestPipelineConfigBridge:
+    """Tests for the PipelineConfig deprecation bridge."""
+
+    def test_new_style_config(self, tmp_path):
+        """SynthEdPipeline(config=PipelineConfig()) works."""
+        config = PipelineConfig(output_dir=str(tmp_path), seed=42)
+        pipeline = SynthEdPipeline(config=config)
+        assert pipeline.config.seed == 42
+
+    def test_legacy_kwargs_emit_warning(self, tmp_path):
+        """Legacy kwargs emit DeprecationWarning."""
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            SynthEdPipeline(output_dir=str(tmp_path), seed=42)
+            dep_warns = [x for x in w if issubclass(x.category, DeprecationWarning)]
+            assert len(dep_warns) >= 1
+            assert "PipelineConfig" in str(dep_warns[0].message)
+
+    def test_mixed_args_raises(self, tmp_path):
+        """config= plus legacy kwargs raises TypeError."""
+        config = PipelineConfig(output_dir=str(tmp_path))
+        with pytest.raises(TypeError, match="Cannot pass both"):
+            SynthEdPipeline(config=config, seed=42)
+
+    def test_unknown_kwarg_raises(self):
+        """Unknown legacy kwargs raise TypeError."""
+        with pytest.raises(TypeError, match="Unknown keyword"):
+            SynthEdPipeline(bad_param=1)
+
+    def test_new_style_full_run(self, tmp_path):
+        """Full pipeline run with PipelineConfig."""
+        config = PipelineConfig(output_dir=str(tmp_path), seed=42)
+        pipeline = SynthEdPipeline(config=config)
+        report = pipeline.run(n_students=20)
+        assert "simulation_summary" in report
+
+
+class TestPropertyDelegation:
+    """Verify @property delegates to self.config."""
+
+    def test_persona_config_delegates(self, tmp_path):
+        config = PipelineConfig(output_dir=str(tmp_path))
+        pipeline = SynthEdPipeline(config=config)
+        assert pipeline.persona_config is pipeline.config.persona_config
+
+    def test_environment_delegates(self, tmp_path):
+        config = PipelineConfig(output_dir=str(tmp_path))
+        pipeline = SynthEdPipeline(config=config)
+        assert pipeline.environment is pipeline.config.environment
+
+    def test_reference_delegates(self, tmp_path):
+        config = PipelineConfig(output_dir=str(tmp_path))
+        pipeline = SynthEdPipeline(config=config)
+        assert pipeline.reference is pipeline.config.reference_stats
+
+    def test_seed_delegates(self, tmp_path):
+        config = PipelineConfig(output_dir=str(tmp_path), seed=99)
+        pipeline = SynthEdPipeline(config=config)
+        assert pipeline.seed == 99
+
+    def test_target_dropout_range_delegates(self, tmp_path):
+        config = PipelineConfig(
+            output_dir=str(tmp_path),
+            target_dropout_range=(0.30, 0.50),
+        )
+        pipeline = SynthEdPipeline(config=config)
+        assert pipeline.target_dropout_range == (0.30, 0.50)
+
+    def test_engine_config_forwarded(self, tmp_path):
+        """engine_config correctly forwarded to SimulationEngine."""
+        from dataclasses import replace as dc_replace
+        from synthed.simulation.engine_config import EngineConfig
+        custom_cfg = dc_replace(EngineConfig(), _LOGIN_ENG_MULTIPLIER=9.9)
+        config = PipelineConfig(
+            output_dir=str(tmp_path),
+            engine_config=custom_cfg,
+        )
+        pipeline = SynthEdPipeline(config=config)
+        assert pipeline.engine.cfg._LOGIN_ENG_MULTIPLIER == 9.9
+        assert pipeline.engine.cfg == custom_cfg
+
+    def test_calibration_updates_config(self, tmp_path):
+        """Post-calibration persona_config differs from default."""
+        config = PipelineConfig(
+            output_dir=str(tmp_path),
+            target_dropout_range=(0.35, 0.55),
+        )
+        default_rate = PipelineConfig().persona_config.dropout_base_rate
+        pipeline = SynthEdPipeline(config=config)
+        assert pipeline.config.persona_config.dropout_base_rate != default_rate
