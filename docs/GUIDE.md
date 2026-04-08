@@ -116,7 +116,8 @@ report = pipeline.run(n_students=300)
 
 # Serialize config for reproducibility
 import json
-json.dump(config.to_dict(), open("config.json", "w"))
+with open("config.json", "w") as f:
+    json.dump(config.to_dict(), f)
 ```
 
 Legacy keyword arguments still work but emit a `DeprecationWarning`. Migrate by wrapping kwargs in `PipelineConfig(...)`.

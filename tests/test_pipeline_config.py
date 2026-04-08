@@ -21,8 +21,10 @@ class TestPipelineConfigCreation:
         assert config.cost_threshold == 1.0
 
     def test_has_16_fields(self):
+        """Contract test: PipelineConfig field count is part of the public API."""
         from dataclasses import fields
         from synthed.pipeline_config import PipelineConfig
+        # Deliberate: adding/removing fields is a breaking change and must be reviewed
         assert len(fields(PipelineConfig)) == 16
 
     def test_frozen(self):

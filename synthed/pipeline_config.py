@@ -143,6 +143,12 @@ class PipelineConfig:
             raise ValueError(
                 f"cost_threshold must be >= 0, got {self.cost_threshold}",
             )
+        if self.target_dropout_range is not None:
+            lo, hi = self.target_dropout_range
+            if lo > hi:
+                raise ValueError(
+                    f"target_dropout_range must have lo <= hi, got {self.target_dropout_range}",
+                )
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to a JSON-compatible dict.

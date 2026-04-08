@@ -297,12 +297,12 @@ class SynthEdPipeline:
             )
 
         profile = PROFILES[profile_name]
-        return cls(
+        config = PipelineConfig(
             persona_config=profile.persona_config,
             environment=profile.environment,
             institutional_config=profile.institutional_config,
             grading_config=profile.grading_config,
-            engine_config=engine_config,
+            engine_config=engine_config or EngineConfig(),
             reference_stats=profile.reference_stats,
             output_dir=output_dir,
             use_llm=use_llm,
@@ -311,8 +311,8 @@ class SynthEdPipeline:
             seed=profile.seed,
             target_dropout_range=profile.expected_dropout_range,
             cost_threshold=cost_threshold,
-            confirm_callback=confirm_callback,
         )
+        return cls(config=config, confirm_callback=confirm_callback)
 
     def run(
         self,
