@@ -155,6 +155,7 @@ SynthEd/
 │   ├── agents/
 │   │   ├── persona.py          # StudentPersona, PersonaConfig, BigFiveTraits
 │   │   ├── factory.py          # Calibrated population generation
+│   │   ├── name_pools.py       # Culturally diverse name generation
 │   │   └── backstory_templates.py  # 7 templates, 12 life events, 8 contexts
 │   ├── simulation/
 │   │   ├── engine.py            # Orchestrator (delegates to theories/)
@@ -171,7 +172,8 @@ SynthEd/
 │   │   ├── oulad_exporter.py    # OULAD-compatible 7-table export
 │   │   └── oulad_mappings.py    # OULAD schema mappings
 │   ├── validation/
-│   │   └── validator.py         # 21 statistical validation tests
+│   │   ├── validator.py         # 21 statistical validation tests
+│   │   └── types.py             # ReferenceStatistics, ValidationResult
 │   ├── analysis/
 │   │   ├── sensitivity.py       # OAT parameter sweeps
 │   │   ├── sobol_sensitivity.py # Sobol variance decomposition (69 params)
@@ -191,6 +193,8 @@ SynthEd/
 │   │   ├── log_config.py        # Logging configuration
 │   │   └── validation.py        # Input validation utilities
 │   ├── calibration.py           # CalibrationMap: target dropout -> params
+│   ├── doc_facts.py             # Documentation consistency checker
+│   ├── pipeline_config.py       # PipelineConfig frozen dataclass (16 params)
 │   └── pipeline.py              # End-to-end orchestrator
 ├── tests/                       # 697 pytest tests across 41 files
 ├── docs/
