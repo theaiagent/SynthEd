@@ -7,7 +7,7 @@ import numpy as np
 
 if TYPE_CHECKING:
     from ...agents.persona import StudentPersona
-    from ..engine import InteractionRecord, SimulationState
+    from ..state import InteractionRecord, SimulationState
     from .protocol import TheoryContext
 
 

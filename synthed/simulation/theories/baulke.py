@@ -9,7 +9,7 @@ from ..institutional import InstitutionalConfig, scale_by
 
 if TYPE_CHECKING:
     from ...agents.persona import StudentPersona
-    from ..engine import SimulationState
+    from ..state import SimulationState
     from .protocol import TheoryContext
     from ..environment import ODLEnvironment
 

@@ -17,7 +17,7 @@ import numpy as np
 if TYPE_CHECKING:
     from numpy.random import Generator
 
-    from ..engine import SimulationState
+    from ..state import SimulationState
     from ...agents.persona import StudentPersona
 
 logger = logging.getLogger(__name__)
