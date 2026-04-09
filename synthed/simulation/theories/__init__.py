@@ -66,4 +66,7 @@ def discover_theories() -> list[type]:
             if isinstance(obj, type) and any(hasattr(obj, m) for m in _PHASE_METHODS):
                 if obj not in theories:
                     theories.append(obj)
-    return sorted(theories, key=lambda c: c.__module__)
+    return sorted(
+        theories,
+        key=lambda c: (getattr(c, "_PHASE_ORDER", 10_000), c.__module__, c.__name__),
+    )

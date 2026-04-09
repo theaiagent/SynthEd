@@ -180,6 +180,11 @@ class SimulationEngine:
         self.sdt = _by_type.get("SDTMotivationDynamics")
         self.baulke = _by_type.get("BaulkeDropoutPhase")
         self.epstein_axtell = _by_type.get("EpsteinAxtellPeerInfluence")
+        _required = {"TintoIntegration", "GarrisonCoI", "SDTMotivationDynamics",
+                      "BaulkeDropoutPhase", "EpsteinAxtellPeerInfluence"}
+        _missing = _required - _by_type.keys()
+        if _missing:
+            raise RuntimeError(f"discover_theories() missed required theories: {_missing}")
 
         # Engagement-only theories (called inline in _update_engagement)
         self.bean_metzner = BeanMetznerPressure()

@@ -132,17 +132,19 @@ class TestBehavioralEquivalence:
     """Same seed produces identical output before/after protocol migration."""
 
     def test_determinism_preserved(self, tmp_path):
-        """Run engine twice with same seed — states must be identical."""
+        """Run engine twice with same seed in separate dirs — states must be identical."""
         from synthed.pipeline import SynthEdPipeline
         from synthed.pipeline_config import PipelineConfig
 
-        config = PipelineConfig(output_dir=str(tmp_path), seed=42)
+        c1 = PipelineConfig(output_dir=str(tmp_path / "run1"), seed=42)
+        c2 = PipelineConfig(output_dir=str(tmp_path / "run2"), seed=42)
 
-        p1 = SynthEdPipeline(config=config)
-        r1 = p1.run(n_students=50)
+        r1 = SynthEdPipeline(config=c1).run(n_students=50)
+        r2 = SynthEdPipeline(config=c2).run(n_students=50)
 
-        p2 = SynthEdPipeline(config=config)
-        r2 = p2.run(n_students=50)
-
-        assert r1["simulation_summary"]["dropout_rate"] == r2["simulation_summary"]["dropout_rate"]
-        assert r1["simulation_summary"]["mean_final_gpa"] == r2["simulation_summary"]["mean_final_gpa"]
+        s1 = r1["simulation_summary"]
+        s2 = r2["simulation_summary"]
+        assert s1["dropout_rate"] == s2["dropout_rate"]
+        assert s1["mean_final_gpa"] == s2["mean_final_gpa"]
+        assert s1["total_students"] == s2["total_students"]
+        assert s1["dropout_count"] == s2["dropout_count"]
