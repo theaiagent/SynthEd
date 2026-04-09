@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from ...agents.persona import StudentPersona
     from ..engine import InteractionRecord, SimulationState
     from ..social_network import SocialNetwork
+    from .protocol import TheoryContext
 
 
 class EpsteinAxtellPeerInfluence:
@@ -118,3 +119,11 @@ class EpsteinAxtellPeerInfluence:
                 state.social_integration + min(degree * self._SOCIAL_DEGREE_FACTOR, self._SOCIAL_DEGREE_CAP),
                 self._ENGAGEMENT_CLIP_LO, self._SOCIAL_CLIP_HI
             ))
+
+    def on_network_step(self, ctx: TheoryContext) -> None:
+        """Protocol dispatch: Phase 2 collective network update."""
+        self.update_network(ctx.week, ctx.week_records_by_student, ctx.network, rng=ctx.rng)
+
+    def on_post_peer_step(self, ctx: TheoryContext) -> None:
+        """Protocol dispatch: Phase 2 per-student peer influence."""
+        self.apply_peer_influence(ctx.student, ctx.state, ctx.all_states, ctx.network)

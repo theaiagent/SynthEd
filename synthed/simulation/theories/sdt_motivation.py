@@ -9,6 +9,7 @@ import numpy as np
 if TYPE_CHECKING:
     from ...agents.persona import StudentPersona
     from ..engine import InteractionRecord, SimulationState
+    from .protocol import TheoryContext
 
 
 @dataclass
@@ -141,3 +142,8 @@ class SDTMotivationDynamics:
         if composite >= self._EXTRINSIC_THRESHOLD:
             return "extrinsic"
         return "amotivation"
+
+    def on_individual_step(self, ctx: TheoryContext) -> None:
+        """Protocol dispatch: Phase 1 per-student (needs + motivation shift)."""
+        self.update_needs(ctx.student, ctx.state, ctx.week, ctx.records)
+        ctx.state.current_motivation_type = self.evaluate_motivation_shift(ctx.state)
