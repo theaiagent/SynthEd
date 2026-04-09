@@ -8,7 +8,7 @@ import numpy as np
 from synthed.simulation.engine import SimulationEngine
 from synthed.simulation.state import SimulationState
 from synthed.simulation.environment import ODLEnvironment
-from synthed.simulation.grading import GradingConfig, GradingScale
+from synthed.simulation.grading import GradingConfig, GradingScale, assign_outcomes
 from synthed.simulation.institutional import InstitutionalConfig
 
 
@@ -161,8 +161,6 @@ class TestRelativeGrading:
         """All eligible students have identical grades -> fallback warning, outcomes assigned."""
         # Build states manually with identical semester grades
         cfg = GradingConfig(grading_method="relative")
-        env = ODLEnvironment()
-        engine = SimulationEngine(env, seed=42, grading_config=cfg)
 
         states = {}
         for i in range(5):
@@ -176,8 +174,8 @@ class TestRelativeGrading:
             state.final_score = 0.70
             states[sid] = state
 
-        with caplog.at_level(logging.WARNING, logger="synthed.simulation.engine"):
-            engine._assign_outcomes(states)
+        with caplog.at_level(logging.WARNING, logger="synthed.simulation.grading"):
+            assign_outcomes(states, cfg)
 
         assert "zero variance" in caplog.text
         for state in states.values():
@@ -189,8 +187,6 @@ class TestRelativeGrading:
     def test_relative_single_eligible_fallback(self, caplog):
         """1 eligible + rest withdrawn -> fallback to absolute."""
         cfg = GradingConfig(grading_method="relative")
-        env = ODLEnvironment()
-        engine = SimulationEngine(env, seed=42, grading_config=cfg)
 
         states = {}
         # One eligible student
@@ -211,8 +207,8 @@ class TestRelativeGrading:
             state.dropout_week = 3
             states[sid] = state
 
-        with caplog.at_level(logging.WARNING, logger="synthed.simulation.engine"):
-            engine._assign_outcomes(states)
+        with caplog.at_level(logging.WARNING, logger="synthed.simulation.grading"):
+            assign_outcomes(states, cfg)
 
         assert "fewer than 2" in caplog.text
         assert states["S000"].outcome in ("Distinction", "Pass", "Fail")
@@ -222,8 +218,6 @@ class TestRelativeGrading:
     def test_relative_all_withdrawn(self):
         """All dropped out -> all Withdrawn, no crash."""
         cfg = GradingConfig(grading_method="relative")
-        env = ODLEnvironment()
-        engine = SimulationEngine(env, seed=42, grading_config=cfg)
 
         states = {}
         for i in range(5):
@@ -233,7 +227,7 @@ class TestRelativeGrading:
             state.dropout_week = 2
             states[sid] = state
 
-        engine._assign_outcomes(states)
+        assign_outcomes(states, cfg)
         for state in states.values():
             assert state.outcome == "Withdrawn"
 
@@ -244,8 +238,6 @@ class TestRelativeGrading:
             dual_hurdle=True,
             component_pass_thresholds={"final": 0.70},
         )
-        env = ODLEnvironment()
-        engine = SimulationEngine(env, seed=42, grading_config=cfg)
 
         states = {}
         # Student with high midterm but very low final (fails hurdle)
@@ -278,7 +270,7 @@ class TestRelativeGrading:
         s2.final_score = 0.50
         states["S002"] = s2
 
-        engine._assign_outcomes(states)
+        assign_outcomes(states, cfg)
 
         # S000 has highest raw grade but low final -> fails hurdle
         assert states["S000"].outcome == "Fail"
