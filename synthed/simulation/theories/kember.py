@@ -9,7 +9,7 @@ from ..institutional import InstitutionalConfig, scale_by
 
 if TYPE_CHECKING:
     from ...agents.persona import StudentPersona
-    from ..engine import InteractionRecord, SimulationState
+    from ..state import InteractionRecord, SimulationState
 
 
 class KemberCostBenefit:

@@ -5,7 +5,8 @@ import logging
 
 import numpy as np
 
-from synthed.simulation.engine import SimulationEngine, SimulationState
+from synthed.simulation.engine import SimulationEngine
+from synthed.simulation.state import SimulationState
 from synthed.simulation.environment import ODLEnvironment
 from synthed.simulation.grading import GradingConfig, GradingScale
 from synthed.simulation.institutional import InstitutionalConfig

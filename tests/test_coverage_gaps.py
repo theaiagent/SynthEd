@@ -57,7 +57,8 @@ class TestBaulkeEdgeCases:
     def test_phase_transition_with_low_gpa(self):
         """Baulke non-fit perception triggered by low GPA."""
         from synthed.agents.persona import StudentPersona, BigFiveTraits
-        from synthed.simulation.engine import SimulationEngine, SimulationState
+        from synthed.simulation.engine import SimulationEngine
+        from synthed.simulation.state import SimulationState
         from synthed.simulation.environment import ODLEnvironment
 
         env = ODLEnvironment()

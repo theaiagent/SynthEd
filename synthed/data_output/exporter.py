@@ -11,7 +11,7 @@ import csv
 from pathlib import Path
 
 from ..agents.persona import StudentPersona
-from ..simulation.engine import InteractionRecord, SimulationState
+from ..simulation.state import InteractionRecord, SimulationState
 from ..simulation.social_network import SocialNetwork
 
 

@@ -1,7 +1,8 @@
 """Tests for dual-track GPA: transcript GPA vs perceived mastery."""
 import numpy as np
 
-from synthed.simulation.engine import SimulationState, SimulationEngine
+from synthed.simulation.engine import SimulationEngine
+from synthed.simulation.state import SimulationState
 from synthed.simulation.environment import ODLEnvironment
 from synthed.simulation.theories.kember import KemberCostBenefit
 from synthed.simulation.theories.sdt_motivation import SDTMotivationDynamics, SDTNeedSatisfaction
@@ -70,7 +71,7 @@ class TestKemberUsesPerceivedMastery:
         state.perceived_mastery_count = 5
         initial_cb = state.perceived_cost_benefit
         # neutral quality record so quality factor doesn't dominate
-        from synthed.simulation.engine import InteractionRecord
+        from synthed.simulation.state import InteractionRecord
         records = [
             InteractionRecord(student_id="test-001", week=5, course_id="CS101",
                               interaction_type="assignment_submit", quality_score=0.5),
@@ -94,7 +95,7 @@ class TestKemberUsesPerceivedMastery:
         )
         state.perceived_mastery_sum = 4.0   # mastery = 0.8
         state.perceived_mastery_count = 5
-        from synthed.simulation.engine import InteractionRecord
+        from synthed.simulation.state import InteractionRecord
         records = [
             InteractionRecord(student_id="test-001", week=5, course_id="CS101",
                               interaction_type="assignment_submit", quality_score=0.5),
@@ -120,7 +121,7 @@ class TestSDTUsesPerceivedMastery:
         state.sdt_needs = SDTNeedSatisfaction(competence=0.5)
         state.perceived_mastery_sum = 1.5   # mastery = 0.3
         state.perceived_mastery_count = 5
-        from synthed.simulation.engine import InteractionRecord
+        from synthed.simulation.state import InteractionRecord
         records = [
             InteractionRecord(student_id="test-001", week=5, course_id="CS101",
                               interaction_type="assignment_submit", quality_score=0.5),
@@ -143,7 +144,7 @@ class TestSDTUsesPerceivedMastery:
         state.sdt_needs = SDTNeedSatisfaction(competence=0.5)
         state.perceived_mastery_sum = 4.0   # mastery = 0.8
         state.perceived_mastery_count = 5
-        from synthed.simulation.engine import InteractionRecord
+        from synthed.simulation.state import InteractionRecord
         records = [
             InteractionRecord(student_id="test-001", week=5, course_id="CS101",
                               interaction_type="assignment_submit", quality_score=0.5),

@@ -9,7 +9,7 @@ import numpy as np
 from ..institutional import InstitutionalConfig, scale_by
 
 if TYPE_CHECKING:
-    from ..engine import InteractionRecord, SimulationState
+    from ..state import InteractionRecord, SimulationState
     from ...agents.persona import StudentPersona
 
 

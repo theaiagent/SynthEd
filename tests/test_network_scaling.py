@@ -36,7 +36,7 @@ class TestUpdateNetworkCompat:
         """Call update_network without rng -> works (all-pairs)."""
         ea = EpsteinAxtellPeerInfluence()
         net = SocialNetwork()
-        from synthed.simulation.engine import InteractionRecord
+        from synthed.simulation.state import InteractionRecord
         records = {
             "s1": [InteractionRecord(student_id="s1", week=1, course_id="c1", interaction_type="forum_post")],
             "s2": [InteractionRecord(student_id="s2", week=1, course_id="c1", interaction_type="forum_post")],
@@ -54,7 +54,7 @@ class TestLargeScaleMeanDegree:
         ea = EpsteinAxtellPeerInfluence()
         net = SocialNetwork()
         rng = np.random.default_rng(99)
-        from synthed.simulation.engine import InteractionRecord
+        from synthed.simulation.state import InteractionRecord
         records = {}
         for i in range(200):
             sid = f"student_{i}"

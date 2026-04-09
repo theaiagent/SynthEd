@@ -26,7 +26,7 @@ from .oulad_mappings import (
 
 if TYPE_CHECKING:
     from ..agents.persona import StudentPersona
-    from ..simulation.engine import InteractionRecord, SimulationState
+    from ..simulation.state import InteractionRecord, SimulationState
     from ..simulation.environment import ODLEnvironment
 
 logger = logging.getLogger(__name__)

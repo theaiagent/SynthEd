@@ -3,7 +3,7 @@
 import numpy as np
 
 from synthed.agents.persona import StudentPersona, BigFiveTraits
-from synthed.simulation.engine import InteractionRecord, SimulationState, CommunityOfInquiryState
+from synthed.simulation.state import InteractionRecord, SimulationState, CommunityOfInquiryState
 from synthed.simulation.environment import ODLEnvironment
 from synthed.simulation.theories import (
     TintoIntegration,

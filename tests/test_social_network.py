@@ -1,7 +1,7 @@
 """Tests for SocialNetwork."""
 
 from synthed.simulation.social_network import SocialNetwork
-from synthed.simulation.engine import SimulationState
+from synthed.simulation.state import SimulationState
 
 
 class TestSocialNetwork:
