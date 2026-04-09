@@ -17,6 +17,22 @@ All notable changes to SynthEd are documented here.
 - `PipelineConfig` frozen dataclass — groups 16 pipeline params with JSON `to_dict()`/`from_dict()` serialization
 - Deprecation bridge: legacy `SynthEdPipeline(seed=42)` kwargs still work with `DeprecationWarning`
 
+## [1.3.0] - 2026-04-05
+
+### Added
+- `grading_method="relative"` support — t-score standardization with cohort-relative outcome classification, automatic fallback for small cohorts
+- `normalize_t_scores()` utility for t-score to 0-1 conversion
+- `SobolAnalyzer` parallel execution via `n_workers` parameter (ProcessPoolExecutor)
+- Warning when `n_students < 100` (calibration reliability)
+
+### Changed
+- `SimulationEngine._simulate_student_week` split into 5 focused methods
+- `_assign_outcomes` refactored into absolute/relative dispatcher with shared eligibility filter
+- `_validate_correlations` uses declarative test table via `_correlation_test` helper
+- `ODLEnvironment.get_course_by_id` uses O(1) dict lookup
+- Calibration mode skips temp directory I/O
+- `ReferenceStatistics` and `ValidationResult` extracted to `validation/types.py`
+
 ## [1.2.0] - 2026-04-05
 
 ### Added
