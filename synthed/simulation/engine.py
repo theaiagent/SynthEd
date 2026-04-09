@@ -205,7 +205,11 @@ class SimulationEngine:
 
         avg_td is pre-computed here. For Phase 1 contexts it reflects
         pre-update state; Baulke (on_post_peer_step) receives a Phase 2
-        peer_ctx where state is post-Phase-1.
+        peer_ctx where state is post-Phase-1.  _update_engagement
+        recomputes avg_td from current state independently.
+
+        Phase 1 hooks should avoid mutating TD-affecting fields
+        (coi_state, etc.) if they depend on avg_td consistency.
         """
         active = [c for c in self.env.courses if c.id in state.courses_active] if state else []
         avg_td = self.moore.average(student, state, self.env) if student else 0.0
