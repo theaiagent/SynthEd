@@ -201,7 +201,12 @@ class SimulationEngine:
         )
 
     def _make_ctx(self, student, state, records, week, context, states, week_records_by_student):
-        """Build a TheoryContext for protocol dispatch."""
+        """Build a TheoryContext for protocol dispatch.
+
+        avg_td is pre-computed here. For Phase 1 contexts it reflects
+        pre-update state; Baulke (on_post_peer_step) receives a Phase 2
+        peer_ctx where state is post-Phase-1.
+        """
         active = [c for c in self.env.courses if c.id in state.courses_active] if state else []
         avg_td = self.moore.average(student, state, self.env) if student else 0.0
         return TheoryContext(
@@ -287,8 +292,10 @@ class SimulationEngine:
                 all_records.extend(week_records)
                 week_records_by_student[student.id] = week_records
 
+                # Phase 1: week_records_by_student is partially built — pass empty
+                # to prevent theories from reading incomplete data.
                 ctx = self._make_ctx(student, state, week_records, week, week_context,
-                                     states, week_records_by_student)
+                                     states, {})
                 for theory in self.theories:
                     if hasattr(theory, "on_individual_step"):
                         theory.on_individual_step(ctx)

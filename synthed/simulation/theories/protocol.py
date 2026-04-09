@@ -16,7 +16,7 @@ Phase execution order:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol
 
 import numpy as np
 
@@ -74,7 +74,6 @@ class TheoryContext:
     avg_td: float
 
 
-@runtime_checkable
 class TheoryModule(Protocol):
     """Structural protocol for theory modules.
 

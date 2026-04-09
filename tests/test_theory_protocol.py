@@ -36,6 +36,18 @@ class TestDiscovery:
         b = discover_theories()
         assert [t.__name__ for t in a] == [t.__name__ for t in b]
 
+    def test_canonical_order(self):
+        """Exact canonical order — changing this breaks determinism."""
+        expected = [
+            "BaulkeDropoutPhase",
+            "EpsteinAxtellPeerInfluence",
+            "GarrisonCoI",
+            "SDTMotivationDynamics",
+            "TintoIntegration",
+        ]
+        actual = [t.__name__ for t in discover_theories()]
+        assert actual == expected, f"Theory order changed: {actual} != {expected}"
+
     def test_all_have_phase_methods(self):
         """Every discovered theory has at least one phase method."""
         phase_methods = ("on_individual_step", "on_network_step", "on_post_peer_step")
