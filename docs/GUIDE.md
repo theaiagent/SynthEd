@@ -122,6 +122,16 @@ with open("config.json", "w") as f:
 
 Legacy keyword arguments still work but emit a `DeprecationWarning`. Migrate by wrapping kwargs in `PipelineConfig(...)`.
 
+### Theory Protocol (Developer)
+
+Theory modules implement a phase-based protocol for engine dispatch:
+
+- `on_individual_step(ctx)` — Phase 1 per-student updates (Tinto, Garrison, SDT)
+- `on_network_step(ctx)` — Phase 2 collective network update (Epstein)
+- `on_post_peer_step(ctx)` — Phase 2 per-student post-peer (Epstein peer influence, Baulke)
+
+New theories are auto-discovered from `synthed/simulation/theories/` — no engine changes needed. Execution order controlled by `_PHASE_ORDER` class attribute.
+
 ---
 
 ## ⚙️ Population Configuration

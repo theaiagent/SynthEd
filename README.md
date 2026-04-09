@@ -48,6 +48,7 @@ python run_pipeline.py --n 200      # or: pip install synthedu
 - **Relative Grading** -- grading_method="relative" with t-score cohort normalization, automatic fallback for small/homogeneous cohorts
 - **Baulke Institutional Modulation** -- `support_services_quality` scales 13 dropout phase thresholds, better institutions produce lower dropout
 - **PipelineConfig** -- Frozen dataclass grouping 16 pipeline params with JSON `to_dict()`/`from_dict()` serialization for reproducibility
+- **TheoryModule Protocol** -- Phase-based dispatch with auto-discovery, new theories added with zero engine changes
 
 ---
 
