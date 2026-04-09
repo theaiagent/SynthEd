@@ -195,7 +195,7 @@ SynthEd/
 │   ├── doc_facts.py             # Documentation consistency checker
 │   ├── pipeline_config.py       # PipelineConfig frozen dataclass (16 params)
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                       # 713 pytest tests across 42 files
+├── tests/                       # 714 pytest tests across 42 files
 ├── docs/
 │   ├── GUIDE.md                 # User guide
 │   └── THEORY.md                # This file
@@ -224,7 +224,7 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 
 ## 🧪 Test Suite
 
-713 pytest tests across 42 files:
+714 pytest tests across 42 files:
 
 | Test File | Tests | Coverage |
 |-----------|-------|----------|
