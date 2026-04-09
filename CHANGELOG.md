@@ -2,13 +2,14 @@
 
 All notable changes to SynthEd are documented here.
 
-## [Unreleased]
+## [1.5.0] - 2026-04-09
 
 ### Added
 - `TheoryModule` Protocol with phase-based dispatch (`on_individual_step`, `on_network_step`, `on_post_peer_step`)
 - `TheoryContext` frozen dataclass as uniform argument envelope for theory modules
 - `discover_theories()` auto-discovery function replacing hardcoded theory imports
 - Engine Phase 1/2 loops now iterate over discovered theories via protocol dispatch
+- `_PHASE_ORDER` class attribute on migrated theories (Tinto=10, Garrison=20, SDT=30, Epstein=40, Baulke=50)
 
 ## [1.4.0] - 2026-04-08
 
