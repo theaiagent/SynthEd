@@ -129,7 +129,7 @@ class TestCarryOverStateNone:
     def test_carry_over_skips_student_without_state(self):
         """Student not in states dict is skipped in carry-over."""
         from synthed.agents.persona import StudentPersona
-        from synthed.simulation.engine import SimulationState
+        from synthed.simulation.state import SimulationState
         from synthed.simulation.social_network import SocialNetwork
 
         students = [
@@ -170,7 +170,7 @@ class TestBuildInterimReport:
         from synthed.simulation.semester import (
             _build_interim_report, SemesterResult,
         )
-        from synthed.simulation.engine import SimulationState
+        from synthed.simulation.state import SimulationState
 
         # Create mock semester results with no dropouts
         states = {
@@ -190,7 +190,7 @@ class TestBuildInterimReport:
         from synthed.simulation.semester import (
             _build_interim_report, SemesterResult,
         )
-        from synthed.simulation.engine import SimulationState
+        from synthed.simulation.state import SimulationState
 
         # All students dropped out
         states = {
@@ -210,7 +210,7 @@ class TestBuildInterimReport:
         from synthed.simulation.semester import (
             _build_interim_report, SemesterResult,
         )
-        from synthed.simulation.engine import SimulationState
+        from synthed.simulation.state import SimulationState
 
         # 5 out of 10 dropped out = 50%, target is 40-60%
         states = {}
@@ -239,7 +239,7 @@ class TestPriorGPABlend:
     def test_prior_gpa_blend_updates_persona(self):
         """Earned GPA blends into prior_gpa with default alpha=0.6."""
         from synthed.agents.persona import StudentPersona
-        from synthed.simulation.engine import SimulationState
+        from synthed.simulation.state import SimulationState
         from synthed.simulation.semester import _create_carry_over_persona, SemesterCarryOverConfig
 
         student = StudentPersona(prior_gpa=3.0)
@@ -260,7 +260,7 @@ class TestPriorGPABlend:
     def test_prior_gpa_no_blend_when_no_grades(self):
         """With gpa_count=0, prior_gpa stays unchanged."""
         from synthed.agents.persona import StudentPersona
-        from synthed.simulation.engine import SimulationState
+        from synthed.simulation.state import SimulationState
         from synthed.simulation.semester import _create_carry_over_persona, SemesterCarryOverConfig
 
         student = StudentPersona(prior_gpa=3.0)
@@ -280,7 +280,7 @@ class TestPriorGPABlend:
     def test_prior_gpa_blend_respects_alpha(self):
         """alpha=0 keeps original, alpha=1 fully replaces."""
         from synthed.agents.persona import StudentPersona
-        from synthed.simulation.engine import SimulationState
+        from synthed.simulation.state import SimulationState
         from synthed.simulation.semester import _create_carry_over_persona, SemesterCarryOverConfig
 
         student = StudentPersona(prior_gpa=3.0)
@@ -305,7 +305,7 @@ class TestPriorGPABlend:
     def test_prior_gpa_blend_clamps_to_range(self):
         """Blended prior_gpa is clipped to [0.0, 4.0]."""
         from synthed.agents.persona import StudentPersona
-        from synthed.simulation.engine import SimulationState
+        from synthed.simulation.state import SimulationState
         from synthed.simulation.semester import _create_carry_over_persona, SemesterCarryOverConfig
 
         student = StudentPersona(prior_gpa=3.5)
@@ -348,7 +348,7 @@ class TestCopingCarryOver:
 
     def test_coping_retention_in_carry_over(self):
         """Coping factor is partially retained via _build_state_overrides."""
-        from synthed.simulation.engine import SimulationState
+        from synthed.simulation.state import SimulationState
         from synthed.simulation.semester import _build_state_overrides, SemesterCarryOverConfig
 
         state = SimulationState(

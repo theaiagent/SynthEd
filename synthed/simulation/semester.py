@@ -22,10 +22,8 @@ from typing import Any
 import numpy as np
 
 from ..agents.persona import StudentPersona
-from .engine import (
-    SimulationEngine, InteractionRecord, SimulationState,
-    CommunityOfInquiryState,
-)
+from .engine import SimulationEngine
+from .state import CommunityOfInquiryState, InteractionRecord, SimulationState
 from .social_network import SocialNetwork
 from .theories import ExhaustionState
 

@@ -99,7 +99,7 @@ class TestSimulationEngine:
 
     def test_summary_statistics_with_unavoidable_withdrawals(self):
         """summary_statistics handles withdrawal_reason in phase_dist (lines 574, 585)."""
-        from synthed.simulation.engine import SimulationState
+        from synthed.simulation.state import SimulationState
 
         states = {
             "s1": SimulationState(
@@ -136,7 +136,7 @@ class TestSimulationEngine:
 
     def test_summary_includes_std_final_engagement(self):
         """summary_statistics returns std_final_engagement for retained students."""
-        from synthed.simulation.engine import SimulationState
+        from synthed.simulation.state import SimulationState
 
         states = {
             "s1": SimulationState(
@@ -165,7 +165,7 @@ class TestSimulationEngine:
 
     def test_std_final_engagement_none_when_all_dropout(self):
         """std_final_engagement is None when all students dropped out."""
-        from synthed.simulation.engine import SimulationState
+        from synthed.simulation.state import SimulationState
 
         states = {
             "s1": SimulationState(
@@ -192,7 +192,7 @@ class TestSimulationEngine:
         )
 
         # Manually run with a state that has an invalid course ID
-        from synthed.simulation.engine import SimulationState
+        from synthed.simulation.state import SimulationState
         states = {
             student.id: SimulationState(
                 student_id=student.id,

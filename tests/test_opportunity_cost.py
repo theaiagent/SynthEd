@@ -1,6 +1,6 @@
 """Tests for Kember opportunity cost mechanism."""
 
-from synthed.simulation.engine import SimulationState
+from synthed.simulation.state import SimulationState
 from synthed.simulation.theories.kember import KemberCostBenefit
 from synthed.agents.persona import PersonaConfig
 from synthed.agents.factory import StudentFactory

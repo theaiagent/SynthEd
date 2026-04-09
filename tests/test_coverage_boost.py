@@ -18,10 +18,7 @@ import numpy as np
 from synthed.agents.persona import StudentPersona
 from synthed.data_output.exporter import DataExporter
 from synthed.pipeline import SynthEdPipeline
-from synthed.simulation.engine import (
-    SimulationState,
-    CommunityOfInquiryState,
-)
+from synthed.simulation.state import SimulationState, CommunityOfInquiryState
 from synthed.simulation.environment import ODLEnvironment, _default_semester_name
 from synthed.simulation.theories.baulke import BaulkeDropoutPhase
 from synthed.simulation.theories.positive_events import PositiveEventHandler

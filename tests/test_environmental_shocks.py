@@ -6,7 +6,8 @@ import pytest
 
 from synthed.agents.persona import StudentPersona
 from synthed.agents.factory import StudentFactory
-from synthed.simulation.engine import SimulationEngine, SimulationState, CommunityOfInquiryState
+from synthed.simulation.engine import SimulationEngine
+from synthed.simulation.state import SimulationState, CommunityOfInquiryState
 from synthed.simulation.environment import ODLEnvironment
 from synthed.simulation.theories.bean_metzner import BeanMetznerPressure
 from synthed.simulation.theories.baulke import BaulkeDropoutPhase

@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from synthed.agents.persona import StudentPersona, PersonaConfig
-from synthed.simulation.engine import SimulationState, CommunityOfInquiryState
+from synthed.simulation.state import SimulationState, CommunityOfInquiryState
 from synthed.simulation.theories import (
     SDTNeedSatisfaction,
     ExhaustionState,

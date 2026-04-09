@@ -4,7 +4,8 @@ import csv
 
 from synthed.agents.persona import StudentPersona, BigFiveTraits
 from synthed.agents.factory import StudentFactory
-from synthed.simulation.engine import SimulationEngine, SimulationState
+from synthed.simulation.engine import SimulationEngine
+from synthed.simulation.state import SimulationState
 from synthed.simulation.environment import ODLEnvironment
 from synthed.data_output.exporter import DataExporter
 

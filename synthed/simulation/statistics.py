@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 if TYPE_CHECKING:
-    from .engine import SimulationState
+    from .state import SimulationState
 
 logger = logging.getLogger(__name__)
 
