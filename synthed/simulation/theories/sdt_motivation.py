@@ -43,6 +43,8 @@ class SDTMotivationDynamics:
     Relatedness: from social_integration + CoI social_presence.
     """
 
+    _PHASE_ORDER: int = 30
+
     # ── tuneable constants ──
     _AUTONOMY_FACTOR: float = 0.03           # autonomy need sensitivity to learner autonomy
     _AUTONOMY_REGULATION_FACTOR: float = 0.01  # self-regulation's contribution to autonomy

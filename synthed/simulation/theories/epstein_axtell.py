@@ -15,6 +15,8 @@ if TYPE_CHECKING:
 class EpsteinAxtellPeerInfluence:
     """Agent-based social simulation with peer influence and contagion."""
 
+    _PHASE_ORDER: int = 40
+
     # ── tuneable constants ──
     _FORUM_LINK_WEIGHT: float = 0.05         # tie strength from co-posting in a forum
     _LIVE_LINK_WEIGHT: float = 0.03          # tie strength from co-attending live session

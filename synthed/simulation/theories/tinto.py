@@ -14,6 +14,8 @@ if TYPE_CHECKING:
 class TintoIntegration:
     """Update Tinto's academic and social integration based on week's events."""
 
+    _PHASE_ORDER: int = 10
+
     # ── tuneable constants ──
     _ACADEMIC_QUALITY_FACTOR: float = 0.05   # academic integration boost per quality delta
     _ACADEMIC_EROSION: float = 0.02          # weekly erosion when no academic activity

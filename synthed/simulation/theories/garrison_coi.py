@@ -15,6 +15,8 @@ if TYPE_CHECKING:
 class GarrisonCoI:
     """Update Community of Inquiry presences based on weekly activity."""
 
+    _PHASE_ORDER: int = 20
+
     # ── tuneable constants ──
     _FORUM_POST_SOCIAL_BOOST: float = 0.03    # social presence boost per forum post
     _LIVE_SESSION_SOCIAL_BOOST: float = 0.02  # social presence boost per live session

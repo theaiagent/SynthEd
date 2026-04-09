@@ -22,6 +22,8 @@ class BaulkeDropoutPhase:
     Rubicon action-phase model (Achtziger & Gollwitzer, 2010).
     """
 
+    _PHASE_ORDER: int = 50
+
     # ── phase 0 → 1: non-fit perception ──
     _NONFIT_ENG_THRESHOLD: float = 0.40          # engagement below this triggers non-fit
     _NONFIT_ENG_SOFT: float = 0.45               # softer threshold when combined with other factors

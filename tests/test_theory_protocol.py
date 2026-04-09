@@ -39,11 +39,11 @@ class TestDiscovery:
     def test_canonical_order(self):
         """Exact canonical order — changing this breaks determinism."""
         expected = [
-            "BaulkeDropoutPhase",
-            "EpsteinAxtellPeerInfluence",
+            "TintoIntegration",
             "GarrisonCoI",
             "SDTMotivationDynamics",
-            "TintoIntegration",
+            "EpsteinAxtellPeerInfluence",
+            "BaulkeDropoutPhase",
         ]
         actual = [t.__name__ for t in discover_theories()]
         assert actual == expected, f"Theory order changed: {actual} != {expected}"
