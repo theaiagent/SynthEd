@@ -306,9 +306,12 @@ def _aggregate_components(
         active_weight += weight
 
     if missing_policy == "redistribute":
+        # active_weight == 0.0 is exact: loop body never entered (all skipped).
         if active_weight == 0.0:
             return None
-        if active_weight < 1.0:
+        # Tolerance avoids spurious normalization from IEEE 754 rounding
+        # (e.g. 0.50 + 0.30 + 0.20 = 0.9999999999999999 in float).
+        if active_weight < 1.0 - 1e-9:
             total /= active_weight
 
     return total
@@ -322,7 +325,10 @@ def _compute_midterm_aggregate(state: SimulationState, cfg: GradingConfig) -> fl
         "forum": (state.forum_scores, max(state.n_total_forums, len(state.forum_scores))),
     }
     result = _aggregate_components(component_data, cfg.midterm_components, cfg.missing_policy)
-    return result if result is not None else 0.0
+    # None only returned when all components empty under redistribute.
+    # has_gradable_work gate in _filter_eligible_states prevents this path.
+    assert result is not None, "midterm aggregate should not be None after has_gradable_work gate"
+    return result
 
 
 def _filter_eligible_states(
@@ -340,6 +346,8 @@ def _filter_eligible_states(
         if state.has_dropped_out:
             state.outcome = "Withdrawn"
             continue
+        # Check all possible grading inputs. gpa_count covers exam_only mode
+        # where final_score is the only graded item (not in score lists).
         has_gradable_work = (
             state.midterm_exam_scores
             or state.assignment_scores
