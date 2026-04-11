@@ -307,10 +307,11 @@ def _aggregate_components(
 
     if missing_policy == "redistribute":
         # active_weight == 0.0 is exact: loop body never entered (all skipped).
-        # active_weight < 1.0 is monotone-safe: weights only added, never subtracted.
         if active_weight == 0.0:
             return None
-        if active_weight < 1.0:
+        # Tolerance avoids spurious normalization from IEEE 754 rounding
+        # (e.g. 0.50 + 0.30 + 0.20 = 0.9999999999999999 in float).
+        if active_weight < 1.0 - 1e-9:
             total /= active_weight
 
     return total
