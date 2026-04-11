@@ -160,6 +160,7 @@ SynthEd/
 │   │   ├── engine.py            # Orchestrator (delegates to theories/)
 │   │   ├── engine_config.py     # EngineConfig frozen dataclass (70 constants)
 │   │   ├── grading.py           # GradingConfig + outcome classification
+│   │   ├── state.py              # SimulationState + state management (extracted from engine)
 │   │   ├── statistics.py        # summary_statistics (extracted from engine)
 │   │   ├── environment.py       # ODL course structure + positive events
 │   │   ├── social_network.py    # Peer network with link decay
@@ -267,5 +268,8 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 | `test_grading.py` | 47 | GradingConfig, outcome classification, semester grades |
 | `test_engine_grading.py` | 6 | Engine grading integration, floor-adjusted outcomes |
 | `test_engine_config.py` | 19 | EngineConfig frozen dataclass, validation, replace |
+| `test_baulke_institutional.py` | 11 | Baulke institutional modulation, threshold scaling |
+| `test_pipeline_config.py` | 19 | PipelineConfig frozen dataclass, serialization |
+| `test_theory_protocol.py` | 17 | TheoryModule protocol, phase dispatch, auto-discovery |
 
 CI runs tests across **Python 3.10, 3.11, and 3.12** via [GitHub Actions](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml).
