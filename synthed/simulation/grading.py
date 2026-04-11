@@ -245,26 +245,11 @@ def calculate_semester_grade(
         "forum": (forum_scores, max(n_total_forums, len(forum_scores))),
     }
 
-    midterm_total = 0.0
-    active_weight = 0.0
-
-    for comp_name, weight in config.midterm_components.items():
-        scores, n_total = component_data.get(comp_name, ([], 0))
-        if not scores:
-            if config.missing_policy == "redistribute":
-                continue  # Weight redistributed
-            comp_mean = 0.0
-        else:
-            comp_mean = sum(scores) / max(n_total, 1)
-        midterm_total += comp_mean * weight
-        active_weight += weight
-
-    # Redistribute if needed
-    if config.missing_policy == "redistribute":
-        if active_weight == 0.0:
-            return None
-        if active_weight < 1.0:
-            midterm_total /= active_weight
+    midterm_total = _aggregate_components(
+        component_data, config.midterm_components, config.missing_policy,
+    )
+    if midterm_total is None:
+        return None
 
     semester = midterm_total * config.midterm_weight
     if config.assessment_mode != "continuous" and final_score is not None:
@@ -295,6 +280,40 @@ def check_dual_hurdle_pass(
 # ---------------------------------------------------------------------------
 
 
+def _aggregate_components(
+    component_data: dict[str, tuple[list[float], int]],
+    weights: dict[str, float],
+    missing_policy: str = "zero",
+) -> float | None:
+    """Compute weighted aggregate from component scores.
+
+    Shared by ``_compute_midterm_aggregate`` and ``calculate_semester_grade``.
+    When *missing_policy* is ``"redistribute"``, empty components are skipped
+    and remaining weights are renormalized.  Returns ``None`` if all
+    components are empty under redistribute policy.
+    """
+    total = 0.0
+    active_weight = 0.0
+    for comp_name, weight in weights.items():
+        scores, n_total = component_data.get(comp_name, ([], 0))
+        if not scores:
+            if missing_policy == "redistribute":
+                continue
+            comp_mean = 0.0
+        else:
+            comp_mean = sum(scores) / max(n_total, 1)
+        total += comp_mean * weight
+        active_weight += weight
+
+    if missing_policy == "redistribute":
+        if active_weight == 0.0:
+            return None
+        if active_weight < 1.0:
+            total /= active_weight
+
+    return total
+
+
 def _compute_midterm_aggregate(state: SimulationState, cfg: GradingConfig) -> float:
     """Compute weighted midterm aggregate from component scores."""
     component_data: dict[str, tuple[list[float], int]] = {
@@ -302,12 +321,8 @@ def _compute_midterm_aggregate(state: SimulationState, cfg: GradingConfig) -> fl
         "assignment": (state.assignment_scores, max(state.n_total_assignments, len(state.assignment_scores))),
         "forum": (state.forum_scores, max(state.n_total_forums, len(state.forum_scores))),
     }
-    total = 0.0
-    for comp_name, weight in cfg.midterm_components.items():
-        scores, n = component_data.get(comp_name, ([], 0))
-        comp_mean = sum(scores) / max(n, 1) if scores else 0.0
-        total += comp_mean * weight
-    return total
+    result = _aggregate_components(component_data, cfg.midterm_components, cfg.missing_policy)
+    return result if result is not None else 0.0
 
 
 def _filter_eligible_states(
@@ -325,7 +340,13 @@ def _filter_eligible_states(
         if state.has_dropped_out:
             state.outcome = "Withdrawn"
             continue
-        if state.gpa_count == 0:
+        has_gradable_work = (
+            state.midterm_exam_scores
+            or state.assignment_scores
+            or state.forum_scores
+            or state.gpa_count > 0
+        )
+        if not has_gradable_work:
             state.outcome = "Fail"
             continue
         if cfg.exam_eligibility_threshold is not None:

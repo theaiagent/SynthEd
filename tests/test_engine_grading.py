@@ -103,7 +103,12 @@ class TestRelativeGrading:
             assert state.outcome in valid, f"Unexpected outcome: {state.outcome}"
 
     def test_relative_changes_outcome_distribution(self):
-        """Same seed, absolute vs relative produce different outcome counts."""
+        """Same seed, absolute vs relative produce different outcome counts.
+
+        n=50 with fixed seed=42 is sufficient for stable divergence between
+        absolute and relative grading. If thresholds change, increase n or
+        add tolerance.
+        """
         students_abs = _make_students(50, seed=42)
         students_rel = _make_students(50, seed=42)
 
