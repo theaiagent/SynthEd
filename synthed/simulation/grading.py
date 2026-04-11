@@ -2,6 +2,7 @@
 
 Provides :class:`GradingConfig` (frozen dataclass) for institution-level
 grading policy, scale conversion, and outcome classification utilities.
+Also provides grading orchestration free functions extracted from SimulationEngine.
 """
 from __future__ import annotations
 
@@ -9,8 +10,12 @@ import enum
 import logging
 import math
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from .state import SimulationState
 
 logger = logging.getLogger(__name__)
 
@@ -283,3 +288,175 @@ def check_dual_hurdle_pass(
         if final_score is None or final_score < config.component_pass_thresholds["final"]:
             return False
     return True
+
+
+# ---------------------------------------------------------------------------
+# Grading orchestration — free functions extracted from SimulationEngine
+# ---------------------------------------------------------------------------
+
+
+def _compute_midterm_aggregate(state: SimulationState, cfg: GradingConfig) -> float:
+    """Compute weighted midterm aggregate from component scores."""
+    component_data: dict[str, tuple[list[float], int]] = {
+        "exam": (state.midterm_exam_scores, len(state.midterm_exam_scores)),
+        "assignment": (state.assignment_scores, max(state.n_total_assignments, len(state.assignment_scores))),
+        "forum": (state.forum_scores, max(state.n_total_forums, len(state.forum_scores))),
+    }
+    total = 0.0
+    for comp_name, weight in cfg.midterm_components.items():
+        scores, n = component_data.get(comp_name, ([], 0))
+        comp_mean = sum(scores) / max(n, 1) if scores else 0.0
+        total += comp_mean * weight
+    return total
+
+
+def _filter_eligible_states(
+    states: dict[str, SimulationState],
+    cfg: GradingConfig,
+    floor: float,
+) -> dict[str, float]:
+    """Compute semester_grade and filter eligible students.
+
+    Sets outcome for ineligible students (Withdrawn, Fail).
+    Returns dict of sid -> raw [0-1] semester_grade, NOT floor-adjusted.
+    """
+    eligible: dict[str, float] = {}
+    for sid, state in states.items():
+        if state.has_dropped_out:
+            state.outcome = "Withdrawn"
+            continue
+        if state.gpa_count == 0:
+            state.outcome = "Fail"
+            continue
+        if cfg.exam_eligibility_threshold is not None:
+            midterm_agg = _compute_midterm_aggregate(state, cfg)
+            adjusted_midterm = floor + (1.0 - floor) * midterm_agg
+            if adjusted_midterm < cfg.exam_eligibility_threshold:
+                state.outcome = "Fail"
+                continue
+        grade = calculate_semester_grade(
+            cfg,
+            midterm_exam_scores=state.midterm_exam_scores,
+            assignment_scores=state.assignment_scores,
+            forum_scores=state.forum_scores,
+            final_score=state.final_score,
+            n_total_assignments=state.n_total_assignments,
+            n_total_forums=state.n_total_forums,
+        )
+        state.semester_grade = grade
+        if grade is not None:
+            eligible[sid] = grade
+        else:
+            state.outcome = "Fail"
+    return eligible
+
+
+def _classify_absolute_single(
+    state: SimulationState, cfg: GradingConfig, floor: float, grade: float,
+) -> str:
+    """Classify a single student using absolute grading (floor-adjust + hurdle + classify).
+
+    Returns the outcome string: Distinction, Pass, or Fail.
+    """
+    adjusted_grade = floor + (1.0 - floor) * grade
+    midterm_agg = _compute_midterm_aggregate(state, cfg)
+    adjusted_midterm = floor + (1.0 - floor) * midterm_agg
+    adjusted_final = (
+        (floor + (1.0 - floor) * state.final_score)
+        if state.final_score is not None
+        else None
+    )
+    passes_hurdle = check_dual_hurdle_pass(cfg, adjusted_midterm, adjusted_final)
+    if passes_hurdle:
+        return classify_outcome(adjusted_grade, cfg)
+    return "Fail"
+
+
+def _classify_relative(
+    states: dict[str, SimulationState],
+    cfg: GradingConfig,
+    floor: float,
+    sids: list[str],
+    normalized: list[float],
+) -> None:
+    """Classify students using normalized t-scores with dual-hurdle check."""
+    for sid, norm_score in zip(sids, normalized, strict=True):
+        state = states[sid]
+        midterm_agg = _compute_midterm_aggregate(state, cfg)
+        adjusted_midterm = floor + (1.0 - floor) * midterm_agg
+        adjusted_final = (
+            (floor + (1.0 - floor) * state.final_score)
+            if state.final_score is not None
+            else None
+        )
+        passes_hurdle = check_dual_hurdle_pass(cfg, adjusted_midterm, adjusted_final)
+        if passes_hurdle:
+            state.outcome = classify_outcome(norm_score, cfg)
+        else:
+            state.outcome = "Fail"
+
+
+def _assign_outcomes_absolute(
+    states: dict[str, SimulationState], grading_config: GradingConfig,
+) -> None:
+    """Assign semester_grade and outcome using absolute grading."""
+    floor = grading_config.grade_floor
+    eligible = _filter_eligible_states(states, grading_config, floor)
+    for sid, grade in eligible.items():
+        states[sid].outcome = _classify_absolute_single(
+            states[sid], grading_config, floor, grade,
+        )
+
+
+def _assign_outcomes_relative(
+    states: dict[str, SimulationState], grading_config: GradingConfig,
+) -> None:
+    """Assign semester_grade and outcome using relative (t-score) grading.
+
+    Falls back to absolute if fewer than 2 eligible or zero variance.
+    """
+    floor = grading_config.grade_floor
+    eligible = _filter_eligible_states(states, grading_config, floor)
+
+    if len(eligible) < 2:
+        logger.warning(
+            "Relative grading: fewer than 2 eligible students, "
+            "falling back to absolute",
+        )
+        for sid, grade in eligible.items():
+            states[sid].outcome = _classify_absolute_single(
+                states[sid], grading_config, floor, grade,
+            )
+        return
+
+    sids = list(eligible.keys())
+    raw_grades = [eligible[sid] for sid in sids]
+    t_scores = apply_relative_grading(raw_grades)
+    normalized = normalize_t_scores(t_scores)
+
+    if all(abs(t - 50.0) < 1e-9 for t in t_scores):
+        logger.warning(
+            "Relative grading: zero variance in semester grades, "
+            "falling back to absolute",
+        )
+        for sid, grade in eligible.items():
+            states[sid].outcome = _classify_absolute_single(
+                states[sid], grading_config, floor, grade,
+            )
+        return
+
+    _classify_relative(states, grading_config, floor, sids, normalized)
+
+
+def assign_outcomes(
+    states: dict[str, SimulationState],
+    grading_config: GradingConfig,
+) -> None:
+    """Assign semester_grade and outcome to each student at end of run.
+
+    Dispatches to absolute or relative grading based on grading_config.
+    """
+    if grading_config.grading_method == "relative":
+        _assign_outcomes_relative(states, grading_config)
+    else:
+        _assign_outcomes_absolute(states, grading_config)
