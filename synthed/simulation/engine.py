@@ -261,7 +261,7 @@ class SimulationEngine:
                     state.dropout_week = week
 
         # ── End-of-run: semester grade and outcome assignment ──
-        _assign_outcomes(states, self.grading_config, self.cfg, self.rng)
+        _assign_outcomes(states, self.grading_config)
 
         return all_records, states, self.network
 

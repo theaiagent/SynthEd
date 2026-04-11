@@ -16,7 +16,6 @@ import numpy as np
 
 if TYPE_CHECKING:
     from .state import SimulationState
-    from .engine_config import EngineConfig
 
 logger = logging.getLogger(__name__)
 
@@ -452,14 +451,10 @@ def _assign_outcomes_relative(
 def assign_outcomes(
     states: dict[str, SimulationState],
     grading_config: GradingConfig,
-    engine_config: EngineConfig | None = None,
-    rng: np.random.Generator | None = None,
 ) -> None:
     """Assign semester_grade and outcome to each student at end of run.
 
     Dispatches to absolute or relative grading based on grading_config.
-    ``engine_config`` and ``rng`` are accepted for API symmetry but currently
-    unused — all logic depends only on grading_config.
     """
     if grading_config.grading_method == "relative":
         _assign_outcomes_relative(states, grading_config)
