@@ -1,5 +1,10 @@
 """Tests for SynthEd Dashboard config bridge, distribution normalization, and charts."""
 
+import pytest
+
+pytest.importorskip("shiny", reason="Dashboard tests require shiny (pip install -e '.[dashboard]')")
+pytest.importorskip("plotly", reason="Dashboard tests require plotly (pip install -e '.[dashboard]')")
+
 from synthed.pipeline_config import PipelineConfig
 from synthed.dashboard.config_bridge import (
     config_to_dict,
