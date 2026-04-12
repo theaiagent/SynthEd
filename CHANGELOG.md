@@ -2,6 +2,19 @@
 
 All notable changes to SynthEd are documented here.
 
+## [Unreleased]
+
+### Changed
+- **Spectrum refactoring**: 3 binary + 1 integer persona field converted to 3 continuous [0,1] floats — `is_employed`+`weekly_work_hours` → `employment_intensity`, `has_family_responsibilities` → `family_responsibility_level`, `has_reliable_internet` → `internet_reliability`
+- Factory uses Beta distributions: Beta(2.5,3) employment, Beta(2,4) family, Beta(8,2)/Beta(4,3) internet (SES-dependent)
+- Bean & Metzner: `_OVERWORK_PENALTY` → `_EMPLOYMENT_PRESSURE_FACTOR` (0.04), `_OVERWORK_THRESHOLD_HOURS` removed, continuous pressure formulas
+- Kember: `_OC_STRESS_THRESHOLD` removed, fully continuous opportunity cost via `employment_intensity * financial_stress * _OC_FACTOR`
+- Academic Exhaustion: 1.5x scaling compensation for employment /40→/60 domain shift
+- Engine: probability-weighted login hours, continuous live session attendance penalty
+- Sobol parameter space: 69 → 68 params (`_OC_STRESS_THRESHOLD` removed, `_OVERWORK_PENALTY` renamed)
+- `CALIBRATION_DATA` re-measured post spectrum refactoring (dropout rates shifted ~22% lower)
+- README Key Features reorganized into 4 categories, Zenodo description restructured
+
 ## [1.6.0] - 2026-04-12
 
 ### Changed
