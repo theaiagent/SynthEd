@@ -14,7 +14,8 @@ if TYPE_CHECKING:
 class TintoIntegration:
     """Update Tinto's academic and social integration based on week's events."""
 
-    _PHASE_ORDER: int = 10
+    _PHASE_ORDER: int = 10        # discovery sort (on_individual_step)
+    _ENGAGEMENT_ORDER: int = 100  # engagement composition order
 
     # ── tuneable constants ──
     _ACADEMIC_QUALITY_FACTOR: float = 0.05   # academic integration boost per quality delta
@@ -69,3 +70,12 @@ class TintoIntegration:
     def on_individual_step(self, ctx: TheoryContext) -> None:
         """Protocol dispatch: Phase 1 per-student."""
         self.update_integration(ctx.student, ctx.state, ctx.week, ctx.context, ctx.records)
+
+    def contribute_engagement_delta(self, ctx: TheoryContext) -> float:
+        """Integration effect on engagement (Tinto, 1975)."""
+        decay_attenuation = 1.0 / (1.0 + ctx.cfg._DECAY_DAMPING_FACTOR * (ctx.week - 1) ** 0.5)
+        return (
+            ctx.state.academic_integration * ctx.cfg._TINTO_ACADEMIC_WEIGHT
+            + ctx.state.social_integration * ctx.cfg._TINTO_SOCIAL_WEIGHT
+            - ctx.cfg._TINTO_DECAY_BASE * decay_attenuation
+        )

@@ -108,13 +108,23 @@ class SimulationEngine:
         if _missing:
             raise RuntimeError(f"discover_theories() missed required theories: {_missing}")
 
-        # Engagement-only theories (called inline in _update_engagement)
+        # Engagement-composition theories (not auto-discovered; lack _PHASE_METHODS)
         self.bean_metzner = BeanMetznerPressure()
         self.kember = KemberCostBenefit()
         self.moore = MooreTransactionalDistance()
         self.rovai = RovaiPersistence()
         self.gonzalez = GonzalezExhaustion()
         self.positive_events = PositiveEventHandler()
+
+        # Engagement dispatch list: discovered theories + inline theories.
+        # Inline theories are NOT auto-discovered (they lack _PHASE_METHODS).
+        # TODO: Migrate to full discovery when constructor injection is solved.
+        _eng = {id(t): t for t in self.theories if hasattr(t, "contribute_engagement_delta")}
+        for t in (self.bean_metzner, self.positive_events, self.rovai,
+                  self.moore, self.gonzalez, self.kember):
+            if hasattr(t, "contribute_engagement_delta"):
+                _eng[id(t)] = t
+        self._engagement_theories = sorted(_eng.values(), key=lambda t: t._ENGAGEMENT_ORDER)
 
         # Special lifecycle
         self.unavoidable_withdrawal = UnavoidableWithdrawal(
@@ -125,13 +135,9 @@ class SimulationEngine:
     def _make_ctx(self, student, state, records, week, context, states, week_records_by_student):
         """Build a TheoryContext for protocol dispatch.
 
-        avg_td is pre-computed here. For Phase 1 contexts it reflects
-        pre-update state; Baulke (on_post_peer_step) receives a Phase 2
-        peer_ctx where state is post-Phase-1.  _update_engagement
-        recomputes avg_td from current state independently.
-
-        Phase 1 hooks should avoid mutating TD-affecting fields
-        (coi_state, etc.) if they depend on avg_td consistency.
+        avg_td is pre-computed here from Moore.average() once per
+        student-week.  All phases (including contribute_engagement_delta)
+        use this single computation via ctx.avg_td.
         """
         active = [c for c in self.env.courses if c.id in state.courses_active] if state else []
         avg_td = self.moore.average(student, state, self.env) if student else 0.0
@@ -227,7 +233,7 @@ class SimulationEngine:
                         theory.on_individual_step(ctx)
                 self.gonzalez.update_exhaustion(student, state, week, week_context, week_records,
                                                 inst=self.inst)
-                self._update_engagement(student, state, week, week_context, week_records)
+                self._update_engagement(ctx)
 
             # ── Phase 2: Social network + peer influence (Epstein & Axtell) ──
             self.network.decay_links(decay_rate=self.cfg._NETWORK_DECAY_RATE)
@@ -472,89 +478,23 @@ class SimulationEngine:
                                  "impact": exam_quality - 0.5})
         return records
 
-    # ── ENGAGEMENT UPDATE (Multi-theory composer) ──
+    # ── ENGAGEMENT UPDATE (Protocol-dispatched + inline mechanics) ──
 
-    def _update_engagement(
-        self, student: StudentPersona, state: SimulationState,
-        week: int, context: dict, records: list[InteractionRecord],
-    ):
+    def _update_engagement(self, ctx: TheoryContext):
+        """Update engagement via protocol-dispatched theory deltas.
+
+        Theory contributions are dispatched in _ENGAGEMENT_ORDER.
+        Inline engine mechanics (academic outcomes, missed streak,
+        exam stress) are not theory-specific and remain here.
         """
-        Update engagement incorporating all theoretical anchors.
+        engagement = ctx.state.current_engagement
 
-        Tinto: Integration → institutional commitment → engagement
-        Bean & Metzner: Environmental stressors erode engagement
-        Rovai: Self-regulation sustains engagement across weeks
-        Kember: Cost-benefit perception modulates persistence
-        """
-        engagement = state.current_engagement
+        # Theory-contributed engagement deltas (protocol-dispatched)
+        for theory in self._engagement_theories:
+            engagement += theory.contribute_engagement_delta(ctx)
 
-        # ── Adaptive baseline decay ──
-        decay_attenuation = 1.0 / (1.0 + self.cfg._DECAY_DAMPING_FACTOR * (week - 1) ** 0.5)
-
-        # ── Tinto: Integration effect ──
-        integration_effect = (
-            state.academic_integration * self.cfg._TINTO_ACADEMIC_WEIGHT
-            + state.social_integration * self.cfg._TINTO_SOCIAL_WEIGHT
-            - self.cfg._TINTO_DECAY_BASE * decay_attenuation
-        )
-        engagement += integration_effect
-
-        # ── Bean & Metzner: Environmental pressure (with coping attenuation) ──
-        self.bean_metzner.update_coping(student, state)
-        engagement += self.bean_metzner.calculate_environmental_pressure(student, state.coping_factor)
-
-        # ── Environmental shocks: stochastic life events ──
-        if state.env_shock_remaining > 0:
-            engagement -= state.env_shock_magnitude * 0.05
-            state.env_shock_remaining -= 1
-            if state.env_shock_remaining == 0:
-                state.env_shock_magnitude = 0.0
-        else:
-            duration, magnitude = self.bean_metzner.stochastic_pressure_event(student, self.rng)
-            if duration > 0:
-                state.env_shock_remaining = duration
-                state.env_shock_magnitude = magnitude
-                engagement -= magnitude * 0.05
-                state.memory.append({
-                    "week": week, "event_type": "env_shock",
-                    "details": f"Environmental shock (magnitude={magnitude:.2f}, duration={duration}w)",
-                    "impact": -magnitude * 0.05,
-                })
-
-        # ── Positive environmental events (counter-pressure) ──
-        engagement += self.positive_events.apply(
-            context.get("positive_event"), student, state
-        )
-
-        # ── Rovai: Self-regulation buffer ──
-        engagement += self.rovai.regulation_buffer(student)
-
-        # ── SDT (Deci & Ryan, 1985): Motivation type effect ──
-        motivation_effect = {
-            "intrinsic": self.cfg._MOTIVATION_INTRINSIC_BOOST, "extrinsic": 0.0, "amotivation": -self.cfg._MOTIVATION_AMOTIVATION_PENALTY
-        }.get(state.current_motivation_type, 0.0)
-        engagement += motivation_effect
-
-        # ── Moore (1993): Transactional distance effect ──
-        avg_td = self.moore.average(student, state, self.env)
-        td_effect = -(avg_td - 0.5) * self.cfg._TD_EFFECT_FACTOR
-        engagement += td_effect
-
-        # ── Garrison et al. (2000): Community of Inquiry effect ──
-        coi = state.coi_state
-        coi_effect = (
-            coi.social_presence * self.cfg._COI_SOCIAL_WEIGHT
-            + coi.cognitive_presence * self.cfg._COI_COGNITIVE_WEIGHT
-            + coi.teaching_presence * self.cfg._COI_TEACHING_WEIGHT
-            - self.cfg._COI_BASELINE_OFFSET
-        )
-        engagement += coi_effect
-
-        # ── Gonzalez et al. (2025): Academic exhaustion drag ──
-        engagement += self.gonzalez.exhaustion_engagement_effect(state)
-
-        # ── Academic outcomes this week ──
-        for r in records:
+        # ── Inline engine mechanics (not theory-specific) ──
+        for r in ctx.records:
             if r.interaction_type in ("assignment_submit", "exam"):
                 if r.quality_score > self.cfg._HIGH_QUALITY_THRESHOLD:
                     engagement += self.cfg._HIGH_QUALITY_BOOST
@@ -562,28 +502,18 @@ class SimulationEngine:
                     engagement -= self.cfg._LOW_QUALITY_PENALTY
 
         # Missed assignments compound (Bäulke: perceived misfit grows)
-        if state.missed_assignments_streak >= 2:
-            engagement -= self.cfg._MISSED_STREAK_PENALTY * min(state.missed_assignments_streak - 1, self.cfg._MISSED_STREAK_CAP)
+        if ctx.state.missed_assignments_streak >= 2:
+            engagement -= self.cfg._MISSED_STREAK_PENALTY * min(
+                ctx.state.missed_assignments_streak - 1, self.cfg._MISSED_STREAK_CAP)
 
-        # ── Exam week stress (Neuroticism moderator) ──
-        if context.get("is_exam_week"):
-            engagement -= student.personality.neuroticism * self.cfg._NEUROTICISM_EXAM_FACTOR
+        # Exam week stress (Neuroticism moderator)
+        if ctx.context.get("is_exam_week"):
+            engagement -= ctx.student.personality.neuroticism * self.cfg._NEUROTICISM_EXAM_FACTOR
 
-        # ── Kember: Cost-benefit recalculation after major events ──
-        has_graded_item = any(
-            r.interaction_type in ("assignment_submit", "exam") for r in records
-        )
-        if context.get("is_exam_week") or state.missed_assignments_streak >= 2 or has_graded_item:
-            self.kember.recalculate(student, state, context, records, avg_td,
-                                    week=week, total_weeks=self.env.total_weeks,
-                                    inst=self.inst)
-            # Cost-benefit feeds back into engagement
-            engagement += (state.perceived_cost_benefit - 0.5) * self.cfg._CB_FEEDBACK_FACTOR
-
-        # ── Persona-based engagement floor (Rovai) ──
-        engagement = max(engagement, self.rovai.engagement_floor(student))
-
-        state.current_engagement = float(np.clip(engagement, self.cfg._ENGAGEMENT_CLIP_LO, self.cfg._ENGAGEMENT_CLIP_HI))
+        # Persona-based engagement floor (Rovai)
+        engagement = max(engagement, self.rovai.engagement_floor(ctx.student))
+        ctx.state.current_engagement = float(
+            np.clip(engagement, self.cfg._ENGAGEMENT_CLIP_LO, self.cfg._ENGAGEMENT_CLIP_HI))
 
     def summary_statistics(self, states: dict[str, SimulationState]) -> dict[str, Any]:
         """Compute aggregate statistics from simulation states."""
