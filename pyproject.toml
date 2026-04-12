@@ -30,6 +30,7 @@ dependencies = [
 
 [project.optional-dependencies]
 llm = ["openai>=1.0.0"]
+dashboard = ["shiny>=1.0", "plotly>=5.0", "htmltools"]
 dev = ["pytest>=7.0.0", "pytest-cov>=4.0.0", "ruff"]
 
 [project.urls]
