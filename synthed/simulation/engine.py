@@ -124,6 +124,11 @@ class SimulationEngine:
                   self.moore, self.gonzalez, self.kember):
             if hasattr(t, "contribute_engagement_delta"):
                 _eng[id(t)] = t
+        for t in _eng.values():
+            if not hasattr(t, "_ENGAGEMENT_ORDER"):
+                raise RuntimeError(
+                    f"{type(t).__name__} implements contribute_engagement_delta "
+                    f"but is missing _ENGAGEMENT_ORDER")
         self._engagement_theories = sorted(_eng.values(), key=lambda t: t._ENGAGEMENT_ORDER)
 
         # Special lifecycle
