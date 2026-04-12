@@ -62,8 +62,8 @@ class TestStudentPersona:
             personality=BigFiveTraits(conscientiousness=0.05, neuroticism=0.95),
             self_regulation=0.05, goal_commitment=0.05, self_efficacy=0.05,
             motivation_type="amotivation", financial_stress=0.95,
-            is_employed=True, weekly_work_hours=60,
-            has_family_responsibilities=True, perceived_cost_benefit=0.05,
+            employment_intensity=1.0,
+            family_responsibility_level=1.0, perceived_cost_benefit=0.05,
             learner_autonomy=0.05,
         )
         assert low.base_engagement_probability >= 0.05
@@ -73,12 +73,32 @@ class TestStudentPersona:
             personality=BigFiveTraits(conscientiousness=0.95, neuroticism=0.05),
             self_regulation=0.95, goal_commitment=0.95, self_efficacy=0.95,
             motivation_type="intrinsic", financial_stress=0.05,
-            is_employed=False, weekly_work_hours=0,
-            has_family_responsibilities=False, perceived_cost_benefit=0.95,
+            employment_intensity=0.0,
+            family_responsibility_level=0.0, perceived_cost_benefit=0.95,
             learner_autonomy=0.95,
         )
         assert high.base_engagement_probability <= 0.95
         assert high.base_dropout_risk >= 0.02
+
+    def test_continuous_fields_boundary_values(self):
+        """Continuous persona fields produce correct risk at 0.0 and 1.0 poles."""
+        # Zero external burden: ei=0, frl=0, ir=1.0
+        zero_burden = StudentPersona(
+            employment_intensity=0.0, family_responsibility_level=0.0,
+            internet_reliability=1.0,
+        )
+        # ext_risk floor: 0.0*0.10 + (0.2+0)*0.08 + 0.3*0.07 + (1-1.0)*0.6*0.05
+        assert zero_burden.base_dropout_risk < 0.5
+        ext_risk_component = 0.0 * 0.10 + 0.2 * 0.08 + 0.3 * 0.07 + 0.0
+        assert ext_risk_component < 0.04  # minimal external risk
+
+        # Max external burden: ei=1.0, frl=1.0, ir=0.0
+        max_burden = StudentPersona(
+            employment_intensity=1.0, family_responsibility_level=1.0,
+            internet_reliability=0.0,
+        )
+        assert max_burden.base_dropout_risk > zero_burden.base_dropout_risk
+        assert max_burden.base_engagement_probability < zero_burden.base_engagement_probability
 
 
 class TestBigFiveToDescription:
@@ -159,9 +179,8 @@ class TestStudentPersonaLevel:
             name="Test",
             age=30,
             gender="female",
-            is_employed=True,
-            weekly_work_hours=40,
-            has_family_responsibilities=True,
+            employment_intensity=0.67,
+            family_responsibility_level=0.8,
             financial_stress=0.8,
             self_regulation=0.3,
             digital_literacy=0.6,
@@ -178,15 +197,15 @@ class TestStudentPersonaLevel:
         assert "Student ID:" in desc
         assert "Age: 30" in desc
         assert "Gender: female" in desc
-        assert "employed 40h/wk" in desc
-        assert "Family responsibilities: yes" in desc
+        assert "employed ~40h/wk" in desc
+        assert "Family responsibilities: high" in desc
         assert "Financial stress: high" in desc
         assert "Self-regulation: low" in desc
         assert "Motivation: intrinsic" in desc
 
     def test_to_prompt_description_unemployed(self):
         """to_prompt_description() with unemployed student."""
-        p = StudentPersona(is_employed=False)
+        p = StudentPersona(employment_intensity=0.0)
         desc = p.to_prompt_description()
         assert "unemployed" in desc
 

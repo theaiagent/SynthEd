@@ -473,7 +473,7 @@ export OPENAI_API_KEY="your-key"
 python run_pipeline.py --n 100 --llm
 ```
 
-- **Persona-grounded:** Backstories are generated *from* real persona attributes via `to_prompt_description()`, not randomly. A student with `financial_stress=0.8` and `is_employed=True` gets a backstory reflecting financial hardship and work-life balance.
+- **Persona-grounded:** Backstories are generated *from* real persona attributes via `to_prompt_description()`, not randomly. A student with `financial_stress=0.8` and `employment_intensity=0.7` gets a backstory reflecting financial hardship and work-life balance.
 - **Providers:** OpenAI, Ollama (`--base-url`), any OpenAI-compatible API
 - **Cost control:** `--cost-threshold 2.0` prompts for confirmation
 - **Cache:** 7-day TTL, 10K-entry LRU eviction
@@ -548,7 +548,7 @@ pipeline = SynthEdPipeline(engine_config=custom_cfg, output_dir="./output", seed
 | `config.*` | PersonaConfig | `config.employment_rate` |
 | `engine.*` | EngineConfig | `engine._TINTO_DECAY_BASE` |
 | `tinto.*` | TintoIntegration | `tinto._ACADEMIC_EROSION` |
-| `bean.*` | BeanMetznerPressure | `bean._OVERWORK_PENALTY` |
+| `bean.*` | BeanMetznerPressure | `bean._EMPLOYMENT_PRESSURE_FACTOR` |
 | `baulke.*` | BaulkeDropoutPhase | `baulke._DECISION_RISK_MULTIPLIER` |
 | `sdt.*` | SDTMotivationDynamics | `sdt._INTRINSIC_THRESHOLD` |
 | `rovai.*` | RovaiPersistence | `rovai._FLOOR_SCALE` |

@@ -52,11 +52,11 @@ class TestTinto:
 class TestBeanMetzner:
     def test_employed_has_more_pressure(self):
         bm = BeanMetznerPressure()
-        employed = StudentPersona(is_employed=True, weekly_work_hours=40,
-                                  has_family_responsibilities=True,
+        employed = StudentPersona(employment_intensity=0.67,
+                                  family_responsibility_level=0.8,
                                   financial_stress=0.7)
-        unemployed = StudentPersona(is_employed=False, weekly_work_hours=0,
-                                    has_family_responsibilities=False,
+        unemployed = StudentPersona(employment_intensity=0.0,
+                                    family_responsibility_level=0.0,
                                     financial_stress=0.2)
         assert bm.calculate_environmental_pressure(employed) < bm.calculate_environmental_pressure(unemployed)
 
@@ -146,8 +146,8 @@ class TestGonzalez:
     def test_assignments_increase_exhaustion(self):
         gonzalez = GonzalezExhaustion()
         student = StudentPersona(
-            is_employed=True, weekly_work_hours=40,
-            has_family_responsibilities=True,
+            employment_intensity=0.67,
+            family_responsibility_level=0.8,
             financial_stress=0.7, self_regulation=0.3,
             personality=BigFiveTraits(conscientiousness=0.3),
         )
@@ -344,8 +344,8 @@ class TestBeanMetznerCoping:
     def test_coping_attenuates_pressure(self):
         """Coping reduces the magnitude of environmental pressure."""
         bm = BeanMetznerPressure()
-        student = StudentPersona(is_employed=True, weekly_work_hours=40,
-                                 has_family_responsibilities=True,
+        student = StudentPersona(employment_intensity=0.67,
+                                 family_responsibility_level=0.8,
                                  financial_stress=0.7)
         pressure_no_coping = bm.calculate_environmental_pressure(student, coping_factor=0.0)
         pressure_with_coping = bm.calculate_environmental_pressure(student, coping_factor=0.3)
@@ -357,8 +357,8 @@ class TestBeanMetznerCoping:
     def test_coping_zero_preserves_original(self):
         """coping_factor=0.0 produces identical result to the old behavior."""
         bm = BeanMetznerPressure()
-        student = StudentPersona(is_employed=True, weekly_work_hours=40,
-                                 has_family_responsibilities=True,
+        student = StudentPersona(employment_intensity=0.67,
+                                 family_responsibility_level=0.8,
                                  financial_stress=0.7)
         p1 = bm.calculate_environmental_pressure(student)
         p2 = bm.calculate_environmental_pressure(student, coping_factor=0.0)
@@ -429,10 +429,10 @@ class TestBeanMetznerDisability:
         """Disabled student gets more negative pressure."""
         bm = BeanMetznerPressure()
         student_dis = StudentPersona(disability_severity=0.5,
-                                     is_employed=True, weekly_work_hours=40,
+                                     employment_intensity=0.67,
                                      financial_stress=0.7)
         student_no = StudentPersona(disability_severity=0.0,
-                                    is_employed=True, weekly_work_hours=40,
+                                    employment_intensity=0.67,
                                     financial_stress=0.7)
         p_dis = bm.calculate_environmental_pressure(student_dis)
         p_no = bm.calculate_environmental_pressure(student_no)
@@ -441,6 +441,6 @@ class TestBeanMetznerDisability:
     def test_severe_disability_more_pressure(self):
         """Higher severity means more environmental pressure."""
         bm = BeanMetznerPressure()
-        mild = StudentPersona(disability_severity=0.1, is_employed=False)
-        severe = StudentPersona(disability_severity=0.8, is_employed=False)
+        mild = StudentPersona(disability_severity=0.1, employment_intensity=0.0)
+        severe = StudentPersona(disability_severity=0.8, employment_intensity=0.0)
         assert bm.calculate_environmental_pressure(severe) < bm.calculate_environmental_pressure(mild)

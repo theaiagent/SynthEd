@@ -17,9 +17,8 @@ class BeanMetznerPressure:
     _ENGAGEMENT_ORDER: int = 200  # engagement composition order
 
     # ── tuneable constants ──
-    _OVERWORK_THRESHOLD_HOURS: int = 30       # weekly hours beyond which overwork penalty applies
-    _OVERWORK_PENALTY: float = 0.025          # engagement erosion from overwork
-    _FAMILY_PENALTY: float = 0.02             # engagement erosion from family responsibilities
+    _EMPLOYMENT_PRESSURE_FACTOR: float = 0.04  # continuous engagement erosion from employment
+    _FAMILY_PRESSURE_FACTOR: float = 0.02     # continuous engagement erosion from family responsibilities
     _FINANCIAL_STRESS_THRESHOLD: float = 0.5  # stress level triggering financial penalty
     _FINANCIAL_PENALTY: float = 0.015         # engagement erosion from financial stress
     _DISABILITY_PENALTY: float = 0.015           # engagement erosion from disability-related challenges
@@ -48,10 +47,8 @@ class BeanMetznerPressure:
         Returns a negative value representing engagement erosion.
         """
         env_pressure = 0.0
-        if student.is_employed and student.weekly_work_hours > self._OVERWORK_THRESHOLD_HOURS:
-            env_pressure -= self._OVERWORK_PENALTY  # Overwork erodes engagement
-        if student.has_family_responsibilities:
-            env_pressure -= self._FAMILY_PENALTY
+        env_pressure -= student.employment_intensity * self._EMPLOYMENT_PRESSURE_FACTOR
+        env_pressure -= student.family_responsibility_level * self._FAMILY_PRESSURE_FACTOR
         if student.financial_stress > self._FINANCIAL_STRESS_THRESHOLD:
             env_pressure -= self._FINANCIAL_PENALTY
         if student.disability_severity > 0:
@@ -67,8 +64,8 @@ class BeanMetznerPressure:
         Risk is modulated by employment status, family responsibilities, and financial stress.
         """
         risk_score = (
-            (1.0 if student.is_employed else 0.0) * self._SHOCK_EMPLOY_WEIGHT
-            + (1.0 if student.has_family_responsibilities else 0.0) * self._SHOCK_FAMILY_WEIGHT
+            student.employment_intensity * self._SHOCK_EMPLOY_WEIGHT
+            + student.family_responsibility_level * self._SHOCK_FAMILY_WEIGHT
             + student.financial_stress * self._SHOCK_STRESS_WEIGHT
         )
         shock_prob = self._SHOCK_BASE_PROB * risk_score

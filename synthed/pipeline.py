@@ -487,7 +487,9 @@ class SynthEdPipeline:
                 "display_id": s.display_id,
                 "age": s.age,
                 "gender": s.gender,
-                "is_employed": s.is_employed,
+                "employment_intensity": s.employment_intensity,
+                "family_responsibility_level": s.family_responsibility_level,
+                "internet_reliability": s.internet_reliability,
                 "prior_gpa": s.prior_gpa,
                 "socioeconomic_level": s.socioeconomic_level,
                 # Cluster 1: Student Characteristics

@@ -322,7 +322,7 @@ class SimulationEngine:
         login_rate = engagement * self.cfg._LOGIN_ENG_MULTIPLIER * (effective_login_floor + self.cfg._LOGIN_LITERACY_SCALE * student.digital_literacy)
         n_logins = max(0, int(self.rng.poisson(login_rate)))
         for _ in range(n_logins):
-            if student.is_employed:
+            if self.rng.random() < student.employment_intensity:
                 hour = float(self.rng.choice([*range(18, 24), *range(0, 2)]) + self.rng.uniform(0, 1))
             else:
                 hour = float(self.rng.uniform(8, 22))
@@ -433,8 +433,7 @@ class SimulationEngine:
         if not course.has_live_sessions:
             return records
         attend_prob = engagement * self.cfg._LIVE_ENG_FACTOR * student.time_management
-        if student.is_employed:
-            attend_prob *= self.cfg._LIVE_EMPLOYED_PENALTY  # Bean & Metzner: work conflict
+        attend_prob *= (1.0 - student.employment_intensity * (1.0 - self.cfg._LIVE_EMPLOYED_PENALTY))
         if self.rng.random() < attend_prob:
             records.append(InteractionRecord(
                 student_id=student.id, week=week, course_id=course.id,

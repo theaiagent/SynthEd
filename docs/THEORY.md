@@ -94,7 +94,7 @@ Organized using Rovai's (2003) composite persistence model:
 |---------|------------|--------|
 | **Student Characteristics** | personality (Big Five), goal_commitment, ode_beliefs, motivation_type | Tinto, Kember, Costa & McCrae, Deci & Ryan |
 | **Student Skills** | self_regulation, digital_literacy, time_management, learner_autonomy | Rovai, Moore, Baulke |
-| **External Factors** | is_employed, weekly_work_hours, financial_stress, has_family_responsibilities | Bean & Metzner, Economic Rationality |
+| **External Factors** | employment_intensity, family_responsibility_level, financial_stress | Bean & Metzner, Economic Rationality |
 | **Internal Factors** | academic_integration, social_integration, self_efficacy | Tinto, Bandura |
 | **Emergent Properties** | social_presence, cognitive_presence, teaching_presence | Garrison et al. |
 | **Network Properties** | network_degree, peer influence, dropout contagion | Epstein & Axtell |
@@ -176,7 +176,7 @@ SynthEd/
 │   │   └── types.py             # ReferenceStatistics, ValidationResult
 │   ├── analysis/
 │   │   ├── sensitivity.py       # OAT parameter sweeps
-│   │   ├── sobol_sensitivity.py # Sobol variance decomposition (69 params)
+│   │   ├── sobol_sensitivity.py # Sobol variance decomposition (68 params)
 │   │   ├── trait_calibrator.py  # Optuna Bayesian optimization
 │   │   ├── oulad_targets.py     # OULAD reference data extraction
 │   │   ├── oulad_validator.py   # Held-out module validation

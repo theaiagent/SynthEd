@@ -131,7 +131,7 @@ class TestBuildEnrichmentPrompt:
 
         user_content = messages[1]["content"]
         assert str(persona.age) in user_content
-        if persona.is_employed:
+        if persona.employment_intensity > 0.05:
             assert "employed" in user_content
         else:
             assert "unemployed" in user_content

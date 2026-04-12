@@ -37,9 +37,8 @@ def _make_state(**kwargs) -> SimulationState:
 def _high_risk_student() -> StudentPersona:
     """Student with maximum Bean & Metzner risk factors."""
     return StudentPersona(
-        is_employed=True,
-        weekly_work_hours=40,
-        has_family_responsibilities=True,
+        employment_intensity=0.67,
+        family_responsibility_level=0.8,
         financial_stress=0.9,
     )
 
@@ -47,9 +46,8 @@ def _high_risk_student() -> StudentPersona:
 def _low_risk_student() -> StudentPersona:
     """Student with no Bean & Metzner risk factors."""
     return StudentPersona(
-        is_employed=False,
-        weekly_work_hours=0,
-        has_family_responsibilities=False,
+        employment_intensity=0.0,
+        family_responsibility_level=0.0,
         financial_stress=0.0,
     )
 

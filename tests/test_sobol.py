@@ -188,9 +188,9 @@ class TestOverrides:
         _apply_engine_overrides(
             pipeline,
             {},
-            {"bean": {"_OVERWORK_PENALTY": 0.999}},
+            {"bean": {"_EMPLOYMENT_PRESSURE_FACTOR": 0.999}},
         )
-        assert pipeline.engine.bean_metzner._OVERWORK_PENALTY == 0.999
+        assert pipeline.engine.bean_metzner._EMPLOYMENT_PRESSURE_FACTOR == 0.999
 
 
 # ─────────────────────────────────────────────

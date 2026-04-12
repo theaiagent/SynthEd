@@ -208,8 +208,8 @@ class SyntheticDataValidator:
                 details=f"Gender proportions match reference: p={chi2_p:.4f}",
             ))
 
-        # Employment rate
-        emp_rate = sum(1 for s in students if s.get("is_employed")) / len(students)
+        # Employment rate (proportion with employment_intensity > 0.05)
+        emp_rate = sum(1 for s in students if s.get("employment_intensity", 0) > 0.05) / len(students)
         z_stat, z_p = self._proportion_z_test(
             emp_rate, self.reference.employment_rate, len(students)
         )
@@ -622,9 +622,9 @@ class SyntheticDataValidator:
             text = s["backstory"].lower()
             # Look for mentions of key persona attributes
             attribute_keywords = []
-            if s.get("is_employed"):
+            if s.get("employment_intensity", 0) > 0.05:
                 attribute_keywords.extend(["work", "job", "employ", "career"])
-            if s.get("has_family_responsibilities"):
+            if s.get("family_responsibility_level", 0) > 0.05:
                 attribute_keywords.extend(["family", "child", "parent", "care"])
             motivation = s.get("motivation_type", "")
             if motivation == "intrinsic":
