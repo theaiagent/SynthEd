@@ -485,13 +485,16 @@ class SimulationEngine:
 
     # ── ENGAGEMENT UPDATE (Protocol-dispatched + inline mechanics) ──
 
-    def _update_engagement(self, ctx: TheoryContext):
+    def _update_engagement(self, ctx: TheoryContext) -> None:
         """Update engagement via protocol-dispatched theory deltas.
 
         Theory contributions are dispatched in _ENGAGEMENT_ORDER.
         Inline engine mechanics (academic outcomes, missed streak,
         exam stress) are not theory-specific and remain here.
         """
+        assert ctx.student is not None
+        assert ctx.state is not None
+        assert ctx.records is not None
         engagement = ctx.state.current_engagement
 
         # Theory-contributed engagement deltas (protocol-dispatched)
