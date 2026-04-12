@@ -136,9 +136,10 @@ Before this, `bean_metzner.update_coping(student, state)` adapts the coping fact
 |----------|--------|---------|
 | `coping_factor` | `SimulationState` | 0.0, grows over time (max 0.5) |
 | `financial_stress` | `StudentPersona` | Varies |
-| `is_employed` | `StudentPersona` | Varies |
+| `employment_intensity` | `StudentPersona` | [0,1] continuous |
+| `family_responsibility_level` | `StudentPersona` | [0,1] continuous |
 
-**What it does:** Environmental pressure from employment, financial stress, and family obligations erodes engagement. Coping develops over time and attenuates the pressure. Employed students with high financial stress feel the largest penalty.
+**What it does:** Environmental pressure from employment intensity, financial stress, and family obligations erodes engagement. Coping develops over time and attenuates the pressure. Higher employment intensity and financial stress produce the largest penalty.
 
 **Typical magnitude:** Ranges from ~0 (low-stress, adapted student) to approximately **-0.04** (high-stress employed student early in semester).
 

@@ -72,7 +72,7 @@ sequence.
 
 | | Fields |
 |---|--------|
-| **Reads** | `StudentPersona.is_employed`, `.weekly_work_hours`, `.has_family_responsibilities`, `.financial_stress`, `.disability_severity`, `.self_regulation`, `.personality.conscientiousness` |
+| **Reads** | `StudentPersona.employment_intensity`, `.family_responsibility_level`, `.financial_stress`, `.disability_severity`, `.self_regulation`, `.personality.conscientiousness` |
 | **Writes** | `SimulationState.coping_factor`, `SimulationState.env_shock_remaining`, `.env_shock_magnitude` (shock state managed in `contribute_engagement_delta()`) |
 | **When** | Engagement update -- `contribute_engagement_delta()` dispatched at `_ENGAGEMENT_ORDER = 200` |
 
@@ -81,7 +81,7 @@ sequence.
 | Constant | Default | Purpose |
 |----------|---------|---------|
 | `_OVERWORK_THRESHOLD_HOURS` | 30 | Weekly hours triggering overwork penalty |
-| `_OVERWORK_PENALTY` | 0.025 | Engagement erosion from overwork |
+| `_EMPLOYMENT_PRESSURE_FACTOR` | 0.04 | Continuous employment pressure erosion |
 | `_FAMILY_PENALTY` | 0.02 | Engagement erosion from family responsibilities |
 | `_FINANCIAL_STRESS_THRESHOLD` | 0.5 | Stress level triggering financial penalty |
 | `_FINANCIAL_PENALTY` | 0.015 | Engagement erosion from financial stress |
@@ -104,7 +104,7 @@ sequence.
 
 | | Fields |
 |---|--------|
-| **Reads** | `SimulationState.perceived_mastery`, `.perceived_mastery_count`, `.missed_assignments_streak`, `.coi_state` (all 3 presences), `.social_integration`; `StudentPersona.is_employed`, `.financial_stress`, `.has_family_responsibilities`; Moore avg TD |
+| **Reads** | `SimulationState.perceived_mastery`, `.perceived_mastery_count`, `.missed_assignments_streak`, `.coi_state` (all 3 presences), `.social_integration`; `StudentPersona.employment_intensity`, `.financial_stress`, `.family_responsibility_level`; Moore avg TD |
 | **Writes** | `SimulationState.perceived_cost_benefit` |
 | **When** | Engagement update -- `contribute_engagement_delta()` dispatched at `_ENGAGEMENT_ORDER = 900`; conditional gate fires only on graded-item weeks, exam weeks, or missed streak >= 2 |
 
@@ -119,7 +119,7 @@ sequence.
 | `_COI_COMPOSITE_FACTOR` | 0.02 | CoI composite influence on value |
 | `_GPA_CB_FACTOR` | 0.01 | CB sensitivity to perceived mastery |
 | `_OC_FACTOR` | 0.015 | Opportunity cost pressure per week |
-| `_OC_STRESS_THRESHOLD` | 0.5 | Financial stress above this triggers OC |
+| *(removed)* | — | OC now uses continuous `employment_intensity × financial_stress` (no threshold) |
 | `_TIME_DISCOUNT_FACTOR` | 0.008 | Time-based CB erosion per week |
 | `_CLIP_LO` / `_HI` | 0.05 / 0.95 | Cost-benefit bounds |
 
@@ -314,7 +314,7 @@ See [dropout-mechanics.md](dropout-mechanics.md) for the full 6-phase state mach
 
 | | Fields |
 |---|--------|
-| **Reads** | `StudentPersona.is_employed`, `.weekly_work_hours`, `.has_family_responsibilities`, `.financial_stress`, `.self_regulation`, `.personality.conscientiousness`; week context (`active_assignments`, `positive_event`) |
+| **Reads** | `StudentPersona.employment_intensity`, `.family_responsibility_level`, `.financial_stress`, `.self_regulation`, `.personality.conscientiousness`; week context (`active_assignments`, `positive_event`) |
 | **Writes** | `SimulationState.exhaustion` (`.exhaustion_level`, `.recovery_capacity`) |
 | **When** | Phase 1 -- after SDT, before engagement update. Also `exhaustion_engagement_effect()` called inside `_update_engagement()` |
 

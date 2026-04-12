@@ -24,8 +24,8 @@ Persona attributes organized by Rovai's (2003) four factor clusters.
 | **Identity** | `student_id`, `display_id`, `name`, `age`, `gender` |
 | **Big Five** | `openness`, `conscientiousness`, `extraversion`, `agreeableness`, `neuroticism` |
 | **Cluster 1: Student Characteristics** (Tinto, Kember) | `prior_gpa`, `prior_education_level`, `years_since_last_education`, `enrolled_courses`, `goal_commitment`, `ode_beliefs`, `motivation_type`, `goal_orientation` |
-| **Cluster 2: Student Skills** (Rovai, Moore) | `digital_literacy`, `self_regulation`, `time_management`, `learner_autonomy`, `academic_reading_writing`, `has_reliable_internet`, `disability_severity`, `device_type`, `preferred_learning_style` |
-| **Cluster 3: External Factors** (Bean & Metzner) | `is_employed`, `weekly_work_hours`, `has_family_responsibilities`, `financial_stress`, `socioeconomic_level`, `perceived_cost_benefit` |
+| **Cluster 2: Student Skills** (Rovai, Moore) | `digital_literacy`, `self_regulation`, `time_management`, `learner_autonomy`, `academic_reading_writing`, `internet_reliability`, `disability_severity`, `device_type`, `preferred_learning_style` |
+| **Cluster 3: External Factors** (Bean & Metzner) | `employment_intensity`, `family_responsibility_level`, `financial_stress`, `socioeconomic_level`, `perceived_cost_benefit` |
 | **Cluster 4: Internal Factors** (Tinto, Rovai) | `academic_integration`, `social_integration`, `institutional_support_access`, `self_efficacy` |
 | **Derived** | `base_engagement_probability`, `base_dropout_risk` |
 | **LLM** | `backstory` (empty unless `--llm` flag used) |
