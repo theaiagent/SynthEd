@@ -119,11 +119,11 @@ class SimulationEngine:
         # Engagement dispatch list: discovered theories + inline theories.
         # Inline theories are NOT auto-discovered (they lack _PHASE_METHODS).
         # TODO: Migrate to full discovery when constructor injection is solved.
-        _eng = {id(t): t for t in self.theories if hasattr(t, "contribute_engagement_delta")}
+        _eng = {type(t): t for t in self.theories if hasattr(t, "contribute_engagement_delta")}
         for t in (self.bean_metzner, self.positive_events, self.rovai,
                   self.moore, self.gonzalez, self.kember):
             if hasattr(t, "contribute_engagement_delta"):
-                _eng[id(t)] = t
+                _eng[type(t)] = t
         for t in _eng.values():
             if not hasattr(t, "_ENGAGEMENT_ORDER"):
                 raise RuntimeError(
