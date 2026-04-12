@@ -2,7 +2,7 @@
 
 All notable changes to SynthEd are documented here.
 
-## [Unreleased]
+## [1.6.0] - 2026-04-12
 
 ### Changed
 - `contribute_engagement_delta(ctx: TheoryContext) -> float` added to `TheoryModule` Protocol as engagement composition phase — 9 theories now return engagement deltas via protocol dispatch instead of inline engine calls
