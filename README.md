@@ -32,23 +32,28 @@ python run_pipeline.py --n 200      # or: pip install synthedu
 
 ## Key Features
 
+### Simulation Engine
 - **10 Theory Modules** -- Tinto, Bean & Metzner, Kember, SDT, Garrison CoI, Moore, Rovai, Baulke, Epstein & Axtell, Gonzalez (+ unavoidable withdrawal mechanism)
-- **Trait-Based Calibration** -- Sobol sensitivity (69 params) + NSGA-II multi-objective optimization against real OULAD data
+- **TheoryModule Protocol** -- 4-phase dispatch (individual, network, post-peer, engagement) with auto-discovery and `_ENGAGEMENT_ORDER` composition. New theories added with zero engine changes
+- **Continuous Persona Spectrum** -- Employment intensity, family responsibility, internet reliability as [0,1] floats with Beta distributions. No binary gates -- all theory effects scale continuously
 - **Multi-Semester Simulation** -- Carry-over mechanics for engagement, GPA, coping, dropout phases
 - **GPA Feedback Loop** -- Cumulative GPA anchors cost-benefit, non-fit perception, and competence beliefs
-- **OULAD-Compatible Export** -- 7-table CSV matching the Open University Learning Analytics Dataset schema
-- **Adaptive Parameter Bounds** -- `auto_bounds()` adjusts calibration space when demographics change
+
+### Calibration & Validation
+- **Sobol Sensitivity** -- 68-parameter sensitivity analysis identifying dominant dropout/engagement drivers
+- **NSGA-II Calibration** -- Multi-objective optimization with Pareto front, parallel `--workers N` support, adaptive parameter bounds
 - **5-Level Validation Suite** -- 21 statistical tests (distributions, correlations, temporal coherence, privacy, backstory)
+
+### Configuration
+- **InstitutionalConfig** -- 5 institution-level quality parameters that modulate theory constants. `support_services_quality` scales 13 Baulke dropout phase thresholds
+- **GradingConfig** -- Beta/Normal/Uniform grade distributions, dual-hurdle pass requirements, exam-only and continuous assessment modes, relative grading with t-score cohort normalization
+- **EngineConfig** -- 70 frozen engine constants with validation, overridable via `dataclasses.replace()`
+- **PipelineConfig** -- Frozen dataclass grouping 16 pipeline params with JSON serialization for reproducibility
+
+### Data & Integration
+- **OULAD-Compatible Export** -- 7-table CSV matching the Open University Learning Analytics Dataset schema
 - **Optional LLM Enrichment** -- Persona-grounded narrative backstories via OpenAI, Ollama, or any compatible provider
-- **Default Benchmark Profile** -- Customizable via PersonaConfig, InstitutionalConfig, GradingConfig with CLI report generation
-- **InstitutionalConfig** -- 5 institution-level quality parameters that modulate theory constants
-- **GradingConfig** -- Configurable grading policy: Beta/Normal/Uniform grade distributions, weighted semester grades (midterm/final), dual-hurdle pass requirements, exam-only and continuous assessment modes, floor-adjusted transcript scale for outcome classification (Distinction/Pass/Fail)
-- **EngineConfig** -- 70 frozen engine constants with validation (weight sums, ordering, positivity), overridable via `dataclasses.replace()`
-- **NSGA-II Calibration** -- Multi-objective optimization with Pareto front, parallel `--workers N` support
-- **Relative Grading** -- grading_method="relative" with t-score cohort normalization, automatic fallback for small/homogeneous cohorts
-- **Baulke Institutional Modulation** -- `support_services_quality` scales 13 dropout phase thresholds, better institutions produce lower dropout
-- **PipelineConfig** -- Frozen dataclass grouping 16 pipeline params with JSON `to_dict()`/`from_dict()` serialization for reproducibility
-- **TheoryModule Protocol** -- Phase-based dispatch with auto-discovery, new theories added with zero engine changes
+- **Benchmark Reports** -- Customizable default profile with CLI report generation (`--benchmark`)
 
 ---
 
