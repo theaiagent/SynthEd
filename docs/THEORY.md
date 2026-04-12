@@ -160,6 +160,7 @@ SynthEd/
 │   │   ├── engine.py            # Orchestrator (delegates to theories/)
 │   │   ├── engine_config.py     # EngineConfig frozen dataclass (70 constants)
 │   │   ├── grading.py           # GradingConfig + outcome classification
+│   │   ├── state.py             # SimulationState + state management (extracted from engine)
 │   │   ├── statistics.py        # summary_statistics (extracted from engine)
 │   │   ├── environment.py       # ODL course structure + positive events
 │   │   ├── social_network.py    # Peer network with link decay
