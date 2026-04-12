@@ -4,6 +4,11 @@ SynthEd integrates 11 theoretical frameworks as stateless Python classes plus on
 Each module reads specific persona/state fields, writes to specific state fields, and fires at a
 well-defined point in the weekly loop.
 
+Since **v1.6.0**, theories that participate in the engagement composition step implement the
+`contribute_engagement_delta()` protocol method. The engine's `_update_engagement()` dispatches to
+all implementing modules in ascending `_ENGAGEMENT_ORDER`, replacing the previous ad-hoc call
+sequence.
+
 > **Convention**: Every module lives in `synthed/simulation/theories/` and exposes `_UPPERCASE`
 > class-level constants. Override them via Sobol or NSGA-II prefix routing (see
 > [calibration-and-analysis.md](calibration-and-analysis.md)).
@@ -12,20 +17,20 @@ well-defined point in the weekly loop.
 
 ## Module Summary Table
 
-| # | Module | Class | File | Theory | Called In |
-|---|--------|-------|------|--------|-----------|
-| 1 | Tinto Integration | `TintoIntegration` | `theories/tinto.py` | Tinto (1975) | Phase 1 |
-| 2 | Bean & Metzner Pressure | `BeanMetznerPressure` | `theories/bean_metzner.py` | Bean & Metzner (1985) | Engagement update |
-| 3 | Kember Cost-Benefit | `KemberCostBenefit` | `theories/kember.py` | Kember (1989) | Engagement update |
-| 4 | Baulke Dropout Phase | `BaulkeDropoutPhase` | `theories/baulke.py` | Baeulke et al. (2022) | Phase 2 |
-| 5 | Garrison CoI | `GarrisonCoI` | `theories/garrison_coi.py` | Garrison et al. (2000) | Phase 1 |
-| 6 | Moore Transactional Distance | `MooreTransactionalDistance` | `theories/moore_td.py` | Moore (1993) | Engagement update |
-| 7 | Epstein & Axtell Peer Influence | `EpsteinAxtellPeerInfluence` | `theories/epstein_axtell.py` | Epstein & Axtell (1996) | Phase 2 |
-| 8 | Rovai Persistence | `RovaiPersistence` | `theories/rovai.py` | Rovai (2003) | Engagement update |
-| 9 | SDT Motivation Dynamics | `SDTMotivationDynamics` | `theories/sdt_motivation.py` | Deci & Ryan (1985) | Phase 1 |
-| 10 | Gonzalez Exhaustion | `GonzalezExhaustion` | `theories/academic_exhaustion.py` | Gonzalez et al. (2025) | Phase 1 + Engagement |
-| 11 | Unavoidable Withdrawal | `UnavoidableWithdrawal` | `theories/unavoidable_withdrawal.py` | (life events) | Phase 1 (first check) |
-| -- | Positive Event Handler | `PositiveEventHandler` | `theories/positive_events.py` | (counter-pressure) | Engagement update |
+| # | Module | Class | File | Theory | `_PHASE_ORDER` | `_ENGAGEMENT_ORDER` | Called In |
+|---|--------|-------|------|--------|:--------------:|:-------------------:|-----------|
+| 1 | Tinto Integration | `TintoIntegration` | `theories/tinto.py` | Tinto (1975) | 10 | 100 | Phase 1 + Engagement |
+| 2 | Bean & Metzner Pressure | `BeanMetznerPressure` | `theories/bean_metzner.py` | Bean & Metzner (1985) | — | 200 | Engagement |
+| 3 | Kember Cost-Benefit | `KemberCostBenefit` | `theories/kember.py` | Kember (1989) | — | 900 | Engagement |
+| 4 | Baulke Dropout Phase | `BaulkeDropoutPhase` | `theories/baulke.py` | Baeulke et al. (2022) | 50 | — | Phase 2 |
+| 5 | Garrison CoI | `GarrisonCoI` | `theories/garrison_coi.py` | Garrison et al. (2000) | 20 | 700 | Phase 1 + Engagement |
+| 6 | Moore Transactional Distance | `MooreTransactionalDistance` | `theories/moore_td.py` | Moore (1993) | — | 600 | Engagement |
+| 7 | Epstein & Axtell Peer Influence | `EpsteinAxtellPeerInfluence` | `theories/epstein_axtell.py` | Epstein & Axtell (1996) | 40 | — | Phase 2 |
+| 8 | Rovai Persistence | `RovaiPersistence` | `theories/rovai.py` | Rovai (2003) | — | 400 | Engagement |
+| 9 | SDT Motivation Dynamics | `SDTMotivationDynamics` | `theories/sdt_motivation.py` | Deci & Ryan (1985) | 30 | 500 | Phase 1 + Engagement |
+| 10 | Gonzalez Exhaustion | `GonzalezExhaustion` | `theories/academic_exhaustion.py` | Gonzalez et al. (2025) | — | 800 | Phase 1 + Engagement |
+| 11 | Unavoidable Withdrawal | `UnavoidableWithdrawal` | `theories/unavoidable_withdrawal.py` | (life events) | — | — | Phase 1 (first check) |
+| -- | Positive Event Handler | `PositiveEventHandler` | `theories/positive_events.py` | (counter-pressure) | — | 300 | Engagement |
 
 > For academic citations and factor cluster tables, see `docs/THEORY.md`.
 
@@ -68,8 +73,8 @@ well-defined point in the weekly loop.
 | | Fields |
 |---|--------|
 | **Reads** | `StudentPersona.is_employed`, `.weekly_work_hours`, `.has_family_responsibilities`, `.financial_stress`, `.disability_severity`, `.self_regulation`, `.personality.conscientiousness` |
-| **Writes** | `SimulationState.coping_factor`, `SimulationState.env_shock_remaining`, `.env_shock_magnitude` (indirectly via engine) |
-| **When** | Engagement update -- `calculate_environmental_pressure()` and `update_coping()` called inside `_update_engagement()` |
+| **Writes** | `SimulationState.coping_factor`, `SimulationState.env_shock_remaining`, `.env_shock_magnitude` (shock state managed in `contribute_engagement_delta()`) |
+| **When** | Engagement update -- `contribute_engagement_delta()` dispatched at `_ENGAGEMENT_ORDER = 200` |
 
 **Key constants:**
 
@@ -101,7 +106,7 @@ well-defined point in the weekly loop.
 |---|--------|
 | **Reads** | `SimulationState.perceived_mastery`, `.perceived_mastery_count`, `.missed_assignments_streak`, `.coi_state` (all 3 presences), `.social_integration`; `StudentPersona.is_employed`, `.financial_stress`, `.has_family_responsibilities`; Moore avg TD |
 | **Writes** | `SimulationState.perceived_cost_benefit` |
-| **When** | Engagement update -- called when graded items submitted, exam weeks, or missed streak >= 2 |
+| **When** | Engagement update -- `contribute_engagement_delta()` dispatched at `_ENGAGEMENT_ORDER = 900`; conditional gate fires only on graded-item weeks, exam weeks, or missed streak >= 2 |
 
 **Key constants:**
 
@@ -179,7 +184,7 @@ See [dropout-mechanics.md](dropout-mechanics.md) for the full 6-phase state mach
 |---|--------|
 | **Reads** | `Course.structure_level`, `.dialogue_frequency`, `.instructor_responsiveness`; `StudentPersona.learner_autonomy`; `SimulationState.courses_active` |
 | **Writes** | None (returns a float consumed by engagement update and Kember) |
-| **When** | Engagement update -- `average()` called inside `_update_engagement()` and passed to `kember.recalculate()` |
+| **When** | Engagement update -- `contribute_engagement_delta()` dispatched at `_ENGAGEMENT_ORDER = 600` using pre-computed `ctx.avg_td`; result also passed to Kember |
 
 **Key constants:**
 
@@ -238,7 +243,7 @@ See [dropout-mechanics.md](dropout-mechanics.md) for the full 6-phase state mach
 |---|--------|
 | **Reads** | `StudentPersona.self_regulation`, `.goal_commitment`, `.self_efficacy`, `.learner_autonomy`, `.disability_severity`, `.institutional_support_access` |
 | **Writes** | None (returns floats consumed by engagement update) |
-| **When** | Engagement update -- `regulation_buffer()` and `engagement_floor()` called inside `_update_engagement()` |
+| **When** | Engagement update -- `contribute_engagement_delta()` dispatched at `_ENGAGEMENT_ORDER = 400` (regulation buffer); `engagement_floor()` remains an explicit engine call after the dispatch loop |
 
 **Key constants:**
 
@@ -370,11 +375,13 @@ via: `p_week = 1 - (1 - p_semester)^(1/N)`.
 
 **Source**: `theories/positive_events.py`
 
+`_ENGAGEMENT_ORDER = 300`. Implements `contribute_engagement_delta()` as of v1.6.0.
+
 | | Fields |
 |---|--------|
 | **Reads** | Week context (`positive_event` key) |
 | **Writes** | `SimulationState.social_integration`, `.perceived_cost_benefit`, `.coi_state.teaching_presence` |
-| **When** | Engagement update -- returns engagement boost, applies side effects directly |
+| **When** | Engagement update -- `contribute_engagement_delta()` dispatched at `_ENGAGEMENT_ORDER = 300`; side effects applied inside that method |
 
 **Defined events:**
 
@@ -468,13 +475,13 @@ graph LR
 
 - **Stateless classes, stateful constants**: Theory modules are stateless (no `self.xxx` state between calls), but their class-level `_UPPERCASE` constants are the tuning surface for Sobol/NSGA-II. Do not confuse the two.
 
-- **Call order matters for RNG**: Within Phase 1, the order is Tinto -> Garrison -> SDT -> Gonzalez -> Engagement update. Changing this order changes RNG consumption and breaks determinism.
+- **Call order matters for RNG**: Within Phase 1, the order is Tinto -> Garrison -> SDT -> Gonzalez -> Engagement update. Changing this order changes RNG consumption and breaks determinism. Within the engagement composition step, call order is controlled by `_ENGAGEMENT_ORDER` (100–900); altering those values changes RNG consumption in the same way.
 
 - **Moore returns, never writes**: `MooreTransactionalDistance` is the only module that never writes to `SimulationState`. It returns a float consumed by `_update_engagement()` and `kember.recalculate()`. This means its effect is always mediated.
 
 - **Epstein & Axtell fires in Phase 2**: Unlike all other modules, peer influence runs after all individual students have been processed. This is the Epstein & Axtell (1996) two-phase design -- individuals first, then social effects.
 
-- **Engagement update is not a module**: `_update_engagement()` lives in `engine.py`, not in `theories/`. It orchestrates calls to Bean & Metzner, Rovai, Moore, Kember, Gonzalez, and PositiveEventHandler. It is the most complex single method in the codebase.
+- **Engagement update is now protocol-dispatched**: Since v1.6.0, `_update_engagement()` in `engine.py` is a 27-line dispatch loop that calls `contribute_engagement_delta()` on each theory module in `_ENGAGEMENT_ORDER` sequence. Theory-specific delta logic lives in the theory modules themselves, not in the engine. `engagement_floor()` (Rovai) remains an explicit post-loop engine call.
 
 - **`perceived_mastery` vs `cumulative_gpa`**: Theory modules that need academic performance (Kember, SDT, Baulke) read `perceived_mastery` (raw quality, no floor), NOT `cumulative_gpa` (transcript GPA with floor). See [grading-and-gpa.md](grading-and-gpa.md).
 

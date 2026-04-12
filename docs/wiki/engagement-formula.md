@@ -6,9 +6,46 @@ This page decomposes `_update_engagement()` in `synthed/simulation/engine.py` te
 
 ## Overview
 
-`_update_engagement()` is the multi-theory engagement composer. It runs once per student per week, during Phase 1, after all theory modules have updated their respective state variables. It reads state from all theory modules and computes a new `current_engagement` value.
+`_update_engagement()` is the multi-theory engagement composer. It runs once per student per week, during Phase 1, after all theory modules have updated their respective state variables. It dispatches to 9 theory implementations via `contribute_engagement_delta()` and handles 3 inline mechanics directly in the engine.
 
 The formula is additive: it starts from the current engagement, applies a series of positive and negative adjustments, then clips to [`_ENGAGEMENT_CLIP_LO` (0.01), `_ENGAGEMENT_CLIP_HI` (0.99)].
+
+---
+
+## Engagement Dispatch Architecture
+
+As of v1.6.0, the engagement composition is protocol-dispatched. Each participating theory implements:
+
+```python
+def contribute_engagement_delta(ctx: TheoryContext) -> float:
+    ...
+```
+
+The engine's `_update_engagement()` is a 27-line dispatch loop that iterates theories in `_ENGAGEMENT_ORDER` and sums their deltas. The 110-line monolith is gone — theory-specific logic lives in `theories/*.py`.
+
+### Dispatch Order Table
+
+| Theory | `_ENGAGEMENT_ORDER` | Module |
+|--------|---------------------|--------|
+| TintoIntegration | 100 | `theories/tinto.py` |
+| BeanMetzner | 200 | `theories/bean_metzner.py` |
+| PositiveEvents | 300 | `theories/positive_events.py` |
+| Rovai | 400 | `theories/rovai.py` |
+| SDT | 500 | `theories/sdt.py` |
+| Moore | 600 | `theories/moore.py` |
+| Garrison | 700 | `theories/garrison.py` |
+| Gonzalez | 800 | `theories/gonzalez.py` |
+| Kember | 900 | `theories/kember.py` |
+
+### What remains inline in the engine
+
+Three mechanics are **not** dispatched via `contribute_engagement_delta()` — they remain directly in `_update_engagement()`:
+
+- **Academic outcome bonuses/penalties** (Term 11) — per-item quality score bonuses/penalties
+- **Missed assignment streak penalty** (Term 12) — streak-compounding penalty
+- **Exam week neuroticism stress** (Term 13) — personality-modulated exam stress
+
+The **Rovai engagement floor** (Term 15) and **final clip** (Term 16) also remain in the engine as post-dispatch steps.
 
 ---
 
@@ -43,7 +80,9 @@ flowchart LR
 
 ## Term-by-Term Breakdown
 
-### Term 1: Adaptive Baseline Decay
+### Term 1: Adaptive Baseline Decay (inside Tinto's delta)
+
+> **Protocol dispatch**: `TintoIntegration.contribute_engagement_delta()` (`_ENGAGEMENT_ORDER = 100`)
 
 ```
 decay_attenuation = 1 / (1 + _DECAY_DAMPING_FACTOR * sqrt(week - 1))
@@ -60,6 +99,8 @@ decay_attenuation = 1 / (1 + _DECAY_DAMPING_FACTOR * sqrt(week - 1))
 ---
 
 ### Term 2: Tinto Integration Effect
+
+> **Protocol dispatch**: `TintoIntegration.contribute_engagement_delta()` (`_ENGAGEMENT_ORDER = 100`) — decay_attenuation is computed inside this method, not in the engine.
 
 ```
 integration_effect = academic_integration * _TINTO_ACADEMIC_WEIGHT
@@ -83,6 +124,8 @@ integration_effect = academic_integration * _TINTO_ACADEMIC_WEIGHT
 
 ### Term 3: Bean & Metzner Environmental Pressure
 
+> **Protocol dispatch**: `BeanMetzner.contribute_engagement_delta()` (`_ENGAGEMENT_ORDER = 200`) — shock state machine is now inside this method.
+
 ```
 engagement += bean_metzner.calculate_environmental_pressure(student, state.coping_factor)
 ```
@@ -102,6 +145,8 @@ Before this, `bean_metzner.update_coping(student, state)` adapts the coping fact
 ---
 
 ### Term 4: Environmental Shocks (Stochastic)
+
+> **Protocol dispatch**: Part of `BeanMetzner.contribute_engagement_delta()` (`_ENGAGEMENT_ORDER = 200`) — shock rolling and application are now handled inside this method.
 
 ```
 if env_shock_remaining > 0:
@@ -126,6 +171,8 @@ else:
 
 ### Term 5: Positive Events
 
+> **Protocol dispatch**: `PositiveEvents.contribute_engagement_delta()` (`_ENGAGEMENT_ORDER = 300`)
+
 ```
 engagement += positive_events.apply(context.get("positive_event"), student, state)
 ```
@@ -142,6 +189,8 @@ engagement += positive_events.apply(context.get("positive_event"), student, stat
 
 ### Term 6: Rovai Self-Regulation Buffer
 
+> **Protocol dispatch**: `Rovai.contribute_engagement_delta()` (`_ENGAGEMENT_ORDER = 400`)
+
 ```
 engagement += rovai.regulation_buffer(student)
 ```
@@ -157,6 +206,8 @@ engagement += rovai.regulation_buffer(student)
 ---
 
 ### Term 7: SDT Motivation Type Effect
+
+> **Protocol dispatch**: `SDT.contribute_engagement_delta()` (`_ENGAGEMENT_ORDER = 500`)
 
 ```
 motivation_effect = {
@@ -180,6 +231,8 @@ motivation_effect = {
 
 ### Term 8: Moore Transactional Distance Effect
 
+> **Protocol dispatch**: `Moore.contribute_engagement_delta()` (`_ENGAGEMENT_ORDER = 600`)
+
 ```
 avg_td = moore.average(student, state, self.env)
 td_effect = -(avg_td - 0.5) * _TD_EFFECT_FACTOR
@@ -197,6 +250,8 @@ td_effect = -(avg_td - 0.5) * _TD_EFFECT_FACTOR
 ---
 
 ### Term 9: Garrison CoI Effect
+
+> **Protocol dispatch**: `Garrison.contribute_engagement_delta()` (`_ENGAGEMENT_ORDER = 700`)
 
 ```
 coi_effect = social_presence * _COI_SOCIAL_WEIGHT
@@ -222,6 +277,8 @@ coi_effect = social_presence * _COI_SOCIAL_WEIGHT
 ---
 
 ### Term 10: Gonzalez Exhaustion Drag
+
+> **Protocol dispatch**: `Gonzalez.contribute_engagement_delta()` (`_ENGAGEMENT_ORDER = 800`)
 
 ```
 engagement += gonzalez.exhaustion_engagement_effect(state)
@@ -295,6 +352,8 @@ if is_exam_week:
 ---
 
 ### Term 14: Kember Cost-Benefit Recalculation and Feedback
+
+> **Protocol dispatch**: `Kember.contribute_engagement_delta()` (`_ENGAGEMENT_ORDER = 900`) — conditional recalculation logic is now inside this method.
 
 ```
 # Triggered when: is_exam_week OR missed_streak >= 2 OR has graded item this week
@@ -440,6 +499,7 @@ The terms with the **smallest impact** are:
 - **`scale_by()` at default InstitutionalConfig is a no-op** — with all parameters at 0.5, every `scale_by()` call returns the original constant. You only see institutional effects when you change `InstitutionalConfig`.
 - **Academic outcome terms apply per-item, not per-course** — if a student submits 4 assignments in one week (rare, but possible with overlapping `assignment_weeks`), each one independently triggers a bonus or penalty.
 - **Environmental shock magnitude is multiplied by 0.05** — the raw magnitude from `bean_metzner.stochastic_pressure_event()` is much larger than the actual engagement impact. Do not confuse the stored `env_shock_magnitude` with the per-week engagement penalty.
+- **Engagement composition is protocol-dispatched** — `_update_engagement()` is a 27-line dispatch loop, not a 110-line monolith. It calls `contribute_engagement_delta(ctx: TheoryContext) -> float` on each theory in `_ENGAGEMENT_ORDER` order and sums the results. Theory-specific logic lives in `theories/*.py`, not in the engine.
 
 ---
 
