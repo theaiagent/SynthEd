@@ -40,6 +40,12 @@ docs/superpowers/
 
 # Claude Code
 .claude/
+.omc/
+.remember/
+
+# Temp output
+tmp_cal/
+tmp_val/
 
 # OS
 .DS_Store
