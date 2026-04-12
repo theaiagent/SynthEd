@@ -5,10 +5,13 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ...agents.persona import StudentPersona
+    from .protocol import TheoryContext
 
 
 class RovaiPersistence:
     """Rovai (2003): Accessibility and digital skills as persistence factors."""
+
+    _ENGAGEMENT_ORDER: int = 400  # engagement composition order
 
     # ── tuneable constants ──
     _REGULATION_FACTOR: float = 0.03       # self-regulation sensitivity for engagement buffer
@@ -48,3 +51,7 @@ class RovaiPersistence:
             personal_floor *= (1.0 - accessibility_gap * self._DISABILITY_FLOOR_PENALTY * student.disability_severity)
 
         return personal_floor
+
+    def contribute_engagement_delta(self, ctx: TheoryContext) -> float:
+        """Self-regulation buffer on engagement (Rovai, 2003)."""
+        return self.regulation_buffer(ctx.student)

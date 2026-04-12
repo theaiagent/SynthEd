@@ -9,12 +9,15 @@ if TYPE_CHECKING:
     from ...agents.persona import StudentPersona
     from ..state import SimulationState
     from ..environment import Course, ODLEnvironment
+    from .protocol import TheoryContext
 
 
 class MooreTransactionalDistance:
     """
     Moore (1993): Transactional distance = f(structure, dialogue, autonomy).
     """
+
+    _ENGAGEMENT_ORDER: int = 600  # engagement composition order
 
     # ── tuneable constants ──
     _STRUCTURE_WEIGHT: float = 0.35      # weight of course structure (raises TD)
@@ -52,3 +55,7 @@ class MooreTransactionalDistance:
             if course:
                 distances.append(self.calculate(student, course))
         return float(np.mean(distances)) if distances else self._DEFAULT_TD
+
+    def contribute_engagement_delta(self, ctx: TheoryContext) -> float:
+        """Transactional distance effect on engagement (Moore, 1993)."""
+        return -(ctx.avg_td - 0.5) * ctx.cfg._TD_EFFECT_FACTOR

@@ -2,6 +2,13 @@
 
 All notable changes to SynthEd are documented here.
 
+## [Unreleased]
+
+### Changed
+- `contribute_engagement_delta(ctx: TheoryContext) -> float` added to `TheoryModule` Protocol as engagement composition phase — 9 theories now return engagement deltas via protocol dispatch instead of inline engine calls
+- `_ENGAGEMENT_ORDER` class attribute on engagement theories (Tinto=100, BeanMetzner=200, PositiveEvents=300, Rovai=400, SDT=500, Moore=600, Garrison=700, Gonzalez=800, Kember=900)
+- `_update_engagement` refactored from 110-line monolith to 27-line protocol dispatch loop (engine.py 590→520 lines)
+
 ## [1.5.0] - 2026-04-09
 
 ### Added

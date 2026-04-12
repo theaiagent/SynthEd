@@ -15,7 +15,8 @@ if TYPE_CHECKING:
 class GarrisonCoI:
     """Update Community of Inquiry presences based on weekly activity."""
 
-    _PHASE_ORDER: int = 20
+    _PHASE_ORDER: int = 20        # discovery sort (on_individual_step)
+    _ENGAGEMENT_ORDER: int = 700  # engagement composition order
 
     # ── tuneable constants ──
     _FORUM_POST_SOCIAL_BOOST: float = 0.03    # social presence boost per forum post
@@ -86,3 +87,13 @@ class GarrisonCoI:
     def on_individual_step(self, ctx: TheoryContext) -> None:
         """Protocol dispatch: Phase 1 per-student."""
         self.update_presences(ctx.student, ctx.state, ctx.week, ctx.records, ctx.active_courses)
+
+    def contribute_engagement_delta(self, ctx: TheoryContext) -> float:
+        """CoI composite effect on engagement (Garrison et al., 2000)."""
+        coi = ctx.state.coi_state
+        return (
+            coi.social_presence * ctx.cfg._COI_SOCIAL_WEIGHT
+            + coi.cognitive_presence * ctx.cfg._COI_COGNITIVE_WEIGHT
+            + coi.teaching_presence * ctx.cfg._COI_TEACHING_WEIGHT
+            - ctx.cfg._COI_BASELINE_OFFSET
+        )

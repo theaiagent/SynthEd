@@ -11,6 +11,7 @@ from ..institutional import InstitutionalConfig, scale_by
 if TYPE_CHECKING:
     from ..state import InteractionRecord, SimulationState
     from ...agents.persona import StudentPersona
+    from .protocol import TheoryContext
 
 
 @dataclass
@@ -31,6 +32,10 @@ class ExhaustionState:
 
 class GonzalezExhaustion:
     """Academic-exhaustion mediator (Gonzalez et al., 2025).
+
+    Note: update_exhaustion() is called in Phase 1 (engine dispatch).
+    Only exhaustion_engagement_effect() is protocol-dispatched via
+    contribute_engagement_delta.
 
     Accumulation sources
     --------------------
@@ -54,6 +59,7 @@ class GonzalezExhaustion:
     _RECOVERY_CAP_REGEN: float = 0.01
     _ENGAGEMENT_IMPACT: float = 0.04
     _DROPOUT_THRESHOLD: float = 0.70
+    _ENGAGEMENT_ORDER: int = 800  # engagement composition order
 
     # ------------------------------------------------------------------
     def update_exhaustion(
@@ -117,6 +123,11 @@ class GonzalezExhaustion:
     def exhaustion_engagement_effect(self, state: SimulationState) -> float:
         """Return the negative engagement delta caused by exhaustion."""
         return -state.exhaustion.exhaustion_level * self._ENGAGEMENT_IMPACT
+
+    # ------------------------------------------------------------------
+    def contribute_engagement_delta(self, ctx: TheoryContext) -> float:
+        """Exhaustion drag on engagement (Gonzalez et al., 2025)."""
+        return self.exhaustion_engagement_effect(ctx.state)
 
     # ------------------------------------------------------------------
     def exhaustion_accelerates_dropout(self, state: SimulationState) -> bool:

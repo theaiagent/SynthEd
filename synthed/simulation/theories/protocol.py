@@ -11,7 +11,7 @@ Phase execution order:
     Phase 1 (per-student): on_individual_step
     Phase 2 (collective):  on_network_step (ctx.student is None)
     Phase 2 (per-student): on_post_peer_step
-    Engagement:            handled inline in engine (not protocol-dispatched)
+    Engagement (per-student): contribute_engagement_delta (returns float delta)
 """
 from __future__ import annotations
 
@@ -37,21 +37,21 @@ class TheoryContext:
     during ``on_network_step`` which operates collectively on all students.
 
     Field usage by theory:
-        student:        Tinto, Garrison, SDT, Gonzalez, Baulke, Epstein(peer), Bean
+        student:        Tinto, Garrison, SDT, Gonzalez, Baulke, Epstein(peer), Bean, Rovai, Kember
         state:          All theories
-        week:           Tinto, Garrison, SDT, Gonzalez, Baulke
-        context:        Tinto (week_context dict)
-        records:        Tinto, Garrison, SDT, Gonzalez
+        week:           Tinto, Garrison, SDT, Gonzalez, Baulke, Bean(engagement)
+        context:        Tinto (week_context dict), PositiveEvents(engagement), Kember(engagement)
+        records:        Tinto, Garrison, SDT, Gonzalez, Kember(engagement)
         env:            Baulke, Moore
-        rng:            Baulke, Epstein(network)
-        inst:           Baulke, Gonzalez, Kember
+        rng:            Baulke, Epstein(network), Bean(engagement shocks)
+        inst:           Baulke, Gonzalez, Kember(engagement)
         network:        Epstein (both phases)
         all_states:     Epstein (peer influence)
         week_records_by_student: Epstein (network formation)
         active_courses: Garrison
-        cfg:            (reserved for P10)
-        total_weeks:    Kember
-        avg_td:         Kember, Baulke (pre-computed from Moore.average)
+        cfg:            Tinto(engagement), SDT(engagement), Garrison(engagement), Moore(engagement), Kember(engagement)
+        total_weeks:    Kember(engagement)
+        avg_td:         Kember, Baulke (pre-computed from Moore.average), Moore(engagement)
     """
 
     # Per-student (None during on_network_step)
@@ -98,4 +98,13 @@ class TheoryModule(Protocol):
 
     def on_post_peer_step(self, ctx: TheoryContext) -> None:
         """Called per-student in Phase 2 (after peer influence)."""
+        ...
+
+    def contribute_engagement_delta(self, ctx: TheoryContext) -> float:
+        """Called per-student to compute this theory's engagement delta.
+
+        Returns a float delta that the engine accumulates.  May perform
+        side effects on ``ctx.state`` (e.g., coping factor update).
+        Dispatched in ``_ENGAGEMENT_ORDER`` order after Phase 1.
+        """
         ...

@@ -43,7 +43,8 @@ class SDTMotivationDynamics:
     Relatedness: from social_integration + CoI social_presence.
     """
 
-    _PHASE_ORDER: int = 30
+    _PHASE_ORDER: int = 30        # discovery sort (on_individual_step)
+    _ENGAGEMENT_ORDER: int = 500  # engagement composition order
 
     # ── tuneable constants ──
     _AUTONOMY_FACTOR: float = 0.03           # autonomy need sensitivity to learner autonomy
@@ -149,3 +150,11 @@ class SDTMotivationDynamics:
         """Protocol dispatch: Phase 1 per-student (needs + motivation shift)."""
         self.update_needs(ctx.student, ctx.state, ctx.week, ctx.records)
         ctx.state.current_motivation_type = self.evaluate_motivation_shift(ctx.state)
+
+    def contribute_engagement_delta(self, ctx: TheoryContext) -> float:
+        """Motivation type effect on engagement (Deci & Ryan, 1985)."""
+        return {
+            "intrinsic": ctx.cfg._MOTIVATION_INTRINSIC_BOOST,
+            "extrinsic": 0.0,
+            "amotivation": -ctx.cfg._MOTIVATION_AMOTIVATION_PENALTY,
+        }.get(ctx.state.current_motivation_type, 0.0)

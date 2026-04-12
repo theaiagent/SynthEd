@@ -140,6 +140,177 @@ class TestTheoryContext:
         return TheoryContext(**defaults)
 
 
+class TestEngagementDelta:
+    """Each theory's contribute_engagement_delta returns expected values."""
+
+    @staticmethod
+    def _make_engagement_ctx(**overrides):
+        """Build a TheoryContext with real student + state for engagement tests."""
+        from synthed.agents.factory import StudentFactory
+        from synthed.simulation.engine_config import EngineConfig
+        from synthed.simulation.environment import ODLEnvironment
+        from synthed.simulation.institutional import InstitutionalConfig
+        from synthed.simulation.social_network import SocialNetwork
+        from synthed.simulation.state import SimulationState
+
+        env = ODLEnvironment()
+        factory = StudentFactory(seed=42)
+        student = factory.generate_population(1)[0]
+        state = SimulationState(student_id=student.id, courses_active=[c.id for c in env.courses])
+
+        defaults = dict(
+            student=student,
+            state=state,
+            records=[],
+            week=3,
+            context={},
+            env=env,
+            rng=np.random.default_rng(42),
+            inst=InstitutionalConfig(),
+            network=SocialNetwork(),
+            all_states={},
+            week_records_by_student={},
+            active_courses=list(env.courses),
+            cfg=EngineConfig(),
+            total_weeks=14,
+            avg_td=0.5,
+        )
+        defaults.update(overrides)
+        return TheoryContext(**defaults)
+
+    def test_tinto_engagement_delta(self):
+        from synthed.simulation.theories import TintoIntegration
+        ctx = self._make_engagement_ctx()
+        t = TintoIntegration()
+        delta = t.contribute_engagement_delta(ctx)
+        assert isinstance(delta, float)
+
+    def test_bean_metzner_engagement_delta(self):
+        from synthed.simulation.theories import BeanMetznerPressure
+        ctx = self._make_engagement_ctx()
+        t = BeanMetznerPressure()
+        delta = t.contribute_engagement_delta(ctx)
+        assert isinstance(delta, float)
+        assert delta <= 0.0  # environmental pressure is always non-positive
+
+    def test_bean_metzner_shock_side_effects(self):
+        """BeanMetzner contribute_engagement_delta manages shock state."""
+        from synthed.simulation.theories import BeanMetznerPressure
+        ctx = self._make_engagement_ctx()
+        ctx.state.env_shock_remaining = 2
+        ctx.state.env_shock_magnitude = 0.5
+        t = BeanMetznerPressure()
+        delta = t.contribute_engagement_delta(ctx)
+        assert ctx.state.env_shock_remaining == 1
+        assert isinstance(delta, float)
+
+    def test_positive_events_engagement_delta(self):
+        from synthed.simulation.theories import PositiveEventHandler
+        ctx = self._make_engagement_ctx(context={"positive_event": "financial_aid_disbursement"})
+        t = PositiveEventHandler()
+        delta = t.contribute_engagement_delta(ctx)
+        assert delta > 0.0
+
+    def test_positive_events_no_event_returns_zero(self):
+        from synthed.simulation.theories import PositiveEventHandler
+        ctx = self._make_engagement_ctx()
+        t = PositiveEventHandler()
+        assert t.contribute_engagement_delta(ctx) == 0.0
+
+    def test_rovai_engagement_delta(self):
+        from synthed.simulation.theories import RovaiPersistence
+        ctx = self._make_engagement_ctx()
+        t = RovaiPersistence()
+        delta = t.contribute_engagement_delta(ctx)
+        assert isinstance(delta, float)
+
+    def test_sdt_engagement_delta_intrinsic(self):
+        from synthed.simulation.theories import SDTMotivationDynamics
+        ctx = self._make_engagement_ctx()
+        ctx.state.current_motivation_type = "intrinsic"
+        t = SDTMotivationDynamics()
+        delta = t.contribute_engagement_delta(ctx)
+        assert delta > 0.0
+
+    def test_sdt_engagement_delta_amotivation(self):
+        from synthed.simulation.theories import SDTMotivationDynamics
+        ctx = self._make_engagement_ctx()
+        ctx.state.current_motivation_type = "amotivation"
+        t = SDTMotivationDynamics()
+        delta = t.contribute_engagement_delta(ctx)
+        assert delta < 0.0
+
+    def test_moore_engagement_delta(self):
+        from synthed.simulation.theories import MooreTransactionalDistance
+        ctx = self._make_engagement_ctx(avg_td=0.7)
+        t = MooreTransactionalDistance()
+        delta = t.contribute_engagement_delta(ctx)
+        assert delta < 0.0  # high TD -> negative engagement effect
+
+    def test_garrison_engagement_delta(self):
+        from synthed.simulation.theories import GarrisonCoI
+        ctx = self._make_engagement_ctx()
+        t = GarrisonCoI()
+        delta = t.contribute_engagement_delta(ctx)
+        assert isinstance(delta, float)
+
+    def test_gonzalez_engagement_delta(self):
+        from synthed.simulation.theories import GonzalezExhaustion
+        ctx = self._make_engagement_ctx()
+        ctx.state.exhaustion.exhaustion_level = 0.5
+        t = GonzalezExhaustion()
+        delta = t.contribute_engagement_delta(ctx)
+        assert delta < 0.0  # exhaustion drags engagement down
+
+    def test_kember_engagement_delta_with_exam(self):
+        from synthed.simulation.theories import KemberCostBenefit
+        ctx = self._make_engagement_ctx(context={"is_exam_week": True})
+        t = KemberCostBenefit()
+        delta = t.contribute_engagement_delta(ctx)
+        assert isinstance(delta, float)
+
+    def test_kember_returns_zero_when_no_trigger(self):
+        from synthed.simulation.theories import KemberCostBenefit
+        ctx = self._make_engagement_ctx(context={})
+        ctx.state.missed_assignments_streak = 0
+        t = KemberCostBenefit()
+        assert t.contribute_engagement_delta(ctx) == 0.0
+
+    def test_engagement_theories_sorted_by_order(self):
+        """Engine._engagement_theories is sorted by _ENGAGEMENT_ORDER."""
+        from synthed.pipeline import SynthEdPipeline
+        from synthed.pipeline_config import PipelineConfig
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            config = PipelineConfig(output_dir=td, seed=42)
+            pipeline = SynthEdPipeline(config=config)
+            engine = pipeline.engine
+            orders = [t._ENGAGEMENT_ORDER for t in engine._engagement_theories]
+            assert orders == sorted(orders)
+            assert len(orders) == 9  # 9 theories contribute engagement
+
+    def test_engagement_order_canonical(self):
+        """Verify exact _ENGAGEMENT_ORDER values match plan."""
+        from synthed.simulation.theories import (
+            TintoIntegration, BeanMetznerPressure, PositiveEventHandler,
+            RovaiPersistence, SDTMotivationDynamics, MooreTransactionalDistance,
+            GarrisonCoI, GonzalezExhaustion, KemberCostBenefit,
+        )
+        expected = [
+            (TintoIntegration, 100),
+            (BeanMetznerPressure, 200),
+            (PositiveEventHandler, 300),
+            (RovaiPersistence, 400),
+            (SDTMotivationDynamics, 500),
+            (MooreTransactionalDistance, 600),
+            (GarrisonCoI, 700),
+            (GonzalezExhaustion, 800),
+            (KemberCostBenefit, 900),
+        ]
+        for cls, order in expected:
+            assert cls._ENGAGEMENT_ORDER == order, f"{cls.__name__}._ENGAGEMENT_ORDER != {order}"
+
+
 class TestBehavioralEquivalence:
     """Same seed produces identical output before/after protocol migration."""
 

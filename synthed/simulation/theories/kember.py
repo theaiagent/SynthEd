@@ -10,10 +10,13 @@ from ..institutional import InstitutionalConfig, scale_by
 if TYPE_CHECKING:
     from ...agents.persona import StudentPersona
     from ..state import InteractionRecord, SimulationState
+    from .protocol import TheoryContext
 
 
 class KemberCostBenefit:
     """Students perform ongoing cost-benefit analysis (Kember, 1989)."""
+
+    _ENGAGEMENT_ORDER: int = 900  # engagement composition order
 
     # ── tuneable constants ──
     _QUALITY_FACTOR: float = 0.04            # cost-benefit sensitivity to academic quality
@@ -92,3 +95,14 @@ class KemberCostBenefit:
                 state.perceived_cost_benefit -= self._OC_FACTOR * 0.3
 
         state.perceived_cost_benefit = float(np.clip(state.perceived_cost_benefit, self._CLIP_LO, self._CLIP_HI))
+
+    def contribute_engagement_delta(self, ctx: TheoryContext) -> float:
+        """Cost-benefit feedback on engagement (Kember, 1989)."""
+        has_graded_item = any(
+            r.interaction_type in ("assignment_submit", "exam") for r in ctx.records
+        )
+        if ctx.context.get("is_exam_week") or ctx.state.missed_assignments_streak >= 2 or has_graded_item:
+            self.recalculate(ctx.student, ctx.state, ctx.context, ctx.records, ctx.avg_td,
+                             week=ctx.week, total_weeks=ctx.total_weeks, inst=ctx.inst)
+            return (ctx.state.perceived_cost_benefit - 0.5) * ctx.cfg._CB_FEEDBACK_FACTOR
+        return 0.0

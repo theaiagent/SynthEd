@@ -8,10 +8,13 @@ import numpy as np
 if TYPE_CHECKING:
     from ...agents.persona import StudentPersona
     from ..state import SimulationState
+    from .protocol import TheoryContext
 
 
 class BeanMetznerPressure:
     """Environmental pressure from work, family, and finances (Bean & Metzner, 1985)."""
+
+    _ENGAGEMENT_ORDER: int = 200  # engagement composition order
 
     # ── tuneable constants ──
     _OVERWORK_THRESHOLD_HOURS: int = 30       # weekly hours beyond which overwork penalty applies
@@ -90,3 +93,27 @@ class BeanMetznerPressure:
         state.coping_factor = float(np.clip(
             state.coping_factor + growth, 0.0, self._COPING_MAX,
         ))
+
+    def contribute_engagement_delta(self, ctx: TheoryContext) -> float:
+        """Environmental pressure + shock effect on engagement (Bean & Metzner, 1985)."""
+        self.update_coping(ctx.student, ctx.state)
+        delta = self.calculate_environmental_pressure(ctx.student, ctx.state.coping_factor)
+
+        # Environmental shocks: stochastic life events (state machine)
+        if ctx.state.env_shock_remaining > 0:
+            delta -= ctx.state.env_shock_magnitude * 0.05
+            ctx.state.env_shock_remaining -= 1
+            if ctx.state.env_shock_remaining == 0:
+                ctx.state.env_shock_magnitude = 0.0
+        else:
+            duration, magnitude = self.stochastic_pressure_event(ctx.student, ctx.rng)
+            if duration > 0:
+                ctx.state.env_shock_remaining = duration
+                ctx.state.env_shock_magnitude = magnitude
+                delta -= magnitude * 0.05
+                ctx.state.memory.append({
+                    "week": ctx.week, "event_type": "env_shock",
+                    "details": f"Environmental shock (magnitude={magnitude:.2f}, duration={duration}w)",
+                    "impact": -magnitude * 0.05,
+                })
+        return delta

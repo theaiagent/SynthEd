@@ -196,7 +196,7 @@ SynthEd/
 │   ├── doc_facts.py             # Documentation consistency checker
 │   ├── pipeline_config.py       # PipelineConfig frozen dataclass (16 params)
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                       # 714 pytest tests across 42 files
+├── tests/                       # 729 pytest tests across 42 files
 ├── docs/
 │   ├── GUIDE.md                 # User guide
 │   └── THEORY.md                # This file
@@ -225,7 +225,7 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 
 ## 🧪 Test Suite
 
-714 pytest tests across 42 files:
+729 pytest tests across 42 files:
 
 | Test File | Tests | Coverage |
 |-----------|-------|----------|
@@ -270,6 +270,6 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 | `test_engine_config.py` | 19 | EngineConfig frozen dataclass, validation, replace |
 | `test_baulke_institutional.py` | 11 | Baulke institutional modulation, threshold scaling |
 | `test_pipeline_config.py` | 19 | PipelineConfig frozen dataclass, serialization |
-| `test_theory_protocol.py` | 17 | TheoryModule protocol, phase dispatch, auto-discovery |
+| `test_theory_protocol.py` | 32 | TheoryModule protocol, phase dispatch, auto-discovery, engagement deltas |
 
 CI runs tests across **Python 3.10, 3.11, and 3.12** via [GitHub Actions](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml).

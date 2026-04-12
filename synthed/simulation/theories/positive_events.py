@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ..state import SimulationState
     from ...agents.persona import StudentPersona
+    from .protocol import TheoryContext
 
 
 # Event name -> {effect_key: magnitude}
@@ -42,6 +43,8 @@ EVENT_EFFECTS: dict[str, dict[str, float]] = {
 
 class PositiveEventHandler:
     """Apply positive environmental events to student state."""
+
+    _ENGAGEMENT_ORDER: int = 300  # engagement composition order
 
     def apply(
         self,
@@ -82,3 +85,7 @@ class PositiveEventHandler:
             )
 
         return engagement_boost
+
+    def contribute_engagement_delta(self, ctx: TheoryContext) -> float:
+        """Positive event counter-pressure on engagement."""
+        return self.apply(ctx.context.get("positive_event"), ctx.student, ctx.state)
