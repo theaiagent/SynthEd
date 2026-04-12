@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from shiny import ui
-
 from ..config_bridge import check_warning
 
 
@@ -57,8 +55,10 @@ def validate_config(values: dict[str, Any]) -> list[dict[str, str]]:
     return issues
 
 
-def preflight_checklist_ui(issues: list[dict[str, str]]) -> ui.Tag:
+def preflight_checklist_ui(issues: list[dict[str, str]]):
     """Render the pre-flight checklist as inline UI."""
+    from shiny import ui
+
     if not issues:
         return ui.div(
             ui.span("\u2714 ", style="color:var(--success,#2DD4A0);"),

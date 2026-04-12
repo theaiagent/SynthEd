@@ -103,6 +103,19 @@ def server(input, output, session):
         issues = validate_config(vals)
         return preflight_checklist_ui(issues)
 
+    # ── Dual hurdle conditional thresholds ──
+    @render.ui
+    def dual_hurdle_thresholds():
+        if not input.grading_dual_hurdle():
+            return ui.div()
+        return ui.div(
+            ui.h6("Component Pass Thresholds", class_="text-secondary mt-2", style="font-size:12px;"),
+            ui.input_slider("grading_component_exam_threshold", "Exam threshold",
+                            min=0.0, max=1.0, value=0.40, step=0.01),
+            ui.input_slider("grading_component_assignment_threshold", "Assignment threshold",
+                            min=0.0, max=1.0, value=0.40, step=0.01),
+        )
+
     # ── Distribution editors ──
     @render.ui
     def distribution_editors():
@@ -133,7 +146,8 @@ def server(input, output, session):
         ui.notification_show("Simulation running...", type="message", duration=None, id="sim_progress")
 
         try:
-            vals["output_dir"] = tempfile.mkdtemp(prefix="synthed_dash_")
+            if not vals.get("output_dir"):
+                vals["output_dir"] = tempfile.mkdtemp(prefix="synthed_dash_")
             config = dict_to_config(vals)
             pipeline = SynthEdPipeline(config=config)
             report = pipeline.run(n_students=n_students)
@@ -298,6 +312,8 @@ def server(input, output, session):
         std_gpa = summary.get("std_final_gpa", 0.6)
         rng = np.random.default_rng(0)
         gpas = np.clip(rng.normal(mean_gpa, max(std_gpa, 0.1), n), 0.0, 4.0).tolist()
+        # Convert [0,1] thresholds to GPA scale [0,4]
+        gpa_scale = 4.0
         pass_t = 0.64
         dist_t = 0.73
         try:
@@ -305,7 +321,7 @@ def server(input, output, session):
             dist_t = input.grading_distinction_threshold()
         except Exception:
             pass
-        fig = charts.gpa_distribution(gpas, pass_t, dist_t)
+        fig = charts.gpa_distribution(gpas, pass_t * gpa_scale, dist_t * gpa_scale)
         return ui.HTML(fig.to_html(full_html=False, include_plotlyjs="cdn"))
 
     @render.ui

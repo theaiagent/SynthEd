@@ -65,7 +65,7 @@ def results_layout() -> ui.Tag:
         ui.row(
             ui.column(6, ui.download_button("export_config", "Export Config JSON",
                                             class_="btn btn-outline-secondary btn-sm w-100")),
-            ui.column(6, ui.input_file("import_config", None, accept=[".json"],
-                                       button_label="Import Config")),
+            ui.column(6, ui.input_file("import_config", "Import configuration",
+                                       accept=[".json"], button_label="Import Config")),
         ),
     )
