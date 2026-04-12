@@ -174,10 +174,10 @@ class StudentPersona:
 
     CLUSTER 2 — Student Skills (Rovai)
         digital_literacy, self_regulation, time_management,
-        academic_reading_writing, has_reliable_internet, device_type
+        academic_reading_writing, internet_reliability, device_type
 
     CLUSTER 3 — External Factors (Bean & Metzner, Economic Rationality)
-        is_employed, weekly_work_hours, has_family_responsibilities,
+        employment_intensity, family_responsibility_level,
         financial_stress, socioeconomic_level, perceived_cost_benefit
 
     CLUSTER 4 — Internal Factors (Tinto, Rovai)
@@ -211,15 +211,14 @@ class StudentPersona:
     time_management: float = 0.5  # 0-1; distinct from self-regulation
     academic_reading_writing: float = 0.6  # 0-1; readiness for academic work
     learner_autonomy: float = 0.5  # 0-1; Moore (1993): self-direction in learning
-    has_reliable_internet: bool = True
+    internet_reliability: float = 0.95  # [0,1]: 0=no access, 0.5=intermittent, 1.0=stable broadband
     disability_severity: float = 0.0  # 0.0 = none, >0 = severity from Beta(2,5); Rovai accessibility
     device_type: str = "laptop"  # laptop, desktop, mobile, tablet
     preferred_learning_style: str = "visual"
 
     # ── CLUSTER 3: External Factors (Bean & Metzner, Economic Rationality) ──
-    is_employed: bool = True
-    weekly_work_hours: int = 40
-    has_family_responsibilities: bool = False
+    employment_intensity: float = 0.0  # [0,1]: 0=unemployed, 0.5=~30h/wk, 1.0=~60h/wk
+    family_responsibility_level: float = 0.0  # [0,1]: 0=none, 0.5=moderate, 1.0=heavy care duties
     financial_stress: float = 0.3  # 0-1; Bean & Metzner: financial pressure
     socioeconomic_level: str = "middle"  # low, middle, high
     perceived_cost_benefit: float = 0.6  # 0-1; Kember/Economic: "is this worth it?"
@@ -283,7 +282,7 @@ class StudentPersona:
             + self.digital_literacy * 0.06
             + self.time_management * 0.04
             + self.learner_autonomy * 0.04  # Moore (1993)
-            + (1.0 if self.has_reliable_internet else 0.3) * 0.03
+            + self.internet_reliability * 0.03
         )
 
         # Student characteristics — 20%
@@ -295,8 +294,8 @@ class StudentPersona:
 
         # External factors (Bean & Metzner) — 15%
         external = (
-            (1 - min(self.weekly_work_hours / 50, 1.0)) * 0.06
-            + (0.3 if self.has_family_responsibilities else 0.7) * 0.05
+            (1 - self.employment_intensity) * 0.06
+            + (1 - self.family_responsibility_level * 0.7) * 0.05
             + (1 - self.financial_stress) * 0.04
         )
 
@@ -307,10 +306,10 @@ class StudentPersona:
         # ── Dropout Risk ──
         # External factors (Bean & Metzner) — 30% (DOMINANT in ODE)
         ext_risk = (
-            min(self.weekly_work_hours / 50, 1.0) * 0.10
-            + (0.8 if self.has_family_responsibilities else 0.2) * 0.08
+            self.employment_intensity * 0.10
+            + (0.2 + self.family_responsibility_level * 0.6) * 0.08  # 0.2 floor: baseline social obligations even at level=0
             + self.financial_stress * 0.07
-            + (0.6 if not self.has_reliable_internet else 0.1) * 0.05
+            + (1 - self.internet_reliability) * 0.6 * 0.05
         )
 
         # Internal factors (Tinto) — 25%
@@ -367,8 +366,8 @@ class StudentPersona:
             f"Courses: {self.enrolled_courses}, "
             f"Education: {str(self.prior_education_level)[:20]} (GPA {self.prior_gpa:.1f}/4.0), "
             f"{self.years_since_last_education}y since last education. "
-            f"Employment: {'employed ' + str(self.weekly_work_hours) + 'h/wk' if self.is_employed else 'unemployed'}. "
-            f"Family responsibilities: {'yes' if self.has_family_responsibilities else 'no'}. "
+            f"Employment: {'employed ~' + str(int(self.employment_intensity * 60)) + 'h/wk' if self.employment_intensity > 0.05 else 'unemployed'}. "
+            f"Family responsibilities: {lv(self.family_responsibility_level)}. "
             f"Financial stress: {lv(self.financial_stress)}, "
             f"Self-regulation: {lv(self.self_regulation)}, "
             f"Digital literacy: {lv(self.digital_literacy)}, "

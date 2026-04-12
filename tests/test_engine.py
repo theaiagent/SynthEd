@@ -68,8 +68,8 @@ class TestSimulationEngine:
             high_risk.append(StudentPersona(
                 name=f"HighRisk{i}",
                 personality=BigFiveTraits(conscientiousness=0.15, neuroticism=0.85),
-                is_employed=True, weekly_work_hours=50,
-                has_family_responsibilities=True, financial_stress=0.9,
+                employment_intensity=0.83, family_responsibility_level=0.8,
+                financial_stress=0.9,
                 self_regulation=0.15, motivation_type="amotivation",
                 goal_commitment=0.15, self_efficacy=0.15,
                 perceived_cost_benefit=0.15, learner_autonomy=0.15,
@@ -80,8 +80,8 @@ class TestSimulationEngine:
             low_risk.append(StudentPersona(
                 name=f"LowRisk{i}",
                 personality=BigFiveTraits(conscientiousness=0.9, neuroticism=0.1),
-                is_employed=False, weekly_work_hours=0,
-                has_family_responsibilities=False, financial_stress=0.1,
+                employment_intensity=0.0, family_responsibility_level=0.0,
+                financial_stress=0.1,
                 self_regulation=0.9, motivation_type="intrinsic",
                 goal_commitment=0.9, self_efficacy=0.9,
                 perceived_cost_benefit=0.9, learner_autonomy=0.85,

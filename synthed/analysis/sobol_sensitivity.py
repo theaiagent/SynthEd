@@ -65,7 +65,7 @@ class SobolParameter:
 #   "epstein."  → engine.epstein_axtell attribute
 #   "inst."     → InstitutionalConfig field (frozen, use replace())
 
-# Full parameter space: 69 parameters selected for theoretical importance
+# Full parameter space: 68 parameters selected for theoretical importance
 # and empirical impact on dropout/engagement/GPA outcomes.
 SOBOL_PARAMETER_SPACE: tuple[SobolParameter, ...] = (
     # ── PersonaConfig: Population characteristics ──
@@ -89,8 +89,8 @@ SOBOL_PARAMETER_SPACE: tuple[SobolParameter, ...] = (
     SobolParameter("engine._MISSED_STREAK_PENALTY", 0.01, 0.08, "Missed assignment streak erosion"),
 
     # ── Bean & Metzner: Environmental pressure ──
-    SobolParameter("bean._OVERWORK_PENALTY", 0.01, 0.05, "Overwork engagement erosion"),
-    SobolParameter("bean._FAMILY_PENALTY", 0.005, 0.04, "Family responsibility penalty"),
+    SobolParameter("bean._EMPLOYMENT_PRESSURE_FACTOR", 0.02, 0.08, "Employment pressure engagement erosion"),
+    SobolParameter("bean._FAMILY_PRESSURE_FACTOR", 0.005, 0.04, "Family responsibility pressure"),
     SobolParameter("bean._FINANCIAL_PENALTY", 0.005, 0.03, "Financial stress penalty"),
     SobolParameter("bean._DISABILITY_PENALTY", 0.005, 0.03, "Disability engagement erosion"),
     SobolParameter("bean._SHOCK_BASE_PROB", 0.02, 0.08, "Weekly shock probability"),
@@ -102,7 +102,6 @@ SOBOL_PARAMETER_SPACE: tuple[SobolParameter, ...] = (
     SobolParameter("kember._MISSED_PENALTY", 0.01, 0.06, "Missed assignment → cost-benefit"),
     SobolParameter("kember._GPA_CB_FACTOR", 0.003, 0.02, "GPA → cost-benefit sensitivity"),
     SobolParameter("kember._OC_FACTOR", 0.005, 0.03, "Opportunity cost pressure per week"),
-    SobolParameter("kember._OC_STRESS_THRESHOLD", 0.3, 0.7, "Financial stress threshold for OC"),
     SobolParameter("kember._TIME_DISCOUNT_FACTOR", 0.003, 0.015, "Time-based CB erosion"),
 
     # ── Baulke: Dropout phase thresholds ──
@@ -285,7 +284,7 @@ class SobolAnalyzer:
         Generate Sobol (Saltelli) sample matrix.
 
         With calc_second_order=False, total = n_samples * (D + 2).
-        Default: 128 * (69 + 2) = 9,088 simulations.
+        Default: 128 * (68 + 2) = 8,960 simulations.
         """
         return sobol_sample.sample(self._problem, n_samples, calc_second_order=False)
 

@@ -84,10 +84,10 @@ class GonzalezExhaustion:
         accumulation += active_assignments * effective_alw
 
         # 2. Environmental stressors (Bean & Metzner overlap)
-        if student.is_employed:
-            accumulation += (student.weekly_work_hours / 40.0) * self._STRESSOR_WEIGHT
-        if student.has_family_responsibilities:
-            accumulation += self._STRESSOR_WEIGHT * 0.6
+        # Scale by 1.5 to compensate for 40h→60h mapping (40/60 ≈ 0.67, 1/0.67 ≈ 1.5)
+        accumulation += student.employment_intensity * self._STRESSOR_WEIGHT * 1.5
+        # frl=1.0 matches old has_family=True exactly; lower frl values = proportionally less burden
+        accumulation += student.family_responsibility_level * self._STRESSOR_WEIGHT * 0.6
         accumulation += student.financial_stress * self._STRESSOR_WEIGHT
 
         # 3. Low self-regulation amplifies exhaustion

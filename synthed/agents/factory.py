@@ -111,10 +111,14 @@ class StudentFactory:
         big_five = self._sample_big_five()
 
         # ── CLUSTER 3: External Factors (Bean & Metzner) ──
-        is_employed = self.rng.random() < cfg.employment_rate
-        weekly_work_hours = int(self.rng.normal(35, 10)) if is_employed else 0
-        weekly_work_hours = max(0, min(60, weekly_work_hours))
-        has_family = self.rng.random() < cfg.has_family_rate
+        if self.rng.random() < cfg.employment_rate:
+            employment_intensity = round(float(np.clip(self.rng.beta(2.5, 3), 0.05, 1.0)), 2)
+        else:
+            employment_intensity = 0.0
+        if self.rng.random() < cfg.has_family_rate:
+            family_responsibility_level = round(float(np.clip(self.rng.beta(2, 4), 0.05, 1.0)), 2)
+        else:
+            family_responsibility_level = 0.0
 
         socioeconomic_level = self.rng.choice(
             list(cfg.socioeconomic_distribution.keys()),
@@ -123,7 +127,7 @@ class StudentFactory:
 
         # Financial stress: correlated with SES and employment (Bean & Metzner)
         ses_offset = {"low": 0.25, "middle": 0.0, "high": -0.20}[socioeconomic_level]
-        family_offset = 0.10 if has_family else 0.0
+        family_offset = family_responsibility_level * 0.10
         financial_stress = float(np.clip(
             self.rng.normal(cfg.financial_stress_mean + ses_offset + family_offset, 0.18),
             0.0, 1.0
@@ -198,7 +202,10 @@ class StudentFactory:
             self.rng.normal(0.55 + edu_boost, 0.15), 0.1, 0.95
         ))
 
-        has_internet = self.rng.random() < (0.95 if socioeconomic_level != "low" else 0.75)
+        if socioeconomic_level != "low":
+            internet_reliability = round(float(np.clip(self.rng.beta(8, 2), 0.3, 1.0)), 2)
+        else:
+            internet_reliability = round(float(np.clip(self.rng.beta(4, 3), 0.1, 1.0)), 2)
         device = self.rng.choice(
             list(cfg.device_distribution.keys()),
             p=list(cfg.device_distribution.values()),
@@ -265,12 +272,11 @@ class StudentFactory:
             time_management=round(time_management, 2),
             learner_autonomy=round(learner_autonomy, 2),
             academic_reading_writing=round(academic_rw, 2),
-            has_reliable_internet=has_internet,
+            internet_reliability=internet_reliability,
             device_type=device,
             preferred_learning_style=learning_style,
-            is_employed=is_employed,
-            weekly_work_hours=weekly_work_hours,
-            has_family_responsibilities=has_family,
+            employment_intensity=employment_intensity,
+            family_responsibility_level=family_responsibility_level,
             financial_stress=round(financial_stress, 2),
             socioeconomic_level=socioeconomic_level,
             perceived_cost_benefit=round(perceived_cb, 2),
@@ -373,8 +379,9 @@ class StudentFactory:
             # Disability (Rovai, 2003: accessibility)
             "disability_rate": sum(1 for p in personas if p.disability_severity > 0) / n,
             # External factors (Bean & Metzner)
-            "employment_rate": sum(1 for p in personas if p.is_employed) / n,
-            "family_responsibility_rate": sum(1 for p in personas if p.has_family_responsibilities) / n,
+            "employment_intensity_mean": float(np.mean([p.employment_intensity for p in personas])),
+            "family_responsibility_mean": float(np.mean([p.family_responsibility_level for p in personas])),
+            "internet_reliability_mean": float(np.mean([p.internet_reliability for p in personas])),
             "financial_stress_mean": float(np.mean([p.financial_stress for p in personas])),
             # Student characteristics (Tinto)
             "gpa_mean": float(np.mean([p.prior_gpa for p in personas])),

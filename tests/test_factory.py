@@ -31,7 +31,8 @@ class TestStudentFactory:
         summary = factory.population_summary(pop)
         expected_keys = [
             "total_students", "age_mean", "age_std",
-            "gender_distribution", "employment_rate",
+            "gender_distribution", "employment_intensity_mean",
+            "family_responsibility_mean", "internet_reliability_mean",
             "financial_stress_mean", "gpa_mean",
             "digital_literacy_mean", "self_regulation_mean",
             "base_engagement_mean", "base_dropout_risk_mean",
@@ -209,10 +210,10 @@ class TestDisabilitySeverityGeneration:
         import numpy as np
         cfg = PersonaConfig(disability_rate=0.50)
         factory = StudentFactory(config=cfg, seed=42)
-        pop = factory.generate_population(n=200)
+        pop = factory.generate_population(n=500)
         disabled = [p for p in pop if p.disability_severity > 0]
         non_disabled = [p for p in pop if p.disability_severity == 0]
-        assert len(disabled) > 20 and len(non_disabled) > 20
+        assert len(disabled) > 50 and len(non_disabled) > 50
         mean_dis = np.mean([p.digital_literacy for p in disabled])
         mean_non = np.mean([p.digital_literacy for p in non_disabled])
         assert mean_dis < mean_non

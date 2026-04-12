@@ -373,10 +373,13 @@ def build_enrichment_prompt(
     motivation = str(persona.motivation_type)[:15]
 
     employment_info = (
-        f"employed {persona.weekly_work_hours}h/wk"
-        if persona.is_employed else "unemployed"
+        f"employed ~{int(persona.employment_intensity * 60)}h/wk"
+        if persona.employment_intensity > 0.05 else "unemployed"
     )
-    family_info = "has dependents" if persona.has_family_responsibilities else "no dependents"
+    family_info = (
+        f"family responsibilities ({persona.family_responsibility_level:.0%})"
+        if persona.family_responsibility_level > 0.05 else "no dependents"
+    )
     life_event_context = _sanitize(life_event.description) if life_event else "no significant recent life changes"
     regional_ctx = (
         f"{_sanitize(regional_context.setting, 20)} area, "

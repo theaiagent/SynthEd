@@ -11,7 +11,7 @@ class TestSyntheticDataValidator:
         validator = SyntheticDataValidator()
         students = [
             {"student_id": f"s{i}", "age": 25 + i, "gender": "female",
-             "is_employed": i % 2 == 0, "prior_gpa": 2.5,
+             "employment_intensity": 0.67 if i % 2 == 0 else 0.0, "prior_gpa": 2.5,
              "socioeconomic_level": "middle"}
             for i in range(30)
         ]
@@ -61,7 +61,7 @@ class TestDropoutRangeValidation:
     def _make_data(self, n=30, n_dropout=10):
         students = [
             {"student_id": f"s{i}", "age": 25 + i, "gender": "female",
-             "is_employed": i % 2 == 0, "prior_gpa": 2.5,
+             "employment_intensity": 0.67 if i % 2 == 0 else 0.0, "prior_gpa": 2.5,
              "socioeconomic_level": "middle"}
             for i in range(n)
         ]
