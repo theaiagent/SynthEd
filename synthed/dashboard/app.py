@@ -223,8 +223,8 @@ def server(input, output, session):
         for key in keys:
             try:
                 total += float(input[f"{input_id}_{key}"]())
-            except Exception as exc:
-                logger.debug("Distribution sum: could not read %s_%s: %s", input_id, key, exc)
+            except Exception:
+                logger.debug("Distribution sum: could not read %s_%s", input_id, key)
         ok = abs(total - 1.0) <= 0.01
         color = "var(--success,#2DD4A0)" if ok else "var(--warning,#F5A623)"
         symbol = "\u2713" if ok else "\u2717"
