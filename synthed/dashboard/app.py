@@ -80,15 +80,29 @@ app_ui = ui.page_navbar(
                         }
                     });
                 }
-                $(document).on('click', '#toggle_theme', function() {
-                    document.body.classList.toggle('light-mode');
-                    var isLight = document.body.classList.contains('light-mode');
-                    this.setAttribute('aria-pressed', isLight ? 'true' : 'false');
-                    this.setAttribute('aria-label',
-                        isLight ? 'Switch to dark mode' : 'Switch to light mode');
+                function applyTheme(isLight) {
+                    document.body.classList.toggle('light-mode', isLight);
+                    var btn = document.getElementById('toggle_theme');
+                    if (btn) {
+                        btn.setAttribute('aria-pressed', isLight ? 'true' : 'false');
+                        btn.setAttribute('aria-label',
+                            isLight ? 'Switch to dark mode' : 'Switch to light mode');
+                    }
                     var icon = document.getElementById('theme_icon');
-                    icon.className = isLight ? 'bi bi-moon-fill' : 'bi bi-sun-fill';
+                    if (icon) icon.className = isLight ? 'bi bi-moon-fill' : 'bi bi-sun-fill';
                     restyleCharts(isLight ? lightChart : darkChart);
+                }
+                // Restore saved preference or follow system
+                var saved = localStorage.getItem('synthed-theme');
+                if (saved === 'light') {
+                    applyTheme(true);
+                } else if (!saved && window.matchMedia('(prefers-color-scheme: light)').matches) {
+                    applyTheme(true);
+                }
+                $(document).on('click', '#toggle_theme', function() {
+                    var isLight = !document.body.classList.contains('light-mode');
+                    localStorage.setItem('synthed-theme', isLight ? 'light' : 'dark');
+                    applyTheme(isLight);
                 });
             });
             """

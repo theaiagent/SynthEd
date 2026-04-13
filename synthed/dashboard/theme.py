@@ -360,6 +360,10 @@ body.light-mode .offcanvas { background: #F8FAFC !important; color: #0F172A !imp
 body.light-mode .btn-outline-secondary { border-color: #CBD5E1 !important; color: #475569 !important; }
 body.light-mode .irs--shiny .irs-line { background: #E2E8F0; }
 body.light-mode .irs--shiny .irs-handle { background: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+body.light-mode .badge-success { background: #D1FAE5 !important; color: #065F46 !important; }
+body.light-mode .badge-warning { background: #FEF3C7 !important; color: #92400E !important; }
+body.light-mode .badge-info { background: #E0E7FF !important; color: #3730A3 !important; }
+body.light-mode .btn-close-white { filter: none; }
 """
 
 # Combine generated :root with static CSS
