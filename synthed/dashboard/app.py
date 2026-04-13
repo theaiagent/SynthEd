@@ -201,8 +201,8 @@ def server(input, output, session):
                 num_val = float(input[num_id]())
                 if abs(slider_val - num_val) > 0.001:
                     ui.update_numeric(num_id, value=slider_val)
-            except (ValueError, TypeError) as exc:
-                logger.debug("Sync slider->num skipped for %s: %s", slider_id, exc)
+            except (ValueError, TypeError):
+                pass
 
         @reactive.effect
         @reactive.event(input[num_id])
@@ -212,8 +212,8 @@ def server(input, output, session):
                 slider_val = float(input[slider_id]())
                 if abs(num_val - slider_val) > 0.001:
                     ui.update_slider(slider_id, value=num_val)
-            except (ValueError, TypeError) as exc:
-                logger.debug("Sync num->slider skipped for %s: %s", num_id, exc)
+            except (ValueError, TypeError):
+                pass
 
     for _sid, _nid in _sync_pairs:
         _make_sync(_sid, _nid)
@@ -224,7 +224,7 @@ def server(input, output, session):
             try:
                 total += float(input[f"{input_id}_{key}"]())
             except Exception:
-                logger.debug("Distribution sum: could not read %s_%s", input_id, key)
+                pass
         ok = abs(total - 1.0) <= 0.01
         color = "var(--success,#2DD4A0)" if ok else "var(--warning,#F5A623)"
         symbol = "\u2713" if ok else "\u2717"
