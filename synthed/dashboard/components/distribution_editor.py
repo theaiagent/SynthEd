@@ -27,6 +27,7 @@ def distribution_editor(input_id: str, label: str, values: dict[str, float]) -> 
             )
         )
 
+    # Static sum indicator — reactive update deferred to Phase 2
     total = round(sum(values.values()), 2)
     sum_indicator = ui.div(
         f"\u2211 = {total:.2f} \u2713" if abs(total - 1.0) < 0.01 else f"\u2211 = {total:.2f} \u2717",

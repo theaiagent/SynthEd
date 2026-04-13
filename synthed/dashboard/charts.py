@@ -31,12 +31,20 @@ def _base_layout(**overrides: Any) -> dict:
 
 def dropout_timeline(weekly_dropouts: list[int], n_students: int) -> go.Figure:
     """Cumulative dropout percentage by week — line chart."""
-    cumulative = []
-    total = 0
-    for count in weekly_dropouts:
-        total += count
-        cumulative.append(total / n_students * 100)
+    if n_students <= 0 or not weekly_dropouts:
+        fig = go.Figure()
+        fig.update_layout(**_base_layout(
+            xaxis_title="Week",
+            yaxis_title="Cumulative Dropout %",
+            showlegend=False,
+        ))
+        fig.add_annotation(
+            text="No dropout data", showarrow=False,
+            font=dict(color=TEXT_MUTED, size=14),
+        )
+        return fig
 
+    cumulative = _cumulative_percentages(weekly_dropouts, n_students)
     weeks = list(range(1, len(cumulative) + 1))
     fig = go.Figure()
     fig.add_trace(go.Scatter(
@@ -54,6 +62,16 @@ def dropout_timeline(weekly_dropouts: list[int], n_students: int) -> go.Figure:
         showlegend=False,
     ))
     return fig
+
+
+def _cumulative_percentages(weekly: list[int], n_students: int) -> list[float]:
+    """Convert weekly dropout counts to cumulative percentage list."""
+    result = []
+    total = 0
+    for count in weekly:
+        total += count
+        result.append(total / n_students * 100)
+    return result
 
 
 def engagement_distribution(engagements: list[float]) -> go.Figure:

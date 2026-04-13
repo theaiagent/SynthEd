@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import fields
+from pathlib import Path
 from typing import Any
 
 from ..agents.persona import PersonaConfig
@@ -10,6 +12,12 @@ from ..simulation.engine_config import EngineConfig
 from ..simulation.grading import GradingConfig
 from ..simulation.institutional import InstitutionalConfig
 from ..pipeline_config import PipelineConfig
+
+
+# ── Security constants ──
+
+MAX_IMPORT_SIZE_BYTES: int = 512 * 1024  # 512 KB
+MAX_N_STUDENTS: int = 10_000
 
 
 # ── Metadata: field descriptions + warnings ──
@@ -212,3 +220,39 @@ def normalize_distribution(dist: dict[str, float], changed_key: str) -> dict[str
         result[first_other] = round(result[first_other] + diff, 4)
 
     return result
+
+
+def validate_output_dir(output_dir: str) -> str:
+    """Validate output_dir is safe — no path traversal, stays under CWD.
+
+    Returns the resolved path string if valid, raises ValueError otherwise.
+    """
+    resolved = Path(output_dir).resolve()
+    cwd = Path(os.getcwd()).resolve()
+    try:
+        resolved.relative_to(cwd)
+    except ValueError:
+        raise ValueError("output_dir must be within the working directory")
+    return str(resolved)
+
+
+# ── Presets ──
+
+PRESETS: dict[str, dict[str, Any]] = {
+    "default": {},
+    "high_risk": {
+        "persona_dropout_base_rate": 0.95,
+        "persona_financial_stress_mean": 0.80,
+        "persona_employment_rate": 0.90,
+        "inst_support_services_quality": 0.2,
+        "inst_instructional_design_quality": 0.3,
+    },
+    "low_dropout": {
+        "persona_dropout_base_rate": 0.30,
+        "persona_financial_stress_mean": 0.25,
+        "persona_self_regulation_mean": 0.70,
+        "inst_support_services_quality": 0.9,
+        "inst_instructional_design_quality": 0.8,
+        "inst_teaching_presence_baseline": 0.8,
+    },
+}
