@@ -288,8 +288,9 @@ class TestSecurityValidation:
             validate_output_dir("/tmp/evil_output")
 
     def test_valid_relative_path(self):
+        from pathlib import Path
         result = validate_output_dir("./output")
-        assert "output" in result
+        assert result == str((Path.cwd() / "output").resolve())
 
     def test_n_students_cap_constant(self):
         assert MAX_N_STUDENTS == 10_000
@@ -302,13 +303,10 @@ class TestSecurityValidation:
         assert _validate_port("1024") == 1024
         assert _validate_port("65535") == 65535
 
-    def test_port_validation_too_low(self):
+    @pytest.mark.parametrize("raw", ["80", "70000"])
+    def test_port_validation_out_of_range(self, raw):
         with pytest.raises(ValueError, match="between"):
-            _validate_port("80")
-
-    def test_port_validation_too_high(self):
-        with pytest.raises(ValueError, match="between"):
-            _validate_port("70000")
+            _validate_port(raw)
 
     def test_port_validation_non_numeric(self):
         with pytest.raises(ValueError):
