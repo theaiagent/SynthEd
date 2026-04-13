@@ -50,8 +50,8 @@ def dropout_timeline(weekly_dropouts: list[int], n_students: int) -> go.Figure:
     fig.add_trace(go.Scatter(
         x=weeks, y=cumulative,
         mode="lines+markers",
-        line=dict(color=ACCENT, width=2),
-        marker=dict(size=5, color=ACCENT),
+        line=dict(color=ACCENT, width=3),
+        marker=dict(size=7, color=ACCENT),
         name="Cumulative Dropout %",
         hovertemplate="Week %{x}: %{y:.1f}%<extra></extra>",
     ))

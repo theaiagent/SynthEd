@@ -124,7 +124,22 @@ def _approximate_weekly_dropouts(
 def server(input, output, session):
     # Reactive values
     sim_results = reactive.value(None)
+    active_preset = reactive.value("default")
     default_config = PipelineConfig()
+
+    # ── Preset buttons (reactive active state) ──
+    @render.ui
+    def preset_buttons_ui():
+        current = active_preset.get()
+        def _cls(name: str) -> str:
+            base = "btn preset-btn me-1"
+            return f"{base} btn-primary active" if name == current else f"{base} btn-outline-secondary"
+        return ui.div(
+            ui.input_action_button("preset_default", "Default", class_=_cls("default")),
+            ui.input_action_button("preset_high_risk", "High Risk", class_=_cls("high_risk")),
+            ui.input_action_button("preset_low_dropout", "Low Dropout", class_=_cls("low_dropout")),
+            class_="d-flex",
+        )
 
     # ── Status text ──
     @render.text
@@ -485,16 +500,19 @@ def server(input, output, session):
     @reactive.effect
     @reactive.event(input.preset_default)
     def _preset_default():
+        active_preset.set("default")
         _apply_preset("default")
 
     @reactive.effect
     @reactive.event(input.preset_high_risk)
     def _preset_high_risk():
+        active_preset.set("high_risk")
         _apply_preset("high_risk")
 
     @reactive.effect
     @reactive.event(input.preset_low_dropout)
     def _preset_low_dropout():
+        active_preset.set("low_dropout")
         _apply_preset("low_dropout")
 
     # ── Helper: collect current UI values ──

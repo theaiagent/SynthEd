@@ -104,6 +104,10 @@ body {
     font-weight: 500;
 }
 
+/* Heading contrast fix — WCAG AA min 4.5:1 */
+h5, .h5 { color: #A0A5B4 !important; }
+h6, .h6 { color: #8B90A0 !important; }
+
 /* Sliders */
 .irs--shiny .irs-bar { background: var(--accent); }
 .irs--shiny .irs-handle { border-color: var(--accent); background: var(--accent); }
@@ -205,6 +209,34 @@ body {
     font-size: 12px;
     padding: 4px 12px;
 }
+.preset-btn.active {
+    background: var(--accent) !important;
+    border-color: var(--accent) !important;
+    color: #fff !important;
+}
+
+/* Card value contrast fix */
+.card-value.text-primary { color: #3CA0E6 !important; }
+.card-value.text-warning { color: #F5A623 !important; }
+.card-value.text-success { color: #2DD4A0 !important; }
+
+/* Import file input placeholder fix */
+.shiny-input-container .form-control::file-selector-button {
+    color: var(--text-secondary) !important;
+}
+
+/* Select dropdown min-width */
+.form-select { min-width: 100px; }
+
+/* Sidebar scroll fix — ensure independent scroll */
+.bslib-sidebar-layout > .sidebar,
+.bslib-sidebar-layout > .sidebar > .sidebar-content {
+    overflow-y: auto !important;
+    max-height: calc(100vh - 56px) !important;
+}
+
+/* Offcanvas backdrop */
+.offcanvas-backdrop { background-color: rgba(0,0,0,0.6); }
 """
 
 # Combine generated :root with static CSS

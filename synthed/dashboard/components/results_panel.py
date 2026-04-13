@@ -45,27 +45,27 @@ def results_layout() -> ui.Tag:
             ui.output_ui("chart_dropout"),
             class_="mb-3",
         ),
-        ui.div(
-            ui.h6("Engagement Distribution"),
-            ui.output_ui("chart_engagement"),
-            class_="mb-3",
-        ),
-        ui.div(
-            ui.h6("GPA Distribution"),
-            ui.output_ui("chart_gpa"),
-            class_="mb-3",
+        ui.row(
+            ui.column(
+                6,
+                ui.div(
+                    ui.h6("Engagement Distribution"),
+                    ui.output_ui("chart_engagement"),
+                    class_="mb-3",
+                ),
+            ),
+            ui.column(
+                6,
+                ui.div(
+                    ui.h6("GPA Distribution"),
+                    ui.output_ui("chart_gpa"),
+                    class_="mb-3",
+                ),
+            ),
         ),
         ui.div(
             ui.h6("Validation Radar"),
             ui.output_ui("chart_validation"),
             class_="mb-3",
-        ),
-        # Export
-        ui.hr(class_="my-3", style="border-color:var(--border,#1E2130);"),
-        ui.row(
-            ui.column(6, ui.download_button("export_config", "Export Config JSON",
-                                            class_="btn btn-outline-secondary btn-sm w-100")),
-            ui.column(6, ui.input_file("import_config", "Import configuration",
-                                       accept=[".json"], button_label="Import Config")),
         ),
     )
