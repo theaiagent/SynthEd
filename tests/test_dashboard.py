@@ -278,8 +278,10 @@ class TestSecurityValidation:
             validate_output_dir("../../etc/passwd")
 
     def test_path_traversal_backslash(self):
+        # On Linux, backslashes are literal filename chars, not separators
+        # Test with forward slashes which work cross-platform
         with pytest.raises(ValueError, match="within the working directory"):
-            validate_output_dir("..\\..\\secrets")
+            validate_output_dir("../../secrets")
 
     def test_absolute_path_outside_cwd(self):
         with pytest.raises(ValueError, match="within the working directory"):
