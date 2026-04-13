@@ -7,19 +7,21 @@ from typing import Any
 import plotly.graph_objects as go
 
 from .theme import (
-    BG, SURFACE, BORDER, TEXT_PRIMARY, TEXT_SECONDARY, TEXT_MUTED,
-    ACCENT, SUCCESS, WARNING,
+    SURFACE, BORDER, TEXT_PRIMARY, TEXT_SECONDARY, TEXT_MUTED,
+    ACCENT, ACCENT_LIGHT, SUCCESS, WARNING, ERROR, INFO,
 )
 
+_GRID_COLOR = "rgba(30, 33, 48, 0.5)"
 
 _LAYOUT_DEFAULTS = dict(
-    paper_bgcolor=BG,
-    plot_bgcolor=SURFACE,
+    paper_bgcolor="rgba(0,0,0,0)",
+    plot_bgcolor="rgba(0,0,0,0)",
     font=dict(family="Inter, system-ui, sans-serif", color=TEXT_SECONDARY, size=12),
     margin=dict(l=40, r=20, t=30, b=40),
-    xaxis=dict(gridcolor=BORDER, zerolinecolor=BORDER),
-    yaxis=dict(gridcolor=BORDER, zerolinecolor=BORDER),
+    xaxis=dict(gridcolor=_GRID_COLOR, zerolinecolor=_GRID_COLOR),
+    yaxis=dict(gridcolor=_GRID_COLOR, zerolinecolor=_GRID_COLOR),
     hoverlabel=dict(bgcolor=SURFACE, font_color=TEXT_PRIMARY, bordercolor=BORDER),
+    colorway=[ACCENT, ACCENT_LIGHT, SUCCESS, WARNING, ERROR, INFO],
 )
 
 
@@ -142,7 +144,7 @@ def validation_radar(level_scores: dict[str, float]) -> go.Figure:
         r=values_closed,
         theta=categories_closed,
         fill="toself",
-        fillcolor="rgba(79, 142, 247, 0.15)",
+        fillcolor="rgba(99, 102, 241, 0.15)",
         line=dict(color=ACCENT, width=2),
         marker=dict(size=6, color=ACCENT),
         name="Validation Score",

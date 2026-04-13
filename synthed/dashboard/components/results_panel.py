@@ -5,31 +5,34 @@ from __future__ import annotations
 from shiny import ui
 
 
-def summary_card(card_id: str, label: str, color_class: str = "text-primary") -> ui.Tag:
-    """A single summary metric card."""
+def summary_card(
+    card_id: str,
+    label: str,
+    color_class: str = "text-primary",
+    accent_class: str = "",
+) -> ui.Tag:
+    """A single summary metric card with semantic accent border."""
     return ui.div(
-        ui.div(label, class_="card-label",
-               style="font-size:11px;color:var(--text-secondary,#8B90A0);text-transform:uppercase;letter-spacing:0.5px;"),
+        ui.div(label, class_="card-label"),
         ui.div(
             ui.output_text(card_id, inline=True),
-            class_=f"card-value value-display {color_class}",
-            style="font-size:24px;font-weight:600;",
+            class_=f"card-value {color_class}",
         ),
         ui.div(
             ui.output_text(f"{card_id}_sub", inline=True),
-            style="font-size:10px;color:var(--text-muted,#4A4F63);font-family:'JetBrains Mono',monospace;",
+            style="font-size:10px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;",
         ),
-        class_="summary-card p-3",
+        class_=f"summary-card {accent_class}".strip(),
     )
 
 
 def summary_cards_row() -> ui.Tag:
     """4 summary cards in a 2x2 grid."""
     return ui.row(
-        ui.column(6, summary_card("dropout_rate", "Dropout Rate", "text-primary")),
-        ui.column(6, summary_card("mean_engagement", "Engagement", "text-warning")),
-        ui.column(6, summary_card("mean_gpa", "Mean GPA", "text-success"), class_="mt-2"),
-        ui.column(6, summary_card("validation_grade", "Validation", "text-success"), class_="mt-2"),
+        ui.column(6, summary_card("dropout_rate", "Dropout Rate", "text-danger", "summary-card--dropout")),
+        ui.column(6, summary_card("mean_engagement", "Engagement", "text-warning", "summary-card--warning")),
+        ui.column(6, summary_card("mean_gpa", "Mean GPA", "text-info", "summary-card--info"), class_="mt-2"),
+        ui.column(6, summary_card("validation_grade", "Validation", "text-success", "summary-card--success"), class_="mt-2"),
     )
 
 
