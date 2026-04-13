@@ -130,11 +130,13 @@ h6, .h6 { color: var(--text-secondary) !important; font-weight: 600; }
 .btn-primary {
     background: linear-gradient(135deg, var(--accent) 0%, #7C3AED 100%) !important;
     border: none !important;
+    border-radius: 12px !important;
     font-weight: 600;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
     transition: box-shadow 0.2s ease, transform 0.15s ease;
 }
 .btn-primary:hover {
-    box-shadow: 0 0 16px rgba(99, 102, 241, 0.4) !important;
+    box-shadow: 0 6px 25px rgba(99, 102, 241, 0.5) !important;
     background: linear-gradient(135deg, var(--accent-light) 0%, #8B5CF6 100%) !important;
     transform: translateY(-1px);
 }
@@ -207,6 +209,46 @@ h6, .h6 { color: var(--text-secondary) !important; font-weight: 600; }
 .card-value.text-success { color: var(--success) !important; }
 .card-value.text-info { color: var(--info) !important; }
 
+/* Shiny value-box overrides (KPI cards use bslib internally) */
+.bslib-value-box .card {
+    border-radius: 12px !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.bslib-value-box .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+.bslib-value-box .value-box-value {
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 28px !important;
+}
+
+/* Main content scroll fix */
+[role="tabpanel"] > .container-fluid {
+    overflow-y: auto;
+    scroll-behavior: smooth;
+}
+
+/* Status text overflow fix */
+.text-end.text-secondary {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 12px;
+}
+
+/* Chart containers — subtle card frame + display fix for Shiny's display:contents */
+div.shiny-html-output[id^="chart_"] {
+    display: block !important;
+    min-height: 400px;
+}
+.js-plotly-plot {
+    border: 1px solid rgba(148, 163, 184, 0.08);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
 /* Warning border */
 .param-warning { border-left: 3px solid var(--warning) !important; }
 
@@ -241,15 +283,29 @@ h6, .h6 { color: var(--text-secondary) !important; font-weight: 600; }
     padding: 4px 12px;
 }
 .preset-btn.active {
-    background: var(--accent) !important;
-    border-color: var(--accent) !important;
+    background: linear-gradient(135deg, var(--accent), #8B5CF6) !important;
+    border: none !important;
     color: #fff !important;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+}
+.preset-btn:not(.active) {
+    background: var(--elevated) !important;
+    border: 1px solid rgba(148, 163, 184, 0.12) !important;
+}
+.preset-btn:not(.active):hover {
+    border-color: rgba(99, 102, 241, 0.4) !important;
 }
 
-/* Card value contrast fix */
-.card-value.text-primary { color: #3CA0E6 !important; }
-.card-value.text-warning { color: #F5A623 !important; }
-.card-value.text-success { color: #2DD4A0 !important; }
+/* Sub-section headings inside accordion (Demographics, Academic, Risk) */
+.accordion-body h6 {
+    color: var(--text-primary) !important;
+    font-size: 13px !important;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 4px;
+    margin-top: 12px !important;
+}
 
 /* Import file input placeholder fix */
 .shiny-input-container .form-control::file-selector-button {
@@ -268,6 +324,42 @@ h6, .h6 { color: var(--text-secondary) !important; font-weight: 600; }
 
 /* Offcanvas backdrop */
 .offcanvas-backdrop { background-color: rgba(0,0,0,0.6); }
+
+/* ── Light Mode Override ── */
+body.light-mode {
+    --bg: #F8FAFC;
+    --surface: #FFFFFF;
+    --elevated: #F1F5F9;
+    --border: #E2E8F0;
+    --border-hover: #CBD5E1;
+    --text-primary: #0F172A;
+    --text-secondary: #475569;
+    --text-muted: #94A3B8;
+}
+body.light-mode .navbar, body.light-mode .navbar-default {
+    background: rgba(248, 250, 252, 0.85) !important;
+    border-bottom-color: #E2E8F0 !important;
+}
+body.light-mode .navbar-brand { color: #0F172A !important; }
+body.light-mode .sidebar { background: #FFFFFF !important; }
+body.light-mode .accordion-item { background: #FFFFFF !important; }
+body.light-mode .accordion-button { background: #FFFFFF !important; color: #0F172A !important; }
+body.light-mode .accordion-body { background: #F8FAFC !important; }
+body.light-mode .form-control, body.light-mode .form-select {
+    background: #FFFFFF !important;
+    border-color: #E2E8F0 !important;
+    color: #0F172A !important;
+}
+body.light-mode .summary-card {
+    background: linear-gradient(135deg, #FFFFFF 0%, #F1F5F9 100%);
+    border-color: #E2E8F0;
+}
+body.light-mode .run-bar-sticky { background: #F8FAFC; }
+body.light-mode .shiny-notification { background: #FFFFFF !important; color: #0F172A !important; border-color: #E2E8F0 !important; }
+body.light-mode .offcanvas { background: #F8FAFC !important; color: #0F172A !important; }
+body.light-mode .btn-outline-secondary { border-color: #CBD5E1 !important; color: #475569 !important; }
+body.light-mode .irs--shiny .irs-line { background: #E2E8F0; }
+body.light-mode .irs--shiny .irs-handle { background: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
 """
 
 # Combine generated :root with static CSS
