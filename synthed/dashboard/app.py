@@ -180,6 +180,27 @@ def server(input, output, session):
             editors.append(distribution_editor(f"persona_{field_name}", label, dist_val))
         return ui.div(*editors)
 
+    # ── Reactive distribution sum indicators ──
+    def _make_dist_sum_renderer(field_name: str, keys: list[str]):
+        input_id = f"persona_{field_name}"
+
+        @render.text(id=f"{input_id}_sum")
+        def _():
+            total = 0.0
+            for key in keys:
+                try:
+                    total += float(input[f"{input_id}_{key}"]())
+                except Exception:
+                    pass
+            ok = abs(total - 1.0) < 0.01
+            symbol = "\u2713" if ok else "\u2717"
+            return f"\u2211 = {total:.2f} {symbol}"
+
+    pc = default_config.persona_config
+    for _fn in DISTRIBUTION_FIELDS:
+        _dist_val = getattr(pc, _fn, {})
+        _make_dist_sum_renderer(_fn, list(_dist_val.keys()))
+
     # ── Simulation status indicator ──
     sim_running = reactive.value(False)
 

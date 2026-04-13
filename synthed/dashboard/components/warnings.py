@@ -52,6 +52,19 @@ def validate_config(values: dict[str, Any]) -> list[dict[str, str]]:
             "level": "error",
         })
 
+    # Distribution sums must equal 1.0
+    from ..config_bridge import DISTRIBUTION_FIELDS
+    for field_name, label in DISTRIBUTION_FIELDS.items():
+        dist = values.get(f"persona_{field_name}")
+        if isinstance(dist, dict) and dist:
+            total = sum(dist.values())
+            if abs(total - 1.0) > 0.01:
+                issues.append({
+                    "field": label,
+                    "message": f"{label} distribution sums to {total:.2f} (must be 1.0)",
+                    "level": "error",
+                })
+
     return issues
 
 
