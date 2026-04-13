@@ -219,7 +219,7 @@ def server(input, output, session):
                 total += float(input[f"{input_id}_{key}"]())
             except Exception:
                 pass
-        ok = abs(total - 1.0) < 0.01
+        ok = abs(total - 1.0) <= 0.01
         color = "var(--success,#2DD4A0)" if ok else "var(--warning,#F5A623)"
         symbol = "\u2713" if ok else "\u2717"
         return ui.div(
