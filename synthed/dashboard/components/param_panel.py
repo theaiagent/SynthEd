@@ -9,6 +9,19 @@ from ..config_bridge import (
 )
 
 
+def _snake_to_title(name: str) -> str:
+    """Convert snake_case to Title Case: 'employment_rate' -> 'Employment Rate'."""
+    return name.replace("_", " ").title()
+
+
+def _hint_text(field_name: str) -> ui.Tag | str:
+    """Return persistent hint text below input, or empty string."""
+    desc = get_description(field_name)
+    if not desc:
+        return ""
+    return ui.div(desc, class_="param-hint")
+
+
 def _tooltip_icon(field_name: str) -> ui.Tag | str:
     """Create an info tooltip icon for a parameter."""
     desc = get_description(field_name)
@@ -29,11 +42,15 @@ def _slider_input(
     max_val: float = 1.0,
     step: float = 0.01,
 ) -> ui.Tag:
-    """Slider + numeric input for a float parameter."""
-    return ui.input_slider(
-        input_id,
-        ui.span(label, " ", _tooltip_icon(input_id)),
-        min=min_val, max=max_val, value=value, step=step,
+    """Slider + hint text for a float parameter."""
+    human_label = _snake_to_title(label)
+    return ui.div(
+        ui.input_slider(
+            input_id,
+            ui.span(human_label, " ", _tooltip_icon(input_id)),
+            min=min_val, max=max_val, value=value, step=step,
+        ),
+        _hint_text(input_id),
     )
 
 
@@ -42,16 +59,16 @@ def pipeline_controls() -> ui.Tag:
     return ui.accordion_panel(
         "Pipeline Controls",
         ui.row(
-            ui.column(4, ui.input_numeric("n_students", ui.span("n_students ", _tooltip_icon("n_students")),
+            ui.column(4, ui.input_numeric("n_students", ui.span("Students ", _tooltip_icon("n_students")),
                                           value=200, min=10, max=10000, step=10)),
-            ui.column(4, ui.input_numeric("seed", ui.span("seed ", _tooltip_icon("seed")),
+            ui.column(4, ui.input_numeric("seed", ui.span("Seed ", _tooltip_icon("seed")),
                                           value=42, min=0)),
-            ui.column(4, ui.input_numeric("n_semesters", ui.span("n_semesters ", _tooltip_icon("n_semesters")),
+            ui.column(4, ui.input_numeric("n_semesters", ui.span("Semesters ", _tooltip_icon("n_semesters")),
                                           value=1, min=1, max=8)),
         ),
         ui.row(
-            ui.column(6, ui.input_checkbox("export_oulad", "Export OULAD format", value=False)),
-            ui.column(6, ui.input_text("output_dir", "Output dir", value="./output")),
+            ui.column(6, ui.input_checkbox("export_oulad", "Export OULAD Format", value=False)),
+            ui.column(6, ui.input_text("output_dir", "Output Directory", value="./output")),
         ),
         value="pipeline",
         icon=ui.tags.i(class_="bi bi-gear"),
@@ -61,7 +78,7 @@ def pipeline_controls() -> ui.Tag:
 def persona_config_panel() -> ui.Tag:
     """PersonaConfig parameter panel."""
     return ui.accordion_panel(
-        "PersonaConfig",
+        "Persona",
         # Demographics
         ui.h6("Demographics", class_="text-secondary mt-2"),
         _slider_input("persona_employment_rate", "employment_rate", 0.78),
@@ -73,9 +90,9 @@ def persona_config_panel() -> ui.Tag:
         ui.h6("Academic", class_="text-secondary mt-3"),
         ui.row(
             ui.column(6, ui.input_numeric("persona_prior_gpa_mean",
-                                          ui.span("prior_gpa_mean ", _tooltip_icon("prior_gpa_mean")),
+                                          ui.span("Prior GPA Mean ", _tooltip_icon("prior_gpa_mean")),
                                           value=2.3, min=0.0, max=4.0, step=0.1)),
-            ui.column(6, ui.input_numeric("persona_prior_gpa_std", "prior_gpa_std",
+            ui.column(6, ui.input_numeric("persona_prior_gpa_std", "Prior GPA Std",
                                           value=0.8, min=0.0, max=2.0, step=0.1)),
         ),
         ui.row(
@@ -89,7 +106,7 @@ def persona_config_panel() -> ui.Tag:
         _slider_input("persona_unavoidable_withdrawal_rate", "unavoidable_withdrawal_rate", 0.003,
                       max_val=0.05, step=0.001),
 
-        ui.input_checkbox("persona_generate_names", "Generate names", value=False),
+        ui.input_checkbox("persona_generate_names", "Generate Names", value=False),
 
         value="persona",
         icon=ui.tags.i(class_="bi bi-people"),
@@ -106,7 +123,7 @@ def institutional_config_panel() -> ui.Tag:
         ("inst_curriculum_flexibility", "curriculum_flexibility", 0.5),
     ]
     return ui.accordion_panel(
-        "InstitutionalConfig",
+        "Institutional",
         *[_slider_input(fid, label, val) for fid, label, val in inst_fields],
         value="institutional",
         icon=ui.tags.i(class_="bi bi-building"),
@@ -116,12 +133,12 @@ def institutional_config_panel() -> ui.Tag:
 def grading_config_panel() -> ui.Tag:
     """GradingConfig — modes, weights, thresholds."""
     return ui.accordion_panel(
-        "GradingConfig",
+        "Grading",
         # Modes
         ui.row(
-            ui.column(4, ui.input_select("grading_assessment_mode", "Assessment mode",
-                                         {"mixed": "Mixed", "exam_only": "Exam only", "continuous": "Continuous"})),
-            ui.column(4, ui.input_select("grading_grading_method", "Grading method",
+            ui.column(4, ui.input_select("grading_assessment_mode", "Assessment Mode",
+                                         {"mixed": "Mixed", "exam_only": "Exam Only", "continuous": "Continuous"})),
+            ui.column(4, ui.input_select("grading_grading_method", "Grading Method",
                                          {"absolute": "Absolute", "relative": "Relative"})),
             ui.column(4, ui.input_select("grading_distribution", "Distribution",
                                          {"beta": "Beta", "normal": "Normal", "uniform": "Uniform"})),
@@ -136,12 +153,12 @@ def grading_config_panel() -> ui.Tag:
         _slider_input("grading_pass_threshold", "pass_threshold", 0.64),
         _slider_input("grading_distinction_threshold", "distinction_threshold", 0.73),
         # Dual hurdle
-        ui.input_checkbox("grading_dual_hurdle", "Dual hurdle", value=False),
+        ui.input_checkbox("grading_dual_hurdle", "Dual Hurdle", value=False),
         ui.output_ui("dual_hurdle_thresholds"),
         # Other
         _slider_input("grading_late_penalty", "late_penalty", 0.05),
         _slider_input("grading_noise_std", "noise_std", 0.05),
-        ui.input_select("grading_missing_policy", "Missing policy",
+        ui.input_select("grading_missing_policy", "Missing Policy",
                         {"zero": "Zero", "redistribute": "Redistribute"}),
         value="grading",
         icon=ui.tags.i(class_="bi bi-mortarboard"),
@@ -168,8 +185,8 @@ def _engine_group(group_name: str, field_names: list[tuple[str, float]]) -> ui.T
     )
 
 
-def engine_config_panel() -> ui.Tag:
-    """EngineConfig — 70 constants behind a locked gate."""
+def engine_config_offcanvas() -> ui.Tag:
+    """EngineConfig in an offcanvas panel triggered by a button."""
     from dataclasses import fields as dc_fields
     from ...simulation.engine_config import EngineConfig
 
@@ -201,29 +218,76 @@ def engine_config_panel() -> ui.Tag:
 
     sub_groups = [_engine_group(g, fs) for g, fs in groups.items()]
 
-    return ui.accordion_panel(
-        "EngineConfig (Advanced)",
-        ui.div(
-            ui.tags.i(class_="bi bi-shield-lock me-2"),
-            "70 frozen engine constants. Edit with caution.",
-            class_="text-secondary mb-3",
-            style="font-size:12px;",
+    return ui.TagList(
+        ui.tags.button(
+            ui.tags.i(class_="bi bi-sliders me-1"),
+            "Engine Constants",
+            type="button",
+            class_="btn btn-outline-secondary btn-sm w-100 mt-2",
+            **{"data-bs-toggle": "offcanvas", "data-bs-target": "#engine_offcanvas"},
         ),
-        *sub_groups,
-        value="engine",
-        icon=ui.tags.i(class_="bi bi-sliders"),
+        ui.tags.div(
+            ui.tags.div(
+                ui.tags.div(
+                    ui.tags.h5(
+                        "EngineConfig (Advanced)",
+                        class_="offcanvas-title",
+                    ),
+                    ui.tags.button(
+                        type="button",
+                        class_="btn-close btn-close-white",
+                        **{"data-bs-dismiss": "offcanvas"},
+                    ),
+                    class_="offcanvas-header",
+                ),
+                ui.tags.div(
+                    ui.div(
+                        ui.tags.i(class_="bi bi-shield-lock me-2"),
+                        "70 frozen engine constants. Edit with caution.",
+                        class_="text-secondary mb-3",
+                        style="font-size:12px;",
+                    ),
+                    *sub_groups,
+                    class_="offcanvas-body",
+                ),
+                class_="offcanvas offcanvas-end",
+                tabindex="-1",
+                id="engine_offcanvas",
+                style="width:450px;background:var(--bg,#0F1117);color:var(--text-primary,#E8EAF0);",
+            ),
+        ),
+    )
+
+
+def preset_buttons() -> ui.Tag:
+    """Preset configuration buttons."""
+    return ui.div(
+        ui.h6("Presets", class_="text-secondary mb-2"),
+        ui.div(
+            ui.input_action_button("preset_default", "Default",
+                                   class_="btn btn-outline-secondary preset-btn me-1"),
+            ui.input_action_button("preset_high_risk", "High Risk",
+                                   class_="btn btn-outline-secondary preset-btn me-1"),
+            ui.input_action_button("preset_low_dropout", "Low Dropout",
+                                   class_="btn btn-outline-secondary preset-btn"),
+            class_="d-flex",
+        ),
+        class_="mb-3",
     )
 
 
 def config_accordion() -> ui.Tag:
     """Full configuration accordion with all panels."""
-    return ui.accordion(
-        pipeline_controls(),
-        persona_config_panel(),
-        institutional_config_panel(),
-        grading_config_panel(),
-        engine_config_panel(),
-        id="config_accordion",
-        open=["pipeline", "persona"],
-        multiple=True,
+    return ui.div(
+        preset_buttons(),
+        ui.accordion(
+            pipeline_controls(),
+            persona_config_panel(),
+            institutional_config_panel(),
+            grading_config_panel(),
+            id="config_accordion",
+            open="pipeline",
+            multiple=False,
+        ),
+        engine_config_offcanvas(),
     )

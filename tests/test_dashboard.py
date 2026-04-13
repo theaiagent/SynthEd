@@ -12,9 +12,13 @@ from synthed.dashboard.config_bridge import (
     normalize_distribution,
     get_description,
     check_warning,
+    validate_output_dir,
+    MAX_IMPORT_SIZE_BYTES,
+    MAX_N_STUDENTS,
 )
-from synthed.dashboard.components.warnings import validate_config
+from synthed.dashboard.components.warnings import validate_config, warning_badge_count
 from synthed.dashboard import charts
+from synthed.dashboard.__main__ import _validate_port
 
 
 class TestConfigBridgeRoundTrip:
@@ -161,3 +165,149 @@ class TestChartBuilders:
         fig = charts.validation_radar(scores)
         assert fig is not None
         assert len(fig.data) == 1
+
+
+# ── T1: Warnings + badge count ──
+
+
+class TestWarningsExtended:
+    """Additional validation and badge count tests."""
+
+    def test_weight_sum_error(self):
+        vals = config_to_dict(PipelineConfig())
+        vals["grading_midterm_weight"] = 0.3
+        vals["grading_final_weight"] = 0.3
+        issues = validate_config(vals)
+        errors = [i for i in issues if i["level"] == "error"]
+        assert any("must be 1.0" in e["message"] for e in errors)
+
+    def test_clip_bounds_error(self):
+        vals = config_to_dict(PipelineConfig())
+        vals["engine__ENGAGEMENT_CLIP_LO"] = 0.5
+        vals["engine__ENGAGEMENT_CLIP_HI"] = 0.3
+        issues = validate_config(vals)
+        errors = [i for i in issues if i["level"] == "error"]
+        assert any("CLIP_LO" in e["message"] for e in errors)
+
+    def test_badge_count(self):
+        vals = config_to_dict(PipelineConfig())
+        vals["grading_pass_threshold"] = 0.9
+        vals["grading_distinction_threshold"] = 0.7
+        vals["persona_dropout_base_rate"] = 0.95
+        issues = validate_config(vals)
+        assert warning_badge_count(issues) == len(issues)
+        assert warning_badge_count(issues) >= 2
+
+
+# ── T2: Chart edge cases ──
+
+
+class TestChartEdgeCases:
+    """Chart functions handle edge cases gracefully."""
+
+    def test_dropout_timeline_empty(self):
+        fig = charts.dropout_timeline([], 100)
+        assert fig is not None
+        assert len(fig.data) == 0  # no traces, just annotation
+
+    def test_dropout_timeline_zero_students(self):
+        fig = charts.dropout_timeline([1, 2, 3], 0)
+        assert fig is not None
+        # Should not raise ZeroDivisionError
+
+    def test_engagement_single_value(self):
+        fig = charts.engagement_distribution([0.5])
+        assert fig is not None
+        assert len(fig.data) == 1
+
+    def test_radar_polygon_closes(self):
+        scores = {"A": 0.8, "B": 0.6, "C": 0.9}
+        fig = charts.validation_radar(scores)
+        trace = fig.data[0]
+        assert trace.theta[0] == trace.theta[-1]
+        assert trace.r[0] == trace.r[-1]
+
+    def test_engagement_vlines(self):
+        import numpy as np
+        rng = np.random.default_rng(42)
+        engagements = rng.uniform(0, 1, 50).tolist()
+        fig = charts.engagement_distribution(engagements)
+        # vlines are added as shapes in plotly
+        shapes = fig.layout.shapes
+        assert len(shapes) >= 2  # mean + median
+
+
+# ── T3: Config bridge edge cases ──
+
+
+class TestConfigBridgeEdgeCases:
+    """Config bridge handles boundary and unusual inputs."""
+
+    def test_threshold_boundary_equal(self):
+        vals = config_to_dict(PipelineConfig())
+        vals["grading_pass_threshold"] = 0.7
+        vals["grading_distinction_threshold"] = 0.7
+        issues = validate_config(vals)
+        errors = [i for i in issues if i["level"] == "error"]
+        assert any("pass_threshold" in e["message"] for e in errors)
+
+    def test_non_numeric_warning(self):
+        result = check_warning("persona_dropout_base_rate", "not_a_number")
+        assert result is None
+
+    def test_single_key_distribution(self):
+        dist = {"only": 1.0}
+        result = normalize_distribution(dist, "only")
+        assert abs(result["only"] - 1.0) < 1e-6
+
+    def test_enum_conversion_grading_scale(self):
+        vals = config_to_dict(PipelineConfig())
+        # GradingScale is serialized as int — ensure round-trip works
+        config = dict_to_config(vals)
+        assert config.grading_config.scale is not None
+
+
+# ── T4: Security validation tests ──
+
+
+class TestSecurityValidation:
+    """Security-related validations."""
+
+    def test_path_traversal_rejected(self):
+        with pytest.raises(ValueError, match="within the working directory"):
+            validate_output_dir("../../etc/passwd")
+
+    def test_path_traversal_backslash(self):
+        with pytest.raises(ValueError, match="within the working directory"):
+            validate_output_dir("..\\..\\secrets")
+
+    def test_absolute_path_outside_cwd(self):
+        with pytest.raises(ValueError, match="within the working directory"):
+            validate_output_dir("/tmp/evil_output")
+
+    def test_valid_relative_path(self):
+        result = validate_output_dir("./output")
+        assert "output" in result
+
+    def test_n_students_cap_constant(self):
+        assert MAX_N_STUDENTS == 10_000
+
+    def test_import_size_limit_constant(self):
+        assert MAX_IMPORT_SIZE_BYTES == 512 * 1024
+
+    def test_port_validation_valid(self):
+        assert _validate_port("8080") == 8080
+        assert _validate_port("1024") == 1024
+        assert _validate_port("65535") == 65535
+
+    def test_port_validation_too_low(self):
+        with pytest.raises(ValueError, match="between"):
+            _validate_port("80")
+
+    def test_port_validation_too_high(self):
+        with pytest.raises(ValueError, match="between"):
+            _validate_port("70000")
+
+    def test_port_validation_non_numeric(self):
+        with pytest.raises(ValueError):
+            _validate_port("abc")

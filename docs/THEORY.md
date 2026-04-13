@@ -271,5 +271,6 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 | `test_baulke_institutional.py` | 11 | Baulke institutional modulation, threshold scaling |
 | `test_pipeline_config.py` | 19 | PipelineConfig frozen dataclass, serialization |
 | `test_theory_protocol.py` | 32 | TheoryModule protocol, phase dispatch, auto-discovery, engagement deltas |
+| `test_dashboard.py` | 42 | Config bridge round-trip, distribution normalization, validation, chart builders, security, edge cases |
 
 CI runs tests across **Python 3.10, 3.11, and 3.12** via [GitHub Actions](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml).

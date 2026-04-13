@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import logging
+import os
 import tempfile
 
 import numpy as np
@@ -14,22 +16,34 @@ from ..pipeline import SynthEdPipeline
 from ..pipeline_config import PipelineConfig
 
 from .theme import CUSTOM_CSS
-from .config_bridge import config_to_dict, dict_to_config, DISTRIBUTION_FIELDS
+from .config_bridge import (
+    config_to_dict,
+    dict_to_config,
+    validate_output_dir,
+    DISTRIBUTION_FIELDS,
+    PRESETS,
+    MAX_IMPORT_SIZE_BYTES,
+    MAX_N_STUDENTS,
+)
 from .components.param_panel import config_accordion
 from .components.results_panel import results_layout
 from .components.warnings import validate_config, preflight_checklist_ui
 from . import charts
+
+logger = logging.getLogger(__name__)
 
 
 # ── UI Layout ──
 
 app_ui = ui.page_navbar(
     ui.head_content(
+        ui.busy_indicators.use(spinners=True, pulse=True),
         ui.tags.style(CUSTOM_CSS),
         ui.tags.link(
             rel="stylesheet",
             href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css",
         ),
+        ui.tags.script(src="https://cdn.plot.ly/plotly-2.35.0.min.js"),
     ),
     ui.nav_panel(
         "Configure",
@@ -45,7 +59,7 @@ app_ui = ui.page_navbar(
             ),
             # Main content area
             ui.div(
-                # Top bar
+                # Top bar — sticky
                 ui.div(
                     ui.row(
                         ui.column(
@@ -58,12 +72,13 @@ app_ui = ui.page_navbar(
                                 ),
                                 class_="btn btn-primary",
                             ),
+                            ui.output_ui("sim_status_indicator"),
                         ),
                         ui.column(4, ui.output_ui("preflight_status")),
                         ui.column(4, ui.output_text("status_text", inline=True),
                                   class_="text-end text-secondary"),
                     ),
-                    class_="p-3 mb-3",
+                    class_="run-bar-sticky p-3 mb-3",
                     style="background:var(--surface,#1A1D27);border-radius:10px;border:1px solid var(--border,#1E2130);",
                 ),
                 # Results area (shown after simulation)
@@ -79,6 +94,29 @@ app_ui = ui.page_navbar(
     bg="#0A0C10",
     inverse=True,
 )
+
+
+# ── Utilities ──
+
+
+def _approximate_weekly_dropouts(
+    dropout_count: int,
+    mean_week: float,
+    std_week: float,
+    total_weeks: int,
+) -> list[int]:
+    """Approximate weekly dropout distribution from summary statistics."""
+    spread = max(std_week, 2.0)
+    weekly: list[int] = []
+    for w in range(1, total_weeks + 1):
+        cdf_val = stats.norm.cdf(w + 0.5, loc=mean_week, scale=spread)
+        weekly.append(int(round(cdf_val * dropout_count)) - sum(weekly))
+    weekly = [max(0, w) for w in weekly]
+    total_approx = sum(weekly)
+    if total_approx > 0 and total_approx != dropout_count:
+        scale = dropout_count / total_approx
+        weekly = [max(0, int(round(w * scale))) for w in weekly]
+    return weekly
 
 
 # ── Server Logic ──
@@ -127,6 +165,23 @@ def server(input, output, session):
             editors.append(distribution_editor(f"persona_{field_name}", label, dist_val))
         return ui.div(*editors)
 
+    # ── Simulation status indicator ──
+    sim_running = reactive.value(False)
+
+    @render.ui
+    def sim_status_indicator():
+        if sim_running.get():
+            return ui.div(
+                ui.tags.span(
+                    class_="spinner-border spinner-border-sm me-2",
+                    role="status",
+                ),
+                "Running...",
+                class_="text-secondary mt-2",
+                style="font-size:13px;",
+            )
+        return ui.div()
+
     # ── Run simulation ──
     @reactive.effect
     @reactive.event(input.run_simulation)
@@ -142,22 +197,30 @@ def server(input, output, session):
             )
             return
 
-        n_students = input.n_students() or 200
-        ui.notification_show("Simulation running...", type="message", duration=None, id="sim_progress")
+        n_students = min(input.n_students() or 200, MAX_N_STUDENTS)
+        sim_running.set(True)
 
         try:
-            if not vals.get("output_dir"):
+            output_dir = vals.get("output_dir") or ""
+            if not output_dir:
                 vals["output_dir"] = tempfile.mkdtemp(prefix="synthed_dash_")
+            else:
+                vals["output_dir"] = validate_output_dir(output_dir)
             config = dict_to_config(vals)
             pipeline = SynthEdPipeline(config=config)
             report = pipeline.run(n_students=n_students)
 
             sim_results.set(report)
-            ui.notification_remove("sim_progress")
             ui.notification_show("Simulation complete!", type="message", duration=3)
-        except Exception as e:
-            ui.notification_remove("sim_progress")
-            ui.notification_show(f"Simulation failed: {e}", type="error", duration=10)
+        except Exception:
+            logger.exception("Simulation failed")
+            ui.notification_show(
+                "Simulation failed. Check server logs for details.",
+                type="error",
+                duration=10,
+            )
+        finally:
+            sim_running.set(False)
 
     # ── Results area ──
     @render.ui
@@ -212,7 +275,7 @@ def server(input, output, session):
         report = sim_results.get()
         if not report:
             return "—"
-        val = report.get("simulation_summary", {}).get("mean_gpa", 0)
+        val = report.get("simulation_summary", {}).get("mean_final_gpa", 0)
         return f"{val:.2f}"
 
     @render.text
@@ -258,28 +321,18 @@ def server(input, output, session):
         if not report:
             return ui.div()
         summary = report.get("simulation_summary", {})
-        # Build weekly dropout from dropout_phase_distribution or mean_dropout_week
         dropout_count = summary.get("dropout_count", 0)
         n = summary.get("total_students", 200)
+        if dropout_count == 0 or n == 0:
+            return ui.div("No dropouts recorded", class_="text-secondary")
         mean_week = summary.get("mean_dropout_week", 7)
         std_week = summary.get("std_dropout_week", 3)
         total_weeks = report.get("config", {}).get("semester_weeks", 14)
-        if dropout_count == 0:
-            return ui.div("No dropouts recorded", class_="text-secondary")
-        # Approximate weekly dropout distribution using normal CDF
-        weekly = []
-        spread = max(std_week, 2.0)
-        for w in range(1, total_weeks + 1):
-            cdf_val = stats.norm.cdf(w + 0.5, loc=mean_week, scale=spread)
-            weekly.append(int(round(cdf_val * dropout_count)) - sum(weekly))
-        weekly = [max(0, w) for w in weekly]
-        # Rescale to match actual dropout count
-        total_approx = sum(weekly)
-        if total_approx > 0 and total_approx != dropout_count:
-            scale = dropout_count / total_approx
-            weekly = [max(0, int(round(w * scale))) for w in weekly]
+        weekly = _approximate_weekly_dropouts(
+            dropout_count, mean_week, std_week, total_weeks,
+        )
         fig = charts.dropout_timeline(weekly, n)
-        return ui.HTML(fig.to_html(full_html=False, include_plotlyjs="cdn"))
+        return ui.HTML(fig.to_html(full_html=False, include_plotlyjs=False))
 
     @render.ui
     def chart_engagement():
@@ -296,7 +349,7 @@ def server(input, output, session):
         rng = np.random.default_rng(0)
         engagements = np.clip(rng.normal(mean_eng, max(std_eng, 0.01), n), 0.01, 0.99).tolist()
         fig = charts.engagement_distribution(engagements)
-        return ui.HTML(fig.to_html(full_html=False, include_plotlyjs="cdn"))
+        return ui.HTML(fig.to_html(full_html=False, include_plotlyjs=False))
 
     @render.ui
     def chart_gpa():
@@ -319,10 +372,10 @@ def server(input, output, session):
         try:
             pass_t = input.grading_pass_threshold()
             dist_t = input.grading_distinction_threshold()
-        except Exception:
-            pass
+        except (KeyError, TypeError):
+            logger.debug("GPA chart: using default thresholds (inputs not yet available)")
         fig = charts.gpa_distribution(gpas, pass_t * gpa_scale, dist_t * gpa_scale)
-        return ui.HTML(fig.to_html(full_html=False, include_plotlyjs="cdn"))
+        return ui.HTML(fig.to_html(full_html=False, include_plotlyjs=False))
 
     @render.ui
     def chart_validation():
@@ -356,7 +409,7 @@ def server(input, output, session):
         if not scores:
             return ui.div("No validation categories", class_="text-secondary")
         fig = charts.validation_radar(scores)
-        return ui.HTML(fig.to_html(full_html=False, include_plotlyjs="cdn"))
+        return ui.HTML(fig.to_html(full_html=False, include_plotlyjs=False))
 
     def _get_validation_results(report: dict) -> list:
         """Extract validation results from report (handles nested structure)."""
@@ -375,7 +428,8 @@ def server(input, output, session):
             config = dict_to_config(vals)
             config_dict = config.to_dict()
         except Exception:
-            config_dict = vals
+            logger.exception("Config export: dict_to_config failed, using raw values")
+            config_dict = {**vals, "__bridge_fallback": True}
         yield json.dumps(config_dict, indent=2, default=str)
 
     # ── Config import ──
@@ -387,12 +441,61 @@ def server(input, output, session):
             return
         try:
             path = file_info[0]["datapath"]
+            file_size = os.path.getsize(path)
+            if file_size > MAX_IMPORT_SIZE_BYTES:
+                ui.notification_show(
+                    f"Import failed: file exceeds {MAX_IMPORT_SIZE_BYTES // 1024}KB limit",
+                    type="error",
+                    duration=5,
+                )
+                return
             with open(path, "r") as f:
                 config_dict = json.load(f)
+            if "n_students" in config_dict:
+                config_dict["n_students"] = min(config_dict["n_students"], MAX_N_STUDENTS)
             PipelineConfig.from_dict(config_dict)  # validate
-            ui.notification_show("Config imported successfully", type="message", duration=3)
-        except Exception as e:
-            ui.notification_show(f"Import failed: {e}", type="error", duration=5)
+            # TODO Phase 2: apply imported values to UI inputs via session.send_input_message
+            ui.notification_show(
+                "Config validated (UI update deferred to Phase 2)",
+                type="message",
+                duration=3,
+            )
+        except Exception:
+            logger.exception("Config import failed")
+            ui.notification_show(
+                "Import failed: invalid configuration file",
+                type="error",
+                duration=5,
+            )
+
+    # ── Preset handlers ──
+    def _apply_preset(preset_name: str) -> None:
+        overrides = PRESETS.get(preset_name, {})
+        defaults = config_to_dict(default_config)
+        merged = {**defaults, **overrides}
+        for key, val in merged.items():
+            try:
+                if isinstance(val, (int, float)):
+                    ui.update_slider(key, value=val)
+                elif isinstance(val, str):
+                    ui.update_text(key, value=val)
+            except Exception as exc:
+                logger.debug("Preset update skipped for key=%s: %s", key, exc)
+
+    @reactive.effect
+    @reactive.event(input.preset_default)
+    def _preset_default():
+        _apply_preset("default")
+
+    @reactive.effect
+    @reactive.event(input.preset_high_risk)
+    def _preset_high_risk():
+        _apply_preset("high_risk")
+
+    @reactive.effect
+    @reactive.event(input.preset_low_dropout)
+    def _preset_low_dropout():
+        _apply_preset("low_dropout")
 
     # ── Helper: collect current UI values ──
     def _collect_current_values() -> dict:
@@ -401,12 +504,11 @@ def server(input, output, session):
 
         # Override with current input values where available
         for key in list(vals.keys()):
-            input_key = key
             try:
-                input_val = input[input_key]()
+                input_val = input[key]()
                 if input_val is not None:
                     vals[key] = input_val
-            except (KeyError, TypeError):
+            except Exception:
                 pass
 
         # Pipeline scalars
@@ -415,7 +517,7 @@ def server(input, output, session):
                 val = input[key]()
                 if val is not None:
                     vals[key] = val
-            except (KeyError, TypeError):
+            except Exception:
                 pass
 
         return vals

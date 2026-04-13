@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-# ── Color Palette ──
+# ── Color Palette (single source of truth) ──
 BG = "#0F1117"
 SURFACE = "#1A1D27"
 ELEVATED = "#242838"
@@ -18,24 +18,33 @@ SUCCESS = "#2DD4A0"
 WARNING = "#F5A623"
 ERROR = "#E84545"
 
-# ── Custom CSS ──
-CUSTOM_CSS = """
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600&display=swap');
-
-:root {
-    --bg: #0F1117;
-    --surface: #1A1D27;
-    --elevated: #242838;
-    --border: #1E2130;
-    --border-hover: #2A2D3A;
-    --text-primary: #E8EAF0;
-    --text-secondary: #8B90A0;
-    --text-muted: #4A4F63;
-    --accent: #4F8EF7;
-    --success: #2DD4A0;
-    --warning: #F5A623;
-    --error: #E84545;
+_COLOR_VARS: dict[str, str] = {
+    "bg": BG,
+    "surface": SURFACE,
+    "elevated": ELEVATED,
+    "border": BORDER,
+    "border-hover": BORDER_HOVER,
+    "text-primary": TEXT_PRIMARY,
+    "text-secondary": TEXT_SECONDARY,
+    "text-muted": TEXT_MUTED,
+    "accent": ACCENT,
+    "success": SUCCESS,
+    "warning": WARNING,
+    "error": ERROR,
 }
+
+
+def _build_root_block() -> str:
+    """Generate CSS :root block from Python color constants."""
+    lines = [":root {"]
+    for k, v in _COLOR_VARS.items():
+        lines.append("    --" + k + ": " + v + ";")
+    lines.append("}")
+    return "\n".join(lines)
+
+
+_CSS_STATIC = """\
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600&display=swap');
 
 body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
@@ -168,4 +177,35 @@ body {
 
 /* Disabled group */
 .group-disabled { opacity: 0.4; pointer-events: none; }
+
+/* Sidebar independent scroll */
+.bslib-sidebar-layout > .sidebar {
+    overflow-y: auto;
+    max-height: calc(100vh - 56px);
+}
+
+/* Sticky run button bar */
+.run-bar-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg);
+}
+
+/* Hint text below inputs */
+.param-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    line-height: 1.3;
+}
+
+/* Preset buttons */
+.preset-btn {
+    font-size: 12px;
+    padding: 4px 12px;
+}
 """
+
+# Combine generated :root with static CSS
+CUSTOM_CSS = _build_root_block() + "\n" + _CSS_STATIC
