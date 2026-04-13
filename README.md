@@ -123,7 +123,7 @@ print(f"Dropout: {report['simulation_summary']['dropout_rate']:.1%}")
 - [ ] LLM-augmented mode (forum posts, assignment text)
 - [ ] Parquet/Arrow export
 - [x] PyPI package publication (`pip install synthedu`)
-- [ ] Interactive dashboard
+- [x] Interactive dashboard (Shiny + Plotly, dark theme, presets, validation)
 
 ---
 

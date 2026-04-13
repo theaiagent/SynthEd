@@ -6,6 +6,7 @@ Practical guide for generating synthetic ODL data, calibrating against instituti
 
 - [Installation](#-installation)
 - [CLI Usage](#-cli-usage)
+- [Interactive Dashboard](#-interactive-dashboard)
 - [Python API](#-python-api)
 - [Population Configuration](#-population-configuration)
 - [Grading Configuration](#-grading-configuration)
@@ -71,6 +72,35 @@ python run_pipeline.py --n 100 --llm --base-url http://localhost:11434/v1
 # Cost threshold ($2 max)
 python run_pipeline.py --n 500 --llm --cost-threshold 2.0
 ```
+
+---
+
+## 📊 Interactive Dashboard
+
+A browser-based dashboard for configuring and running simulations visually.
+
+```bash
+pip install -e ".[dashboard]"
+python -m synthed.dashboard
+```
+
+Opens at `http://127.0.0.1:8080` by default. Environment variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SYNTHED_DASHBOARD_HOST` | `127.0.0.1` | Bind address |
+| `SYNTHED_DASHBOARD_PORT` | `8080` | Port (1024-65535) |
+| `SYNTHED_DASHBOARD_LAUNCH_BROWSER` | `1` | Auto-open browser (`0` to disable) |
+
+**Features:**
+- **Configure**: Persona, Institutional, Grading parameters via accordion panels
+- **Engine Constants**: 70 advanced parameters in a slide-out panel
+- **Presets**: Default, High Risk, Low Dropout — one-click configuration
+- **Distributions**: 7 probability distributions with slider + numeric stepper, reactive sum validation (must equal 1.0)
+- **Run Simulation**: Produces 4 summary cards (Dropout Rate, Engagement, GPA, Validation) and 4 Plotly charts
+- **Export/Import**: Save and load configurations as JSON
+
+**Security:** Output directory sandboxed, JSON import capped at 512KB, student count capped at 10,000, generic error messages to UI.
 
 ---
 
