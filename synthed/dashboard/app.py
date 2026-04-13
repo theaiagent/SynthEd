@@ -47,14 +47,48 @@ app_ui = ui.page_navbar(
         ui.tags.script(
             """
             $(function() {
+                var darkChart = {
+                    font: '#94A3B8', grid: 'rgba(30,33,48,0.5)',
+                    hoverBg: '#1A1D27', hoverFont: '#F1F5F9', hoverBorder: '#1E2130',
+                    surface: '#1A1D27', border: '#1E2130'
+                };
+                var lightChart = {
+                    font: '#475569', grid: 'rgba(226,232,240,0.5)',
+                    hoverBg: '#FFFFFF', hoverFont: '#0F172A', hoverBorder: '#E2E8F0',
+                    surface: '#FFFFFF', border: '#E2E8F0'
+                };
+                function restyleCharts(c) {
+                    document.querySelectorAll('.js-plotly-plot').forEach(function(el) {
+                        Plotly.relayout(el, {
+                            'font.color': c.font,
+                            'xaxis.gridcolor': c.grid, 'xaxis.zerolinecolor': c.grid,
+                            'yaxis.gridcolor': c.grid, 'yaxis.zerolinecolor': c.grid,
+                            'hoverlabel.bgcolor': c.hoverBg,
+                            'hoverlabel.font.color': c.hoverFont,
+                            'hoverlabel.bordercolor': c.hoverBorder,
+                            'polar.bgcolor': c.surface,
+                            'polar.radialaxis.gridcolor': c.border,
+                            'polar.radialaxis.linecolor': c.border,
+                            'polar.angularaxis.gridcolor': c.border,
+                            'polar.angularaxis.linecolor': c.border
+                        });
+                        var data = el.data || [];
+                        for (var i = 0; i < data.length; i++) {
+                            if (data[i].type === 'histogram') {
+                                Plotly.restyle(el, {'marker.line.color': c.surface}, [i]);
+                            }
+                        }
+                    });
+                }
                 $(document).on('click', '#toggle_theme', function() {
                     document.body.classList.toggle('light-mode');
+                    var isLight = document.body.classList.contains('light-mode');
+                    this.setAttribute('aria-pressed', isLight ? 'true' : 'false');
+                    this.setAttribute('aria-label',
+                        isLight ? 'Switch to dark mode' : 'Switch to light mode');
                     var icon = document.getElementById('theme_icon');
-                    if (document.body.classList.contains('light-mode')) {
-                        icon.className = 'bi bi-moon-fill';
-                    } else {
-                        icon.className = 'bi bi-sun-fill';
-                    }
+                    icon.className = isLight ? 'bi bi-moon-fill' : 'bi bi-sun-fill';
+                    restyleCharts(isLight ? lightChart : darkChart);
                 });
             });
             """
@@ -108,6 +142,8 @@ app_ui = ui.page_navbar(
             ui.tags.i(class_="bi bi-sun-fill", id="theme_icon"),
             class_="btn btn-link text-secondary",
             style="font-size:18px;text-decoration:none;",
+            title="Toggle theme",
+            **{"aria-label": "Switch to light mode", "aria-pressed": "false"},
         ),
     ),
     title=ui.span(
