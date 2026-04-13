@@ -124,7 +124,22 @@ def _approximate_weekly_dropouts(
 def server(input, output, session):
     # Reactive values
     sim_results = reactive.value(None)
+    active_preset = reactive.value("default")
     default_config = PipelineConfig()
+
+    # ── Preset buttons (reactive active state) ──
+    @render.ui
+    def preset_buttons_ui():
+        current = active_preset.get()
+        def _cls(name: str) -> str:
+            base = "btn preset-btn me-1"
+            return f"{base} btn-primary active" if name == current else f"{base} btn-outline-secondary"
+        return ui.div(
+            ui.input_action_button("preset_default", "Default", class_=_cls("default")),
+            ui.input_action_button("preset_high_risk", "High Risk", class_=_cls("high_risk")),
+            ui.input_action_button("preset_low_dropout", "Low Dropout", class_=_cls("low_dropout")),
+            class_="d-flex",
+        )
 
     # ── Status text ──
     @render.text
@@ -154,7 +169,13 @@ def server(input, output, session):
                             min=0.0, max=1.0, value=0.40, step=0.01),
         )
 
-    # ── Distribution editors ──
+    # ── Distribution editors + reactive sums ──
+    _pc = default_config.persona_config
+    _dist_registry = {
+        f"persona_{fn}": list(getattr(_pc, fn, {}).keys())
+        for fn in DISTRIBUTION_FIELDS
+    }
+
     @render.ui
     def distribution_editors():
         from .components.distribution_editor import distribution_editor
@@ -164,6 +185,82 @@ def server(input, output, session):
             dist_val = getattr(pc, field_name, {})
             editors.append(distribution_editor(f"persona_{field_name}", label, dist_val))
         return ui.div(*editors)
+
+    # ── Sync slider <-> numeric for distributions ──
+    _sync_pairs: list[tuple[str, str]] = []
+    for _oid, _ks in _dist_registry.items():
+        for _k in _ks:
+            _sync_pairs.append((f"{_oid}_{_k}", f"{_oid}_{_k}_num"))
+
+    def _make_sync(slider_id: str, num_id: str):
+        @reactive.effect
+        @reactive.event(input[slider_id])
+        def _sync_to_num():
+            try:
+                slider_val = float(input[slider_id]())
+                num_val = float(input[num_id]())
+                if abs(slider_val - num_val) > 0.001:
+                    ui.update_numeric(num_id, value=slider_val)
+            except (ValueError, TypeError):
+                pass
+
+        @reactive.effect
+        @reactive.event(input[num_id])
+        def _sync_to_slider():
+            try:
+                num_val = float(input[num_id]())
+                slider_val = float(input[slider_id]())
+                if abs(num_val - slider_val) > 0.001:
+                    ui.update_slider(slider_id, value=num_val)
+            except (ValueError, TypeError):
+                pass
+
+    for _sid, _nid in _sync_pairs:
+        _make_sync(_sid, _nid)
+
+    def _dist_sum_ui(input_id: str, keys: list[str]):
+        total = 0.0
+        for key in keys:
+            try:
+                total += float(input[f"{input_id}_{key}"]())
+            except Exception:
+                pass
+        ok = abs(total - 1.0) <= 0.01
+        color = "var(--success,#2DD4A0)" if ok else "var(--warning,#F5A623)"
+        symbol = "\u2713" if ok else "\u2717"
+        return ui.div(
+            f"\u2211 = {total:.2f} {symbol}",
+            class_="text-end",
+            style=f"font-family:'JetBrains Mono',monospace;font-size:11px;color:{color};",
+        )
+
+    @render.ui
+    def persona_gender_distribution_sum():
+        return _dist_sum_ui("persona_gender_distribution", _dist_registry["persona_gender_distribution"])
+
+    @render.ui
+    def persona_motivation_levels_sum():
+        return _dist_sum_ui("persona_motivation_levels", _dist_registry["persona_motivation_levels"])
+
+    @render.ui
+    def persona_socioeconomic_distribution_sum():
+        return _dist_sum_ui("persona_socioeconomic_distribution", _dist_registry["persona_socioeconomic_distribution"])
+
+    @render.ui
+    def persona_prior_education_distribution_sum():
+        return _dist_sum_ui("persona_prior_education_distribution", _dist_registry["persona_prior_education_distribution"])
+
+    @render.ui
+    def persona_device_distribution_sum():
+        return _dist_sum_ui("persona_device_distribution", _dist_registry["persona_device_distribution"])
+
+    @render.ui
+    def persona_goal_orientation_distribution_sum():
+        return _dist_sum_ui("persona_goal_orientation_distribution", _dist_registry["persona_goal_orientation_distribution"])
+
+    @render.ui
+    def persona_learning_style_distribution_sum():
+        return _dist_sum_ui("persona_learning_style_distribution", _dist_registry["persona_learning_style_distribution"])
 
     # ── Simulation status indicator ──
     sim_running = reactive.value(False)
@@ -485,16 +582,19 @@ def server(input, output, session):
     @reactive.effect
     @reactive.event(input.preset_default)
     def _preset_default():
+        active_preset.set("default")
         _apply_preset("default")
 
     @reactive.effect
     @reactive.event(input.preset_high_risk)
     def _preset_high_risk():
+        active_preset.set("high_risk")
         _apply_preset("high_risk")
 
     @reactive.effect
     @reactive.event(input.preset_low_dropout)
     def _preset_low_dropout():
+        active_preset.set("low_dropout")
         _apply_preset("low_dropout")
 
     # ── Helper: collect current UI values ──
@@ -519,6 +619,16 @@ def server(input, output, session):
                     vals[key] = val
             except Exception:
                 pass
+
+        # Distribution dicts: read individual slider values
+        for input_id, keys in _dist_registry.items():
+            dist = {}
+            for sub_key in keys:
+                try:
+                    dist[sub_key] = float(input[f"{input_id}_{sub_key}"]())
+                except Exception:
+                    dist[sub_key] = vals.get(input_id, {}).get(sub_key, 0.0)
+            vals[input_id] = dist
 
         return vals
 

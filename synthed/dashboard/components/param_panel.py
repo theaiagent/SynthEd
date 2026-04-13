@@ -70,6 +70,14 @@ def pipeline_controls() -> ui.Tag:
             ui.column(6, ui.input_checkbox("export_oulad", "Export OULAD Format", value=False)),
             ui.column(6, ui.input_text("output_dir", "Output Directory", value="./output")),
         ),
+        ui.hr(style="border-color:var(--border,#1E2130);margin:8px 0;"),
+        ui.row(
+            ui.column(6, ui.download_button("export_config", "Export Config",
+                                            class_="btn btn-outline-secondary btn-sm w-100")),
+            ui.column(6, ui.input_file("import_config", "Import",
+                                       accept=[".json"], button_label="Import",
+                                       width="100%")),
+        ),
         value="pipeline",
         icon=ui.tags.i(class_="bi bi-gear"),
     )
@@ -135,14 +143,12 @@ def grading_config_panel() -> ui.Tag:
     return ui.accordion_panel(
         "Grading",
         # Modes
-        ui.row(
-            ui.column(4, ui.input_select("grading_assessment_mode", "Assessment Mode",
-                                         {"mixed": "Mixed", "exam_only": "Exam Only", "continuous": "Continuous"})),
-            ui.column(4, ui.input_select("grading_grading_method", "Grading Method",
-                                         {"absolute": "Absolute", "relative": "Relative"})),
-            ui.column(4, ui.input_select("grading_distribution", "Distribution",
-                                         {"beta": "Beta", "normal": "Normal", "uniform": "Uniform"})),
-        ),
+        ui.input_select("grading_assessment_mode", "Assessment Mode",
+                        {"mixed": "Mixed", "exam_only": "Exam Only", "continuous": "Continuous"}),
+        ui.input_select("grading_grading_method", "Grading Method",
+                        {"absolute": "Absolute", "relative": "Relative"}),
+        ui.input_select("grading_distribution", "Distribution",
+                        {"beta": "Beta", "normal": "Normal", "uniform": "Uniform"}),
         # Weights
         ui.h6("Weights", class_="text-secondary mt-3"),
         _slider_input("grading_midterm_weight", "midterm_weight", 0.40),
@@ -254,24 +260,17 @@ def engine_config_offcanvas() -> ui.Tag:
                 tabindex="-1",
                 id="engine_offcanvas",
                 style="width:450px;background:var(--bg,#0F1117);color:var(--text-primary,#E8EAF0);",
+                **{"data-bs-backdrop": "true"},
             ),
         ),
     )
 
 
 def preset_buttons() -> ui.Tag:
-    """Preset configuration buttons."""
+    """Preset configuration buttons with active state via output_ui."""
     return ui.div(
         ui.h6("Presets", class_="text-secondary mb-2"),
-        ui.div(
-            ui.input_action_button("preset_default", "Default",
-                                   class_="btn btn-outline-secondary preset-btn me-1"),
-            ui.input_action_button("preset_high_risk", "High Risk",
-                                   class_="btn btn-outline-secondary preset-btn me-1"),
-            ui.input_action_button("preset_low_dropout", "Low Dropout",
-                                   class_="btn btn-outline-secondary preset-btn"),
-            class_="d-flex",
-        ),
+        ui.output_ui("preset_buttons_ui"),
         class_="mb-3",
     )
 
