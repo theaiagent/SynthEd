@@ -44,6 +44,69 @@ app_ui = ui.page_navbar(
             href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css",
         ),
         ui.tags.script(src="https://cdn.plot.ly/plotly-2.35.0.min.js"),
+        ui.tags.script(
+            """
+            $(function() {
+                var darkChart = {
+                    font: '#94A3B8', grid: 'rgba(30,33,48,0.5)',
+                    hoverBg: '#1A1D27', hoverFont: '#F1F5F9', hoverBorder: '#1E2130',
+                    surface: '#1A1D27', border: '#1E2130'
+                };
+                var lightChart = {
+                    font: '#475569', grid: 'rgba(226,232,240,0.5)',
+                    hoverBg: '#FFFFFF', hoverFont: '#0F172A', hoverBorder: '#E2E8F0',
+                    surface: '#FFFFFF', border: '#E2E8F0'
+                };
+                function restyleCharts(c) {
+                    document.querySelectorAll('.js-plotly-plot').forEach(function(el) {
+                        Plotly.relayout(el, {
+                            'font.color': c.font,
+                            'xaxis.gridcolor': c.grid, 'xaxis.zerolinecolor': c.grid,
+                            'yaxis.gridcolor': c.grid, 'yaxis.zerolinecolor': c.grid,
+                            'hoverlabel.bgcolor': c.hoverBg,
+                            'hoverlabel.font.color': c.hoverFont,
+                            'hoverlabel.bordercolor': c.hoverBorder,
+                            'polar.bgcolor': c.surface,
+                            'polar.radialaxis.gridcolor': c.border,
+                            'polar.radialaxis.linecolor': c.border,
+                            'polar.angularaxis.gridcolor': c.border,
+                            'polar.angularaxis.linecolor': c.border
+                        });
+                        var data = el.data || [];
+                        for (var i = 0; i < data.length; i++) {
+                            if (data[i].type === 'histogram') {
+                                Plotly.restyle(el, {'marker.line.color': c.surface}, [i]);
+                            }
+                        }
+                    });
+                }
+                function applyTheme(isLight) {
+                    document.body.classList.toggle('light-mode', isLight);
+                    var btn = document.getElementById('toggle_theme');
+                    if (btn) {
+                        btn.setAttribute('aria-pressed', isLight ? 'true' : 'false');
+                        btn.setAttribute('aria-label',
+                            isLight ? 'Switch to dark mode' : 'Switch to light mode');
+                    }
+                    var icon = document.getElementById('theme_icon');
+                    if (icon) icon.className = isLight ? 'bi bi-moon-fill' : 'bi bi-sun-fill';
+                    restyleCharts(isLight ? lightChart : darkChart);
+                }
+                // Restore saved preference or follow system
+                var saved = localStorage.getItem('synthed-theme');
+                if (saved === 'light') {
+                    applyTheme(true);
+                } else if (!saved && window.matchMedia('(prefers-color-scheme: light)').matches) {
+                    applyTheme(true);
+                }
+                $(document).on('click', '#toggle_theme', function() {
+                    var isLight = !document.body.classList.contains('light-mode');
+                    localStorage.setItem('synthed-theme', isLight ? 'light' : 'dark');
+                    applyTheme(isLight);
+                });
+            });
+            """
+        ),
     ),
     ui.nav_panel(
         "Configure",
@@ -84,6 +147,17 @@ app_ui = ui.page_navbar(
                 # Results area (shown after simulation)
                 ui.output_ui("results_area"),
             ),
+        ),
+    ),
+    ui.nav_spacer(),
+    ui.nav_control(
+        ui.input_action_button(
+            "toggle_theme",
+            ui.tags.i(class_="bi bi-sun-fill", id="theme_icon"),
+            class_="btn btn-link text-secondary",
+            style="font-size:18px;text-decoration:none;",
+            title="Toggle theme",
+            **{"aria-label": "Switch to light mode", "aria-pressed": "false"},
         ),
     ),
     title=ui.span(
@@ -411,6 +485,35 @@ def server(input, output, session):
         passed = sum(1 for r in results if isinstance(r, dict) and r.get("passed"))
         return f"{passed}/{len(results)} passed"
 
+    # ── Chart settings helper ──
+    def _get_chart_settings() -> charts.ChartSettings:
+        def _val(key, default):
+            try:
+                v = input[key]()
+                return v if v is not None else default
+            except Exception:
+                return default
+
+        return charts.ChartSettings(
+            bins=int(_val("chart_bins", 30)),
+            bar_opacity=float(_val("chart_bar_opacity", 0.8)),
+            bar_edge=bool(_val("chart_bar_edge", True)),
+            bar_edge_width=float(_val("chart_bar_edge_width", 1.0)),
+            show_mean=bool(_val("chart_show_mean", True)),
+            show_median=bool(_val("chart_show_median", True)),
+            show_pass_line=bool(_val("chart_show_pass_line", True)),
+            show_dist_line=bool(_val("chart_show_dist_line", True)),
+            show_legend=bool(_val("chart_show_legend", False)),
+            line_width=int(_val("chart_line_width", 3)),
+            marker_size=int(_val("chart_marker_size", 7)),
+            eng_x_label=str(_val("chart_eng_x_label", "Final Engagement")),
+            eng_y_label=str(_val("chart_eng_y_label", "Count")),
+            gpa_x_label=str(_val("chart_gpa_x_label", "Cumulative GPA")),
+            gpa_y_label=str(_val("chart_gpa_y_label", "Count")),
+            dropout_x_label=str(_val("chart_dropout_x_label", "Week")),
+            dropout_y_label=str(_val("chart_dropout_y_label", "Cumulative Dropout %")),
+        )
+
     # ── Chart renders ──
     @render.ui
     def chart_dropout():
@@ -428,7 +531,7 @@ def server(input, output, session):
         weekly = _approximate_weekly_dropouts(
             dropout_count, mean_week, std_week, total_weeks,
         )
-        fig = charts.dropout_timeline(weekly, n)
+        fig = charts.dropout_timeline(weekly, n, settings=_get_chart_settings())
         return ui.HTML(fig.to_html(full_html=False, include_plotlyjs=False))
 
     @render.ui
@@ -445,7 +548,7 @@ def server(input, output, session):
         # Approximate distribution from summary stats
         rng = np.random.default_rng(0)
         engagements = np.clip(rng.normal(mean_eng, max(std_eng, 0.01), n), 0.01, 0.99).tolist()
-        fig = charts.engagement_distribution(engagements)
+        fig = charts.engagement_distribution(engagements, settings=_get_chart_settings())
         return ui.HTML(fig.to_html(full_html=False, include_plotlyjs=False))
 
     @render.ui
@@ -471,7 +574,7 @@ def server(input, output, session):
             dist_t = input.grading_distinction_threshold()
         except (KeyError, TypeError):
             logger.debug("GPA chart: using default thresholds (inputs not yet available)")
-        fig = charts.gpa_distribution(gpas, pass_t * gpa_scale, dist_t * gpa_scale)
+        fig = charts.gpa_distribution(gpas, pass_t * gpa_scale, dist_t * gpa_scale, settings=_get_chart_settings())
         return ui.HTML(fig.to_html(full_html=False, include_plotlyjs=False))
 
     @render.ui
