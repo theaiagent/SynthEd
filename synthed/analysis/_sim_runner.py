@@ -9,6 +9,7 @@ and extract metrics. Used by both SobolAnalyzer and TraitCalibrator.
 from __future__ import annotations
 
 import logging
+import math
 import shutil
 import tempfile
 from dataclasses import fields, replace
@@ -38,6 +39,19 @@ MODULE_ALIASES: dict[str, str] = {
     "moore": "moore",
     "epstein": "epstein_axtell",
 }
+
+_ASSIGN_QUALITY_WEIGHTS = (
+    "_ASSIGN_GPA_WEIGHT", "_ASSIGN_ENG_WEIGHT", "_ASSIGN_EFFICACY_WEIGHT",
+    "_ASSIGN_READING_WEIGHT", "_ASSIGN_NOISE_WEIGHT",
+)
+_EXAM_QUALITY_WEIGHTS = (
+    "_EXAM_GPA_WEIGHT", "_EXAM_ENG_WEIGHT", "_EXAM_EFFICACY_WEIGHT",
+    "_EXAM_REG_WEIGHT", "_EXAM_READING_WEIGHT", "_EXAM_NOISE_WEIGHT",
+)
+_ASSIGN_SUBMIT_WEIGHTS = (
+    "_ASSIGN_SUBMIT_BASE", "_ASSIGN_SUBMIT_REG_WEIGHT",
+    "_ASSIGN_SUBMIT_TIME_WEIGHT", "_ASSIGN_SUBMIT_CONSC_WEIGHT",
+)
 
 
 def _extract_metrics(summary: dict) -> dict[str, float]:
@@ -177,6 +191,31 @@ def _build_config(
     return replace(default_config, **filtered)
 
 
+def _normalize_weight_group(
+    overrides: dict[str, float],
+    current_cfg,
+    group: tuple[str, ...],
+    target_sum: float = 1.0,
+) -> None:
+    """Normalize a constrained weight group in-place after Sobol sampling.
+
+    Sobol analysis samples parameters independently, which can violate
+    sum-to-1.0 constraints on weight groups. This normalizes the full
+    weight vector (using overrides where present, current defaults
+    otherwise) to preserve relative proportions while satisfying the
+    constraint.
+    """
+    if not any(name in overrides for name in group):
+        return
+    weights = {name: overrides.get(name, getattr(current_cfg, name)) for name in group}
+    total = sum(weights.values())
+    if total <= 0 or math.isclose(total, target_sum, rel_tol=1e-9):
+        return
+    scale = target_sum / total
+    for name in group:
+        overrides[name] = weights[name] * scale
+
+
 def _apply_engine_overrides(
     pipeline: SynthEdPipeline,
     engine_overrides: dict[str, float],
@@ -199,6 +238,10 @@ def _apply_engine_overrides(
             else:
                 logger.warning("engine override '%s' not in EngineConfig — ignored", attr)
         if filtered:
+            # Normalize constrained weight groups (Sobol/NSGA-II sample independently)
+            _normalize_weight_group(filtered, engine.cfg, _ASSIGN_QUALITY_WEIGHTS)
+            _normalize_weight_group(filtered, engine.cfg, _EXAM_QUALITY_WEIGHTS)
+            _normalize_weight_group(filtered, engine.cfg, _ASSIGN_SUBMIT_WEIGHTS)
             engine.cfg = replace(engine.cfg, **filtered)
 
     for module_alias, attrs in theory_overrides.items():
