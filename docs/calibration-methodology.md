@@ -67,7 +67,7 @@ where c ∈ [0.5, 1.0] is problem-dependent (Archer et al., 1997).
 
 At n_samples=128, parameters with ST < 0.13 cannot be distinguished from zero. This means the ranking of parameters in positions 10-30 (typically ST ∈ [0.02, 0.10]) is unreliable.
 
-At n_samples=512, parameters with ST > 0.065 are reliably detected. This covers the inclusion threshold of ST > 0.05 recommended by Iooss & Lemaitre (2015).
+At n_samples=512, parameters with ST > 0.065 are reliably detected. This covers the inclusion threshold of ST > 0.05 recommended by Iooss & Lemaître (2015).
 
 Saltelli et al. (2008) recommend n_samples ≥ 500 for D > 50, and n_samples ≥ 10×D for first-order indices. Our choice of 512 satisfies the first criterion and yields N/D = 512/68 = 7.5, approaching the 10× recommendation.
 
@@ -204,7 +204,7 @@ Upper bound:         20 × D = 20 × 20 = 400 → n_trials = 80,000
 
 **Noise Amplification Factor (NAF):**
 
-In stochastic optimization, each fitness evaluation contains Monte Carlo noise. The Noise Amplification Factor (NAF) quantifies how much additional computational budget is needed compared to a noise-free problem (Branke, 2001; Jin & Branke, 2005):
+In stochastic optimization, each fitness evaluation contains Monte Carlo noise. The Noise Amplification Factor (NAF) quantifies how much additional computational budget is needed compared to a noise-free problem (Jin & Branke, 2005):
 
 ```
 NAF = 1 + σ_noise² / σ_signal²
@@ -308,7 +308,7 @@ At k=10, we can claim (95% confidence) that 95% of seeds produce dropout rates w
 **Decision rationale:** k=10 is the standard minimum for simulation output analysis (Law, 2015). It provides df=9 for the t-distribution (mild penalty vs. normal), a sub-1pp CI half-width on the mean, and a ~9pp tolerance interval.
 
 **References:**
-- Law, A.M. (2015). *Simulation Modeling and Analysis*, 5th ed. McGraw-Hill.
+- Law, A.M. (2015). *Simulation Modeling and Analysis* (5th ed.). McGraw-Hill Education.
 - Howe, W.G. (1969). "Two-sided tolerance limits for normal populations." *JASA*, 64(326), 610-620.
 
 ## 5. Complete Parameter Configuration
@@ -383,16 +383,15 @@ The following diagnostic visualizations should accompany calibration results:
 ## 7. References
 
 - Archer, G.E.B., Saltelli, A., & Sobol, I.M. (1997). Sensitivity measures, ANOVA-like techniques and the use of bootstrap. *JSCS*, 58(2), 99-120.
-- Branke, J. (2001). Evolutionary optimization in uncertain environments — a survey. *CEC 2001*.
 - Cochran, W.G. (1977). *Sampling Techniques*, 3rd ed. Wiley.
 - Deb, K., Pratap, A., Agarwal, S., & Meyarivan, T. (2002). A fast and elitist multiobjective genetic algorithm: NSGA-II. *IEEE TEC*, 6(2), 182-197.
 - Deb, K. & Jain, H. (2014). An evolutionary many-objective optimization algorithm using reference-point-based nondominated sorting approach. *IEEE TEC*, 18(4), 577-601.
 - Howe, W.G. (1969). Two-sided tolerance limits for normal populations. *JASA*, 64(326), 610-620.
-- Iooss, B. & Lemaitre, P. (2015). A review on global sensitivity analysis methods. In *Uncertainty Management in Simulation-Optimization*, Springer.
+- Iooss, B. & Lemaître, P. (2015). A review on global sensitivity analysis methods. In G. Dellino & C. Meloni (Eds.), *Uncertainty Management in Simulation-Optimization of Complex Systems: Algorithms and Applications* (pp. 101-122). Springer. https://doi.org/10.1007/978-1-4899-7547-8_5
 - Ishibuchi, H., Imada, R., Setoguchi, Y., & Nojima, Y. (2017). How to specify a reference point in hypervolume calculation. *GECCO 2017*.
 - Jin, Y. & Branke, J. (2005). Evolutionary optimization in uncertain environments: A survey. *IEEE TEC*, 9(3), 303-317.
 - Kuzilek, J., Hlosta, M., & Zdrahal, Z. (2017). Open university learning analytics dataset. *Scientific Data*, 4, 170171.
-- Law, A.M. (2015). *Simulation Modeling and Analysis*, 5th ed. McGraw-Hill.
+- Law, A.M. (2015). *Simulation Modeling and Analysis* (5th ed.). McGraw-Hill Education.
 - Ligmann-Zielinska, A. et al. (2020). One size does not fit all: A roadmap of purpose-driven mixed-method pathways for sensitivity analysis of agent-based models. *JASSS*, 23(1), 6.
 - Saltelli, A. (2002). Making best use of model evaluations to compute sensitivity indices. *CMAME*, 280, 3161-3190.
 - Saltelli, A. et al. (2008). *Global Sensitivity Analysis: The Primer*. Wiley.
