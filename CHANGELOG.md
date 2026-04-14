@@ -14,6 +14,14 @@ All notable changes to SynthEd are documented here.
 - Sobol parameter space: 69 → 68 params (`_OC_STRESS_THRESHOLD` removed, `_OVERWORK_PENALTY` renamed)
 - `CALIBRATION_DATA` re-measured post spectrum refactoring (dropout rates shifted ~22% lower)
 - README Key Features reorganized into 4 categories, Zenodo description restructured
+- Calibration parameters: `n_students` 100→500, `n_samples` 128→512, `n_trials` 12,800→62,000, `pop_size` 160→200, validation seeds 3→10
+- Sequential calibration path refactored from `study.optimize()` to manual ask/tell loop with per-generation HV tracking
+
+### Added
+- **HV convergence tracking**: `compute_hypervolume()` in `pareto_utils.py` tracks hypervolume per NSGA-II generation, stored in `ParetoResult.hv_history`
+- **Pareto front re-evaluation**: `reevaluate_pareto_front()` re-evaluates solutions at N=2,000 with 3 seeds for noise-free knee-point selection
+- **Replicated calibration**: 2 independent NSGA-II seeds (42, 2024) with `compare_knee_points()` for robustness comparison
+- **Calibration methodology**: `docs/calibration-methodology.md` — academic reference with power analysis, NAF framework, 16 citations
 
 ## [1.6.0] - 2026-04-12
 

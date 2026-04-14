@@ -361,8 +361,8 @@ Identifies which parameters most influence outcomes:
 ```python
 from synthed.analysis.sobol_sensitivity import SobolAnalyzer
 
-analyzer = SobolAnalyzer(n_students=200, seed=42)
-results = analyzer.run(n_samples=128)
+analyzer = SobolAnalyzer(n_students=500, seed=42)
+results = analyzer.run(n_samples=512)
 
 rankings = analyzer.rank(results[0], top_n=15)
 for r in rankings:
@@ -430,8 +430,8 @@ When dropout and GPA objectives conflict, NSGA-II explores the Pareto front inst
 ```python
 from synthed.analysis.nsga2_calibrator import NSGAIICalibrator
 
-calibrator = NSGAIICalibrator(n_students=100, seed=42, n_workers=4)
-result = calibrator.run("default", n_trials=12800)
+calibrator = NSGAIICalibrator(n_students=500, seed=42, n_workers=4)
+result = calibrator.run("default", n_trials=62_000)
 print(f"Pareto front: {len(result.pareto_front)} solutions")
 print(f"Knee-point dropout error: {result.knee_point.dropout_error:.4f}")
 ```
