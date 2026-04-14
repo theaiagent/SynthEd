@@ -37,23 +37,23 @@ class CalibrationEstimate:
 
 
 # Empirically measured calibration data (N=500, 5 seeds averaged per point).
-# Measured 2026-04-12 post spectrum refactoring (continuous persona fields).
+# Measured 2026-04-14 post OULAD reference fix (corrected gender, employment, dropout_base_rate).
 # IMPORTANT: Re-measure if theory modules, engine weights, or RNG-consuming
 #            code paths change (even non-dropout features shift RNG sequence).
 CALIBRATION_DATA: tuple[CalibrationPoint, ...] = (
     # 1-semester sweep across dropout_base_rate values
-    CalibrationPoint(1, 0.20, 0.191, 500, 5),
-    CalibrationPoint(1, 0.30, 0.244, 500, 5),
-    CalibrationPoint(1, 0.40, 0.299, 500, 5),
-    CalibrationPoint(1, 0.50, 0.338, 500, 5),
-    CalibrationPoint(1, 0.60, 0.368, 500, 5),
-    CalibrationPoint(1, 0.70, 0.385, 500, 5),
-    CalibrationPoint(1, 0.80, 0.414, 500, 5),
-    CalibrationPoint(1, 0.90, 0.448, 500, 5),
-    CalibrationPoint(1, 0.95, 0.450, 500, 5),
-    # Multi-semester at default rate (0.80)
-    CalibrationPoint(2, 0.80, 0.703, 500, 5),
-    CalibrationPoint(4, 0.80, 0.924, 500, 5),
+    CalibrationPoint(1, 0.20, 0.248, 500, 5),
+    CalibrationPoint(1, 0.30, 0.315, 500, 5),
+    CalibrationPoint(1, 0.40, 0.363, 500, 5),
+    CalibrationPoint(1, 0.50, 0.400, 500, 5),
+    CalibrationPoint(1, 0.60, 0.420, 500, 5),
+    CalibrationPoint(1, 0.70, 0.442, 500, 5),
+    CalibrationPoint(1, 0.80, 0.469, 500, 5),
+    CalibrationPoint(1, 0.90, 0.482, 500, 5),
+    CalibrationPoint(1, 0.95, 0.471, 500, 5),
+    # Multi-semester at default rate (0.46)
+    CalibrationPoint(2, 0.46, 0.678, 500, 5),
+    CalibrationPoint(4, 0.46, 0.908, 500, 5),
 )
 
 # Bounds for dropout_base_rate

@@ -89,7 +89,7 @@ def persona_config_panel() -> ui.Tag:
         "Persona",
         # Demographics
         ui.h6("Demographics", class_="text-secondary mt-2"),
-        _slider_input("persona_employment_rate", "employment_rate", 0.78),
+        _slider_input("persona_employment_rate", "employment_rate", 0.69),
         _slider_input("persona_has_family_rate", "has_family_rate", 0.52),
         _slider_input("persona_financial_stress_mean", "financial_stress_mean", 0.55),
         _slider_input("persona_disability_rate", "disability_rate", 0.10),
@@ -110,7 +110,7 @@ def persona_config_panel() -> ui.Tag:
 
         # Risk
         ui.h6("Risk", class_="text-secondary mt-3"),
-        _slider_input("persona_dropout_base_rate", "dropout_base_rate", 0.80, min_val=0.01),
+        _slider_input("persona_dropout_base_rate", "dropout_base_rate", 0.46, min_val=0.01),
         _slider_input("persona_unavoidable_withdrawal_rate", "unavoidable_withdrawal_rate", 0.003,
                       max_val=0.05, step=0.001),
 

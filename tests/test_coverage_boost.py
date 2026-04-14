@@ -47,7 +47,7 @@ class TestReferenceStatisticsFromJson:
         assert ref.age_std == 5.0
         assert ref.dropout_rate == 0.40
         # defaults preserved
-        assert ref.employment_rate == 0.78
+        assert ref.employment_rate == 0.69
 
 
 # ── Validator: backstory validation ────────────────────────────────────

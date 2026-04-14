@@ -59,9 +59,9 @@ class TestDropoutScaling:
     """Tests for dropout_base_rate → base_dropout_risk scaling."""
 
     def test_scaling_identity_at_default(self):
-        """Default dropout_base_rate (0.80) produces scale=1.0, no change."""
+        """Default dropout_base_rate (0.46) produces scale=1.0, no change."""
         unscaled = StudentFactory(seed=42).generate_population(50)
-        default = StudentFactory(PersonaConfig(dropout_base_rate=0.80), seed=42).generate_population(50)
+        default = StudentFactory(PersonaConfig(dropout_base_rate=0.46), seed=42).generate_population(50)
         for u, d in zip(unscaled, default):
             assert abs(u.base_dropout_risk - d.base_dropout_risk) < 1e-10
 

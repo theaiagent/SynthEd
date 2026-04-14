@@ -38,12 +38,12 @@ PROFILES: dict[str, BenchmarkProfile] = {
         description="Default ODL profile: large-scale, diverse student population",
         persona_config=PersonaConfig(
             age_range=(18, 60),
-            employment_rate=0.80,
+            employment_rate=0.69,
             has_family_rate=0.55,
             financial_stress_mean=0.55,
             digital_literacy_mean=0.45,
             self_regulation_mean=0.40,
-            dropout_base_rate=0.90,
+            dropout_base_rate=0.46,
         ),
         institutional_config=InstitutionalConfig(
             instructional_design_quality=0.50,
@@ -60,10 +60,10 @@ PROFILES: dict[str, BenchmarkProfile] = {
         ),
         environment=ODLEnvironment(total_weeks=14),
         reference_stats=ReferenceStatistics(
-            dropout_rate=0.42, age_mean=30.0, age_std=10.0
+            dropout_rate=0.312, age_mean=30.0, age_std=10.0
         ),
         n_students=1000,
         seed=42,
-        expected_dropout_range=(0.35, 0.60),
+        expected_dropout_range=(0.20, 0.45),
     ),
 }

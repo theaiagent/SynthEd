@@ -71,7 +71,7 @@ class BigFiveTraits:
 
 # The dropout_base_rate at which _calculate_derived_attributes() was calibrated.
 # Referenced by factory.py to compute scaling factors.
-_CALIBRATED_DROPOUT_BASE_RATE: float = 0.80
+_CALIBRATED_DROPOUT_BASE_RATE: float = 0.46
 
 @dataclass
 class PersonaConfig:
@@ -79,13 +79,13 @@ class PersonaConfig:
     # Demographics
     age_range: tuple[int, int] = (18, 55)
     gender_distribution: dict[str, float] = field(
-        default_factory=lambda: {"male": 0.48, "female": 0.52}
+        default_factory=lambda: {"male": 0.55, "female": 0.45}
     )
 
     # Bean & Metzner: External/environmental factors
     # ODL students are predominantly non-traditional: higher employment,
     # more family responsibilities, greater financial pressure
-    employment_rate: float = 0.78
+    employment_rate: float = 0.69
     has_family_rate: float = 0.52
     financial_stress_mean: float = 0.55  # 0-1 scale
 

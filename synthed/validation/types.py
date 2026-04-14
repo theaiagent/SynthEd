@@ -25,15 +25,15 @@ class ReferenceStatistics:
     age_mean: float = 28.0
     age_std: float = 8.0
     gender_distribution: dict[str, float] = field(
-        default_factory=lambda: {"male": 0.48, "female": 0.52}
+        default_factory=lambda: {"male": 0.55, "female": 0.45}
     )
-    employment_rate: float = 0.78
+    employment_rate: float = 0.69
 
     # Academic
     gpa_mean: float = 2.3
     gpa_std: float = 0.8
-    dropout_rate: float = 0.43
-    dropout_range: tuple[float, float] | None = (0.35, 0.55)
+    dropout_rate: float = 0.312
+    dropout_range: tuple[float, float] | None = (0.20, 0.45)
 
     # Grading outcomes
     pass_rate: float | None = None
