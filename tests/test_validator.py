@@ -98,7 +98,7 @@ class TestDropoutRangeValidation:
 
     def test_dropout_range_backward_compat(self):
         """Default uses range check; explicit None uses z-test."""
-        # Default now has dropout_range=(0.35, 0.55) → range check
+        # Default now has dropout_range=(0.20, 0.45) → range check
         ref_default = ReferenceStatistics()
         v_default = SyntheticDataValidator(reference=ref_default)
         students, outcomes = self._make_data(n=30, n_dropout=10)

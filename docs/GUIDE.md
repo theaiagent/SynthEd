@@ -172,13 +172,13 @@ New theories are auto-discovered from `synthed/simulation/theories/` — no engi
 from synthed.agents.persona import PersonaConfig
 
 config = PersonaConfig(
-    employment_rate=0.78,           # fraction employed (0-1)
+    employment_rate=0.69,           # fraction employed (0-1)
     has_family_rate=0.52,           # family responsibilities
     financial_stress_mean=0.55,     # mean financial stress (0-1)
     prior_gpa_mean=2.3,             # mean prior GPA (0-4)
     digital_literacy_mean=0.50,     # mean digital literacy (0-1)
     self_regulation_mean=0.42,      # mean self-regulation (0-1)
-    dropout_base_rate=0.80,         # base dropout risk scaling (0.01-1.0)
+    dropout_base_rate=0.46,         # base dropout risk scaling (0.01-1.0)
     disability_rate=0.10,           # fraction with disability (0-1)
 )
 
@@ -289,11 +289,12 @@ pipeline = SynthEdPipeline(
 report = pipeline.run(n_students=300)
 ```
 
-| Semesters | Default Dropout Rate (base=0.80) | Quality |
+| Semesters | Default Dropout Rate (base=0.46) | Quality |
 |-----------|----------------------------------|---------|
 | 1 (14 weeks) | ~41% | A (Excellent) |
 | 2 (28 weeks) | ~69% | B (Good) |
 | 4 (56 weeks) | ~92% | B (Good) |
+<!-- TODO: remeasure per-semester dropout % values — computed with old base=0.80, need recalculation at base=0.46 -->
 
 ---
 
@@ -531,12 +532,12 @@ python run_pipeline.py --n 100 --llm
 {
   "persona_config": {
     "age_range": [22, 60],
-    "employment_rate": 0.80,
+    "employment_rate": 0.69,
     "dropout_base_rate": 0.75
   },
   "reference_statistics": {
     "age_mean": 32.0,
-    "dropout_rate": 0.43
+    "dropout_rate": 0.312
   }
 }
 ```
@@ -691,7 +692,7 @@ ValueError: gender_distribution must sum to 1.0, got 0.9000
 **Action:**
 ```python
 config = PersonaConfig(
-    gender_distribution={"male": 0.48, "female": 0.52},  # sums to 1.0
+    gender_distribution={"male": 0.55, "female": 0.45},  # sums to 1.0
 )
 ```
 

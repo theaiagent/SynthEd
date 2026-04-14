@@ -51,7 +51,7 @@ class TestPipelineCalibration:
         # Calibration should have updated persona_config
         assert pipeline._calibration_estimate is not None
         assert pipeline._calibration_estimate.confidence in ("high", "low")
-        assert pipeline.persona_config.dropout_base_rate != 0.80  # changed from default
+        assert pipeline.persona_config.dropout_base_rate != 0.46  # changed from default
 
     def test_calibration_updates_reference_stats(self, tmp_path):
         """_apply_calibration updates reference_stats with target range (lines 95-113)."""

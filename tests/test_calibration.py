@@ -48,7 +48,7 @@ class TestCalibrationMap:
 
     def test_estimate_multi_semester(self):
         """2-semester estimation uses 2-semester data point."""
-        # Only one 2-sem point (rate=0.80, observed=0.759)
+        # Only one 2-sem point (rate=0.46, observed=0.678)
         # With only 1 point for n_semesters=2, falls back to 1-sem data
         result = self.cal.estimate(0.40, n_semesters=2)
         assert result.source_data_points >= 2

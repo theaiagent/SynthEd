@@ -14,6 +14,12 @@ All notable changes to SynthEd are documented here.
 - Sobol parameter space: 69 → 68 params (`_OC_STRESS_THRESHOLD` removed, `_OVERWORK_PENALTY` renamed)
 - `CALIBRATION_DATA` re-measured post spectrum refactoring (dropout rates shifted ~22% lower)
 - README Key Features reorganized into 4 categories, Zenodo description restructured
+
+### Fixed
+- **OULAD reference statistics**: dropout 0.42→0.312 (Withdrawn only, Fail≠Dropout), gender male 0.48→0.55, employment 0.78→0.69, dropout_base_rate 0.80→0.46, dropout_range (0.35,0.55)→(0.20,0.45)
+- `configs/default.json` synced with corrected PersonaConfig/ReferenceStatistics defaults
+- `CALIBRATION_DATA` re-measured with corrected PersonaConfig defaults (2026-04-14)
+- `docs/calibration-methodology.md` power analysis recalculated with p=0.312 (SE, MDE, NAF, CI tables)
 - Calibration parameters: `n_students` 100→500, `n_samples` 128→512, `n_trials` 12,800→62,000, `pop_size` 160→200, validation seeds 3→10
 - Sequential calibration path refactored from `study.optimize()` to manual ask/tell loop with per-generation HV tracking
 

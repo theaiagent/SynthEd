@@ -99,7 +99,7 @@ Find engine constant values that simultaneously minimize:
 
 subject to constraints:
 - engagement ≥ 0.1 (hard floor)
-- dropout_rate ∈ [0.35, 0.60] (feasibility range)
+- dropout_rate ∈ [0.20, 0.45] (feasibility range)
 
 ### Why NSGA-II over alternatives?
 
@@ -143,34 +143,34 @@ SE(p) = √(p(1-p)/N)
 
 ```
 Required N = (z_{α/2} + z_β)² × p(1-p) / δ²
-           = (1.96 + 0.842)² × 0.42 × 0.58 / δ²
-           = 7.849 × 0.2436 / δ²
+           = (1.96 + 0.842)² × 0.312 × 0.688 / δ²
+           = 7.849 × 0.2147 / δ²
 ```
 
 | Effect size (δ) | Required N | Interpretation |
 |-----------------|------------|----------------|
-| 3 pp (0.03) | 2,124 | Fine-grained calibration |
-| 5 pp (0.05) | 765 | Moderate calibration |
-| 7 pp (0.07) | 390 | Coarse calibration |
-| 10 pp (0.10) | 191 | Rough calibration |
+| 3 pp (0.03) | 1,872 | Fine-grained calibration |
+| 5 pp (0.05) | 674 | Moderate calibration |
+| 7 pp (0.07) | 344 | Coarse calibration |
+| 10 pp (0.10) | 169 | Rough calibration |
 
 **Standard error at selected N values:**
 
 | N | SE | 95% CI half-width | MDE (power=0.80) |
 |---|----|--------------------|-------------------|
-| 100 | 4.94% | ±9.68% | 13.8 pp |
-| 200 | 3.49% | ±6.84% | 9.8 pp |
-| 300 | 2.85% | ±5.59% | 8.0 pp |
-| **500** | **2.21%** | **±4.33%** | **6.2 pp** |
-| 750 | 1.80% | ±3.53% | 5.0 pp |
-| 1000 | 1.56% | ±3.06% | 4.4 pp |
+| 100 | 4.63% | ±9.08% | 12.98 pp |
+| 200 | 3.28% | ±6.42% | 9.18 pp |
+| 300 | 2.68% | ±5.25% | 7.50 pp |
+| **500** | **2.07%** | **±4.06%** | **5.80 pp** |
+| 750 | 1.69% | ±3.32% | 4.74 pp |
+| 1000 | 1.47% | ±2.87% | 4.11 pp |
 
-**Decision rationale:** N=500 (SE=2.21%) is the pragmatic optimum. It provides:
-- MDE of 6.2 pp — sufficient for NSGA-II to distinguish meaningfully different parameter sets
-- Signal-to-Noise Ratio (SNR) ≈ 2.3 for 5pp differences — workable with evolutionary selection pressure over 310 generations
+**Decision rationale:** N=500 (SE=2.07%) is the pragmatic optimum. It provides:
+- MDE of 5.8 pp — sufficient for NSGA-II to distinguish meaningfully different parameter sets
+- Signal-to-Noise Ratio (SNR) ≈ 2.4 for 5pp differences — workable with evolutionary selection pressure over 310 generations
 - Acceptable computational cost per evaluation (~0.9 seconds)
 
-Going to N=750 (SE=1.80%) would improve discriminability but increase total compute by 50% with diminishing returns for the optimizer.
+Going to N=750 (SE=1.69%) would improve discriminability but increase total compute by 50% with diminishing returns for the optimizer.
 
 **Reference:** Cochran, W.G. (1977). *Sampling Techniques*, 3rd ed. Wiley.
 
@@ -211,32 +211,32 @@ NAF = 1 + σ_noise² / σ_signal²
 ```
 
 where:
-- σ_noise = Standard Error (SE) of a single simulation's dropout_rate = 0.0221 (at N=500, p=0.42)
+- σ_noise = Standard Error (SE) of a single simulation's dropout_rate = 0.0207 (at N=500, p=0.312)
 - σ_signal = standard deviation of the true objective function (dropout_error) across solutions that the optimizer must discriminate between
 
 The value of σ_signal depends on the optimization phase:
 
 | Phase | σ_signal | NAF | Interpretation |
 |-------|----------|-----|----------------|
-| Global exploration (early generations) | 0.052 | 1.18 | Solutions span the full feasible range [0.35, 0.60]; large fitness differences are easy to detect |
-| Mid-convergence | 0.03 | 1.54 | Population clusters near the optimum; moderate differences remain |
-| Near-optimum refinement (late generations) | 0.02 | 2.22 | Competing solutions differ by only 2-3 percentage points; noise dominates |
+| Global exploration (early generations) | 0.040 | 1.27 | Solutions span the full feasible range [0.20, 0.45]; large fitness differences are easy to detect |
+| Mid-convergence | 0.03 | 1.48 | Population clusters near the optimum; moderate differences remain |
+| Near-optimum refinement (late generations) | 0.02 | 2.07 | Competing solutions differ by only 2-3 percentage points; noise dominates |
 
-**Global σ_signal derivation:** In the feasible region, dropout_error = |achieved - 0.42| ranges from 0 to 0.18. Under uniform coverage: σ = 0.18/√12 ≈ 0.052.
+**Global σ_signal derivation:** In the feasible region, dropout_error = |achieved - 0.312| ranges from 0 to 0.138 in [0.20, 0.45]. Under uniform coverage: σ = 0.138/√12 ≈ 0.040.
 
 **Budget computation using the conservative mid-convergence estimate (σ_signal = 0.03):**
 
 ```
-NAF = 1 + 0.0221² / 0.03² = 1 + 0.000489 / 0.0009 = 1.54
+NAF = 1 + 0.0207² / 0.03² = 1 + 0.000428 / 0.0009 = 1.48
 
 Minimum evaluations = pop_size × 10D × NAF
-                    = 200 × 200 × 1.54
-                    = 61,600
+                    = 200 × 200 × 1.48
+                    = 59,200
 ```
 
-**Our choice of 62,000** matches this conservative estimate (61,600 rounded up). This ensures adequate budget not only for global exploration but also for the mid-convergence phase where population refinement occurs.
+**Our choice of 62,000** exceeds this conservative estimate (59,200), providing additional margin. This ensures adequate budget not only for global exploration but also for the mid-convergence phase where population refinement occurs.
 
-Additionally, the **re-evaluation step** provides a second layer of noise mitigation: after NSGA-II completes, every Pareto front solution is re-evaluated at N=2,000 (SE=1.10%), eliminating noise-induced errors in knee-point selection. This two-phase strategy is well-established in noisy optimization (Jin & Branke, 2005): use a principled evaluation budget for search, then re-evaluate the final solution set with higher fidelity.
+Additionally, the **re-evaluation step** provides a second layer of noise mitigation: after NSGA-II completes, every Pareto front solution is re-evaluated at N=2,000 (SE=1.04%), eliminating noise-induced errors in knee-point selection. This two-phase strategy is well-established in noisy optimization (Jin & Branke, 2005): use a principled evaluation budget for search, then re-evaluate the final solution set with higher fidelity.
 
 At pop_size=200, 62,000 evaluations yield 310 generations — comfortably within the Deb (2002) recommended range of 10D-20D generations (200-400).
 
@@ -248,7 +248,7 @@ At pop_size=200, 62,000 evaluations yield 310 generations — comfortably within
 
 ### Strengthening: Re-evaluation and Replication
 
-**Re-evaluation (N=2,000):** After NSGA-II completes, each Pareto front solution is re-evaluated with N=2,000 students. This reduces the SE of each solution's objectives from 2.21% (N=500) to 1.10% (N=2,000), ensuring the knee-point selection is not distorted by calibration-phase noise.
+**Re-evaluation (N=2,000):** After NSGA-II completes, each Pareto front solution is re-evaluated with N=2,000 students. This reduces the SE of each solution's objectives from 2.07% (N=500) to 1.03% (N=2,000), ensuring the knee-point selection is not distorted by calibration-phase noise.
 
 **Replicated calibration:** The full NSGA-II is run with two different optimizer seeds (42 and 2024). If both runs converge to similar knee-point parameter vectors (Euclidean distance < 0.1 in normalized space), the calibration is robust. If they diverge, the landscape has multiple optima and the Pareto front is underexplored.
 
@@ -261,13 +261,13 @@ Verify that the calibrated parameters produce stable outputs across different ra
 ### Parameter: `Validation N = 1,000`
 
 ```
-SE = √(0.42 × 0.58 / 1000) = 1.56%
-95% CI = ±1.96 × 0.0156 = ±3.06 pp
+SE = √(0.312 × 0.688 / 1000) = 1.47%
+95% CI = ±1.96 × 0.0147 = ±2.87 pp
 ```
 
-At N=1,000, a measured dropout of 42% has 95% CI [38.9%, 45.1%] — comfortably within the target range [35%, 60%].
+At N=1,000, a measured dropout of 31.2% has 95% CI [28.3%, 34.1%] — comfortably within the target range [20%, 45%].
 
-For SE < 2%: N ≥ p(1-p) / 0.02² = 0.2436 / 0.0004 = 609. Our N=1,000 exceeds this with margin.
+For SE < 2%: N ≥ p(1-p) / 0.02² = 0.2147 / 0.0004 = 537. Our N=1,000 exceeds this with margin.
 
 ### Parameter: `Validation seeds = 10`
 
@@ -355,12 +355,12 @@ workers = 8                    # Parallel processes (50% of 16 cores)
 | Metric | Value | Source |
 |--------|-------|--------|
 | Sobol Confidence Interval (CI) half-width on ST | ≤ 0.065 | n_samples=512, c=0.75 |
-| NSGA-II fitness Standard Error (SE) on dropout | 2.21% | N=500, p=0.42 |
-| NSGA-II Minimum Detectable Effect (MDE) | 6.2 pp | power=0.80, α=0.05 |
+| NSGA-II fitness Standard Error (SE) on dropout | 2.07% | N=500, p=0.312 |
+| NSGA-II Minimum Detectable Effect (MDE) | 5.8 pp | power=0.80, α=0.05 |
 | NSGA-II generations | 310 | 62,000/200 |
 | Validation CI half-width (mean) | 0.95 percentage points (pp) | k=10, s=0.0133, t=2.262 |
 | Validation tolerance width (95/95) | 8.99 pp | k=10, k_tol=3.379 |
-| SE < 2% threshold | N ≥ 609 | p(1-p)/0.02² |
+| SE < 2% threshold | N ≥ 537 | p(1-p)/0.02² |
 
 ## 6. Diagnostics for Symposium
 
