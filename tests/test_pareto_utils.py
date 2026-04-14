@@ -6,6 +6,7 @@ from dataclasses import fields
 import numpy as np
 from synthed.analysis.pareto_utils import (
     ParetoSolution, ParetoResult, find_knee_point, compute_hypervolume,
+    compare_knee_points,
 )
 
 
@@ -128,3 +129,35 @@ class TestComputeHypervolume:
         hv = compute_hypervolume(points, ref)
         # Sweep-line: (3-1)*(6-5) + (5-3)*(6-3) + (6-5)*(6-1) = 2+6+5 = 13
         assert hv == pytest.approx(13.0)
+
+
+class TestCompareKneePoints:
+    def test_identical_knee_points_return_zero(self):
+        s = _sol(0.1, 0.2, params={"a": 1.0, "b": 2.0})
+        dist = compare_knee_points(s, s)
+        assert dist == pytest.approx(0.0)
+
+    def test_different_knee_points_return_positive(self):
+        s1 = _sol(0.1, 0.2, params={"a": 0.0, "b": 0.0})
+        s2 = _sol(0.3, 0.4, params={"a": 1.0, "b": 1.0})
+        dist = compare_knee_points(s1, s2)
+        assert dist > 0.0
+
+    def test_normalized_distance_is_unit_scale(self):
+        s1 = _sol(0.1, 0.2, params={"a": 0.0, "b": 0.0})
+        s2 = _sol(0.3, 0.4, params={"a": 1.0, "b": 1.0})
+        dist = compare_knee_points(s1, s2)
+        assert dist == pytest.approx(1.0)
+
+
+class TestParetoResultHvHistory:
+    def test_hv_history_default_empty(self):
+        sol = _sol(0.1, 0.2)
+        result = ParetoResult(
+            profile_name="test",
+            pareto_front=(sol,),
+            knee_point=sol,
+            n_evaluations=100,
+            parameter_names=("engine._X",),
+        )
+        assert result.hv_history == ()

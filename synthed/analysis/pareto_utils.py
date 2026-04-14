@@ -31,6 +31,7 @@ class ParetoResult:
     validation_gpa_mean: float | None = None
     validation_gpa_std: float | None = None
     validation_seeds: tuple[int, ...] = ()
+    hv_history: tuple[float, ...] = ()
 
 
 def find_knee_point(front: tuple[ParetoSolution, ...]) -> ParetoSolution:
@@ -119,3 +120,27 @@ def compute_hypervolume(
         volume += (x_next - x_i) * (ref_y - best_y)
 
     return float(volume)
+
+
+def compare_knee_points(
+    a: ParetoSolution,
+    b: ParetoSolution,
+) -> float:
+    """Normalized Euclidean distance between two knee-point param vectors.
+
+    Each parameter's difference is divided by the range (max of abs values)
+    of the two values. Returns the RMS of these normalized differences.
+    If all params are identical, returns 0.0.
+    """
+    keys = sorted(a.params.keys())
+    if not keys:
+        return 0.0
+    diffs = []
+    for k in keys:
+        va, vb = a.params[k], b.params[k]
+        r = max(abs(va), abs(vb))
+        if r == 0:
+            diffs.append(0.0)
+        else:
+            diffs.append(((va - vb) / r) ** 2)
+    return float(np.sqrt(sum(diffs) / len(diffs)))
