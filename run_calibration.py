@@ -30,12 +30,12 @@ PROFILE_NAMES = ["default"]
 OUTPUT_DIR = Path("calibration_output")
 
 
-def run_sobol(n_students: int, seed: int, n_workers: int = 1) -> list[SobolRanking]:
+def run_sobol(n_students: int, seed: int, n_workers: int = 1, n_samples: int = 128) -> list[SobolRanking]:
     """Run single Sobol analysis and return dropout rankings."""
-    logger.info("Running Sobol analysis (n_students=%d, n_workers=%d)...", n_students, n_workers)
+    logger.info("Running Sobol analysis (n_students=%d, n_samples=%d, n_workers=%d)...", n_students, n_samples, n_workers)
     t0 = time.time()
     analyzer = SobolAnalyzer(n_students=n_students, seed=seed, n_workers=n_workers)
-    results = analyzer.run()
+    results = analyzer.run(n_samples=n_samples)
     dropout_result = next(r for r in results if r.metric == "dropout_rate")
     rankings = analyzer.rank(dropout_result)
     logger.info("Sobol complete in %.1fs, %d parameters ranked", time.time() - t0, len(rankings))
@@ -66,12 +66,14 @@ def calibrate_profile(
     cal_time = time.time() - t0
 
     # Validate
-    logger.info("Validating knee-point (n=500, 3 seeds)...")
+    validation_n = 1000
+    validation_seeds = (42, 123, 456, 789, 2024, 1337, 7777, 9999, 31415, 27182)
+    logger.info("Validating knee-point (n=%d, %d seeds)...", validation_n, len(validation_seeds))
     d_mean, d_std, g_mean, g_std = cal.validate_solution(
         result.knee_point,
         profile=profile_name,
-        n_students=500,
-        seeds=(42, 123, 456),
+        n_students=validation_n,
+        seeds=validation_seeds,
     )
 
     profile = PROFILES[profile_name]
@@ -124,15 +126,15 @@ def main():
     args.workers = max(1, min(args.workers, os.cpu_count() or 8))
 
     if args.quick:
-        n_students, pop_size, n_trials, sobol_top_n = 50, 20, 500, 10
+        n_students, pop_size, n_trials, sobol_top_n, sobol_n_samples = 100, 20, 500, 10, 128
     else:
-        n_students, pop_size, n_trials, sobol_top_n = 100, 160, 12800, 20
+        n_students, pop_size, n_trials, sobol_top_n, sobol_n_samples = 500, 200, 62_000, 20, 512
 
     profiles = [args.profile] if args.profile else PROFILE_NAMES
     OUTPUT_DIR.mkdir(exist_ok=True)
 
     # Step 1: Sobol (once)
-    rankings = run_sobol(n_students=n_students, seed=args.seed, n_workers=args.workers)
+    rankings = run_sobol(n_students=n_students, seed=args.seed, n_workers=args.workers, n_samples=sobol_n_samples)
 
     # Step 2: Calibrate each profile
     cal = NSGAIICalibrator(n_students=n_students, seed=args.seed, n_workers=args.workers)

@@ -66,7 +66,7 @@ class NSGAIICalibrator:
 
     def __init__(
         self,
-        n_students: int = 100,
+        n_students: int = 500,
         seed: int = 42,
         n_workers: int = 1,
     ) -> None:
