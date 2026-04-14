@@ -88,6 +88,43 @@ class TestNSGAIICalibrator:
             cal.run("nonexistent_profile", n_trials=10)
 
 
+class TestHVTracking:
+    @pytest.mark.slow
+    def test_run_populates_hv_history(self, monkeypatch):
+        import random
+        rng = random.Random(42)
+
+        def _mock_sim(**kwargs):
+            return {
+                "dropout_rate": 0.35 + rng.random() * 0.25,
+                "mean_gpa": 2.0 + rng.random() * 1.5,
+                "mean_engagement": 0.3 + rng.random() * 0.4,
+            }
+
+        monkeypatch.setattr(
+            "synthed.analysis.nsga2_calibrator.run_simulation_with_overrides",
+            _mock_sim,
+        )
+
+        rankings = [
+            SobolRanking(parameter="grading.grade_floor", s1=0.2, st=0.3, interaction=0.1, rank=1),
+            SobolRanking(parameter="kember._QUALITY_FACTOR", s1=0.15, st=0.25, interaction=0.1, rank=2),
+            SobolRanking(parameter="gonzalez._RECOVERY_BASE", s1=0.1, st=0.2, interaction=0.1, rank=3),
+        ]
+
+        cal = NSGAIICalibrator(n_students=30, seed=42)
+        result = cal.run(
+            profile="default",
+            pop_size=5,
+            n_trials=20,
+            sobol_rankings=rankings,
+            sobol_top_n=3,
+        )
+
+        assert len(result.hv_history) > 0
+        assert all(hv >= 0 for hv in result.hv_history)
+
+
 class TestNSGAIIIntegration:
     """Integration test with a very small NSGA-II run."""
 

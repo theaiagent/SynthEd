@@ -11,7 +11,7 @@ import optuna
 from optuna.samplers import NSGAIISampler
 
 from ._sim_runner import run_simulation_with_overrides
-from .pareto_utils import ParetoSolution, ParetoResult, find_knee_point
+from .pareto_utils import ParetoSolution, ParetoResult, find_knee_point, compute_hypervolume
 from .sobol_sensitivity import (
     SobolAnalyzer,
     SobolParameter,
@@ -122,30 +122,6 @@ class NSGAIICalibrator:
         fixed_overrides = self._build_fixed_overrides(resolved)
         lo, hi = resolved.expected_dropout_range
 
-        # Objective (used in sequential mode only)
-        def objective(trial: optuna.Trial) -> tuple[float, float]:
-            overrides = dict(fixed_overrides)
-            for p in params:
-                overrides[p.name] = trial.suggest_float(
-                    p.name, p.lower, p.upper, log=p.log_scale,
-                )
-            result = run_simulation_with_overrides(
-                overrides=overrides,
-                n_students=self._n_students,
-                seed=self._seed,
-                default_config=resolved.persona_config,
-                calibration_mode=True,
-            )
-            trial.set_user_attr("achieved_dropout", result["dropout_rate"])
-            trial.set_user_attr("achieved_gpa", result["mean_gpa"])
-            trial.set_user_attr("achieved_engagement", result["mean_engagement"])
-            trial.set_user_attr("pass_rate", result.get("pass_rate", 0.0))
-            trial.set_user_attr("distinction_rate", result.get("distinction_rate", 0.0))
-
-            dropout_error = abs(result["dropout_rate"] - target_dropout)
-            gpa_error = abs(result["mean_gpa"] - target_gpa)
-            return dropout_error, gpa_error
-
         # Constraints
         def constraints_func(
             trial: optuna.trial.FrozenTrial,
@@ -175,12 +151,15 @@ class NSGAIICalibrator:
         )
 
         if self._n_workers > 1:
-            self._run_parallel(
+            hv_history = self._run_parallel(
                 study, params, fixed_overrides, resolved,
                 target_dropout, target_gpa, n_trials, pop_size,
             )
         else:
-            study.optimize(objective, n_trials=n_trials, n_jobs=1)
+            hv_history = self._run_sequential(
+                study, params, fixed_overrides, resolved,
+                target_dropout, target_gpa, n_trials, pop_size,
+            )
 
         # Extract Pareto front
         best_trials = study.best_trials
@@ -221,6 +200,7 @@ class NSGAIICalibrator:
             knee_point=knee,
             n_evaluations=len(study.trials),
             parameter_names=param_names,
+            hv_history=tuple(hv_history),
         )
 
     def _run_parallel(
@@ -233,7 +213,7 @@ class NSGAIICalibrator:
         target_gpa: float,
         n_trials: int,
         pop_size: int,
-    ) -> None:
+    ) -> list[float]:
         """Run trials with ProcessPoolExecutor for GIL bypass.
 
         Uses Optuna's ask/tell API: ask for a batch of trials, build
@@ -243,7 +223,11 @@ class NSGAIICalibrator:
 
         Pool is created once and reused across all generations to avoid
         repeated process spawn overhead on Windows.
+
+        Returns per-generation hypervolume history.
         """
+        ref_point = np.array([0.25, 2.0])
+        hv_history: list[float] = []
         worker = partial(
             run_simulation_with_overrides,
             n_students=self._n_students,
@@ -307,11 +291,79 @@ class NSGAIICalibrator:
                         except RuntimeError:
                             pass  # already told as FAIL in the as_completed loop
 
+                # HV tracking per generation
+                best = study.best_trials
+                if best:
+                    pts = np.array([(t.values[0], t.values[1]) for t in best])
+                    hv = compute_hypervolume(pts, ref_point)
+                    hv_history.append(hv)
+
                 completed += batch_size
                 if completed % (pop_size * 5) == 0:
                     logger.info("Progress: %d/%d trials", completed, n_trials)
         finally:
             pool.shutdown(wait=False, cancel_futures=True)
+        return hv_history
+
+    def _run_sequential(
+        self,
+        study: optuna.Study,
+        params: tuple[SobolParameter, ...],
+        fixed_overrides: dict[str, float],
+        profile: BenchmarkProfile,
+        target_dropout: float,
+        target_gpa: float,
+        n_trials: int,
+        pop_size: int,
+    ) -> list[float]:
+        """Run trials sequentially with ask/tell API and HV tracking."""
+        ref_point = np.array([0.25, 2.0])
+        hv_history: list[float] = []
+        completed = 0
+
+        while completed < n_trials:
+            batch_size = min(pop_size, n_trials - completed)
+
+            for _ in range(batch_size):
+                trial = study.ask()
+                overrides = dict(fixed_overrides)
+                for p in params:
+                    overrides[p.name] = trial.suggest_float(
+                        p.name, p.lower, p.upper, log=p.log_scale,
+                    )
+                try:
+                    result = run_simulation_with_overrides(
+                        overrides=overrides,
+                        n_students=self._n_students,
+                        seed=self._seed,
+                        default_config=profile.persona_config,
+                        calibration_mode=True,
+                    )
+                    trial.set_user_attr("achieved_dropout", result["dropout_rate"])
+                    trial.set_user_attr("achieved_gpa", result["mean_gpa"])
+                    trial.set_user_attr("achieved_engagement", result["mean_engagement"])
+                    trial.set_user_attr("pass_rate", result.get("pass_rate", 0.0))
+                    trial.set_user_attr("distinction_rate", result.get("distinction_rate", 0.0))
+
+                    dropout_error = abs(result["dropout_rate"] - target_dropout)
+                    gpa_error = abs(result["mean_gpa"] - target_gpa)
+                    study.tell(trial, (dropout_error, gpa_error))
+                except Exception as e:
+                    logger.warning("Trial %d failed: %s", trial.number, e)
+                    study.tell(trial, state=optuna.trial.TrialState.FAIL)
+
+            completed += batch_size
+
+            best = study.best_trials
+            if best:
+                pts = np.array([(t.values[0], t.values[1]) for t in best])
+                hv = compute_hypervolume(pts, ref_point)
+                hv_history.append(hv)
+
+            if completed % (pop_size * 5) == 0:
+                logger.info("Progress: %d/%d trials", completed, n_trials)
+
+        return hv_history
 
     def validate_solution(
         self,
