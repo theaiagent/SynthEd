@@ -426,7 +426,7 @@ class SobolAnalyzer:
                 for i, od in enumerate(override_list)
             }
             completed = 0
-            for future in as_completed(future_to_idx, timeout=_WORKER_TIMEOUT_S * n_total):
+            for future in as_completed(future_to_idx, timeout=min(_WORKER_TIMEOUT_S * n_total, 86400)):
                 idx = future_to_idx[future]
                 try:
                     outputs[idx] = future.result(timeout=_WORKER_TIMEOUT_S)
