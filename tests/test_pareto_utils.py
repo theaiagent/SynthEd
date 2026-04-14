@@ -3,8 +3,9 @@ from __future__ import annotations
 import pytest
 from dataclasses import fields
 
+import numpy as np
 from synthed.analysis.pareto_utils import (
-    ParetoSolution, ParetoResult, find_knee_point,
+    ParetoSolution, ParetoResult, find_knee_point, compute_hypervolume,
 )
 
 
@@ -96,3 +97,34 @@ class TestFindKneePoint:
         s3 = _sol(1.0, 0.0)
         knee = find_knee_point((s1, s2, s3))
         assert knee.dropout_error == pytest.approx(0.0)
+
+
+class TestComputeHypervolume:
+    def test_single_point(self):
+        points = np.array([[1.0, 2.0]])
+        ref = np.array([3.0, 4.0])
+        hv = compute_hypervolume(points, ref)
+        assert hv == pytest.approx(4.0)  # (3-1) * (4-2)
+
+    def test_two_points_non_overlapping(self):
+        points = np.array([[1.0, 3.0], [2.0, 1.0]])
+        ref = np.array([4.0, 4.0])
+        hv = compute_hypervolume(points, ref)
+        assert hv == pytest.approx(7.0)
+
+    def test_empty_points_returns_zero(self):
+        points = np.empty((0, 2))
+        ref = np.array([1.0, 1.0])
+        assert compute_hypervolume(points, ref) == 0.0
+
+    def test_point_dominated_by_ref_only(self):
+        points = np.array([[5.0, 5.0]])
+        ref = np.array([3.0, 3.0])
+        assert compute_hypervolume(points, ref) == 0.0
+
+    def test_three_points_known_area(self):
+        points = np.array([[1.0, 5.0], [3.0, 3.0], [5.0, 1.0]])
+        ref = np.array([6.0, 6.0])
+        hv = compute_hypervolume(points, ref)
+        # Sweep-line: (3-1)*(6-5) + (5-3)*(6-3) + (6-5)*(6-1) = 2+6+5 = 13
+        assert hv == pytest.approx(13.0)

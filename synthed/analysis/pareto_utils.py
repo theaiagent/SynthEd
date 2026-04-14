@@ -66,3 +66,56 @@ def find_knee_point(front: tuple[ParetoSolution, ...]) -> ParetoSolution:
         line_vec[0] * diffs[:, 1] - line_vec[1] * diffs[:, 0]
     ) / line_len
     return sorted_front[int(np.argmax(distances))]
+
+
+def compute_hypervolume(
+    points: np.ndarray, reference_point: np.ndarray
+) -> float:
+    """2D hypervolume indicator via sweep-line (Fonseca et al., 2006).
+
+    Computes the area dominated by *points* and bounded by *reference_point*.
+    Both objectives are assumed to be minimised.
+
+    Parameters
+    ----------
+    points : np.ndarray
+        (N, 2) array of objective vectors.
+    reference_point : np.ndarray
+        (2,) reference (upper-bound) vector.
+
+    Returns
+    -------
+    float
+        Dominated hypervolume (area).  Zero when *points* is empty or no
+        point strictly dominates the reference on both objectives.
+    """
+    if points.shape[0] == 0:
+        return 0.0
+
+    ref_x, ref_y = reference_point[0], reference_point[1]
+
+    # Keep only points strictly below the reference on both objectives
+    mask = (points[:, 0] < ref_x) & (points[:, 1] < ref_y)
+    valid = points[mask]
+    if valid.shape[0] == 0:
+        return 0.0
+
+    # Sort by first objective ascending
+    order = np.argsort(valid[:, 0])
+    sorted_pts = valid[order]
+
+    volume = 0.0
+    best_y = ref_y  # best (lowest) second-objective value seen so far
+
+    for i in range(sorted_pts.shape[0]):
+        x_i = sorted_pts[i, 0]
+        y_i = sorted_pts[i, 1]
+        best_y = min(best_y, y_i)
+        x_next = (
+            sorted_pts[i + 1, 0]
+            if i + 1 < sorted_pts.shape[0]
+            else ref_x
+        )
+        volume += (x_next - x_i) * (ref_y - best_y)
+
+    return float(volume)
