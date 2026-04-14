@@ -406,6 +406,78 @@ class NSGAIICalibrator:
             float(np.std(gpas)),
         )
 
+    def reevaluate_pareto_front(
+        self,
+        pareto_front: tuple[ParetoSolution, ...],
+        profile: str | BenchmarkProfile,
+        n_students: int = 2000,
+        seeds: tuple[int, ...] = (42, 123, 456),
+    ) -> ParetoResult:
+        """Re-evaluate each Pareto solution at higher N and re-select knee-point.
+
+        Produces cleaner objective values by averaging over multiple seeds
+        with a larger population, reducing Monte Carlo noise in knee-point
+        selection.
+        """
+        from ..benchmarks.profiles import PROFILES
+
+        if isinstance(profile, str):
+            resolved = PROFILES[profile]
+            profile_name = profile
+        else:
+            resolved = profile
+            profile_name = resolved.name
+
+        target_dropout = resolved.reference_stats.dropout_rate
+        target_gpa = resolved.reference_stats.gpa_mean
+        fixed = self._build_fixed_overrides(resolved)
+
+        cleaned: list[ParetoSolution] = []
+        for sol in pareto_front:
+            dropouts: list[float] = []
+            gpas: list[float] = []
+            engagements: list[float] = []
+            for s in seeds:
+                overrides = {**fixed, **sol.params}
+                result = run_simulation_with_overrides(
+                    overrides=overrides,
+                    n_students=n_students,
+                    seed=s,
+                    default_config=resolved.persona_config,
+                    calibration_mode=True,
+                )
+                dropouts.append(result["dropout_rate"])
+                gpas.append(result["mean_gpa"])
+                engagements.append(result["mean_engagement"])
+
+            mean_d = float(np.mean(dropouts))
+            mean_g = float(np.mean(gpas))
+            mean_e = float(np.mean(engagements))
+            cleaned.append(ParetoSolution(
+                params=sol.params,
+                dropout_error=abs(mean_d - target_dropout),
+                gpa_error=abs(mean_g - target_gpa),
+                engagement_error=abs(mean_e - _TARGET_ENGAGEMENT),
+                achieved_dropout=mean_d,
+                achieved_gpa=mean_g,
+                achieved_engagement=mean_e,
+            ))
+
+        cleaned_front = tuple(cleaned)
+        knee = find_knee_point(cleaned_front)
+        logger.info(
+            "Re-evaluation complete: %d solutions, knee dropout_err=%.4f gpa_err=%.4f",
+            len(cleaned_front), knee.dropout_error, knee.gpa_error,
+        )
+
+        return ParetoResult(
+            profile_name=profile_name,
+            pareto_front=cleaned_front,
+            knee_point=knee,
+            n_evaluations=len(pareto_front) * len(seeds),
+            parameter_names=tuple(sorted(pareto_front[0].params.keys())) if pareto_front else (),
+        )
+
     def _build_fixed_overrides(
         self, profile: BenchmarkProfile,
     ) -> dict[str, float]:

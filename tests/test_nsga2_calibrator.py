@@ -200,3 +200,30 @@ class TestNSGAIIIntegration:
         assert d_std >= 0.0
         assert 0.0 <= g_mean <= 4.0
         assert g_std >= 0.0
+
+
+class TestReevaluatePareto:
+    @pytest.mark.slow
+    def test_reevaluate_returns_new_pareto_result(self):
+        cal = NSGAIICalibrator(n_students=30, seed=42)
+        s1 = ParetoSolution(
+            params={"grading.grade_floor": 0.45},
+            dropout_error=0.05, gpa_error=0.1, engagement_error=0.05,
+            achieved_dropout=0.37, achieved_gpa=2.5, achieved_engagement=0.5,
+        )
+        s2 = ParetoSolution(
+            params={"grading.grade_floor": 0.50},
+            dropout_error=0.08, gpa_error=0.05, engagement_error=0.03,
+            achieved_dropout=0.34, achieved_gpa=2.7, achieved_engagement=0.47,
+        )
+        front = (s1, s2)
+        result = cal.reevaluate_pareto_front(
+            pareto_front=front,
+            profile="default",
+            n_students=30,
+            seeds=(42, 123),
+        )
+        assert isinstance(result, ParetoResult)
+        assert len(result.pareto_front) <= 2
+        assert result.knee_point is not None
+        assert result.profile_name == "default"
