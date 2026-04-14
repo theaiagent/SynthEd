@@ -163,7 +163,7 @@ class TestOverrides:
         from synthed.agents.persona import PersonaConfig
         config = _build_config(PersonaConfig(), {"employment_rate": 0.55})
         assert config.employment_rate == 0.55
-        assert config.dropout_base_rate == 0.80
+        assert config.dropout_base_rate == 0.46
 
     def test_engine_override_applies(self, tmp_path):
         """Engine-level constants can be overridden via EngineConfig replace."""

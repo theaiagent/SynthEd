@@ -40,6 +40,10 @@ class CalibrationEstimate:
 # Measured 2026-04-12 post spectrum refactoring (continuous persona fields).
 # IMPORTANT: Re-measure if theory modules, engine weights, or RNG-consuming
 #            code paths change (even non-dropout features shift RNG sequence).
+# TODO(STALE): PersonaConfig defaults changed (gender, employment, dropout_base_rate)
+#              on 2026-04-14. These data points were measured with old defaults and
+#              will produce incorrect interpolation. Re-measure before using
+#              CalibrationMap for auto-calibration. NSGA-II calibration is unaffected.
 CALIBRATION_DATA: tuple[CalibrationPoint, ...] = (
     # 1-semester sweep across dropout_base_rate values
     CalibrationPoint(1, 0.20, 0.191, 500, 5),

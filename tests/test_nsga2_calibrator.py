@@ -96,7 +96,7 @@ class TestHVTracking:
 
         def _mock_sim(**kwargs):
             return {
-                "dropout_rate": 0.35 + rng.random() * 0.25,
+                "dropout_rate": 0.20 + rng.random() * 0.25,
                 "mean_gpa": 2.0 + rng.random() * 1.5,
                 "mean_engagement": 0.3 + rng.random() * 0.4,
             }
@@ -143,7 +143,7 @@ class TestNSGAIIIntegration:
 
         def _mock_sim(**kwargs):
             return {
-                "dropout_rate": 0.35 + rng.random() * 0.25,  # 0.35-0.60
+                "dropout_rate": 0.20 + rng.random() * 0.25,  # 0.20-0.45
                 "mean_gpa": 2.0 + rng.random() * 1.5,        # 2.0-3.5
                 "mean_engagement": 0.3 + rng.random() * 0.4,  # 0.3-0.7
             }

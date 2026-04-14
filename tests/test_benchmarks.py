@@ -82,7 +82,7 @@ class TestBenchmarkGenerator:
         from unittest.mock import patch
 
         mock_report = {
-            "simulation_summary": {"dropout_rate": 0.45},
+            "simulation_summary": {"dropout_rate": 0.35},
         }
         with patch(
             "synthed.benchmarks.generator.SynthEdPipeline"
@@ -97,8 +97,8 @@ class TestBenchmarkGenerator:
         assert "benchmark_validation" in report
         bv = report["benchmark_validation"]
         assert bv["profile"] == "default"
-        assert bv["actual_dropout_rate"] == 0.45
-        # 0.45 is within (0.35, 0.60)
+        assert bv["actual_dropout_rate"] == 0.35
+        # 0.35 is within (0.20, 0.45)
         assert bv["in_expected_range"] is True
 
     def test_generate_valid_profile_out_of_range(self, tmp_path):
@@ -119,7 +119,7 @@ class TestBenchmarkGenerator:
             )
 
         bv = report["benchmark_validation"]
-        # 0.95 is outside (0.35, 0.60)
+        # 0.95 is outside (0.20, 0.45)
         assert bv["in_expected_range"] is False
 
     def test_generate_default_output_dir(self):
@@ -127,7 +127,7 @@ class TestBenchmarkGenerator:
         from unittest.mock import patch
 
         mock_report = {
-            "simulation_summary": {"dropout_rate": 0.45},
+            "simulation_summary": {"dropout_rate": 0.35},
         }
         with patch(
             "synthed.benchmarks.generator.SynthEdPipeline"
@@ -162,7 +162,7 @@ class TestBenchmarkGenerator:
 class TestBenchmarkReport:
     """Tests for benchmark report generation."""
 
-    def _make_mock_report(self, profile_name, dropout=0.45, gpa=2.85, engagement=0.62):
+    def _make_mock_report(self, profile_name, dropout=0.35, gpa=2.85, engagement=0.62):
         """Build a realistic mock report for testing."""
         return {
             "simulation_summary": {
