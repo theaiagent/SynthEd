@@ -19,7 +19,7 @@ All notable changes to SynthEd are documented here.
 - **OULAD reference statistics**: dropout 0.42→0.312 (Withdrawn only, Fail≠Dropout), gender male 0.48→0.55, employment 0.78→0.69, dropout_base_rate 0.80→0.46, dropout_range (0.35,0.55)→(0.20,0.45)
 - `configs/default.json` synced with corrected PersonaConfig/ReferenceStatistics defaults
 - `CALIBRATION_DATA` re-measured with corrected PersonaConfig defaults (2026-04-14)
-- `docs/calibration-methodology.md` power analysis recalculated with p=0.312 (SE, MDE, NAF, CI tables)
+- `docs/CALIBRATION_METHODOLOGY.md` power analysis recalculated with p=0.312 (SE, MDE, NAF, CI tables)
 - Calibration parameters: `n_students` 100→500, `n_samples` 128→512, `n_trials` 12,800→62,000, `pop_size` 160→200, validation seeds 3→10
 - Sequential calibration path refactored from `study.optimize()` to manual ask/tell loop with per-generation HV tracking
 
@@ -27,7 +27,7 @@ All notable changes to SynthEd are documented here.
 - **HV convergence tracking**: `compute_hypervolume()` in `pareto_utils.py` tracks hypervolume per NSGA-II generation, stored in `ParetoResult.hv_history`
 - **Pareto front re-evaluation**: `reevaluate_pareto_front()` re-evaluates solutions at N=2,000 with 3 seeds for noise-free knee-point selection
 - **Replicated calibration**: 2 independent NSGA-II seeds (42, 2024) with `compare_knee_points()` for robustness comparison
-- **Calibration methodology**: `docs/calibration-methodology.md` — academic reference with power analysis, NAF framework, 16 citations
+- **Calibration methodology**: `docs/CALIBRATION_METHODOLOGY.md` — academic reference with power analysis, NAF framework, 16 citations
 
 ## [1.6.0] - 2026-04-12
 

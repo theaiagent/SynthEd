@@ -1,0 +1,75 @@
+{
+  "profile": "default",
+  "pareto_size": 10,
+  "n_evaluations": 500,
+  "calibration_time_s": 54.7,
+  "knee_point": {
+    "dropout_error": 0.06,
+    "gpa_error": 0.4769,
+    "achieved_dropout": 0.48,
+    "achieved_gpa": 2.7769,
+    "achieved_engagement": 0.1137,
+    "params": {
+      "engine._TINTO_ACADEMIC_WEIGHT": 0.036081,
+      "engine._TINTO_SOCIAL_WEIGHT": 0.012255,
+      "engine._TINTO_DECAY_BASE": 0.07856,
+      "engine._MOTIVATION_INTRINSIC_BOOST": 0.03619,
+      "engine._MOTIVATION_AMOTIVATION_PENALTY": 0.023561,
+      "engine._TD_EFFECT_FACTOR": 0.036385,
+      "engine._CB_FEEDBACK_FACTOR": 0.036449,
+      "engine._MISSED_STREAK_PENALTY": 0.045996,
+      "bean._EMPLOYMENT_PRESSURE_FACTOR": 0.055545,
+      "bean._FAMILY_PRESSURE_FACTOR": 0.023877
+    }
+  },
+  "validation": {
+    "dropout_mean": 0.5785,
+    "dropout_std": 0.0161,
+    "gpa_mean": 2.8148,
+    "gpa_std": 0.0062,
+    "in_range": true,
+    "expected_range": [
+      0.35,
+      0.6
+    ]
+  },
+  "parameter_names": [
+    "engine._TINTO_ACADEMIC_WEIGHT",
+    "engine._TINTO_SOCIAL_WEIGHT",
+    "engine._TINTO_DECAY_BASE",
+    "engine._MOTIVATION_INTRINSIC_BOOST",
+    "engine._MOTIVATION_AMOTIVATION_PENALTY",
+    "engine._TD_EFFECT_FACTOR",
+    "engine._CB_FEEDBACK_FACTOR",
+    "engine._MISSED_STREAK_PENALTY",
+    "bean._EMPLOYMENT_PRESSURE_FACTOR",
+    "bean._FAMILY_PRESSURE_FACTOR"
+  ],
+  "hv_history": [
+    0.3745665150645405,
+    0.37495321063021136,
+    0.3755041807615196,
+    0.37637254032972245,
+    0.3766394621721281,
+    0.37712168568037757,
+    0.3777934807749581,
+    0.3778098070150704,
+    0.3778098070150704,
+    0.3790316906767809,
+    0.37975115526583647,
+    0.37975115526583647,
+    0.37975115526583647,
+    0.38007095403343866,
+    0.38014266585019274,
+    0.38014266585019274,
+    0.38014266585019274,
+    0.38014266585019274,
+    0.38014526702973767,
+    0.38014526702973767,
+    0.38014526702973767,
+    0.38014526702973767,
+    0.38014526702973767,
+    0.38039608099429023,
+    0.38039608099429023
+  ]
+}
