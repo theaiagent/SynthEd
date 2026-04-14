@@ -3,8 +3,10 @@ from __future__ import annotations
 import pytest
 from dataclasses import fields
 
+import numpy as np
 from synthed.analysis.pareto_utils import (
-    ParetoSolution, ParetoResult, find_knee_point,
+    ParetoSolution, ParetoResult, find_knee_point, compute_hypervolume,
+    compare_knee_points,
 )
 
 
@@ -96,3 +98,66 @@ class TestFindKneePoint:
         s3 = _sol(1.0, 0.0)
         knee = find_knee_point((s1, s2, s3))
         assert knee.dropout_error == pytest.approx(0.0)
+
+
+class TestComputeHypervolume:
+    def test_single_point(self):
+        points = np.array([[1.0, 2.0]])
+        ref = np.array([3.0, 4.0])
+        hv = compute_hypervolume(points, ref)
+        assert hv == pytest.approx(4.0)  # (3-1) * (4-2)
+
+    def test_two_points_non_overlapping(self):
+        points = np.array([[1.0, 3.0], [2.0, 1.0]])
+        ref = np.array([4.0, 4.0])
+        hv = compute_hypervolume(points, ref)
+        assert hv == pytest.approx(7.0)
+
+    def test_empty_points_returns_zero(self):
+        points = np.empty((0, 2))
+        ref = np.array([1.0, 1.0])
+        assert compute_hypervolume(points, ref) == 0.0
+
+    def test_point_dominated_by_ref_only(self):
+        points = np.array([[5.0, 5.0]])
+        ref = np.array([3.0, 3.0])
+        assert compute_hypervolume(points, ref) == 0.0
+
+    def test_three_points_known_area(self):
+        points = np.array([[1.0, 5.0], [3.0, 3.0], [5.0, 1.0]])
+        ref = np.array([6.0, 6.0])
+        hv = compute_hypervolume(points, ref)
+        # Sweep-line: (3-1)*(6-5) + (5-3)*(6-3) + (6-5)*(6-1) = 2+6+5 = 13
+        assert hv == pytest.approx(13.0)
+
+
+class TestCompareKneePoints:
+    def test_identical_knee_points_return_zero(self):
+        s = _sol(0.1, 0.2, params={"a": 1.0, "b": 2.0})
+        dist = compare_knee_points(s, s)
+        assert dist == pytest.approx(0.0)
+
+    def test_different_knee_points_return_positive(self):
+        s1 = _sol(0.1, 0.2, params={"a": 0.0, "b": 0.0})
+        s2 = _sol(0.3, 0.4, params={"a": 1.0, "b": 1.0})
+        dist = compare_knee_points(s1, s2)
+        assert dist > 0.0
+
+    def test_normalized_distance_is_unit_scale(self):
+        s1 = _sol(0.1, 0.2, params={"a": 0.0, "b": 0.0})
+        s2 = _sol(0.3, 0.4, params={"a": 1.0, "b": 1.0})
+        dist = compare_knee_points(s1, s2)
+        assert dist == pytest.approx(1.0)
+
+
+class TestParetoResultHvHistory:
+    def test_hv_history_default_empty(self):
+        sol = _sol(0.1, 0.2)
+        result = ParetoResult(
+            profile_name="test",
+            pareto_front=(sol,),
+            knee_point=sol,
+            n_evaluations=100,
+            parameter_names=("engine._X",),
+        )
+        assert result.hv_history == ()

@@ -88,6 +88,43 @@ class TestNSGAIICalibrator:
             cal.run("nonexistent_profile", n_trials=10)
 
 
+class TestHVTracking:
+    @pytest.mark.slow
+    def test_run_populates_hv_history(self, monkeypatch):
+        import random
+        rng = random.Random(42)
+
+        def _mock_sim(**kwargs):
+            return {
+                "dropout_rate": 0.35 + rng.random() * 0.25,
+                "mean_gpa": 2.0 + rng.random() * 1.5,
+                "mean_engagement": 0.3 + rng.random() * 0.4,
+            }
+
+        monkeypatch.setattr(
+            "synthed.analysis.nsga2_calibrator.run_simulation_with_overrides",
+            _mock_sim,
+        )
+
+        rankings = [
+            SobolRanking(parameter="grading.grade_floor", s1=0.2, st=0.3, interaction=0.1, rank=1),
+            SobolRanking(parameter="kember._QUALITY_FACTOR", s1=0.15, st=0.25, interaction=0.1, rank=2),
+            SobolRanking(parameter="gonzalez._RECOVERY_BASE", s1=0.1, st=0.2, interaction=0.1, rank=3),
+        ]
+
+        cal = NSGAIICalibrator(n_students=30, seed=42)
+        result = cal.run(
+            profile="default",
+            pop_size=5,
+            n_trials=20,
+            sobol_rankings=rankings,
+            sobol_top_n=3,
+        )
+
+        assert len(result.hv_history) > 0
+        assert all(hv >= 0 for hv in result.hv_history)
+
+
 class TestNSGAIIIntegration:
     """Integration test with a very small NSGA-II run."""
 
@@ -163,3 +200,30 @@ class TestNSGAIIIntegration:
         assert d_std >= 0.0
         assert 0.0 <= g_mean <= 4.0
         assert g_std >= 0.0
+
+
+class TestReevaluatePareto:
+    @pytest.mark.slow
+    def test_reevaluate_returns_new_pareto_result(self):
+        cal = NSGAIICalibrator(n_students=30, seed=42)
+        s1 = ParetoSolution(
+            params={"grading.grade_floor": 0.45},
+            dropout_error=0.05, gpa_error=0.1, engagement_error=0.05,
+            achieved_dropout=0.37, achieved_gpa=2.5, achieved_engagement=0.5,
+        )
+        s2 = ParetoSolution(
+            params={"grading.grade_floor": 0.50},
+            dropout_error=0.08, gpa_error=0.05, engagement_error=0.03,
+            achieved_dropout=0.34, achieved_gpa=2.7, achieved_engagement=0.47,
+        )
+        front = (s1, s2)
+        result = cal.reevaluate_pareto_front(
+            pareto_front=front,
+            profile="default",
+            n_students=30,
+            seeds=(42, 123),
+        )
+        assert isinstance(result, ParetoResult)
+        assert len(result.pareto_front) <= 2
+        assert result.knee_point is not None
+        assert result.profile_name == "default"
