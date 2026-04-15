@@ -170,6 +170,7 @@ class ReportGenerator:
             validation_radar,
         )
 
+        t = TRANSLATIONS.get(self._lang, TRANSLATIONS["en"])
         result: dict[str, str] = {}
 
         # Demographics charts
@@ -197,10 +198,10 @@ class ReportGenerator:
         result["chart_dropout"] = _fig_to_b64(fig_dropout)
 
         # Engagement distribution
-        mean_eng = sim.get("mean_final_engagement", 0)
+        mean_eng = sim.get("mean_final_engagement")
         std_eng = sim.get("std_final_engagement", 0.05)
         n_retained = sim.get("retained_students", 50)
-        if mean_eng and n_retained > 0:
+        if mean_eng is not None and n_retained > 0:
             rng = np.random.default_rng(0)
             engagements = np.clip(
                 rng.normal(mean_eng, max(std_eng, 0.01), n_retained),
@@ -213,9 +214,9 @@ class ReportGenerator:
         result["chart_engagement"] = _fig_to_b64(fig_eng)
 
         # GPA distribution
-        mean_gpa_val = sim.get("mean_final_gpa", 0)
+        mean_gpa_val = sim.get("mean_final_gpa")
         n_total = sim.get("total_students", 100)
-        if mean_gpa_val and n_total > 0:
+        if mean_gpa_val is not None and n_total > 0:
             std_gpa = 0.6
             rng = np.random.default_rng(0)
             gpas = np.clip(
@@ -232,26 +233,26 @@ class ReportGenerator:
         val_results = val.get("results", [])
         if val_results:
             categories: dict[str, list[dict]] = {
-                "Demographics": [],
-                "Correlations": [],
-                "Temporal": [],
-                "Privacy": [],
-                "Other": [],
+                t["radar_demographics"]: [],
+                t["radar_correlations"]: [],
+                t["radar_temporal"]: [],
+                t["radar_privacy"]: [],
+                t["radar_other"]: [],
             }
             for r in val_results:
                 if not isinstance(r, dict):
                     continue
                 test = r.get("test", "")
                 if any(k in test for k in ("age", "gender", "employment", "dropout_rate", "gpa")):
-                    categories["Demographics"].append(r)
+                    categories[t["radar_demographics"]].append(r)
                 elif "correlation" in test or "engagement" in test:
-                    categories["Correlations"].append(r)
+                    categories[t["radar_correlations"]].append(r)
                 elif "timing" in test or "attrition" in test or "temporal" in test:
-                    categories["Temporal"].append(r)
+                    categories[t["radar_temporal"]].append(r)
                 elif "privacy" in test or "backstory" in test:
-                    categories["Privacy"].append(r)
+                    categories[t["radar_privacy"]].append(r)
                 else:
-                    categories["Other"].append(r)
+                    categories[t["radar_other"]].append(r)
 
             scores: dict[str, float] = {}
             for cat, items in categories.items():
@@ -318,6 +319,10 @@ class ReportGenerator:
         if total_approx > 0 and total_approx != dropout_count:
             scale = dropout_count / total_approx
             weekly = [max(0, int(round(w * scale))) for w in weekly]
+            delta = dropout_count - sum(weekly)
+            if delta and weekly:
+                peak_idx = max(range(len(weekly)), key=weekly.__getitem__)
+                weekly[peak_idx] = max(0, weekly[peak_idx] + delta)
         return weekly
 
 

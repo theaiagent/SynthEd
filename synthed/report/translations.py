@@ -78,6 +78,12 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "self_efficacy": "Self Efficacy (mean)",
         "base_dropout_risk": "Base Dropout Risk (mean)",
         "base_engagement": "Base Engagement (mean)",
+        # Radar chart category labels
+        "radar_demographics": "Demographics",
+        "radar_correlations": "Correlations",
+        "radar_temporal": "Temporal",
+        "radar_privacy": "Privacy",
+        "radar_other": "Other",
     },
     "tr": {
         # Section headings
@@ -154,5 +160,11 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "self_efficacy": "Öz Yeterlilik (ortalama)",
         "base_dropout_risk": "Temel Terk Riski (ortalama)",
         "base_engagement": "Temel Katılım (ortalama)",
+        # Radar chart category labels
+        "radar_demographics": "Demografik",
+        "radar_correlations": "Korelasyonlar",
+        "radar_temporal": "Zamansal",
+        "radar_privacy": "Gizlilik",
+        "radar_other": "Diğer",
     },
 }
