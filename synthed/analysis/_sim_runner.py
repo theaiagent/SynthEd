@@ -196,20 +196,25 @@ def _normalize_weight_group(
     current_cfg,
     group: tuple[str, ...],
     target_sum: float = 1.0,
+    cap_only: bool = False,
 ) -> None:
     """Normalize a constrained weight group in-place after Sobol sampling.
 
     Sobol analysis samples parameters independently, which can violate
-    sum-to-1.0 constraints on weight groups. This normalizes the full
-    weight vector (using overrides where present, current defaults
-    otherwise) to preserve relative proportions while satisfying the
-    constraint.
+    sum constraints on weight groups. For equality constraints (sum == 1.0),
+    always normalize. For inequality constraints (sum <= 1.0), set
+    cap_only=True to only scale down when the sum exceeds the target.
     """
     if not any(name in overrides for name in group):
         return
     weights = {name: overrides.get(name, getattr(current_cfg, name)) for name in group}
     total = sum(weights.values())
-    if total <= 0 or math.isclose(total, target_sum, rel_tol=1e-9):
+    if total <= 0:
+        return
+    if cap_only:
+        if total <= target_sum or math.isclose(total, target_sum, rel_tol=1e-9):
+            return
+    elif math.isclose(total, target_sum, rel_tol=1e-9):
         return
     scale = target_sum / total
     for name in group:
@@ -241,7 +246,9 @@ def _apply_engine_overrides(
             # Normalize constrained weight groups (Sobol/NSGA-II sample independently)
             _normalize_weight_group(filtered, engine.cfg, _ASSIGN_QUALITY_WEIGHTS)
             _normalize_weight_group(filtered, engine.cfg, _EXAM_QUALITY_WEIGHTS)
-            _normalize_weight_group(filtered, engine.cfg, _ASSIGN_SUBMIT_WEIGHTS)
+            _normalize_weight_group(
+                filtered, engine.cfg, _ASSIGN_SUBMIT_WEIGHTS, cap_only=True
+            )
             engine.cfg = replace(engine.cfg, **filtered)
 
     for module_alias, attrs in theory_overrides.items():
