@@ -347,6 +347,87 @@ class TestNWorkers:
         assert analyzer._n_workers == 1
 
 
+class TestWeightNormalization:
+    def test_assign_weights_normalized(self):
+        """Overriding partial assignment weights normalizes the full group."""
+        from synthed.analysis._sim_runner import (
+            _normalize_weight_group, _ASSIGN_QUALITY_WEIGHTS,
+        )
+        from synthed.simulation.engine_config import EngineConfig
+
+        cfg = EngineConfig()
+        overrides = {"_ASSIGN_GPA_WEIGHT": 0.40, "_ASSIGN_ENG_WEIGHT": 0.40}
+        _normalize_weight_group(overrides, cfg, _ASSIGN_QUALITY_WEIGHTS)
+
+        total = sum(overrides.get(k, getattr(cfg, k)) for k in _ASSIGN_QUALITY_WEIGHTS)
+        assert abs(total - 1.0) < 1e-9
+
+    def test_no_normalization_without_weight_overrides(self):
+        """No normalization when no weight params are overridden."""
+        from synthed.analysis._sim_runner import (
+            _normalize_weight_group, _ASSIGN_QUALITY_WEIGHTS,
+        )
+        from synthed.simulation.engine_config import EngineConfig
+
+        cfg = EngineConfig()
+        overrides = {"_TINTO_ACADEMIC_WEIGHT": 0.05}
+        _normalize_weight_group(overrides, cfg, _ASSIGN_QUALITY_WEIGHTS)
+        assert "_ASSIGN_GPA_WEIGHT" not in overrides
+
+    def test_relative_proportions_preserved(self):
+        """Normalization preserves relative weight ratios."""
+        from synthed.analysis._sim_runner import (
+            _normalize_weight_group, _ASSIGN_QUALITY_WEIGHTS,
+        )
+        from synthed.simulation.engine_config import EngineConfig
+
+        cfg = EngineConfig()
+        overrides = {"_ASSIGN_GPA_WEIGHT": 0.40, "_ASSIGN_ENG_WEIGHT": 0.20}
+        _normalize_weight_group(overrides, cfg, _ASSIGN_QUALITY_WEIGHTS)
+        assert overrides["_ASSIGN_GPA_WEIGHT"] / overrides["_ASSIGN_ENG_WEIGHT"] == pytest.approx(2.0)
+
+    def test_exam_weights_normalized(self):
+        """Overriding partial exam weights normalizes the full group."""
+        from synthed.analysis._sim_runner import (
+            _normalize_weight_group, _EXAM_QUALITY_WEIGHTS,
+        )
+        from synthed.simulation.engine_config import EngineConfig
+
+        cfg = EngineConfig()
+        overrides = {"_EXAM_GPA_WEIGHT": 0.35, "_EXAM_ENG_WEIGHT": 0.35}
+        _normalize_weight_group(overrides, cfg, _EXAM_QUALITY_WEIGHTS)
+
+        total = sum(overrides.get(k, getattr(cfg, k)) for k in _EXAM_QUALITY_WEIGHTS)
+        assert total == pytest.approx(1.0)
+
+    def test_submit_weights_unchanged_when_under_cap(self):
+        """Submit weights stay unchanged when total <= 1.0 (cap_only mode)."""
+        from synthed.analysis._sim_runner import (
+            _normalize_weight_group, _ASSIGN_SUBMIT_WEIGHTS,
+        )
+        from synthed.simulation.engine_config import EngineConfig
+
+        cfg = EngineConfig()
+        overrides = {"_ASSIGN_SUBMIT_BASE": 0.15}  # total = 0.15 + 0.30 + 0.20 + 0.20 = 0.85
+        _normalize_weight_group(overrides, cfg, _ASSIGN_SUBMIT_WEIGHTS, cap_only=True)
+        assert overrides["_ASSIGN_SUBMIT_BASE"] == pytest.approx(0.15)
+        assert "_ASSIGN_SUBMIT_REG_WEIGHT" not in overrides  # untouched
+
+    def test_submit_weights_scaled_down_when_over_cap(self):
+        """Submit weights are scaled down when total > 1.0 (cap_only mode)."""
+        from synthed.analysis._sim_runner import (
+            _normalize_weight_group, _ASSIGN_SUBMIT_WEIGHTS,
+        )
+        from synthed.simulation.engine_config import EngineConfig
+
+        cfg = EngineConfig()
+        overrides = {"_ASSIGN_SUBMIT_BASE": 0.50}  # total = 0.50 + 0.30 + 0.20 + 0.20 = 1.20
+        _normalize_weight_group(overrides, cfg, _ASSIGN_SUBMIT_WEIGHTS, cap_only=True)
+
+        total = sum(overrides.get(k, getattr(cfg, k)) for k in _ASSIGN_SUBMIT_WEIGHTS)
+        assert total == pytest.approx(1.0)
+
+
 class TestSimRunnerCalibrationMode:
     """Tests for calibration_mode=True skipping temp directory creation."""
 

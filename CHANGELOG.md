@@ -20,6 +20,7 @@ All notable changes to SynthEd are documented here.
 - `configs/default.json` synced with corrected PersonaConfig/ReferenceStatistics defaults
 - `CALIBRATION_DATA` re-measured with corrected PersonaConfig defaults (2026-04-14)
 - `docs/CALIBRATION_METHODOLOGY.md` power analysis recalculated with p=0.312 (SE, MDE, NAF, CI tables)
+- Sobol/NSGA-II weight normalization: constrained weight groups (assignment, exam, submit) now normalized in `_sim_runner.py` before EngineConfig creation, preventing crash when parameters are sampled independently
 - Calibration parameters: `n_students` 100→500, `n_samples` 128→512, `n_trials` 12,800→62,000, `pop_size` 160→200, validation seeds 3→10
 - Sequential calibration path refactored from `study.optimize()` to manual ask/tell loop with per-generation HV tracking
 
