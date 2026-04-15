@@ -75,6 +75,8 @@ class ReportGenerator:
             browser = p.chromium.launch()
             try:
                 page = browser.new_page()
+                page.set_default_timeout(60000)
+                page.set_default_navigation_timeout(60000)
                 page.set_content(html, wait_until="networkidle")
                 pdf = page.pdf(
                     format="A4",
@@ -163,6 +165,8 @@ class ReportGenerator:
         val: dict,
     ) -> dict[str, str]:
         """Render all charts as base64-encoded PNG strings."""
+        import plotly.graph_objects as go
+
         from ..dashboard.charts import (
             dropout_timeline,
             engagement_distribution,
@@ -209,7 +213,6 @@ class ReportGenerator:
             ).tolist()
             fig_eng = engagement_distribution(engagements)
         else:
-            import plotly.graph_objects as go
             fig_eng = go.Figure()
         result["chart_engagement"] = _fig_to_b64(fig_eng)
 
@@ -225,7 +228,6 @@ class ReportGenerator:
             ).tolist()
             fig_gpa = gpa_distribution(gpas)
         else:
-            import plotly.graph_objects as go
             fig_gpa = go.Figure()
         result["chart_gpa"] = _fig_to_b64(fig_gpa)
 
