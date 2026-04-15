@@ -20,6 +20,7 @@ from .charts import (
 from .translations import TRANSLATIONS
 
 _TEMPLATE_DIR = Path(__file__).parent / "templates"
+_EM_DASH = "\u2014"
 
 logger = logging.getLogger(__name__)
 
@@ -72,18 +73,20 @@ class ReportGenerator:
         html = self.render_html()
         with sync_playwright() as p:
             browser = p.chromium.launch()
-            page = browser.new_page()
-            page.set_content(html, wait_until="networkidle")
-            pdf = page.pdf(
-                format="A4",
-                margin={
-                    "top": "20mm",
-                    "bottom": "20mm",
-                    "left": "15mm",
-                    "right": "15mm",
-                },
-            )
-            browser.close()
+            try:
+                page = browser.new_page()
+                page.set_content(html, wait_until="networkidle")
+                pdf = page.pdf(
+                    format="A4",
+                    margin={
+                        "top": "20mm",
+                        "bottom": "20mm",
+                        "left": "15mm",
+                        "right": "15mm",
+                    },
+                )
+            finally:
+                browser.close()
         return pdf
 
     def save_html(self, path: str) -> None:
@@ -116,7 +119,7 @@ class ReportGenerator:
         val_results = val.get("results", [])
         val_passed = val_summary.get("passed", 0)
         val_total = val_summary.get("total_tests", 0)
-        val_grade = val_summary.get("overall_quality", "—")
+        val_grade = val_summary.get("overall_quality", _EM_DASH)
 
         # KPI formatting
         dropout_rate = sim.get("dropout_rate", 0)
@@ -134,14 +137,14 @@ class ReportGenerator:
             "lang": self._lang,
             "generated_on": datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
             "version": self._data.get("pipeline", "SynthEd"),
-            "n_students": config.get("n_students", "—"),
-            "seed": config.get("seed", "—"),
+            "n_students": config.get("n_students", _EM_DASH),
+            "seed": config.get("seed", _EM_DASH),
             "n_semesters": config.get("semester_weeks", 14) // 14 or 1,
             "duration_sec": round(total_sec, 1),
             # KPIs
             "dropout_rate": f"{dropout_rate:.1%}",
-            "mean_engagement": f"{mean_eng:.3f}" if mean_eng else "—",
-            "mean_gpa": f"{mean_gpa:.2f}" if mean_gpa else "—",
+            "mean_engagement": f"{mean_eng:.3f}" if mean_eng is not None else _EM_DASH,
+            "mean_gpa": f"{mean_gpa:.2f}" if mean_gpa is not None else _EM_DASH,
             "validation_grade_value": val_grade,
             # Validation
             "validation_passed": val_passed,
@@ -171,7 +174,7 @@ class ReportGenerator:
 
         # Demographics charts
         result["chart_age"] = _fig_to_b64(
-            age_distribution_chart(pop),
+            age_distribution_chart(pop, lang=self._lang),
         )
         result["chart_gender"] = _fig_to_b64(
             gender_distribution_chart(pop, lang=self._lang),
@@ -270,25 +273,25 @@ class ReportGenerator:
         pop = self._data.get("population_summary", {})
 
         demographics = [
-            {"name": "Age (mean)", "value": f"{pop.get('age_mean', '—'):.1f}" if isinstance(pop.get('age_mean'), (int, float)) else "—"},
-            {"name": "Age (std)", "value": f"{pop.get('age_std', '—'):.1f}" if isinstance(pop.get('age_std'), (int, float)) else "—"},
-            {"name": "Gender Distribution", "value": _format_dict(pop.get("gender_distribution", {}))},
-            {"name": "Employment Intensity (mean)", "value": f"{pop.get('employment_intensity_mean', '—'):.2f}" if isinstance(pop.get('employment_intensity_mean'), (int, float)) else "—"},
-            {"name": "Family Responsibility (mean)", "value": f"{pop.get('family_responsibility_mean', '—'):.2f}" if isinstance(pop.get('family_responsibility_mean'), (int, float)) else "—"},
+            {"name": t["age_mean"], "value": _fmt(pop, "age_mean", ".1f")},
+            {"name": t["age_std"], "value": _fmt(pop, "age_std", ".1f")},
+            {"name": t["gender_dist"], "value": _format_dict(pop.get("gender_distribution", {}))},
+            {"name": t["employment_intensity"], "value": _fmt(pop, "employment_intensity_mean", ".2f")},
+            {"name": t["family_responsibility"], "value": _fmt(pop, "family_responsibility_mean", ".2f")},
         ]
 
         academic = [
-            {"name": "Prior GPA (mean)", "value": f"{pop.get('gpa_mean', '—'):.2f}" if isinstance(pop.get('gpa_mean'), (int, float)) else "—"},
-            {"name": "Digital Literacy (mean)", "value": f"{pop.get('digital_literacy_mean', '—'):.2f}" if isinstance(pop.get('digital_literacy_mean'), (int, float)) else "—"},
-            {"name": "Self Regulation (mean)", "value": f"{pop.get('self_regulation_mean', '—'):.2f}" if isinstance(pop.get('self_regulation_mean'), (int, float)) else "—"},
-            {"name": "Motivation Distribution", "value": _format_dict(pop.get("motivation_distribution", {}))},
+            {"name": t["prior_gpa"], "value": _fmt(pop, "gpa_mean", ".2f")},
+            {"name": t["digital_literacy"], "value": _fmt(pop, "digital_literacy_mean", ".2f")},
+            {"name": t["self_regulation"], "value": _fmt(pop, "self_regulation_mean", ".2f")},
+            {"name": t["motivation_dist"], "value": _format_dict(pop.get("motivation_distribution", {}))},
         ]
 
         risk_factors = [
-            {"name": "Financial Stress (mean)", "value": f"{pop.get('financial_stress_mean', '—'):.2f}" if isinstance(pop.get('financial_stress_mean'), (int, float)) else "—"},
-            {"name": "Self Efficacy (mean)", "value": f"{pop.get('self_efficacy_mean', '—'):.2f}" if isinstance(pop.get('self_efficacy_mean'), (int, float)) else "—"},
-            {"name": "Base Dropout Risk (mean)", "value": f"{pop.get('base_dropout_risk_mean', '—'):.3f}" if isinstance(pop.get('base_dropout_risk_mean'), (int, float)) else "—"},
-            {"name": "Base Engagement (mean)", "value": f"{pop.get('base_engagement_mean', '—'):.3f}" if isinstance(pop.get('base_engagement_mean'), (int, float)) else "—"},
+            {"name": t["financial_stress"], "value": _fmt(pop, "financial_stress_mean", ".2f")},
+            {"name": t["self_efficacy"], "value": _fmt(pop, "self_efficacy_mean", ".2f")},
+            {"name": t["base_dropout_risk"], "value": _fmt(pop, "base_dropout_risk_mean", ".3f")},
+            {"name": t["base_engagement"], "value": _fmt(pop, "base_engagement_mean", ".3f")},
         ]
 
         return {
@@ -328,16 +331,28 @@ class _DotDict(dict):
             raise AttributeError(key) from None
 
 
+def _fmt(pop: dict, key: str, spec: str) -> str:
+    """Format a numeric population value, returning em-dash if missing."""
+    val = pop.get(key)
+    if isinstance(val, (int, float)):
+        return format(val, spec)
+    return _EM_DASH
+
+
 def _fig_to_b64(fig: Any) -> str:
     """Convert a Plotly figure to a base64-encoded PNG string."""
-    png_bytes = figure_to_png(fig)
+    try:
+        png_bytes = figure_to_png(fig)
+    except Exception:
+        logger.exception("Failed to render report chart")
+        return ""
     return base64.b64encode(png_bytes).decode("ascii")
 
 
 def _format_dict(d: dict) -> str:
     """Format a dict as 'key: value%' pairs for config display."""
     if not d:
-        return "—"
+        return _EM_DASH
     parts = []
     for k, v in d.items():
         if isinstance(v, float):

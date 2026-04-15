@@ -68,21 +68,26 @@ def _figure_to_png_playwright(
     """Render a Plotly figure to PNG via Playwright (fallback)."""
     from playwright.sync_api import sync_playwright
 
-    html = fig.to_html(full_html=True, include_plotlyjs="cdn")
+    html = fig.to_html(full_html=True, include_plotlyjs=True)
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        page = browser.new_page(viewport={"width": width, "height": height})
-        page.set_content(html, wait_until="networkidle")
-        # Wait for Plotly to render
-        page.wait_for_selector(".js-plotly-plot", timeout=10000)
-        element = page.query_selector(".js-plotly-plot")
-        png_bytes = element.screenshot(type="png") if element else page.screenshot(type="png")
-        browser.close()
+        try:
+            page = browser.new_page(viewport={"width": width, "height": height})
+            page.set_content(html, wait_until="networkidle")
+            page.wait_for_selector(".js-plotly-plot", timeout=10000)
+            element = page.query_selector(".js-plotly-plot")
+            png_bytes = element.screenshot(type="png") if element else page.screenshot(type="png")
+        finally:
+            browser.close()
     return png_bytes
 
 
-def age_distribution_chart(population_summary: dict) -> go.Figure:
+def age_distribution_chart(
+    population_summary: dict,
+    lang: str = "en",
+) -> go.Figure:
     """Histogram approximating age distribution from summary statistics."""
+    t = TRANSLATIONS.get(lang, TRANSLATIONS["en"])
     mean_age = population_summary.get("age_mean", 30)
     std_age = population_summary.get("age_std", 8)
     n = population_summary.get("total_students", 200)
@@ -99,16 +104,16 @@ def age_distribution_chart(population_summary: dict) -> go.Figure:
         opacity=0.85,
         marker_line_color=_BG_WHITE,
         marker_line_width=1,
-        name="Age",
+        name=t.get("age", "Age"),
     ))
     fig.add_vline(
         x=mean_age, line_dash="dash", line_color=_WARNING,
-        annotation_text=f"Mean: {mean_age:.1f}",
+        annotation_text=f"{t.get('mean', 'Mean')}: {mean_age:.1f}",
         annotation_font_color=_WARNING,
     )
     fig.update_layout(**_print_layout(
-        xaxis_title="Age",
-        yaxis_title="Count",
+        xaxis_title=t.get("age", "Age"),
+        yaxis_title=t.get("count", "Count"),
         showlegend=False,
     ))
     return fig
@@ -140,7 +145,7 @@ def gender_distribution_chart(
     ))
     fig.update_layout(**_print_layout(
         xaxis_title="",
-        yaxis_title="Count",
+        yaxis_title=t.get("count", "Count"),
         showlegend=False,
     ))
     return fig
@@ -170,7 +175,7 @@ def employment_chart(
     ))
     fig.update_layout(**_print_layout(
         xaxis_title="",
-        yaxis_title="Count",
+        yaxis_title=t.get("count", "Count"),
         showlegend=False,
     ))
     return fig

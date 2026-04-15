@@ -4,14 +4,25 @@ from __future__ import annotations
 
 import pytest
 
-pytest.importorskip("jinja2", reason="Report tests require jinja2 (pip install -e '.[report]')")
-pytest.importorskip("plotly", reason="Report tests require plotly (pip install -e '.[report]')")
-pytest.importorskip("playwright", reason="Report tests require playwright (pip install -e '.[report]')")
+pytest.importorskip("jinja2", reason="Report tests require jinja2")
+pytest.importorskip("plotly", reason="Report tests require plotly")
 
 import plotly.graph_objects as go
 
 from synthed.report.charts import age_distribution_chart, employment_chart, figure_to_png, gender_distribution_chart
 from synthed.report.generator import ReportGenerator
+
+
+@pytest.fixture(scope="session")
+def chromium_available():
+    """Check that Playwright Chromium binary is installed."""
+    try:
+        from playwright.sync_api import sync_playwright
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            browser.close()
+    except Exception:
+        pytest.skip("Chromium browser not available (run: playwright install chromium)")
 
 
 def _make_report_data() -> dict:
@@ -98,7 +109,7 @@ def _make_report_data() -> dict:
 class TestFigureToPng:
     """figure_to_png returns valid PNG bytes."""
 
-    def test_returns_png_bytes(self):
+    def test_returns_png_bytes(self, chromium_available):
         fig = go.Figure()
         fig.add_trace(go.Bar(x=["A", "B"], y=[1, 2]))
         result = figure_to_png(fig)
@@ -153,11 +164,13 @@ class TestReportGenerator:
         data = _make_report_data()
         gen = ReportGenerator(report_data=data, lang="tr")
         html = gen.render_html()
-        assert "Yonetici Ozeti" in html
-        assert "Populasyon Demografisi" in html
-        assert "Simulasyon Sonuclari" in html
-        assert "Dogrulama Raporu" in html
-        assert "Yapilandirma" in html
+        assert "Yönetici Özeti" in html
+        assert "Popülasyon Demografisi" in html
+        assert "Simülasyon Sonuçları" in html
+        assert "Doğrulama Raporu" in html
+        assert "Yapılandırma" in html
+        assert "Yaş" in html or "Cinsiyet" in html  # chart labels
+        assert "Demografik" in html  # config group
 
     def test_render_html_contains_dynamic_values(self):
         data = _make_report_data()
@@ -167,7 +180,7 @@ class TestReportGenerator:
         assert "100" in html    # n_students
         assert "B" in html      # validation grade
 
-    def test_render_pdf_returns_bytes(self):
+    def test_render_pdf_returns_bytes(self, chromium_available):
         data = _make_report_data()
         gen = ReportGenerator(report_data=data)
         pdf = gen.render_pdf()
@@ -182,7 +195,7 @@ class TestReportGenerator:
         content = (tmp_path / "report.html").read_text(encoding="utf-8")
         assert content.startswith("<!DOCTYPE")
 
-    def test_save_pdf(self, tmp_path):
+    def test_save_pdf(self, tmp_path, chromium_available):
         data = _make_report_data()
         gen = ReportGenerator(report_data=data)
         path = str(tmp_path / "report.pdf")
