@@ -30,6 +30,13 @@ PROFILE_NAMES = ["default"]
 
 CALIBRATION_SEEDS = (42, 2024)
 
+GPA_FORCE_INCLUDE = frozenset({
+    "grading.grade_floor",
+    "grading.pass_threshold",
+    "engine._ASSIGN_GPA_WEIGHT",
+    "engine._EXAM_GPA_WEIGHT",
+})
+
 OUTPUT_DIR = Path("calibration_output")
 
 
@@ -66,6 +73,7 @@ def calibrate_profile(
         n_trials=n_trials,
         sobol_rankings=rankings,
         sobol_top_n=sobol_top_n,
+        force_include=GPA_FORCE_INCLUDE,
     )
     cal_time = time.time() - t0
 

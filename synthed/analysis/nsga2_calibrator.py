@@ -35,17 +35,34 @@ def select_nsga2_parameters(
     rankings: list[SobolRanking],
     top_n: int = 20,
     exclude_prefixes: tuple[str, ...] = ("config.", "inst."),
+    force_include: frozenset[str] = frozenset(),
 ) -> tuple[SobolParameter, ...]:
-    """Select top-N Sobol params, excluding config/inst (fixed per profile)."""
+    """Select top-N Sobol params, excluding config/inst (fixed per profile).
+
+    Parameters forced via *force_include* are always present and count
+    towards *top_n*; remaining slots are filled from the Sobol ranking.
+    """
+    # First collect force-included params
+    forced = tuple(
+        p for p in SOBOL_PARAMETER_SPACE
+        if p.name in force_include
+    )
+    forced_names = {p.name for p in forced}
+
+    # Then fill remaining slots from Sobol ranking
     filtered = [
         r for r in rankings
         if not any(r.parameter.startswith(prefix) for prefix in exclude_prefixes)
+        and r.parameter not in forced_names
     ]
-    selected_names = {r.parameter for r in filtered[:top_n]}
-    return tuple(
+    remaining_slots = top_n - len(forced)
+    selected_names = {r.parameter for r in filtered[:max(0, remaining_slots)]}
+
+    ranked = tuple(
         p for p in SOBOL_PARAMETER_SPACE
         if p.name in selected_names
     )
+    return forced + ranked
 
 
 class NSGAIICalibrator:
@@ -81,6 +98,7 @@ class NSGAIICalibrator:
         n_trials: int = 8000,
         sobol_rankings: list[SobolRanking] | None = None,
         sobol_top_n: int = 20,
+        force_include: frozenset[str] = frozenset(),
     ) -> ParetoResult:
         """Run NSGA-II calibration for a benchmark profile."""
         from ..benchmarks.profiles import PROFILES
@@ -109,7 +127,7 @@ class NSGAIICalibrator:
             )
             sobol_rankings = analyzer.rank(dropout_result)
 
-        params = select_nsga2_parameters(sobol_rankings, top_n=sobol_top_n)
+        params = select_nsga2_parameters(sobol_rankings, top_n=sobol_top_n, force_include=force_include)
         param_names = tuple(p.name for p in params)
         logger.info(
             "Selected %d parameters for NSGA-II: %s",

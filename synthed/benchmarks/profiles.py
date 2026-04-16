@@ -60,7 +60,7 @@ PROFILES: dict[str, BenchmarkProfile] = {
         ),
         environment=ODLEnvironment(total_weeks=14),
         reference_stats=ReferenceStatistics(
-            dropout_rate=0.312, age_mean=30.0, age_std=10.0
+            dropout_rate=0.312, gpa_mean=3.03, gpa_std=0.75, age_mean=30.0, age_std=10.0
         ),
         n_students=1000,
         seed=42,

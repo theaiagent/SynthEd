@@ -44,6 +44,24 @@ class TestSelectNsga2Parameters:
         result = select_nsga2_parameters([], top_n=5)
         assert result == ()
 
+    def test_force_include_adds_params(self):
+        rankings = self._make_rankings()
+        result = select_nsga2_parameters(
+            rankings, top_n=5,
+            force_include=frozenset({"grading.grade_floor"}),
+        )
+        names = [p.name for p in result]
+        assert "grading.grade_floor" in names
+
+    def test_force_include_respects_total(self):
+        rankings = self._make_rankings()
+        result = select_nsga2_parameters(
+            rankings, top_n=5,
+            force_include=frozenset({"grading.grade_floor", "grading.pass_threshold"}),
+        )
+        # 2 forced + 3 from ranking = 5 total
+        assert len(result) <= 5
+
 
 class TestNSGAIICalibrationError:
     def test_is_runtime_error(self):
