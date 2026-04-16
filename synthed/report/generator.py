@@ -124,9 +124,9 @@ class ReportGenerator:
         val_grade = val_summary.get("overall_quality", _EM_DASH)
 
         # KPI formatting
-        dropout_rate = sim.get("dropout_rate", 0)
-        mean_eng = sim.get("mean_final_engagement", 0)
-        mean_gpa = sim.get("mean_final_gpa", 0)
+        dropout_rate = sim.get("dropout_rate")
+        mean_eng = sim.get("mean_final_engagement")
+        mean_gpa = sim.get("mean_final_gpa")
 
         # Charts
         chart_data = self._render_charts(pop, sim, val)
@@ -144,7 +144,7 @@ class ReportGenerator:
             "n_semesters": config.get("semester_weeks", 14) // 14 or 1,
             "duration_sec": round(total_sec, 1),
             # KPIs
-            "dropout_rate": f"{dropout_rate:.1%}",
+            "dropout_rate": f"{dropout_rate:.1%}" if dropout_rate is not None else _EM_DASH,
             "mean_engagement": f"{mean_eng:.3f}" if mean_eng is not None else _EM_DASH,
             "mean_gpa": f"{mean_gpa:.2f}" if mean_gpa is not None else _EM_DASH,
             "validation_grade_value": val_grade,
@@ -278,7 +278,7 @@ class ReportGenerator:
         demographics = [
             {"name": t["age_mean"], "value": _fmt(pop, "age_mean", ".1f")},
             {"name": t["age_std"], "value": _fmt(pop, "age_std", ".1f")},
-            {"name": t["gender_dist"], "value": _format_dict(pop.get("gender_distribution", {}))},
+            {"name": t["gender_dist"], "value": _format_dict(pop.get("gender_distribution", {}), t)},
             {"name": t["employment_intensity"], "value": _fmt(pop, "employment_intensity_mean", ".2f")},
             {"name": t["family_responsibility"], "value": _fmt(pop, "family_responsibility_mean", ".2f")},
         ]
@@ -287,7 +287,7 @@ class ReportGenerator:
             {"name": t["prior_gpa"], "value": _fmt(pop, "gpa_mean", ".2f")},
             {"name": t["digital_literacy"], "value": _fmt(pop, "digital_literacy_mean", ".2f")},
             {"name": t["self_regulation"], "value": _fmt(pop, "self_regulation_mean", ".2f")},
-            {"name": t["motivation_dist"], "value": _format_dict(pop.get("motivation_distribution", {}))},
+            {"name": t["motivation_dist"], "value": _format_dict(pop.get("motivation_distribution", {}), t)},
         ]
 
         risk_factors = [
@@ -322,9 +322,19 @@ class ReportGenerator:
             scale = dropout_count / total_approx
             weekly = [max(0, int(round(w * scale))) for w in weekly]
             delta = dropout_count - sum(weekly)
-            if delta and weekly:
-                peak_idx = max(range(len(weekly)), key=weekly.__getitem__)
-                weekly[peak_idx] = max(0, weekly[peak_idx] + delta)
+            if delta > 0:
+                # Add to largest buckets first
+                while delta > 0 and weekly:
+                    peak_idx = max(range(len(weekly)), key=weekly.__getitem__)
+                    weekly[peak_idx] += 1
+                    delta -= 1
+            elif delta < 0:
+                # Subtract from largest buckets first (never below 0)
+                while delta < 0 and any(w > 0 for w in weekly):
+                    peak_idx = max(range(len(weekly)), key=weekly.__getitem__)
+                    if weekly[peak_idx] > 0:
+                        weekly[peak_idx] -= 1
+                        delta += 1
         return weekly
 
 
@@ -356,14 +366,15 @@ def _fig_to_b64(fig: Any) -> str:
     return base64.b64encode(png_bytes).decode("ascii")
 
 
-def _format_dict(d: dict) -> str:
+def _format_dict(d: dict, t: dict[str, str] | None = None) -> str:
     """Format a dict as 'key: value%' pairs for config display."""
     if not d:
         return _EM_DASH
     parts = []
     for k, v in d.items():
+        label = t.get(str(k), str(k)) if t else str(k)
         if isinstance(v, float):
-            parts.append(f"{k}: {v:.0%}")
+            parts.append(f"{label}: {v:.0%}")
         else:
-            parts.append(f"{k}: {v}")
+            parts.append(f"{label}: {v}")
     return ", ".join(parts)
