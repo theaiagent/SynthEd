@@ -59,8 +59,13 @@ class TestSelectNsga2Parameters:
             rankings, top_n=5,
             force_include=frozenset({"grading.grade_floor", "grading.pass_threshold"}),
         )
-        # 2 forced + 3 from ranking = 5 total
+        names = [p.name for p in result]
+        # 2 forced + available ranked (limited by fixture having few valid params)
         assert len(result) <= 5
+        assert "grading.grade_floor" in names
+        assert "grading.pass_threshold" in names
+        # Forced params must not reduce ranked selection below zero
+        assert len(result) >= 2
 
     def test_force_include_unknown_name_raises(self):
         rankings = self._make_rankings()
