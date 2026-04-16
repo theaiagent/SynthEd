@@ -62,6 +62,22 @@ class TestSelectNsga2Parameters:
         # 2 forced + 3 from ranking = 5 total
         assert len(result) <= 5
 
+    def test_force_include_unknown_name_raises(self):
+        rankings = self._make_rankings()
+        with pytest.raises(ValueError, match="Unknown force_include"):
+            select_nsga2_parameters(
+                rankings, top_n=5,
+                force_include=frozenset({"grading.__does_not_exist__"}),
+            )
+
+    def test_force_include_fixed_prefix_raises(self):
+        rankings = self._make_rankings()
+        with pytest.raises(ValueError, match="cannot contain fixed-prefix"):
+            select_nsga2_parameters(
+                rankings, top_n=5,
+                force_include=frozenset({"config.employment_rate"}),
+            )
+
 
 class TestNSGAIICalibrationError:
     def test_is_runtime_error(self):

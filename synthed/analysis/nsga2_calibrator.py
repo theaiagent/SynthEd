@@ -42,7 +42,22 @@ def select_nsga2_parameters(
     Parameters forced via *force_include* are always present and count
     towards *top_n*; remaining slots are filled from the Sobol ranking.
     """
-    # First collect force-included params
+    # Validate force_include
+    if force_include:
+        sobol_names = {p.name for p in SOBOL_PARAMETER_SPACE}
+        unknown = force_include - sobol_names
+        if unknown:
+            raise ValueError(f"Unknown force_include parameters: {sorted(unknown)}")
+        forbidden = [
+            name for name in force_include
+            if any(name.startswith(prefix) for prefix in exclude_prefixes)
+        ]
+        if forbidden:
+            raise ValueError(
+                f"force_include cannot contain fixed-prefix parameters: {sorted(forbidden)}"
+            )
+
+    # Collect force-included params
     forced = tuple(
         p for p in SOBOL_PARAMETER_SPACE
         if p.name in force_include
