@@ -89,6 +89,8 @@ After Sobol analysis, the top 20 parameters by ST are selected for NSGA-II optim
 
 These 4 force-included parameters count toward the top-20 budget (4 forced + 16 from Sobol ranking = 20 total), keeping search dimensionality constant.
 
+> **Note:** This force-include set is specific to the current SynthEd grading formula and OULAD calibration target. The authoritative list is maintained in `run_calibration.py::GPA_FORCE_INCLUDE`. If the engine's grading model is refactored or alternative institutional profiles with different GPA calculation strategies are introduced, this list should be reviewed for applicability.
+
 **Justification:**
 - With 68 parameters, the Pareto principle typically applies: 20-30% of parameters explain 80%+ of output variance
 - ST already includes all interaction effects — a parameter with ST = 0.005 contributes at most 0.5% of variance through any combination of interactions
@@ -331,6 +333,8 @@ sobol_n_samples = 512          # Saltelli base count; total sims = 512 × 70 = 3
 sobol_n_students = 500         # Students per Sobol simulation
 sobol_top_n = 20               # Top parameters selected for NSGA-II
 gpa_force_include = {           # Always included regardless of Sobol rank
+    # Note: OULAD/GPA-specific. If calibrating to non-GPA profiles, review applicability.
+    # Authoritative source: run_calibration.py::GPA_FORCE_INCLUDE
     "grading.grade_floor",      # Direct GPA lever
     "grading.pass_threshold",   # Pass/Fail classification
     "engine._ASSIGN_GPA_WEIGHT",# GPA → assignment quality
