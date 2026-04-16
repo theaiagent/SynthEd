@@ -80,10 +80,20 @@ Saltelli et al. (2008) recommend n_samples ≥ 500 for D > 50, and n_samples ≥
 
 After Sobol analysis, the top 20 parameters by ST are selected for NSGA-II optimization. The remaining 48 are fixed at profile defaults.
 
+**Force-included parameters:** Because Sobol ranks parameters by dropout_rate sensitivity, GPA-affecting parameters may rank low despite being critical for the GPA objective. Four grading parameters are force-included regardless of Sobol rank:
+
+- `grading.grade_floor` — most direct GPA lever: `floor + (1-floor) * quality`
+- `grading.pass_threshold` — affects Pass/Fail/Distinction classification
+- `engine._ASSIGN_GPA_WEIGHT` — prior GPA influence on assignment quality
+- `engine._EXAM_GPA_WEIGHT` — prior GPA influence on exam quality
+
+These 4 force-included parameters count toward the top-20 budget (4 forced + 16 from Sobol ranking = 20 total), keeping search dimensionality constant.
+
 **Justification:**
 - With 68 parameters, the Pareto principle typically applies: 20-30% of parameters explain 80%+ of output variance
 - ST already includes all interaction effects — a parameter with ST = 0.005 contributes at most 0.5% of variance through any combination of interactions
 - The `config.*` (PersonaConfig) and `inst.*` (InstitutionalConfig) parameters are excluded from optimization (fixed per profile), effectively reducing the candidate pool to ~55 parameters
+- Force-include ensures NSGA-II has levers for both objectives (dropout_error and gpa_error), preventing the optimizer from being blind to GPA
 
 **Validation criterion:** The cumulative ST of the top 20 parameters must explain ≥ 90% of total variance. If < 70%, increase to 25-30 and raise n_trials proportionally.
 
@@ -94,8 +104,8 @@ After Sobol analysis, the top 20 parameters by ST are selected for NSGA-II optim
 ### Purpose
 
 Find engine constant values that simultaneously minimize:
-1. **Dropout error:** |achieved_dropout - target_dropout|
-2. **GPA error:** |achieved_gpa - target_gpa|
+1. **Dropout error:** |achieved_dropout - target_dropout| where target_dropout = 0.312 (OULAD Withdrawn rate)
+2. **GPA error:** |achieved_gpa - target_gpa| where target_gpa = 3.03 (OULAD assessment score 75.80/100 × 4.0)
 
 subject to constraints:
 - engagement ≥ 0.1 (hard floor)
@@ -320,6 +330,12 @@ At k=10, we can claim (95% confidence) that 95% of seeds produce dropout rates w
 sobol_n_samples = 512          # Saltelli base count; total sims = 512 × 70 = 35,840
 sobol_n_students = 500         # Students per Sobol simulation
 sobol_top_n = 20               # Top parameters selected for NSGA-II
+gpa_force_include = {           # Always included regardless of Sobol rank
+    "grading.grade_floor",      # Direct GPA lever
+    "grading.pass_threshold",   # Pass/Fail classification
+    "engine._ASSIGN_GPA_WEIGHT",# GPA → assignment quality
+    "engine._EXAM_GPA_WEIGHT",  # GPA → exam quality
+}
 
 # NSGA-II multi-objective optimization
 nsga2_n_students = 500         # Students per NSGA-II evaluation
