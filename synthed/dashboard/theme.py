@@ -230,8 +230,11 @@ h6, .h6 { color: var(--text-secondary) !important; font-weight: 600; }
     scroll-behavior: smooth;
 }
 
-/* Status text overflow fix */
+/* Status text — explicit color so Bootstrap's default .text-secondary
+ * (dark gray) does not override on dark navbar. Pairs with the raised
+ * TEXT_SECONDARY value to guarantee WCAG AA on all navbar surfaces. */
 .text-end.text-secondary {
+    color: var(--text-secondary) !important;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
