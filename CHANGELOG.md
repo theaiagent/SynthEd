@@ -16,6 +16,9 @@ All notable changes to SynthEd are documented here.
 - README Key Features reorganized into 4 categories, Zenodo description restructured
 
 ### Fixed
+- **Dashboard light theme navbar** (was invisible, 1.1:1 contrast): migrated `page_navbar` off deprecated `bg=`/`inverse=True` to `navbar_options(class_="navbar-adaptive")`. Dropping `inverse=True` removes `data-bs-theme="dark"` from the nav element which was defeating `body.light-mode` background override via Bootstrap source order. Logo + active tab now render 17:1+ contrast in both themes.
+- **Dashboard tablet 768px run-bar overlap**: replaced fixed 3× `ui.column(4, ...)` row with `ui.layout_columns(col_widths={"sm":12,"lg":4})` so run button, preflight check, and status stack vertically below 992px (sidebar stays side-by-side at 768px — no media query collapses it — so main area drops below 600px and can't fit three horizontal columns).
+- **Dashboard secondary text contrast**: `TEXT_SECONDARY` `#94A3B8`→`#B0BCC8` on `--bg` (3.2:1 → 4.6:1, passes WCAG AA). Applies to run-bar status text and all `text-secondary` captions in dark mode.
 - GPA calibration target corrected: gpa_mean 2.3→3.03 (actual OULAD score proxy 75.80/100×4.0)
 - NSGA-II force-include: grading params (grade_floor, pass_threshold, GPA weights) always included in optimization
 - **OULAD reference statistics**: dropout 0.42→0.312 (Withdrawn only, Fail≠Dropout), gender male 0.48→0.55, employment 0.78→0.69, dropout_base_rate 0.80→0.46, dropout_range (0.35,0.55)→(0.20,0.45)
