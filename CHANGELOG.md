@@ -5,6 +5,7 @@ All notable changes to SynthEd are documented here.
 ## [Unreleased]
 
 ### Changed
+- **Dashboard mode split (PR A skeleton)**: renamed the "Configure" nav tab to "Research" and added a new "Calibrate" nav tab with a placeholder describing upcoming calibration tooling. No behavior change — all current functionality is preserved under Research. The Calibrate tab is inert in this release; follow-up PRs will add OULAD-indexed calibration features (reference overlays, validation test scorecard, Pareto viewer, HV convergence).
 - **Spectrum refactoring**: 3 binary + 1 integer persona field converted to 3 continuous [0,1] floats — `is_employed`+`weekly_work_hours` → `employment_intensity`, `has_family_responsibilities` → `family_responsibility_level`, `has_reliable_internet` → `internet_reliability`
 - Factory uses Beta distributions: Beta(2.5,3) employment, Beta(2,4) family, Beta(8,2)/Beta(4,3) internet (SES-dependent)
 - Bean & Metzner: `_OVERWORK_PENALTY` → `_EMPLOYMENT_PRESSURE_FACTOR` (0.04), `_OVERWORK_THRESHOLD_HOURS` removed, continuous pressure formulas
