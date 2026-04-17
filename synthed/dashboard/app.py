@@ -122,11 +122,12 @@ app_ui = ui.page_navbar(
             ),
             # Main content area
             ui.div(
-                # Top bar — sticky
+                # Top bar — sticky; stacks vertically below 992px so the
+                # run button, preflight, and status don't overlap when the
+                # sidebar is still side-by-side and main area is narrow.
                 ui.div(
-                    ui.row(
-                        ui.column(
-                            4,
+                    ui.layout_columns(
+                        ui.div(
                             ui.input_action_button(
                                 "run_simulation",
                                 ui.span(
@@ -136,13 +137,25 @@ app_ui = ui.page_navbar(
                                 class_="btn btn-primary",
                             ),
                             ui.output_ui("sim_status_indicator"),
+                            class_="d-flex gap-2 align-items-center",
                         ),
-                        ui.column(4, ui.output_ui("preflight_status")),
-                        ui.column(4, ui.output_text("status_text", inline=True),
-                                  class_="text-end text-secondary"),
+                        ui.output_ui("preflight_status"),
+                        ui.div(
+                            ui.output_text("status_text", inline=True),
+                            class_="text-end text-secondary",
+                        ),
+                        col_widths={"sm": 12, "lg": 4},
+                        gap="0.5rem",
                     ),
                     class_="run-bar-sticky p-3 mb-3",
-                    style="background:var(--surface,#1A1D27);border-radius:10px;border:1px solid var(--border,#1E2130);",
+                    style=(
+                        "background:var(--surface,#1A1D27);"
+                        "border-radius:10px;"
+                        "border:1px solid var(--border,#1E2130);"
+                        # Cap sticky height when stacked on narrow viewports, but scroll
+                        # rather than clip so long preflight warnings remain accessible.
+                        "max-height:240px;overflow-y:auto;"
+                    ),
                 ),
                 # Results area (shown after simulation)
                 ui.output_ui("results_area"),
@@ -165,8 +178,12 @@ app_ui = ui.page_navbar(
                       style="font-size:14px;border-radius:6px;"),
         "SynthEd Dashboard",
     ),
-    bg="#0A0C10",
-    inverse=True,
+    # navbar_options (shiny ≥1.3) replaces deprecated bg=/inverse= args.
+    # Dropping inverse=True is load-bearing: it removes data-bs-theme="dark"
+    # from the <nav> element, which was defeating our body.light-mode
+    # navbar background override via Bootstrap's scoped stylesheet.
+    # The .navbar-adaptive class is targeted by theme.py for both modes.
+    navbar_options=ui.navbar_options(class_="navbar-adaptive"),
 )
 
 

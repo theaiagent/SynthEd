@@ -10,7 +10,7 @@ BORDER = "#1E2130"
 BORDER_HOVER = "#2A2D3A"
 
 TEXT_PRIMARY = "#F1F5F9"
-TEXT_SECONDARY = "#94A3B8"
+TEXT_SECONDARY = "#B0BCC8"  # was #94A3B8 (3.2:1) — raised to 4.6:1 on --bg for WCAG AA
 TEXT_MUTED = "#64748B"
 
 ACCENT = "#6366F1"
@@ -230,8 +230,11 @@ h6, .h6 { color: var(--text-secondary) !important; font-weight: 600; }
     scroll-behavior: smooth;
 }
 
-/* Status text overflow fix */
+/* Status text — explicit color so Bootstrap's default .text-secondary
+ * (dark gray) does not override on dark navbar. Pairs with the raised
+ * TEXT_SECONDARY value to guarantee WCAG AA on all navbar surfaces. */
 .text-end.text-secondary {
+    color: var(--text-secondary) !important;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -336,11 +339,19 @@ body.light-mode {
     --text-secondary: #475569;
     --text-muted: #94A3B8;
 }
-body.light-mode .navbar, body.light-mode .navbar-default {
+body.light-mode .navbar, body.light-mode .navbar-default,
+body.light-mode .navbar.navbar-adaptive {
     background: rgba(248, 250, 252, 0.85) !important;
     border-bottom-color: #E2E8F0 !important;
 }
-body.light-mode .navbar-brand { color: #0F172A !important; }
+body.light-mode .navbar-brand,
+body.light-mode .navbar.navbar-adaptive .navbar-brand,
+body.light-mode .navbar.navbar-adaptive .nav-link {
+    color: #0F172A !important;
+}
+body.light-mode .navbar.navbar-adaptive .nav-link.active {
+    color: var(--accent) !important;
+}
 body.light-mode .sidebar { background: #FFFFFF !important; }
 body.light-mode .accordion-item { background: #FFFFFF !important; }
 body.light-mode .accordion-button { background: #FFFFFF !important; color: #0F172A !important; }
