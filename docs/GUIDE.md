@@ -94,6 +94,7 @@ Opens at `http://127.0.0.1:8080` by default. Environment variables:
 
 **Features:**
 - **Research**: Persona, Institutional, Grading parameters via accordion panels
+- **Calibrate** *(skeleton)*: placeholder tab for upcoming OULAD-indexed calibration tooling — reference overlays, validation scorecard, Pareto viewer, and HV convergence
 - **Engine Constants**: 70 advanced parameters in a slide-out panel
 - **Presets**: Default, High Risk, Low Dropout — one-click configuration
 - **Distributions**: 7 probability distributions with slider + numeric stepper, reactive sum validation (must equal 1.0)
