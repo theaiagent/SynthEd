@@ -19,8 +19,8 @@
     "age_std": 8.0,
     "gender_distribution": {"male": 0.55, "female": 0.45},
     "employment_rate": 0.69,
-    "gpa_mean": 2.3,
-    "gpa_std": 0.8,
+    "gpa_mean": 3.03,
+    "gpa_std": 0.75,
     "dropout_rate": 0.312
   },
   "simulation": {

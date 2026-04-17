@@ -30,8 +30,8 @@ class ReferenceStatistics:
     employment_rate: float = 0.69
 
     # Academic
-    gpa_mean: float = 2.3
-    gpa_std: float = 0.8
+    gpa_mean: float = 3.03
+    gpa_std: float = 0.75
     dropout_rate: float = 0.312
     dropout_range: tuple[float, float] | None = (0.20, 0.45)
 

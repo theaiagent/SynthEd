@@ -44,6 +44,48 @@ class TestSelectNsga2Parameters:
         result = select_nsga2_parameters([], top_n=5)
         assert result == ()
 
+    def test_force_include_adds_params(self):
+        """force_include surfaces a param that would NOT appear via ranking alone."""
+        rankings = self._make_rankings()
+        # top_n=1 would only pick kember (first non-excluded by rank)
+        # grading.pass_threshold is not in rankings at all — force adds it
+        result = select_nsga2_parameters(
+            rankings, top_n=3,
+            force_include=frozenset({"grading.pass_threshold"}),
+        )
+        names = [p.name for p in result]
+        assert "grading.pass_threshold" in names
+
+    def test_force_include_respects_total(self):
+        rankings = self._make_rankings()
+        force = frozenset({"grading.grade_floor", "grading.pass_threshold"})
+        top_n = 5
+        result = select_nsga2_parameters(
+            rankings, top_n=top_n,
+            force_include=force,
+        )
+        names = [p.name for p in result]
+        assert force.issubset(names)
+        non_forced = [n for n in names if n not in force]
+        assert len(non_forced) <= top_n - len(force)
+        assert len(names) == len(set(names))  # no duplicates
+
+    def test_force_include_unknown_name_raises(self):
+        rankings = self._make_rankings()
+        with pytest.raises(ValueError, match="Unknown force_include"):
+            select_nsga2_parameters(
+                rankings, top_n=5,
+                force_include=frozenset({"grading.__does_not_exist__"}),
+            )
+
+    def test_force_include_fixed_prefix_raises(self):
+        rankings = self._make_rankings()
+        with pytest.raises(ValueError, match="cannot contain fixed-prefix"):
+            select_nsga2_parameters(
+                rankings, top_n=5,
+                force_include=frozenset({"config.employment_rate"}),
+            )
+
 
 class TestNSGAIICalibrationError:
     def test_is_runtime_error(self):

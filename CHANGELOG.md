@@ -16,6 +16,8 @@ All notable changes to SynthEd are documented here.
 - README Key Features reorganized into 4 categories, Zenodo description restructured
 
 ### Fixed
+- GPA calibration target corrected: gpa_mean 2.3→3.03 (actual OULAD score proxy 75.80/100×4.0)
+- NSGA-II force-include: grading params (grade_floor, pass_threshold, GPA weights) always included in optimization
 - **OULAD reference statistics**: dropout 0.42→0.312 (Withdrawn only, Fail≠Dropout), gender male 0.48→0.55, employment 0.78→0.69, dropout_base_rate 0.80→0.46, dropout_range (0.35,0.55)→(0.20,0.45)
 - `configs/default.json` synced with corrected PersonaConfig/ReferenceStatistics defaults
 - `CALIBRATION_DATA` re-measured with corrected PersonaConfig defaults (2026-04-14)
