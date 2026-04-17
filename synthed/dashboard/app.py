@@ -420,7 +420,7 @@ def server(input, output, session):
 
     # ── Run simulation ──
     @reactive.effect
-    @reactive.event(input.run_simulation)
+    @reactive.event(input[_RUN_SIMULATION_INPUT_ID])
     def _run_simulation():
         vals = _collect_current_values()
         issues = validate_config(vals)
