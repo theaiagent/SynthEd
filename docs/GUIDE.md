@@ -93,7 +93,7 @@ Opens at `http://127.0.0.1:8080` by default. Environment variables:
 | `SYNTHED_DASHBOARD_LAUNCH_BROWSER` | `1` | Auto-open browser (`0` to disable) |
 
 **Features:**
-- **Configure**: Persona, Institutional, Grading parameters via accordion panels
+- **Research**: Persona, Institutional, Grading parameters via accordion panels
 - **Engine Constants**: 70 advanced parameters in a slide-out panel
 - **Presets**: Default, High Risk, Low Dropout — one-click configuration
 - **Distributions**: 7 probability distributions with slider + numeric stepper, reactive sum validation (must equal 1.0)
