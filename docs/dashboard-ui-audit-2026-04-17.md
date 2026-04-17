@@ -40,8 +40,8 @@ Dark mode:
 **Root cause:** `theme.py:62-66` base `.navbar` sets `background: rgba(10,12,16,0.75) !important;`. Override at `theme.py:339-342` `body.light-mode .navbar { background: rgba(248,250,252,0.85) !important }` should win on specificity (body class adds one selector weight), **but** Shiny `page_navbar()` emits `data-bs-theme="dark"` on the navbar element which invokes Bootstrap 5's `[data-bs-theme="dark"]` variable scoping and defeats the override.
 
 **Files:**
-- `synthed/dashboard/theme.py:62-66, 339-342`
-- `synthed/dashboard/app.py` (page_navbar call — verify `bg`/`inverse`/`navbar_options`)
+- `synthed/dashboard/theme.py` — base `.navbar` rule and the `body.light-mode .navbar` override in the light-mode block
+- `synthed/dashboard/app.py` — the `ui.page_navbar(...)` call; verify `bg`/`inverse`/`navbar_options` arguments
 
 ### P0-5: Tablet (768px) run-bar content overlap — resolved in PR #77
 
@@ -61,6 +61,9 @@ Dark mode:
 ---
 
 ## 🟠 P1 — High Priority
+
+> **Status:** P1-3 (run-bar status text contrast) **resolved in PR #77**.
+> 9 remaining items tracked for follow-up PRs (research UX pack, accessibility pack).
 
 ### Research UX Gaps
 - **P1-1**: Validation test list missing — "14/21 passed" shown but the 7 failed tests are not named. Blocks researcher diagnosis. Add collapsible table (test name, expected, actual, pass/fail).
