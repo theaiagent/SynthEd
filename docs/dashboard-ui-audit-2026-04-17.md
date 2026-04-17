@@ -19,7 +19,8 @@ Dashboard design quality is **high** (Phase 3 redesign PR #71 delivered indigo g
 ### P0-3: Light theme navbar invisible (contrast 1.1:1)
 
 **Evidence (Playwright computed styles):**
-```
+
+```text
 Light mode:
   .navbar-brand color: rgb(15, 23, 42)    [dark]
   .navbar background: rgb(10, 12, 16)     [still dark — NOT overridden]
@@ -42,6 +43,7 @@ Dark mode:
 **Evidence:** `ui_audit_results/05_responsive_tablet_768.png` — "Run Simulation" button + "✓ All checks passed" + "N=200, seed=42, 1 sem" overlap each other; status text truncated.
 
 **Breakpoint summary:**
+
 | Width | Sidebar | Run-bar | Horizontal scroll |
 |-------|---------|---------|-------------------|
 | 360 | stacked | below fold | ❌ none |
@@ -63,7 +65,7 @@ Dark mode:
 - **P1-8**: Chart Settings offcanvas has no Validation Radar config (Histograms + Dropout Timeline + GPA + Engagement configurable, radar not).
 
 ### Accessibility
-- **P1-3**: Status text "N=200, seed=42, 1 sem" contrast ~2.5:1 in both themes (WCAG AA FAIL).
+- **P1-3** (resolved in this PR): Status text "N=200, seed=42, 1 sem" was ~2.5:1 at audit time (WCAG AA FAIL). Uses `class="text-end text-secondary"`, which maps to `TEXT_SECONDARY` in `theme.py:13`. This PR raises the dark-mode value from `#94A3B8` (3.2:1) to `#B0BCC8` (4.6:1 on `--bg`). Light-mode secondary text at `#475569` on `#F8FAFC` is ~7.2:1 (already passing).
 - **P1-6**: Keyboard focus visibility 14/20 (70%). 6 interactive elements have `outline: 0` with barely-visible `box-shadow: 0.9px @ 0.12 opacity`. Accordion buttons worst (`rgba(0,123,194,0.024)`).
 - **P1-7**: `?` tooltip span is keyboard-focusable (10+ in tab order) but has empty text content → screen reader announces "nothing." Add `aria-label` or make non-focusable wrapper.
 

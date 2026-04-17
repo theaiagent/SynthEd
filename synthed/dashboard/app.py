@@ -152,7 +152,9 @@ app_ui = ui.page_navbar(
                         "background:var(--surface,#1A1D27);"
                         "border-radius:10px;"
                         "border:1px solid var(--border,#1E2130);"
-                        "max-height:240px;overflow:hidden;"
+                        # Cap sticky height when stacked on narrow viewports, but scroll
+                        # rather than clip so long preflight warnings remain accessible.
+                        "max-height:240px;overflow-y:auto;"
                     ),
                 ),
                 # Results area (shown after simulation)
