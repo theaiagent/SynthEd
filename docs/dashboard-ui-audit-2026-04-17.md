@@ -16,7 +16,12 @@ Dashboard design quality is **high** (Phase 3 redesign PR #71 delivered indigo g
 
 ## 🔴 P0 — Production Blockers
 
-### P0-3: Light theme navbar invisible (contrast 1.1:1)
+> **Status:** Both P0 items below are **resolved in PR #77**. The findings are
+> preserved here as the pre-fix baseline — useful for future regression diagnosis
+> and as evidence that the v1.7.0 release is unblocked. Regression guards live
+> in `tests/test_dashboard_theme.py`.
+
+### P0-3: Light theme navbar invisible (contrast 1.1:1) — resolved in PR #77
 
 **Evidence (Playwright computed styles):**
 
@@ -38,7 +43,7 @@ Dark mode:
 - `synthed/dashboard/theme.py:62-66, 339-342`
 - `synthed/dashboard/app.py` (page_navbar call — verify `bg`/`inverse`/`navbar_options`)
 
-### P0-5: Tablet (768px) run-bar content overlap
+### P0-5: Tablet (768px) run-bar content overlap — resolved in PR #77
 
 **Evidence:** `ui_audit_results/05_responsive_tablet_768.png` — "Run Simulation" button + "✓ All checks passed" + "N=200, seed=42, 1 sem" overlap each other; status text truncated.
 
@@ -84,7 +89,7 @@ Dark mode:
 - **P2-5**: Empty results state ("Results will appear here") too ghost-like. Add illustration + CTA.
 - **P2-6**: Validation Radar uses only 3 axes (Temporal/Demographics/Other) → shallow 2D triangle. Expand to 6+ categories.
 - **P2-7**: Radar axis label "Other" is non-descriptive.
-- **P2-10**: Engine Constants offcanvas backdrop transparent/weak — doesn't feel modal.
+- **P2-10**: Engine Constants offcanvas backdrop is too transparent/weak — it doesn't feel modal.
 
 ## 🟢 P3 — Polish
 
