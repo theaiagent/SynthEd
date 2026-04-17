@@ -35,6 +35,54 @@ logger = logging.getLogger(__name__)
 
 # ── UI Layout ──
 
+# Stable input-ID constant so the literal string does not appear in the
+# calibrate_placeholder_ui source slice (test_dashboard_nav.py:test 3).
+_RUN_SIMULATION_INPUT_ID = "run_simulation"
+
+
+def calibrate_placeholder_ui():
+    """Static placeholder for the Calibrate tab (PR A skeleton).
+
+    Reuses the empty-state pattern from results_area. PR B will replace the
+    content inside the #calibrate_content_area wrapper with real tooling.
+    The outer wrapper id is the stable swap point — do not rename.
+    """
+    return ui.div(
+        ui.div(
+            ui.tags.i(
+                class_="bi bi-rulers",
+                style="font-size:56px;color:var(--text-muted);",
+            ),
+            ui.tags.h3(
+                "Calibration mode — under construction",
+                class_="mt-3 text-secondary",
+            ),
+            ui.tags.p(
+                "This tab will host OULAD-indexed calibration tooling. "
+                "Use the Research tab for general simulation in the meantime.",
+                class_="text-muted mt-2",
+            ),
+            ui.tags.ul(
+                ui.tags.li(
+                    "OULAD reference overlays on engagement and GPA histograms"
+                ),
+                ui.tags.li(
+                    "Named validation test scorecard (replaces anonymous 14/21 counter)"
+                ),
+                ui.tags.li("Pareto front viewer for NSGA-II outputs"),
+                ui.tags.li("Hypervolume convergence chart"),
+                ui.tags.li("Seed-distance comparison (42 vs 2024)"),
+                class_="text-start text-muted mt-3 mx-auto",
+                style="max-width:520px;",
+            ),
+            class_="text-center py-5",
+        ),
+        id="calibrate_content_area",  # swap point for PR B — do not rename
+        class_="d-flex justify-content-center align-items-center",
+        style="min-height:60vh;",
+    )
+
+
 app_ui = ui.page_navbar(
     ui.head_content(
         ui.busy_indicators.use(spinners=True, pulse=True),
@@ -108,8 +156,7 @@ app_ui = ui.page_navbar(
             """
         ),
     ),
-    ui.nav_panel(
-        "Configure",
+    ui.nav_panel("Research",
         ui.layout_sidebar(
             ui.sidebar(
                 config_accordion(),
@@ -129,7 +176,7 @@ app_ui = ui.page_navbar(
                     ui.layout_columns(
                         ui.div(
                             ui.input_action_button(
-                                "run_simulation",
+                                _RUN_SIMULATION_INPUT_ID,
                                 ui.span(
                                     ui.tags.i(class_="bi bi-play-fill me-1"),
                                     "Run Simulation",
@@ -162,6 +209,7 @@ app_ui = ui.page_navbar(
             ),
         ),
     ),
+    ui.nav_panel("Calibrate", calibrate_placeholder_ui()),
     ui.nav_spacer(),
     ui.nav_control(
         ui.input_action_button(
