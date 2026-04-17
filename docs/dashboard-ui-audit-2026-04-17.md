@@ -10,7 +10,7 @@ Dashboard design quality is **high** (Phase 3 redesign PR #71 delivered indigo g
 
 **P0 (must fix before v1.7.0):** 2 bugs — light theme navbar invisibility, tablet breakpoint overlap.
 **P1 (high priority):** 10 items — research UX gaps (validation detail, reference comparison, export), accessibility (focus visibility, tooltip semantics), display bugs (locale).
-**P2/P3 (polish):** 17 items — consistency, copy, minor layout.
+**P2/P3 (polish):** 15 items — consistency, copy, minor layout.
 
 ---
 
