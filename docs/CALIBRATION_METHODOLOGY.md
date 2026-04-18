@@ -412,26 +412,26 @@ Future versions will incrementally tighten the validation: multi-objective calib
 Cross-seed validation at n=1,000 students with 10 seeds (§4) yields the following empirical standard deviations on the calibrated profile:
 
 - **Dropout rate**: σ ≈ 0.015–0.020 (1.5–2.0 percentage points)
-- **GPA mean (4-point scale)**: σ ≈ 0.003–0.004
+- **GPA mean (4-point scale)**: σ ≈ 0.003–0.005
 
 Any objective difference smaller than ~1 pp dropout (≈0.5 σ) or ~0.005 GPA is **below the noise floor** of the simulator at the validation sample size. NSGA-II cannot distinguish solutions whose objective values fall inside this band, and reported fit improvements within this band should not be interpreted as meaningful.
 
 ### 7.3 Parameter identifiability
 
-The calibration optimizes 20 free parameters (Sobol-screened from 68 — see §2 *Parameter: `sobol_top_n = 20`*) against 2 scalar objectives. This yields an effective 18-dimensional null space: many distinct parameter vectors produce statistically indistinguishable outputs on (dropout, GPA). Cross-seed comparison of knee-point parameter vectors at distance metric `compare_knee_points` consistently shows differences on the order of 0.3–0.4 (normalized RMS) even when both seeds achieve sub-percentage-point agreement on the calibration targets.
+The calibration optimizes 20 free parameters (Sobol-screened from 68 — see §2 *Parameter: `sobol_top_n = 20`*) against 2 scalar objectives. The local Jacobian of the forward map (parameters → objectives) has rank at most 2, so there are **at least 18 effectively unconstrained directions** in parameter space at any solution: many distinct parameter vectors produce statistically indistinguishable outputs on (dropout, GPA). Cross-seed comparison of knee-point parameter vectors at distance metric `compare_knee_points` consistently shows differences on the order of 0.3–0.4 (normalized RMS) even when both seeds achieve sub-percentage-point agreement on the calibration targets.
 
 This is the expected statistical signature of a **non-identifiable model under marginal-only calibration** (cf. Brun et al. 2001; Gutenkunst et al. 2007 on "sloppy models"). It is not a defect of the optimizer; it is a structural property of fitting a high-dimensional simulator to a low-dimensional target. The `compare_knee_points < 0.1` threshold previously used in `run_calibration.py` is **informational only** as of v1.7.0, not a release gate, because the threshold itself is not derived from a Fisher Information analysis of the simulator.
 
 ### 7.4 Practical implications for users of v1.7.0
 
 - **Output level (synthetic cohorts)**: safe to use. Whichever knee-point parameter vector is shipped, dropout and GPA distributions match the OULAD reference within the noise floor in §7.2.
-- **Parameter level (calibrated constants)**: the values reported in `calibration_output/nsga2_default_seed*.json` are **one valid solution among many**. The non-grading parameters (e.g. `_DECISION_RISK_MULTIPLIER`, `_MISSED_STREAK_PENALTY`, `_TINTO_DECAY_BASE`) should not be interpreted, plotted, or compared as physical constants until the multi-objective calibration described in §7.5 is in place. The four force-included grading parameters (`grade_floor`, `pass_threshold`, GPA weights) do converge across seeds and are the only ones safe to interpret in v1.7.0.
+- **Parameter level (calibrated constants)**: the values reported in `calibration_output/nsga2_default_seed*.json` are **one valid solution among many**. The non-grading parameters (e.g. `_DECISION_RISK_MULTIPLIER`, `_MISSED_STREAK_PENALTY`, `_TINTO_DECAY_BASE`) should not be interpreted, plotted, or compared as physical constants until the multi-objective calibration described in §7.5 is in place. Of the four force-included grading parameters, only the two grading-formula parameters (`grade_floor`, `pass_threshold`) converge tightly across seeds (normalized cross-seed difference < 0.05) and are safe to interpret in v1.7.0; the GPA-weight parameters (`_ASSIGN_GPA_WEIGHT`, `_EXAM_GPA_WEIGHT`) show partial convergence (normalized differences ~0.13 and ~0.42 respectively) and should be interpreted with caution.
 
 ### 7.5 Planned identifiability improvements
 
 The next major calibration release will introduce three structural fixes addressing the limitations described in §7.3:
 
-1. **Promote `pass_rate` and `distinction_rate` to NSGA-II objectives** — these metrics are already computed in `user_attrs` at no additional simulation cost. Adding them reduces the parameter null space from 18 to 16 dimensions.
+1. **Promote `pass_rate` and `distinction_rate` to NSGA-II objectives** — these metrics are already computed in `user_attrs` at no additional simulation cost. Adding them is expected to reduce the unconstrained-direction count from ≥18 toward ≥16, though `pass_rate` is partly redundant with `dropout_rate` (both are exit-event metrics) so the effective identifiability gain is an upper bound.
 2. **Add `withdrawal_week_distribution` KS-test as a fourth objective** — replaces a marginal scalar constraint with a distributional one, tightening identifiability.
 3. **Run NSGA-II across 5 seeds** (not 2) and report parameters as **posterior bands** (median + 5–95 percentile per parameter) rather than point estimates.
 
@@ -440,9 +440,11 @@ These changes are expected to reduce cross-seed knee-point distance below 0.20 o
 ## 8. References
 
 - Archer, G.E.B., Saltelli, A., & Sobol, I.M. (1997). Sensitivity measures, ANOVA-like techniques and the use of bootstrap. *JSCS*, 58(2), 99-120.
+- Brun, R., Reichert, P., & Künsch, H.R. (2001). Practical identifiability analysis of large environmental simulation models. *Water Resources Research*, 37(4), 1015-1030.
 - Cochran, W.G. (1977). *Sampling Techniques*, 3rd ed. Wiley.
 - Deb, K., Pratap, A., Agarwal, S., & Meyarivan, T. (2002). A fast and elitist multiobjective genetic algorithm: NSGA-II. *IEEE TEC*, 6(2), 182-197.
 - Deb, K. & Jain, H. (2014). An evolutionary many-objective optimization algorithm using reference-point-based nondominated sorting approach. *IEEE TEC*, 18(4), 577-601.
+- Gutenkunst, R.N., Waterfall, J.J., Casey, F.P., Brown, K.S., Myers, C.R., & Sethna, J.P. (2007). Universally sloppy parameter sensitivities in systems biology models. *PLoS Computational Biology*, 3(10), e189.
 - Howe, W.G. (1969). Two-sided tolerance limits for normal populations. *JASA*, 64(326), 610-620.
 - Iooss, B. & Lemaître, P. (2015). A review on global sensitivity analysis methods. In G. Dellino & C. Meloni (Eds.), *Uncertainty Management in Simulation-Optimization of Complex Systems: Algorithms and Applications* (pp. 101-122). Springer. https://doi.org/10.1007/978-1-4899-7547-8_5
 - Ishibuchi, H., Imada, R., Setoguchi, Y., & Nojima, Y. (2017). How to specify a reference point in hypervolume calculation. *GECCO 2017*.
