@@ -324,6 +324,8 @@ At k=10, we can claim (95% confidence) that 95% of seeds produce dropout rates w
 
 ## 5. Complete Parameter Configuration
 
+> **Note on defaults.** The values in this section reflect the **production calibration invocation** in `run_calibration.py` (full run, not `--quick`), which is the authoritative configuration cited throughout §2–§4. Direct calls to `NSGAIICalibrator.run()`, `SobolAnalyzer.run()`, or `NSGAIICalibrator.validate_solution()` use smaller method-signature defaults (`pop_size=80`, `n_trials=8000`, `n_samples=128`, `validation n_students=500`) intended for quick local testing. When reading the methodology, assume the `run_calibration.py` values unless a quick-run is explicitly discussed.
+
 ### Calibration Parameters
 
 ```python
@@ -355,7 +357,7 @@ validation_n_students = 1_000  # Students per validation run
 validation_seeds = [42, 123, 456, 789, 2024, 1337, 7777, 9999, 31415, 27182]
 
 # Compute
-workers = 8                    # Parallel processes (50% of 16 cores)
+workers = 1                    # CLI default (`--workers 1`); pass `--workers 8` on a 16-core host for ~50% utilization
 ```
 
 ### Computational Budget
@@ -383,7 +385,21 @@ workers = 8                    # Parallel processes (50% of 16 cores)
 
 ## 6. Diagnostic Visualizations
 
-The following diagnostic visualizations should accompany calibration results:
+The following diagnostic visualizations are **recommended** to accompany calibration results. As of v1.7.0 the calibration pipeline captures the raw data needed for most of them (e.g. `hv_history` per generation in each seed's output JSON, the full Pareto front in the same file, Sobol ST indices in the Sobol output), but chart *rendering* is deferred to the Phase 2 calibration release — see the Calibrate-tab placeholder in `synthed/dashboard/app.py` and the roadmap entry in `docs/superpowers/specs/2026-04-18-calibration-roadmap.md` for the planned implementation scope. Users who need these views immediately can build them from the JSON outputs in `calibration_output/`.
+
+### 6.1 Implementation status (v1.7.0)
+
+| # | Diagnostic | Data captured in v1.7.0 | Chart rendered |
+|---|------------|-------------------------|----------------|
+| 1 | HV convergence curve | ✅ `hv_history` in each `nsga2_default_seed*.json` | ❌ Planned (Phase 2) |
+| 2 | Sobol ST bar chart with CI | ✅ Sobol output JSON (ST indices + bootstrap CI) | ❌ Planned (Phase 2) |
+| 3 | Cumulative variance plot | ✅ Derivable from Sobol ST indices | ❌ Planned (Phase 2) |
+| 4 | Pareto front scatter with knee | ✅ `pareto_front` + knee-point in seed JSON | ❌ Planned (Phase 2 — Calibrate tab) |
+| 5 | Seed stability boxplot | ✅ 10-seed validation output | ❌ Planned (Phase 2) |
+| 6 | Cohen's d effect sizes | ⚠️ Computable from validation output + OULAD reference | ❌ Planned (Phase 2) |
+| 7 | Replicated calibration overlay | ✅ Both seed JSON files | ❌ Planned (Phase 2) |
+
+### 6.2 Recommended diagnostics
 
 1. **Hypervolume Indicator (HV) convergence curve** — HV vs. generation number for both NSGA-II seeds. Demonstrates convergence rather than budget exhaustion.
 
