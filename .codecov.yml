@@ -16,7 +16,12 @@ coverage:
     project:
       default:
         target: auto       # don't drop below the previous commit
-        threshold: 1%      # 1 pp tolerance for noisy fluctuations
+        # Project threshold is intentionally tighter (1 pp) than the
+        # per-component thresholds (typically 2 pp). A single component
+        # can move ±2 pp without alarming, but the *aggregate* across
+        # ~4400 statements should not drift more than 1 pp without
+        # explicit acknowledgement.
+        threshold: 1%
         if_ci_failed: error
     patch:
       default:
@@ -65,9 +70,21 @@ component_management:
           threshold: 2%
     - component_id: simulation_engine
       name: Simulation engine (non-theories)
+      # Top-level simulation files only; theories/ is its own component
+      # above. Listed explicitly (rather than via negation) so a future
+      # move of theories/ does not silently bring those files back into
+      # this component's scope.
       paths:
-        - synthed/simulation/**
-        - "!synthed/simulation/theories/**"
+        - synthed/simulation/__init__.py
+        - synthed/simulation/engine.py
+        - synthed/simulation/engine_config.py
+        - synthed/simulation/environment.py
+        - synthed/simulation/grading.py
+        - synthed/simulation/institutional.py
+        - synthed/simulation/semester.py
+        - synthed/simulation/social_network.py
+        - synthed/simulation/state.py
+        - synthed/simulation/statistics.py
       statuses:
         - type: project
           target: 90%
