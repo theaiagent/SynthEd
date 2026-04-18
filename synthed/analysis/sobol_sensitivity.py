@@ -62,7 +62,7 @@ class SobolParameter:
 #   "garrison." → engine.garrison attribute
 #   "gonzalez." → engine.gonzalez attribute
 #   "moore."    → engine.moore attribute
-#   "epstein."  → engine.epstein_axtell attribute
+#   "grading."  → GradingConfig field (frozen, use replace())
 #   "inst."     → InstitutionalConfig field (frozen, use replace())
 
 # Full parameter space: 68 parameters selected for theoretical importance
