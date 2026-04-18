@@ -1,7 +1,6 @@
 # SynthEd Calibration Methodology
 
-> Academic reference document for the NSGA-II calibration pipeline.
-> Prepared for symposium presentation (April 2026).
+> Reference document for the NSGA-II calibration pipeline.
 
 ## 1. Overview
 
@@ -315,7 +314,7 @@ k=10: CI half-width = 2.262 × 0.0133 / √10 = 0.0095 (0.95 pp)
 | **10** | **3.379** | **8.99 pp** |
 | 15 | 2.954 | 7.86 pp |
 
-At k=10, we can claim (95% confidence) that 95% of seeds produce dropout rates within a ~9 pp band around the mean. This is defensible for a symposium.
+At k=10, we can claim (95% confidence) that 95% of seeds produce dropout rates within a ~9 pp band around the mean. This is the operational tolerance interval.
 
 **Decision rationale:** k=10 is the standard minimum for simulation output analysis (Law, 2015). It provides df=9 for the t-distribution (mild penalty vs. normal), a sub-1pp CI half-width on the mean, and a ~9pp tolerance interval.
 
@@ -382,7 +381,7 @@ workers = 8                    # Parallel processes (50% of 16 cores)
 | Validation tolerance width (95/95) | 8.99 pp | k=10, k_tol=3.379 |
 | SE < 2% threshold | N ≥ 537 | p(1-p)/0.02² |
 
-## 6. Diagnostics for Symposium
+## 6. Diagnostic Visualizations
 
 The following diagnostic visualizations should accompany calibration results:
 
@@ -400,7 +399,45 @@ The following diagnostic visualizations should accompany calibration results:
 
 7. **Replicated calibration comparison** — Overlay Pareto fronts from seed=42 and seed=2024. Agreement = robust calibration.
 
-## 7. References
+## 7. Limitations & Identifiability
+
+### 7.1 Scope of the credibility claim in v1.7.0
+
+The calibration pipeline described in §2-§5 demonstrates that SynthEd can match the **marginal** OULAD targets `dropout_rate` and `gpa_mean` to within the simulator's Monte Carlo noise floor across multiple seeds. This is necessary but not sufficient evidence of *deep* distributional fidelity. v1.7.0 therefore positions the calibration as a **method release** — the pipeline is reproducible and auditable — rather than as evidence that the calibrated parameter values are themselves estimates of underlying constants.
+
+Future versions will incrementally tighten the validation: multi-objective calibration to reduce the parameter null space, holdout-presentation generalization tests, predictive-utility (TSTR) experiments, and mechanism-ablation studies.
+
+### 7.2 Monte Carlo noise floor of the simulator
+
+Cross-seed validation at n=1,000 students with 10 seeds (§4) yields the following empirical standard deviations on the calibrated profile:
+
+- **Dropout rate**: σ ≈ 0.015–0.020 (1.5–2.0 percentage points)
+- **GPA mean (4-point scale)**: σ ≈ 0.003–0.004
+
+Any objective difference smaller than ~1 pp dropout (≈0.5 σ) or ~0.005 GPA is **below the noise floor** of the simulator at the validation sample size. NSGA-II cannot distinguish solutions whose objective values fall inside this band, and reported fit improvements within this band should not be interpreted as meaningful.
+
+### 7.3 Parameter identifiability
+
+The calibration optimizes 20 free parameters (Sobol-screened from 68 — see §2 *Parameter: `sobol_top_n = 20`*) against 2 scalar objectives. This yields an effective 18-dimensional null space: many distinct parameter vectors produce statistically indistinguishable outputs on (dropout, GPA). Cross-seed comparison of knee-point parameter vectors at distance metric `compare_knee_points` consistently shows differences on the order of 0.3–0.4 (normalized RMS) even when both seeds achieve sub-percentage-point agreement on the calibration targets.
+
+This is the expected statistical signature of a **non-identifiable model under marginal-only calibration** (cf. Brun et al. 2001; Gutenkunst et al. 2007 on "sloppy models"). It is not a defect of the optimizer; it is a structural property of fitting a high-dimensional simulator to a low-dimensional target. The `compare_knee_points < 0.1` threshold previously used in `run_calibration.py` is **informational only** as of v1.7.0, not a release gate, because the threshold itself is not derived from a Fisher Information analysis of the simulator.
+
+### 7.4 Practical implications for users of v1.7.0
+
+- **Output level (synthetic cohorts)**: safe to use. Whichever knee-point parameter vector is shipped, dropout and GPA distributions match the OULAD reference within the noise floor in §7.2.
+- **Parameter level (calibrated constants)**: the values reported in `calibration_output/nsga2_default_seed*.json` are **one valid solution among many**. The non-grading parameters (e.g. `_DECISION_RISK_MULTIPLIER`, `_MISSED_STREAK_PENALTY`, `_TINTO_DECAY_BASE`) should not be interpreted, plotted, or compared as physical constants until the multi-objective calibration described in §7.5 is in place. The four force-included grading parameters (`grade_floor`, `pass_threshold`, GPA weights) do converge across seeds and are the only ones safe to interpret in v1.7.0.
+
+### 7.5 Planned identifiability improvements
+
+The next major calibration release will introduce three structural fixes addressing the limitations described in §7.3:
+
+1. **Promote `pass_rate` and `distinction_rate` to NSGA-II objectives** — these metrics are already computed in `user_attrs` at no additional simulation cost. Adding them reduces the parameter null space from 18 to 16 dimensions.
+2. **Add `withdrawal_week_distribution` KS-test as a fourth objective** — replaces a marginal scalar constraint with a distributional one, tightening identifiability.
+3. **Run NSGA-II across 5 seeds** (not 2) and report parameters as **posterior bands** (median + 5–95 percentile per parameter) rather than point estimates.
+
+These changes are expected to reduce cross-seed knee-point distance below 0.20 on the revised metric, with the new threshold derived from a Fisher Information / noise-floor analysis.
+
+## 8. References
 
 - Archer, G.E.B., Saltelli, A., & Sobol, I.M. (1997). Sensitivity measures, ANOVA-like techniques and the use of bootstrap. *JSCS*, 58(2), 99-120.
 - Cochran, W.G. (1977). *Sampling Techniques*, 3rd ed. Wiley.
