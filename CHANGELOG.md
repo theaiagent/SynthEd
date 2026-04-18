@@ -4,6 +4,12 @@ All notable changes to SynthEd are documented here.
 
 ## [Unreleased]
 
+### Added
+- `.codecov.yml` with project-tailored, per-component coverage targets calibrated to the actual structure of the codebase (theory modules 95%, simulation engine 90%, validation/utils/data_output/agents 88-90%, pipeline 95%, analysis 70% informational, dashboard 70% informational). Project status uses `target: auto` with a 1 pp threshold; patch status is informational. CLI tooling (`synthed/doc_facts.py`) and root-level orchestration scripts (`run_*.py`) excluded from measurement.
+
+### Removed
+- `calibration_output/nsga2_default.json` — stale 4 KB artifact from a pre-v1.7.0 quick test (Apr 12 timestamp, 500 evaluations) that was not referenced anywhere in the methodology documentation. The two seed-specific files (`nsga2_default_seed42.json`, `nsga2_default_seed2024.json`) and their combined `nsga2_all_profiles.json` are the v1.7.0 release artifacts and remain.
+
 ## [1.7.0] - 2026-04-18
 
 ### Changed
