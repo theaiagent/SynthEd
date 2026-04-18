@@ -7,6 +7,9 @@ All notable changes to SynthEd are documented here.
 ### Added
 - `.codecov.yml` with project-tailored, per-component coverage targets calibrated to the actual structure of the codebase (theory modules 95%, simulation engine 90%, validation/utils/data_output/agents 88-90%, pipeline 95%, analysis 70% informational, dashboard 70% informational). Project status uses `target: auto` with a 1 pp threshold; patch status is informational. CLI tooling (`synthed/doc_facts.py`) and root-level orchestration scripts (`run_*.py`) excluded from measurement.
 
+### Fixed
+- **Flaky `test_high_ssq_lower_dropout` / `test_low_ssq_higher_dropout`** (`tests/test_baulke_institutional.py`): the 3-seed × n=200 design gave a per-seed dropout std ≈0.0337 (SE ≈0.0195 across 3 seeds), so the 0.005 assertion threshold was ~0.26σ — well within seed variance. CI observed `diff=0.002` on Python 3.10, triggering fail-fast that also cancelled the 3.12 job. Raised seed count to 10 (seeds 41..50) and epsilon to 0.010 symmetrically for both directional tests; new SE ≈0.011 puts the threshold at ~0.9σ — still directional, no longer flaky. Full suite: 812 passed in 124s locally.
+
 ### Removed
 - `calibration_output/nsga2_default.json` — stale 4 KB artifact from a pre-v1.7.0 quick test (Apr 12 timestamp, 500 evaluations) that was not referenced anywhere in the methodology documentation. The two seed-specific files (`nsga2_default_seed42.json`, `nsga2_default_seed2024.json`) and their combined `nsga2_all_profiles.json` are the v1.7.0 release artifacts and remain.
 
