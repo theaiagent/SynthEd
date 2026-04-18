@@ -363,11 +363,11 @@ workers = 8                    # Parallel processes (50% of 16 cores)
 | Stage | Simulations | N per sim | Est. time (8 workers) |
 |-------|-------------|-----------|----------------------|
 | Sobol | 35,840 | 500 | ~65 min |
-| NSGA-II (seed 42) | 62,000 | 500 | ~115 min |
-| NSGA-II (seed 2024) | 62,000 | 500 | ~115 min |
+| NSGA-II (seed 42) | 62,000 | 500 | ~210 min (measured: 12,749.9 s on the v1.7.0 run) |
+| NSGA-II (seed 2024) | 62,000 | 500 | ~200 min (measured: 11,938.4 s on the v1.7.0 run) |
 | Re-evaluation | ≤ pareto_size × 3 (typically 9–60) | 2,000 | ~1 min |
 | Validation | 10 | 1,000 | <1 min |
-| **Total** | **~160,000** | | **~5 hours** |
+| **Total** | **~160,000** | | **~8 hours** (measured on the v1.7.0 run with 8 workers) |
 
 ### Statistical Summary
 
@@ -418,7 +418,7 @@ Any objective difference smaller than ~1 pp dropout (≈0.5 σ) or ~0.005 GPA is
 
 ### 7.3 Parameter identifiability
 
-The calibration optimizes 20 free parameters (Sobol-screened from 68 — see §2 *Parameter: `sobol_top_n = 20`*) against 2 scalar objectives. The local Jacobian of the forward map (parameters → objectives) has rank at most 2, so there are **at least 18 effectively unconstrained directions** in parameter space at any solution: many distinct parameter vectors produce statistically indistinguishable outputs on (dropout, GPA). Cross-seed comparison of knee-point parameter vectors at distance metric `compare_knee_points` consistently shows differences on the order of 0.3–0.4 (normalized RMS) even when both seeds achieve sub-percentage-point agreement on the calibration targets.
+The calibration optimizes 20 free parameters (Sobol-screened from 68 — see §2 *Parameter: `sobol_top_n = 20`*) against 2 scalar objectives. The local Jacobian of the forward map (parameters → objectives) has rank at most 2 (assuming the two objectives, `dropout_error` and `gpa_error`, are locally linearly independent — if they happen to be locally collinear along the optimum manifold, the effective rank could fall to 1 and the null space could grow to 19-D), so there are **at least 18 effectively unconstrained directions** in parameter space at any solution: many distinct parameter vectors produce statistically indistinguishable outputs on (dropout, GPA). Cross-seed comparison of knee-point parameter vectors at distance metric `compare_knee_points` consistently shows differences on the order of 0.3–0.4 (normalized RMS) even when both seeds achieve sub-percentage-point agreement on the calibration targets — observed empirically in the v1.7.0 outputs `calibration_output/nsga2_default_seed42.json` and `nsga2_default_seed2024.json`, reproducible by running `compare_knee_points` from `synthed/analysis/pareto_utils.py` on those files.
 
 This is the expected statistical signature of a **non-identifiable model under marginal-only calibration** (cf. Brun et al. 2001; Gutenkunst et al. 2007 on "sloppy models"). It is not a defect of the optimizer; it is a structural property of fitting a high-dimensional simulator to a low-dimensional target. The `compare_knee_points < 0.1` threshold previously used in `run_calibration.py` is **informational only** as of v1.7.0, not a release gate, because the threshold itself is not derived from a Fisher Information analysis of the simulator.
 
@@ -431,7 +431,7 @@ This is the expected statistical signature of a **non-identifiable model under m
 
 The next major calibration release will introduce three structural fixes addressing the limitations described in §7.3:
 
-1. **Promote `pass_rate` and `distinction_rate` to NSGA-II objectives** — these metrics are already computed in `user_attrs` at no additional simulation cost. Adding them is expected to reduce the unconstrained-direction count from ≥18 toward ≥16, though `pass_rate` is partly redundant with `dropout_rate` (both are exit-event metrics) so the effective identifiability gain is an upper bound.
+1. **Promote `pass_rate` and `distinction_rate` to NSGA-II objectives** — these metrics are already computed in `user_attrs` at no additional simulation cost. The two candidates address different mechanisms: `pass_rate` is partly exit-driven (overlapping with `dropout_rate`) while `distinction_rate` is purely grading-driven (independent of the dropout mechanism). The naive identifiability gain ("≥18 → ≥16 unconstrained directions") is an upper bound; the true gain depends on the empirical orthogonality of the four-objective set, which will be quantified in the Phase 2 work via the empirical objective correlation matrix on the existing Sobol sample and a collinearity-index analysis (Brun et al. 2001) on the objective Jacobian before the new objectives are committed.
 2. **Add `withdrawal_week_distribution` KS-test as a fourth objective** — replaces a marginal scalar constraint with a distributional one, tightening identifiability.
 3. **Run NSGA-II across 5 seeds** (not 2) and report parameters as **posterior bands** (median + 5–95 percentile per parameter) rather than point estimates.
 

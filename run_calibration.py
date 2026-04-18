@@ -165,6 +165,12 @@ def main():
     # Step 2: Calibrate each profile with replicated seeds
     calibration_seeds = CALIBRATION_SEEDS if not args.quick else (args.seed,)
     seed_knee_points: dict[str, dict] = {}
+    # all_results entries have two shapes:
+    #   success: {"seed": int, "profile": str, "pareto_size": int, "n_evaluations": int,
+    #             "calibration_time_s": float, "knee_point": dict, "validation": dict,
+    #             "parameter_names": list[str], "hv_history": list[float]}
+    #   failure: {"seed": int, "profile": str, "error": str}
+    # Consumers should branch on presence of "error" key.
     all_results: list[dict] = []
 
     for cal_seed in calibration_seeds:
@@ -200,6 +206,11 @@ def main():
         logger.info("=" * 60)
         logger.info("KNEE-POINT COMPARISON")
         logger.info("=" * 60)
+        # NOTE: only compares the first two seeds. Sufficient for the current
+        # 2-seed setup (CALIBRATION_SEEDS = (42, 2024)). When the seed count
+        # grows (planned alongside the multi-objective calibration upgrade),
+        # this should iterate over all combinations(seeds_list, 2) and persist
+        # the full pairwise distance matrix to nsga2_all_profiles.json.
         for name, knees in seed_knee_points.items():
             if len(knees) >= 2:
                 seeds_list = sorted(knees.keys())
