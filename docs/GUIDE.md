@@ -292,10 +292,9 @@ report = pipeline.run(n_students=300)
 
 | Semesters | Default Dropout Rate (base=0.46) | Quality |
 |-----------|----------------------------------|---------|
-| 1 (14 weeks) | ~41% | A (Excellent) |
-| 2 (28 weeks) | ~69% | B (Good) |
-| 4 (56 weeks) | ~92% | B (Good) |
-<!-- TODO: remeasure per-semester dropout % values — computed with old base=0.80, need recalculation at base=0.46 -->
+| 1 (14 weeks) | ~38% | A (Excellent) |
+| 2 (28 weeks) | ~68% | B (Good) |
+| 4 (56 weeks) | ~91% | B (Good) |
 
 ---
 
@@ -348,7 +347,7 @@ md = gen.generate_report(output_dir="./benchmarks")  # writes benchmark_report.m
 
 | Profile | Scenario | Expected Dropout |
 |---------|----------|-----------------|
-| `default` | Large-scale, diverse student population | 35-60% |
+| `default` | Large-scale, diverse student population | 20-45% |
 
 ---
 
@@ -606,7 +605,6 @@ pipeline = SynthEdPipeline(engine_config=custom_cfg, output_dir="./output", seed
 | Validation grade D or F | [Low validation grade](#low-validation-grade) |
 | Dropout rate too low/high | [Dropout mismatch](#dropout-rate-outside-expectations) |
 | `Unknown PersonaConfig field` | [Sobol typo](#unknown-parameter-in-sobol) |
-| GPA gap (~15%) | [GPA convergence](#gpa-gap-in-calibration) |
 | `auto_bounds()` returns empty | [Auto bounds edge case](#auto_bounds-returns-empty) |
 | `openai.AuthenticationError` | [API key missing](#openai-api-key-missing) |
 | `LLM enrichment blocked: cost exceeds threshold` | [Cost threshold](#llm-cost-threshold) |
@@ -743,24 +741,6 @@ ValueError: Unknown PersonaConfig field: 'emplyment_rate' in config.emplyment_ra
 1. Fix the spelling, or
 2. Use `auto_bounds()` for auto-generated valid parameters
 
-#### GPA gap in calibration
-
-**Symptom:** `target_gpa=3.03, achieved_gpa=2.77` (~8.6% gap)
-
-**Context:** Assignment/exam quality formula interacts with Optuna's composite loss. Too many trials causes over-optimization of dropout at GPA's expense.
-
-**Action:**
-1. Use 60-80 Optuna trials (sweet spot). More trials (120+) can degrade GPA.
-2. Increase `gpa_weight` relative to `dropout_weight` if GPA is priority.
-3. Best observed: 80 trials → GPA 2.77 (8.6% error), Score 70.1 (8.6%), Loss 0.0036.
-
-| Trials | Loss | GPA | GPA Error | Grade |
-|--------|------|-----|-----------|-------|
-| 30 | 0.0319 | 2.19 | 27% | — |
-| 60 | 0.0084 | 2.56 | 15% | B |
-| **80** | **0.0036** | **2.77** | **8.6%** | **B** |
-| 120 | 0.0168 | 2.32 | 23% | D |
-
 #### auto_bounds returns empty
 
 **Symptom:** `len(auto_bounds(margin=0.01))` returns 0.
@@ -853,7 +833,7 @@ UUIDv7 embeds wall-clock time. Same seed at different times produces different I
 
 #### Calibration data staleness
 
-`CALIBRATION_DATA` in `calibration.py` was measured 2026-03-31. Re-measure if you modify theory modules or engine weights (N=500, 5 seeds per point).
+`CALIBRATION_DATA` in `calibration.py` was measured 2026-04-14 (post OULAD reference fix). Re-measure if you modify theory modules or engine weights (N=500, 5 seeds per point).
 
 ---
 
