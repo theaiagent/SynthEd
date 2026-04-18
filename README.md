@@ -42,7 +42,7 @@ python run_pipeline.py --n 200      # or: pip install synthedu
 ### Calibration & Validation
 - **Sobol Sensitivity** -- 68-parameter sensitivity analysis identifying dominant dropout/engagement drivers
 - **NSGA-II Calibration** -- Multi-objective optimization with Pareto front, parallel `--workers N` support, adaptive parameter bounds
-- **5-Level Validation Suite** -- 21 statistical tests (distributions, correlations, temporal coherence, privacy, backstory)
+- **5-Level Validation Suite** -- 22 statistical tests (default; up to 24 with backstory validation) across distributions, correlations, temporal coherence, privacy, and backstory
 
 ### Configuration
 - **InstitutionalConfig** -- 5 institution-level quality parameters that modulate theory constants. `support_services_quality` scales 13 Baulke dropout phase thresholds
