@@ -4,8 +4,13 @@ All notable changes to SynthEd are documented here.
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-04-18
+
 ### Changed
-- **Dashboard mode split (PR A skeleton)**: renamed the "Configure" nav tab to "Research" and added a new "Calibrate" nav tab with a placeholder describing upcoming calibration tooling. No behavior change — all current functionality is preserved under Research. The Calibrate tab is inert in this release; follow-up PRs will add OULAD-indexed calibration features (reference overlays, validation test scorecard, Pareto viewer, HV convergence).
+- **Calibration knee-point cross-seed log demoted to informational**: the previous binary "ROBUST/DIVERGENT" verdict against a 0.1 normalized-RMS threshold was a heuristic, not a Fisher Information–derived gate. Cross-seed parameter scatter is the expected signature of the model's structural non-identifiability (20 free parameters × 2 scalar objectives), not an optimizer regression.
+- **`docs/CALIBRATION_METHODOLOGY.md` reworked**: added §7 "Limitations & Identifiability" documenting the parameter null space, Monte Carlo noise floor (~1.5–2 pp dropout σ at n=1000), parameter-interpretation caveats, and the planned identifiability improvements. Saltelli (2002) citation corrected (*Computer Physics Communications* 145(2):280-297, with DOI). §1 parameter-scope clarified (68 Sobol candidates / 70 EngineConfig fields / 20 NSGA-II actively optimized). Computational budget table updated with measured wall-clock times. §3 framing aligned with §7 (single non-identifiability story). §7.4 GPA-weight cross-seed numerical claim corrected after data re-check.
+- **`docs/GUIDE.md` numerical corrections**: default benchmark profile expected dropout 35-60% → 20-45% (matches `expected_dropout_range=(0.20, 0.45)` in code), 1-semester default dropout estimate ~41% → ~38% (matches `CalibrationMap` interpolation), `CALIBRATION_DATA` measurement date 2026-03-31 → 2026-04-14, removed obsolete TraitCalibrator-era "GPA gap in calibration" troubleshooting entry (NSGA-II achieves `gpa_error=0.004`, the entry's 8.6% gap advice was stale).
+- **Dashboard mode split (PR A skeleton)**: renamed the "Configure" nav tab to "Research" and added a new "Calibrate" nav tab with a placeholder describing upcoming calibration tooling. No behavior change — all current functionality is preserved under Research. The Calibrate tab is inert in this release; follow-up work will add OULAD-indexed calibration features (reference overlays, validation test scorecard, Pareto viewer, HV convergence).
 - **Spectrum refactoring**: 3 binary + 1 integer persona field converted to 3 continuous [0,1] floats — `is_employed`+`weekly_work_hours` → `employment_intensity`, `has_family_responsibilities` → `family_responsibility_level`, `has_reliable_internet` → `internet_reliability`
 - Factory uses Beta distributions: Beta(2.5,3) employment, Beta(2,4) family, Beta(8,2)/Beta(4,3) internet (SES-dependent)
 - Bean & Metzner: `_OVERWORK_PENALTY` → `_EMPLOYMENT_PRESSURE_FACTOR` (0.04), `_OVERWORK_THRESHOLD_HOURS` removed, continuous pressure formulas
@@ -17,6 +22,7 @@ All notable changes to SynthEd are documented here.
 - README Key Features reorganized into 4 categories, Zenodo description restructured
 
 ### Fixed
+- **Calibration result aggregation bug**: `nsga2_all_profiles.json` now contains all calibration seeds with an explicit `seed` field for disambiguation. Previously `all_results` was reset inside the per-seed loop in `run_calibration.py`, so the combined-profile JSON only retained the last seed's results.
 - **Dashboard light theme navbar** (was invisible, 1.1:1 contrast): migrated `page_navbar` off deprecated `bg=`/`inverse=True` to `navbar_options(class_="navbar-adaptive")`. Dropping `inverse=True` removes `data-bs-theme="dark"` from the nav element which was defeating `body.light-mode` background override via Bootstrap source order. Logo + active tab now render 17:1+ contrast in both themes.
 - **Dashboard tablet 768px run-bar overlap**: replaced fixed 3× `ui.column(4, ...)` row with `ui.layout_columns(col_widths={"sm":12,"lg":4})` so run button, preflight check, and status stack vertically below 992px (sidebar stays side-by-side at 768px — no media query collapses it — so main area drops below 600px and can't fit three horizontal columns).
 - **Dashboard run-bar status text contrast**: Bootstrap's default `.text-secondary` color (dark gray) was winning over our CSS variable on the dark navbar, producing ~1.88:1 contrast for the "N=..., seed=..." status text (WCAG AA fail). Added an explicit `color: var(--text-secondary) !important` rule to `.text-end.text-secondary` so the status text now uses our theme variable, and raised `TEXT_SECONDARY` from `#94A3B8` (7.4:1 on `--bg`) to `#B0BCC8` (9.8:1) for consistent above-AA margin across all custom `var(--text-secondary)` usages (labels, `h6`, nav links, tooltips).
@@ -34,7 +40,10 @@ All notable changes to SynthEd are documented here.
 - **HV convergence tracking**: `compute_hypervolume()` in `pareto_utils.py` tracks hypervolume per NSGA-II generation, stored in `ParetoResult.hv_history`
 - **Pareto front re-evaluation**: `reevaluate_pareto_front()` re-evaluates solutions at N=2,000 with 3 seeds for noise-free knee-point selection
 - **Replicated calibration**: 2 independent NSGA-II seeds (42, 2024) with `compare_knee_points()` for robustness comparison
-- **Calibration methodology**: `docs/CALIBRATION_METHODOLOGY.md` — academic reference with power analysis, NAF framework, 16 citations
+- **Calibration methodology**: `docs/CALIBRATION_METHODOLOGY.md` — reference document with power analysis, NAF framework, 18 citations (now including Brun et al. 2001 and Gutenkunst et al. 2007 for the identifiability discussion)
+
+### Removed
+- Internal UI/UX audit document (`docs/dashboard-ui-audit-2026-04-17.md`) removed from the public repository. Findings have been incorporated into the relevant implementation PRs.
 
 ## [1.6.0] - 2026-04-12
 
