@@ -1,0 +1,156 @@
+# Codecov configuration tailored to SynthEd's structure.
+# Reference: https://docs.codecov.com/docs/codecov-yaml
+
+# ── Coverage status checks ──────────────────────────────────────────
+# Project status: enforce no overall regression. Threshold gives
+# a small buffer for branch-coverage noise from `--cov-branch` and
+# from new untested integration code. NOT a stretch goal — coverage
+# work is risk-driven (see CALIBRATION_ROADMAP.md Phase 1.5), not
+# percentage-driven.
+coverage:
+  precision: 1
+  round: down
+  range: "70...100"
+
+  status:
+    project:
+      default:
+        target: auto       # don't drop below the previous commit
+        threshold: 1%      # 1 pp tolerance for noisy fluctuations
+        if_ci_failed: error
+    patch:
+      default:
+        target: 70%        # new code should have at least basic coverage
+        threshold: 5%
+        informational: true   # advisory, not a merge gate
+
+# ── Files excluded from coverage ────────────────────────────────────
+# These are intentionally not unit-tested:
+#   - CLI tooling scripts (run via integration / manual)
+#   - Orchestration entry points (smoke-tested via pipeline-smoke CI)
+#   - __init__.py boilerplate when it only re-exports
+ignore:
+  - "synthed/doc_facts.py"           # CLI documentation linter
+  - "run_calibration.py"              # orchestration entry point
+  - "run_pipeline.py"                 # orchestration entry point
+  - "tests/**"                        # test files themselves
+  - "**/conftest.py"                  # pytest fixtures
+
+# ── Component-level visibility ──────────────────────────────────────
+# Per-area targets reflect what the code actually permits:
+#   - Theory modules + simulation engine: stateless, deterministic
+#     once seeded → high coverage achievable
+#   - Validation + utils + data_output: pure logic → high coverage
+#   - Agents + grading: high coverage (mostly deterministic factories)
+#   - Analysis (Sobol, NSGA-II, Pareto): lower target because
+#     calibration runs are expensive integration tests; risk-driven
+#     uplift tracked in roadmap Phase 1.5
+#   - Dashboard: Shiny + Plotly UI, exercised by Playwright tests;
+#     UI code intrinsically harder to unit-test
+#   - Benchmarks: thin profile dataclasses → 100% achievable
+component_management:
+  default_rules:
+    statuses:
+      - type: project
+        target: auto
+        threshold: 2%
+  individual_components:
+    - component_id: theories
+      name: Theory modules
+      paths:
+        - synthed/simulation/theories/**
+      statuses:
+        - type: project
+          target: 95%
+          threshold: 2%
+    - component_id: simulation_engine
+      name: Simulation engine (non-theories)
+      paths:
+        - synthed/simulation/**
+        - "!synthed/simulation/theories/**"
+      statuses:
+        - type: project
+          target: 90%
+          threshold: 2%
+    - component_id: agents
+      name: Agent layer
+      paths:
+        - synthed/agents/**
+      statuses:
+        - type: project
+          target: 88%
+          threshold: 2%
+    - component_id: validation
+      name: Validation suite
+      paths:
+        - synthed/validation/**
+      statuses:
+        - type: project
+          target: 90%
+          threshold: 2%
+    - component_id: data_output
+      name: Data export
+      paths:
+        - synthed/data_output/**
+      statuses:
+        - type: project
+          target: 90%
+          threshold: 2%
+    - component_id: utils
+      name: Utilities
+      paths:
+        - synthed/utils/**
+      statuses:
+        - type: project
+          target: 90%
+          threshold: 2%
+    - component_id: pipeline
+      name: Pipeline orchestration
+      paths:
+        - synthed/pipeline.py
+        - synthed/pipeline_config.py
+        - synthed/calibration.py
+      statuses:
+        - type: project
+          target: 95%
+          threshold: 2%
+    - component_id: benchmarks
+      name: Benchmark profiles
+      paths:
+        - synthed/benchmarks/**
+      statuses:
+        - type: project
+          target: 95%
+          threshold: 2%
+    - component_id: analysis
+      name: Calibration & analysis
+      paths:
+        - synthed/analysis/**
+      statuses:
+        - type: project
+          target: 70%
+          threshold: 2%
+          informational: true   # roadmap Phase 1.5 lifts this toward 85%
+    - component_id: dashboard
+      name: Interactive dashboard
+      paths:
+        - synthed/dashboard/**
+      statuses:
+        - type: project
+          target: 70%
+          threshold: 5%
+          informational: true   # Shiny UI, exercised via Playwright
+
+# ── PR comment ─────────────────────────────────────────────────────
+comment:
+  layout: "header, diff, components, files, footer"
+  behavior: default
+  require_changes: true     # only post when coverage actually moves
+  require_base: false
+  require_head: true
+
+# ── Codecov-side validation ────────────────────────────────────────
+# Codecov-validation: this file is parsed at CI time; if invalid the
+# upload still succeeds but no statuses post.
+github_checks:
+  annotations: true
