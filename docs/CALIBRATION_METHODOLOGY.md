@@ -4,7 +4,7 @@
 
 ## 1. Overview
 
-SynthEd calibrates 70 engine constants against the Open University Learning Analytics Dataset (OULAD; Kuzilek et al., 2017) using a three-stage pipeline:
+SynthEd calibrates 68 tunable simulation parameters spanning 13 modules (engine, theory anchors, grading, institutional, persona) against the Open University Learning Analytics Dataset (OULAD; Kuzilek et al., 2017) using a three-stage pipeline. After Sobol screening, 20 of these are actively optimized by NSGA-II; the remainder are fixed at profile defaults. (Note: the dashboard's "Engine Constants" panel exposes all 70 fields of the `EngineConfig` dataclass; only 15 of those are in the Sobol candidate set.)
 
 ```
 Sobol Global Sensitivity Analysis → NSGA-II Multi-Objective Optimization → Cross-Seed Validation
@@ -43,7 +43,7 @@ Total simulations = n_samples × (D + 2)
 
 where D = 68 parameters. This generates a base sample matrix and D perturbation matrices, allowing efficient computation of both S1 (first-order) and ST (total-order) indices.
 
-**Reference:** Saltelli, A. (2002). "Making best use of model evaluations to compute sensitivity indices." *Computer Methods in Applied Mechanics and Engineering*, 280, 3161-3190.
+**Reference:** Saltelli, A. (2002). "Making best use of model evaluations to compute sensitivity indices." *Computer Physics Communications*, 145(2), 280-297.
 
 ### Parameter: `n_samples = 512`
 
@@ -254,14 +254,14 @@ At pop_size=200, 62,000 evaluations yield 310 generations — comfortably within
 **Convergence verification:** Hypervolume Indicator (HV) tracking per generation. Convergence is declared when HV improvement < 0.1% over 20 consecutive generations. If convergence is reached before generation 310, the remaining generations serve as confirmation of stability.
 
 **References:**
-- Branke, J. (2001). "Evolutionary optimization in uncertain environments — a survey." *CEC 2001*.
+- Jin, Y. & Branke, J. (2005). "Evolutionary optimization in uncertain environments — a survey." *IEEE Transactions on Evolutionary Computation*, 9(3), 303-317.
 - Ishibuchi, H., Imada, R., Setoguchi, Y., & Nojima, Y. (2017). "How to specify a reference point in hypervolume calculation." *GECCO 2017*.
 
 ### Strengthening: Re-evaluation and Replication
 
-**Re-evaluation (N=2,000):** After NSGA-II completes, each Pareto front solution is re-evaluated with N=2,000 students. This reduces the SE of each solution's objectives from 2.07% (N=500) to 1.03% (N=2,000), ensuring the knee-point selection is not distorted by calibration-phase noise.
+**Re-evaluation (N=2,000):** After NSGA-II completes, each Pareto front solution is re-evaluated with N=2,000 students. This reduces the SE of each solution's objectives from 2.07% (N=500) to 1.04% (N=2,000), ensuring the knee-point selection is not distorted by calibration-phase noise.
 
-**Replicated calibration:** The full NSGA-II is run with two different optimizer seeds (42 and 2024). If both runs converge to similar knee-point parameter vectors (Euclidean distance < 0.1 in normalized space), the calibration is robust. If they diverge, the landscape has multiple optima and the Pareto front is underexplored.
+**Replicated calibration:** The full NSGA-II is run with two different optimizer seeds (42 and 2024). The cross-seed knee-point distance (`compare_knee_points` in `pareto_utils.py`) is reported as an **informational** measurement — the historical "robust if < 0.1" rule was a heuristic, not a Fisher Information-derived threshold. Cross-seed parameter divergence is the expected signature of the parameter non-identifiability discussed in §7.3 (20 free parameters fit to 2 scalar objectives), not evidence of optimizer failure. The Pareto front re-evaluation reduces noise-induced selection error in knee-point identification regardless of cross-seed parameter scatter.
 
 ## 4. Cross-Seed Validation
 
@@ -328,7 +328,7 @@ At k=10, we can claim (95% confidence) that 95% of seeds produce dropout rates w
 
 ```python
 # Sobol global sensitivity analysis
-sobol_n_samples = 512          # Saltelli base count; total sims = 512 × 70 = 35,840
+sobol_n_samples = 512          # Saltelli base count; total sims = 512 × (D + 2) = 512 × 70 = 35,840 for D = 68
 sobol_n_students = 500         # Students per Sobol simulation
 sobol_top_n = 20               # Top parameters selected for NSGA-II
 gpa_force_include = {           # Always included regardless of Sobol rank
@@ -365,7 +365,7 @@ workers = 8                    # Parallel processes (50% of 16 cores)
 | Sobol | 35,840 | 500 | ~65 min |
 | NSGA-II (seed 42) | 62,000 | 500 | ~115 min |
 | NSGA-II (seed 2024) | 62,000 | 500 | ~115 min |
-| Re-evaluation | ~60 | 2,000 | ~1 min |
+| Re-evaluation | ≤ pareto_size × 3 (typically 9–60) | 2,000 | ~1 min |
 | Validation | 10 | 1,000 | <1 min |
 | **Total** | **~160,000** | | **~5 hours** |
 
@@ -397,7 +397,7 @@ The following diagnostic visualizations should accompany calibration results:
 
 6. **Cohen's d effect sizes** — Effect size between SynthEd outputs and OULAD reference statistics for each validation metric.
 
-7. **Replicated calibration comparison** — Overlay Pareto fronts from seed=42 and seed=2024. Agreement = robust calibration.
+7. **Replicated calibration comparison** — Overlay Pareto fronts from seed=42 and seed=2024. Agreement at the *output* level (dropout, GPA) confirms search reproducibility; cross-seed *parameter* divergence is informational only and reflects the structural non-identifiability discussed in §7.3.
 
 ## 7. Limitations & Identifiability
 
@@ -425,7 +425,7 @@ This is the expected statistical signature of a **non-identifiable model under m
 ### 7.4 Practical implications for users of v1.7.0
 
 - **Output level (synthetic cohorts)**: safe to use. Whichever knee-point parameter vector is shipped, dropout and GPA distributions match the OULAD reference within the noise floor in §7.2.
-- **Parameter level (calibrated constants)**: the values reported in `calibration_output/nsga2_default_seed*.json` are **one valid solution among many**. The non-grading parameters (e.g. `_DECISION_RISK_MULTIPLIER`, `_MISSED_STREAK_PENALTY`, `_TINTO_DECAY_BASE`) should not be interpreted, plotted, or compared as physical constants until the multi-objective calibration described in §7.5 is in place. Of the four force-included grading parameters, only the two grading-formula parameters (`grade_floor`, `pass_threshold`) converge tightly across seeds (normalized cross-seed difference < 0.05) and are safe to interpret in v1.7.0; the GPA-weight parameters (`_ASSIGN_GPA_WEIGHT`, `_EXAM_GPA_WEIGHT`) show partial convergence (normalized differences ~0.13 and ~0.42 respectively) and should be interpreted with caution.
+- **Parameter level (calibrated constants)**: the values reported in `calibration_output/nsga2_default_seed*.json` are **one valid solution among many**. The non-grading parameters (e.g. `_DECISION_RISK_MULTIPLIER`, `_MISSED_STREAK_PENALTY`, `_TINTO_DECAY_BASE`) should not be interpreted, plotted, or compared as physical constants until the multi-objective calibration described in §7.5 is in place. Of the four force-included grading parameters, only the two grading-formula parameters (`grade_floor`, `pass_threshold`) converge tightly across seeds (normalized cross-seed difference < 0.05) and are safe to interpret in v1.7.0; the GPA-weight parameters show partial convergence — `_EXAM_GPA_WEIGHT` (normalized difference ~0.13) is moderate, and `_ASSIGN_GPA_WEIGHT` (normalized difference ~0.42) is in the same poorly-identified regime as the unconstrained non-grading parameters and should be interpreted with caution.
 
 ### 7.5 Planned identifiability improvements
 
@@ -452,7 +452,7 @@ These changes are expected to reduce cross-seed knee-point distance below 0.20 o
 - Kuzilek, J., Hlosta, M., & Zdrahal, Z. (2017). Open university learning analytics dataset. *Scientific Data*, 4, 170171.
 - Law, A.M. (2015). *Simulation Modeling and Analysis* (5th ed.). McGraw-Hill Education.
 - Ligmann-Zielinska, A. et al. (2020). One size does not fit all: A roadmap of purpose-driven mixed-method pathways for sensitivity analysis of agent-based models. *JASSS*, 23(1), 6.
-- Saltelli, A. (2002). Making best use of model evaluations to compute sensitivity indices. *CMAME*, 280, 3161-3190.
+- Saltelli, A. (2002). Making best use of model evaluations to compute sensitivity indices. *Computer Physics Communications*, 145(2), 280-297. https://doi.org/10.1016/S0010-4655(02)00280-1
 - Saltelli, A. et al. (2008). *Global Sensitivity Analysis: The Primer*. Wiley.
 - Saltelli, A. et al. (2010). Variance based sensitivity analysis of model output. *CPC*, 181(2), 259-270.
 - Ten Broeke, G., Van Voorn, G., & Ligtenberg, A. (2016). Which sensitivity analysis method should I use for my agent-based model? *JASSS*, 19(1), 5.
