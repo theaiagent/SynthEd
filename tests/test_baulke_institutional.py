@@ -245,7 +245,11 @@ class TestIntegrationDropoutRate:
         return _run
 
     def test_high_ssq_lower_dropout(self, _run_simulation):
-        """SSQ=0.8 should produce lower mean dropout than SSQ=0.5 (10 seeds, eps=0.010)."""
+        """SSQ=0.8 should produce lower mean dropout than SSQ=0.5 (10 seeds, eps=0.010).
+
+        Directional smoke test. Not a regression guard for true effect sizes
+        below ~0.015 — eps=0.010 is a pending empirical calibration (issue #86).
+        """
         seeds = list(range(41, 51))
         default_rate = sum(_run_simulation(0.5, seed=s) for s in seeds) / len(seeds)
         high_ssq_rate = sum(_run_simulation(0.8, seed=s) for s in seeds) / len(seeds)
@@ -254,7 +258,11 @@ class TestIntegrationDropoutRate:
         )
 
     def test_low_ssq_higher_dropout(self, _run_simulation):
-        """SSQ=0.2 should produce higher mean dropout than SSQ=0.5 (10 seeds, eps=0.010)."""
+        """SSQ=0.2 should produce higher mean dropout than SSQ=0.5 (10 seeds, eps=0.010).
+
+        Directional smoke test. Not a regression guard for true effect sizes
+        below ~0.015 — eps=0.010 is a pending empirical calibration (issue #86).
+        """
         seeds = list(range(41, 51))
         default_rate = sum(_run_simulation(0.5, seed=s) for s in seeds) / len(seeds)
         low_ssq_rate = sum(_run_simulation(0.2, seed=s) for s in seeds) / len(seeds)
