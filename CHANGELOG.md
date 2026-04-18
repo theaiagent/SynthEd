@@ -4,6 +4,9 @@ All notable changes to SynthEd are documented here.
 
 ## [Unreleased]
 
+### Fixed
+- **Flaky `test_high_ssq_lower_dropout` / `test_low_ssq_higher_dropout`** (`tests/test_baulke_institutional.py`): the 3-seed × n=200 design gave a per-seed dropout std ≈0.0337 (SE ≈0.0195 across 3 seeds), so the 0.005 assertion threshold was ~0.26σ — well within seed variance. CI observed `diff=0.002` on Python 3.10, triggering fail-fast that also cancelled the 3.12 job. Raised seed count to 10 (seeds 41..50) and epsilon to 0.010 symmetrically for both directional tests; new SE ≈0.011 puts the threshold at ~0.9σ — still directional, no longer flaky. Full suite: 812 passed in 124s locally.
+
 ## [1.7.0] - 2026-04-18
 
 ### Changed
