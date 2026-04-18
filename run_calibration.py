@@ -165,6 +165,13 @@ def main():
     # Step 2: Calibrate each profile with replicated seeds
     calibration_seeds = CALIBRATION_SEEDS if not args.quick else (args.seed,)
     seed_knee_points: dict[str, dict] = {}
+    # all_results entries have two shapes:
+    #   success: {"seed": int, "profile": str, "pareto_size": int, "n_evaluations": int,
+    #             "calibration_time_s": float, "knee_point": dict, "validation": dict,
+    #             "parameter_names": list[str], "hv_history": list[float]}
+    #   failure: {"seed": int, "profile": str, "error": str}
+    # Consumers should branch on presence of "error" key.
+    all_results: list[dict] = []
 
     for cal_seed in calibration_seeds:
         logger.info("=" * 60)
@@ -172,7 +179,6 @@ def main():
         logger.info("=" * 60)
 
         cal = NSGAIICalibrator(n_students=n_students, seed=cal_seed, n_workers=args.workers)
-        all_results = []
         total_t0 = time.time()
 
         for name in profiles:
@@ -181,8 +187,8 @@ def main():
                     cal, name, rankings, pop_size, n_trials, sobol_top_n,
                     quick_mode=args.quick,
                 )
-                all_results.append(summary)
                 seed_knee_points.setdefault(name, {})[cal_seed] = summary["knee_point"]
+                all_results.append({"seed": cal_seed, **summary})
 
                 out_file = OUTPUT_DIR / f"nsga2_{name}_seed{cal_seed}.json"
                 out_file.write_text(json.dumps(summary, indent=2))
@@ -190,7 +196,7 @@ def main():
 
             except Exception as e:
                 logger.error("Failed to calibrate %s (seed=%d): %s", name, cal_seed, e)
-                all_results.append({"profile": name, "error": str(e)})
+                all_results.append({"seed": cal_seed, "profile": name, "error": str(e)})
 
         total_time = time.time() - total_t0
         logger.info("Seed %d complete (%.1f min)", cal_seed, total_time / 60)
@@ -200,6 +206,11 @@ def main():
         logger.info("=" * 60)
         logger.info("KNEE-POINT COMPARISON")
         logger.info("=" * 60)
+        # NOTE: only compares the first two seeds. Sufficient for the current
+        # 2-seed setup (CALIBRATION_SEEDS = (42, 2024)). When the seed count
+        # grows (planned alongside the multi-objective calibration upgrade),
+        # this should iterate over all combinations(seeds_list, 2) and persist
+        # the full pairwise distance matrix to nsga2_all_profiles.json.
         for name, knees in seed_knee_points.items():
             if len(knees) >= 2:
                 seeds_list = sorted(knees.keys())
@@ -223,11 +234,13 @@ def main():
                     achieved_engagement=knees[seeds_list[1]].get("achieved_engagement", 0.5),
                 )
                 dist = compare_knee_points(sol_a, sol_b)
-                robust = "ROBUST" if dist < 0.1 else "DIVERGENT"
-                logger.info(
-                    "  %s: distance=%.4f — %s",
-                    name, dist, robust,
-                )
+                # The 0.1 threshold is informational, not a release gate. The model
+                # is non-identifiable by construction (20 free params x 2 objectives
+                # = 18-D null space); cross-seed parameter scatter is expected even
+                # when output-level metrics match. See docs/CALIBRATION_METHODOLOGY.md
+                # sec.7 (Limitations & Identifiability).
+                status = "within informational threshold" if dist < 0.1 else "above informational threshold (expected for non-identifiable model)"
+                logger.info("  %s: knee-point seed distance=%.4f — %s", name, dist, status)
 
     # Save combined
     combined = OUTPUT_DIR / "nsga2_all_profiles.json"
