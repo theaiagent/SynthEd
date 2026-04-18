@@ -258,7 +258,7 @@ pipeline = SynthEdPipeline(grading_config=config)
 | `pass_threshold` | `0.64` | Minimum transcript score to pass |
 | `distinction_threshold` | `0.73` | Minimum transcript score for distinction |
 | `grade_floor` | `0.45` | Floor applied to transcript GPA (not perceived mastery) |
-| `assessment_mode` | `"mixed"` | `"mixed"` (midterm+final), `"continuous"`, or `"exam_only"` |
+| `assessment_mode` | `"mixed"` | `"mixed"` (midterm + final), `"continuous"` (midterm only, no final), or `"exam_only"` (final only) |
 
 **Notes:**
 - `grade_floor` affects transcript GPA and outcome classification only. Theory modules (Kember, SDT, Baulke) use `perceived_mastery` (raw, no floor) for dropout signals.
@@ -293,7 +293,7 @@ report = pipeline.run(n_students=300)
 
 | Semesters | Default Dropout Rate (base=0.46) | Quality |
 |-----------|----------------------------------|---------|
-| 1 (14 weeks) | ~40% | A (Excellent) |
+| 1 (14 weeks) | ~38% | A (Excellent) |
 | 2 (28 weeks) | ~68% | B (Good) |
 | 4 (56 weeks) | ~91% | B (Good) |
 
