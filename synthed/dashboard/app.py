@@ -162,10 +162,17 @@ app_ui = ui.page_navbar(
         ui.tags.script(
             """
             function applyNumericLocale(root) {
-                (root || document).querySelectorAll('input[type="number"]').forEach(function(el) {
-                    if (!el.hasAttribute('lang')) el.setAttribute('lang', 'en');
-                    if (!el.hasAttribute('inputmode')) el.setAttribute('inputmode', 'decimal');
-                });
+                function setNumericLocale(el) {
+                    el.setAttribute('lang', 'en');
+                    el.setAttribute('inputmode', 'decimal');
+                }
+                var scope = root || document;
+                // Process the root node itself (MutationObserver may pass an
+                // <input> directly when one is added without a wrapper).
+                if (scope.matches && scope.matches('input[type="number"]')) {
+                    setNumericLocale(scope);
+                }
+                scope.querySelectorAll('input[type="number"]').forEach(setNumericLocale);
             }
             document.addEventListener('DOMContentLoaded', function() {
                 document.documentElement.lang = 'en';

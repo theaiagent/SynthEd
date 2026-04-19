@@ -118,7 +118,7 @@ body {
     outline: 2px solid var(--accent) !important;
     outline-offset: 2px !important;
 }
-.accordion-button:focus, .btn:focus, .preset-btn:focus {
+.accordion-button:focus-visible, .btn:focus-visible, .preset-btn:focus-visible {
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5) !important;
 }
 .irs--shiny .irs-handle:focus-visible {

@@ -108,9 +108,16 @@ def test_focus_visible_outline_present():
     assert "*:focus-visible" in css, (
         ":focus-visible rule missing — keyboard navigation has no visible focus indicator"
     )
-    # Outline width must be at least 2px (3 is also acceptable)
-    assert re.search(r"\*:focus-visible\s*\{[^}]*outline:\s*[23]px\s+solid", css), (
-        ":focus-visible outline must be ≥2px solid for visibility"
+    # Outline width must be at least 2px; accept any width to leave room for
+    # future tuning without churning the regex.
+    outline = re.search(
+        r"\*:focus-visible\s*\{[^}]*outline:\s*(\d+(?:\.\d+)?)px\s+solid",
+        css,
+    )
+    assert outline, ":focus-visible outline must be present and solid"
+    assert float(outline.group(1)) >= 2, (
+        f":focus-visible outline must be ≥2px solid for visibility "
+        f"(found {outline.group(1)}px)"
     )
 
 
