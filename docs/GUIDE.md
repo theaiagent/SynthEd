@@ -94,7 +94,7 @@ Opens at `http://127.0.0.1:8080` by default. Environment variables:
 
 **Features:**
 - **Research**: Persona, Institutional, Grading parameters via accordion panels
-- **Calibrate** *(skeleton)*: placeholder tab for upcoming OULAD-indexed calibration tooling — reference overlays, validation scorecard, Pareto viewer, and HV convergence
+- **Calibrate** *(skeleton)*: placeholder tab for upcoming OULAD-indexed calibration tooling — reference overlays, validation scorecard, Pareto viewer, HV convergence, and cross-seed distance comparison (42 vs 2024)
 - **Engine Constants**: 70 advanced parameters in a slide-out panel
 - **Presets**: Default, High Risk, Low Dropout — one-click configuration
 - **Distributions**: 7 probability distributions with slider + numeric stepper, reactive sum validation (must equal 1.0)
@@ -160,8 +160,9 @@ Theory modules implement a phase-based protocol for engine dispatch:
 - `on_individual_step(ctx)` — Phase 1 per-student updates (Tinto, Garrison, SDT)
 - `on_network_step(ctx)` — Phase 2 collective network update (Epstein)
 - `on_post_peer_step(ctx)` — Phase 2 per-student post-peer (Epstein peer influence, Baulke)
+- `contribute_engagement_delta(ctx) -> float` — Engagement phase: each theory returns a per-step engagement adjustment that the engine sums into the weekly engagement update
 
-New theories are auto-discovered from `synthed/simulation/theories/` — no engine changes needed. Execution order controlled by `_PHASE_ORDER` class attribute.
+New theories are auto-discovered from `synthed/simulation/theories/` — no engine changes needed. Execution order is controlled by two class attributes: `_PHASE_ORDER` orders `on_individual_step` discovery, and `_ENGAGEMENT_ORDER` orders the engagement-phase dispatch (lower values run first).
 
 ---
 
@@ -254,10 +255,10 @@ pipeline = SynthEdPipeline(grading_config=config)
 | `distribution` | `"beta"` | Grade distribution: `"beta"`, `"normal"`, `"uniform"` |
 | `midterm_weight` | `0.4` | Midterm contribution to semester grade |
 | `final_weight` | `0.6` | Final exam contribution to semester grade |
-| `pass_threshold` | `0.50` | Minimum transcript score to pass |
-| `distinction_threshold` | `0.85` | Minimum transcript score for distinction |
+| `pass_threshold` | `0.64` | Minimum transcript score to pass |
+| `distinction_threshold` | `0.73` | Minimum transcript score for distinction |
 | `grade_floor` | `0.45` | Floor applied to transcript GPA (not perceived mastery) |
-| `assessment_mode` | `"continuous"` | `"continuous"` (midterm+final) or `"exam_only"` |
+| `assessment_mode` | `"mixed"` | `"mixed"` (midterm + final), `"continuous"` (midterm only, no final), or `"exam_only"` (final only) |
 
 **Notes:**
 - `grade_floor` affects transcript GPA and outcome classification only. Theory modules (Kember, SDT, Baulke) use `perceived_mastery` (raw, no floor) for dropout signals.
@@ -314,13 +315,13 @@ report = pipeline.run(n_students=300)
 | Carries Over | Resets |
 |-------------|--------|
 | Academic integration | Weekly engagement history |
-| Social integration (decayed 20%) | Memory/event log |
+| Social integration (70% retained) | Memory/event log |
 | Engagement (with +0.05 recovery) | Missed assignments streak |
 | Dropout phase (regressed by 1) | Dropout status |
 | Cost-benefit (with +0.03 recovery) | Network links (decayed) |
 | Prior GPA (60/40 blend with earned GPA) | |
 | Coping factor (70% retained) | |
-| Exhaustion (reduced 70%) | |
+| Exhaustion (reduced 60%) | |
 
 ---
 
@@ -353,11 +354,13 @@ md = gen.generate_report(output_dir="./benchmarks")  # writes benchmark_report.m
 
 ## 🔬 Calibration Pipeline
 
-Four-phase pipeline for tuning SynthEd parameters against real data (e.g., OULAD).
+SynthEd's **standard calibration** (`run_calibration.py`) runs two stages: Sobol global sensitivity analysis followed by NSGA-II multi-objective optimization. The script does *not* chain through `TraitCalibrator` or `validate_against_oulad` — those are standalone single-objective utilities you can invoke independently when their narrower scope fits the task. The statistical power analysis and parameter choices are documented in [`CALIBRATION_METHODOLOGY.md`](CALIBRATION_METHODOLOGY.md).
 
-### Phase 1: Sobol Sensitivity Analysis
+### Standard Pipeline
 
-Identifies which parameters most influence outcomes:
+#### 1. Sobol Global Sensitivity Analysis
+
+Identifies which parameters most influence the simulation outputs. The top-ranked parameters are then handed off to NSGA-II.
 
 ```python
 from synthed.analysis.sobol_sensitivity import SobolAnalyzer
@@ -365,14 +368,37 @@ from synthed.analysis.sobol_sensitivity import SobolAnalyzer
 analyzer = SobolAnalyzer(n_students=500, seed=42)
 results = analyzer.run(n_samples=512)
 
-rankings = analyzer.rank(results[0], top_n=15)
+rankings = analyzer.rank(results[0], top_n=20)
 for r in rankings:
     print(f"{r.rank:2d}. {r.parameter:<40s} ST={r.st:.4f}")
 ```
 
-### Phase 2: Bayesian Optimization
+#### 2. NSGA-II Multi-Objective Calibration
 
-Optimizes top parameters against reference data:
+Explores the Pareto front for the dropout and GPA objectives jointly, rather than collapsing them into a single weighted loss. The knee-point of the front is the recommended compromise solution.
+
+```python
+from synthed.analysis.nsga2_calibrator import NSGAIICalibrator
+
+calibrator = NSGAIICalibrator(n_students=500, seed=42, n_workers=4)
+result = calibrator.run("default", n_trials=62_000)
+print(f"Pareto front: {len(result.pareto_front)} solutions")
+print(f"Knee-point dropout error: {result.knee_point.dropout_error:.4f}")
+```
+
+The full production invocation (both seeds, re-evaluation, and held-out validation) is wired up in `run_calibration.py`. Reproduce a release run with:
+
+```bash
+python run_calibration.py --workers 8
+```
+
+### Optional Helpers
+
+These utilities are **not** invoked by `run_calibration.py`. Use them standalone when their narrower objective matches your task.
+
+#### TraitCalibrator — single-objective Bayesian optimization
+
+Weighted composite loss (default: 50% dropout + 30% GPA + 20% engagement) minimized by Optuna TPE. Use this when you want a quick single-solution fit and do not need the Pareto-front trade-off view.
 
 ```python
 from synthed.analysis.trait_calibrator import TraitCalibrator, select_top_parameters
@@ -388,7 +414,9 @@ print(f"Dropout: {result.target_dropout:.1%} -> {result.achieved_dropout:.1%}")
 print(f"GPA: {result.target_gpa:.3f} -> {result.achieved_gpa:.3f}")
 ```
 
-### Phase 3: Held-Out Validation
+#### validate_against_oulad — held-out validation
+
+Run a calibrated parameter dict against a held-out OULAD slice and receive a pass/fail grade per validation test.
 
 ```python
 from synthed.analysis.oulad_validator import validate_against_oulad
@@ -401,9 +429,9 @@ report = validate_against_oulad(
 print(f"Grade: {report.grade} ({report.passed_count}/{report.total_count})")
 ```
 
-### Auto-Bounds: Adaptive Parameter Space
+#### auto_bounds — adaptive parameter space
 
-When you change `PersonaConfig` defaults, use `auto_bounds()` to generate matching bounds:
+When you change `PersonaConfig` defaults, use `auto_bounds()` to generate matching parameter bounds for Sobol or NSGA-II custom runs.
 
 ```python
 from synthed.analysis.auto_bounds import auto_bounds
@@ -423,21 +451,6 @@ params = auto_bounds(config=my_config, margin=0.3)
 | `include_engine` | True | Include engine constants |
 | `include_theories` | True | Include theory module constants |
 | `exclude` | `frozenset()` | Specific parameters to skip |
-
-### Phase 4: NSGA-II Multi-Objective Calibration
-
-When dropout and GPA objectives conflict, NSGA-II explores the Pareto front instead of collapsing to a single weighted loss:
-
-```python
-from synthed.analysis.nsga2_calibrator import NSGAIICalibrator
-
-calibrator = NSGAIICalibrator(n_students=500, seed=42, n_workers=4)
-result = calibrator.run("default", n_trials=62_000)
-print(f"Pareto front: {len(result.pareto_front)} solutions")
-print(f"Knee-point dropout error: {result.knee_point.dropout_error:.4f}")
-```
-
-The knee-point solution balances both objectives and is recommended as the default starting point for further tuning.
 
 ---
 
@@ -580,12 +593,14 @@ pipeline = SynthEdPipeline(engine_config=custom_cfg, output_dir="./output", seed
 | `engine.*` | EngineConfig | `engine._TINTO_DECAY_BASE` |
 | `tinto.*` | TintoIntegration | `tinto._ACADEMIC_EROSION` |
 | `bean.*` | BeanMetznerPressure | `bean._EMPLOYMENT_PRESSURE_FACTOR` |
+| `kember.*` | KemberCostBenefit | `kember._QUALITY_FACTOR` |
 | `baulke.*` | BaulkeDropoutPhase | `baulke._DECISION_RISK_MULTIPLIER` |
 | `sdt.*` | SDTMotivationDynamics | `sdt._INTRINSIC_THRESHOLD` |
 | `rovai.*` | RovaiPersistence | `rovai._FLOOR_SCALE` |
 | `garrison.*` | GarrisonCoI | `garrison._SOCIAL_DECAY` |
 | `gonzalez.*` | GonzalezExhaustion | `gonzalez._ENGAGEMENT_IMPACT` |
 | `moore.*` | MooreTransactionalDistance | `moore._STRUCTURE_WEIGHT` |
+| `grading.*` | GradingConfig | `grading.pass_threshold` |
 | `inst.*` | InstitutionalConfig | `inst.technology_quality` |
 
 ---
@@ -701,7 +716,7 @@ config = PersonaConfig(
 
 #### Low validation grade
 
-**Symptom:** `Quality: D (12/21 tests passed)`
+**Symptom:** `Quality: D (12/22 tests passed)`
 
 **Context:** Population too small for reliable statistics, or PersonaConfig far from reference defaults.
 
@@ -722,7 +737,7 @@ config = PersonaConfig(
 3. Too high? Decrease `dropout_base_rate` or increase `self_regulation_mean`
 4. N < 100 → high variance between runs
 
-> **Why:** `dropout_base_rate` is a scaling factor, not the literal rate. The `CalibrationMap` maps target rates to base rates via interpolation. Calibrated range: ~0.21 to ~0.46 for 1 semester.
+> **Why:** `dropout_base_rate` is a scaling factor, not the literal rate. The `CalibrationMap` maps target rates to base rates via interpolation. Observed 1-semester range across the `CALIBRATION_DATA` grid: ~0.25 to ~0.48 (measured dropout_rate at base_rate 0.20 → 0.95, N=500, 5 seeds).
 
 ---
 

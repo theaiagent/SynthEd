@@ -7,6 +7,8 @@
 - [Factor Clusters](#-factor-clusters)
 - [Design Decision: ODE is not Campus](#-design-decision-ode-is-not-campus)
 - [Emergent Properties](#-emergent-properties)
+- [Institutional Quality](#-institutional-quality)
+- [Grading and Outcome Classification](#-grading-and-outcome-classification)
 - [Project Structure](#-project-structure)
 - [Validation Suite](#-validation-suite)
 - [Test Suite](#-test-suite)
@@ -55,7 +57,7 @@ flowchart TD
 
     EX --> VAL
 
-    subgraph VAL ["Validation Suite -- 21 statistical tests"]
+    subgraph VAL ["Validation Suite -- 22-24 statistical tests"]
         direction LR
         V1["L1: Distributions"]
         V2["L2: Correlations"]
@@ -96,7 +98,7 @@ Organized using Rovai's (2003) composite persistence model:
 | **Student Skills** | self_regulation, digital_literacy, time_management, learner_autonomy | Rovai, Moore, Baulke |
 | **External Factors** | employment_intensity, family_responsibility_level, financial_stress | Bean & Metzner, Economic Rationality |
 | **Internal Factors** | academic_integration, social_integration, self_efficacy | Tinto, Bandura |
-| **Emergent Properties** | social_presence, cognitive_presence, teaching_presence | Garrison et al. |
+| **Emergent Properties** | `social_presence`, `cognitive_presence`, `teaching_presence` (emergent; stored on `SimulationState.coi_state`, not on `StudentPersona`) | Garrison et al. |
 | **Network Properties** | network_degree, peer influence, dropout contagion | Epstein & Axtell |
 
 ---
@@ -137,7 +139,7 @@ Each parameter ranges 0-1 with 0.5 as neutral. The `scale_by()` method applies m
 
 ---
 
-## 📊 Grading & Outcome Classification
+## 📊 Grading and Outcome Classification
 
 SynthEd supports two grading methods via `GradingConfig`:
 
@@ -172,7 +174,7 @@ SynthEd/
 │   │   ├── oulad_exporter.py    # OULAD-compatible 7-table export
 │   │   └── oulad_mappings.py    # OULAD schema mappings
 │   ├── validation/
-│   │   ├── validator.py         # 21 statistical validation tests
+│   │   ├── validator.py         # 22 statistical validation tests (default; up to 24 with backstory validation)
 │   │   └── types.py             # ReferenceStatistics, ValidationResult
 │   ├── analysis/
 │   │   ├── sensitivity.py       # OAT parameter sweeps
@@ -187,6 +189,18 @@ SynthEd/
 │   ├── benchmarks/
 │   │   ├── profiles.py          # Default benchmark profile
 │   │   └── generator.py         # Benchmark dataset generator + report
+│   ├── dashboard/
+│   │   ├── __main__.py          # `python -m synthed.dashboard` entry point
+│   │   ├── app.py               # Shiny for Python app (reactive UI, simulation runner)
+│   │   ├── theme.py             # Dark/light theme color palette (WCAG AA contrast)
+│   │   ├── charts.py            # Plotly chart builders (on-screen)
+│   │   ├── config_bridge.py     # Frozen config dataclasses <-> reactive UI values
+│   │   └── components/          # param_panel, distribution_editor, warnings, results_panel
+│   ├── report/
+│   │   ├── generator.py         # HTML/PDF report generator (optional deps: jinja2, playwright)
+│   │   ├── charts.py            # Print-friendly chart builders (white bg, dark text)
+│   │   ├── translations.py      # i18n strings (EN/TR)
+│   │   └── templates/report.html
 │   ├── utils/
 │   │   ├── llm.py               # OpenAI wrapper with cache, cost, streaming
 │   │   ├── llm_memory.py        # Immutable ConversationMemory
@@ -209,15 +223,15 @@ SynthEd/
 
 ## ✅ Validation Suite
 
-21 statistical tests across 5 levels:
+22 statistical tests (default; up to 24 with backstory validation) across 5 levels:
 
 | Level | Tests | Method |
 |-------|-------|--------|
 | **L1: Distributions** | age, gender, employment, GPA, dropout | KS-test, chi-squared, z-test, range check |
-| **L2: Correlations** | conscientiousness-dropout, self-efficacy-engagement, self-regulation-engagement, financial-stress-dropout, goal-commitment-engagement, autonomy-engagement, CoI-engagement, network-engagement, cost-benefit-engagement, GPA-dropout, SDT motivation, Baulke phases | Point-biserial r, Pearson r, t-test |
+| **L2: Correlations** | conscientiousness-dropout, self-efficacy-engagement, self-regulation-engagement, financial-stress-dropout, goal-commitment-engagement, autonomy-engagement, CoI-engagement, network-engagement, cost-benefit-engagement, GPA-dropout, engagement-GPA, SDT motivation, Baulke phases | Point-biserial r, Pearson r, t-test |
 | **L3: Temporal** | engagement divergence, negative trend, early attrition | Mean difference, proportion, timing |
 | **L4: Privacy** | k-anonymity | Quasi-identifier grouping |
-| **L5: Backstory** | consistency | Content checks (when LLM enabled) |
+| **L5: Backstory** | non-empty rate, attribute relevance | Content checks (when LLM enabled) |
 
 Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<40%).
 
@@ -229,21 +243,21 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 
 | Test File | Tests | Coverage |
 |-----------|-------|----------|
-| `test_persona.py` | 26 | BigFive, engagement/dropout bounds, UUIDv7, disability |
+| `test_persona.py` | 27 | BigFive, engagement/dropout bounds, UUIDv7, disability |
 | `test_factory.py` | 26 | Population, seed determinism, attribute ranges, display_id |
 | `test_engine.py` | 12 | State, phases, engagement, dropout, std_engagement |
 | `test_social_network.py` | 11 | Links, degree, peer influence, decay, statistics |
 | `test_theories.py` | 29 | All 10 theory modules + unavoidable withdrawal, GPA feedback, coping, disability |
-| `test_pipeline_integration.py` | 11 | Full pipeline, validation, calibration, profiles |
+| `test_pipeline_integration.py` | 25 | Full pipeline, validation, calibration, profiles |
 | `test_semester.py` | 19 | Carry-over, dropout persistence, prior_gpa blend |
 | `test_llm_enrichment.py` | 12 | Mock LLM, backstory export, error handling |
-| `test_llm_client.py` | 27 | Init, chat, retry, cache, cost, base_url, streaming |
+| `test_llm_client.py` | 28 | Init, chat, retry, cache, cost, base_url, streaming |
 | `test_llm_cache.py` | 9 | TTL expiry, LRU eviction, defaults |
 | `test_llm_cost_warning.py` | 11 | Cost estimation, threshold, confirm_callback |
 | `test_llm_memory.py` | 14 | Immutability, role validation, add/clear |
 | `test_backstory_templates.py` | 17 | Templates, life events, regional contexts |
 | `test_name_pools.py` | 11 | Name pools, determinism, country context |
-| `test_sobol.py` | 26 | Parameter space, sampling, overrides, ranking, validation |
+| `test_sobol.py` | 37 | Parameter space, sampling, overrides, ranking, validation |
 | `test_trait_calibration.py` | 39 | OULAD targets, Optuna, loss functions, held-out validation |
 | `test_auto_bounds.py` | 20 | Generation, clipping, filtering, compatibility, edge cases |
 | `test_sensitivity.py` | 2 | OAT sweep, tornado chart |
@@ -254,23 +268,26 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 | `test_dual_track_gpa.py` | 12 | Perceived mastery fields, dual-track recording, theory module switching |
 | `test_opportunity_cost.py` | 5 | Opportunity cost pressure, time discount, backward compat |
 | `test_environmental_shocks.py` | 26 | Shock generation, engine integration, Baulke phase advance |
-| `test_environment.py` | 4 | Courses, exam weeks, positive events |
+| `test_environment.py` | 7 | Courses, exam weeks, positive events |
 | `test_utils.py` | 14 | Validation helpers, logging config |
 | `test_network_scaling.py` | 4 | Degree cap, sampling threshold |
 | `test_coverage_boost.py` | 37 | Edge cases, pipeline branches, Baulke phases |
 | `test_coverage_gaps.py` | 8 | Additional coverage edge cases |
 | `test_institutional_config.py` | 15 | InstitutionalConfig validation, scale_by, defaults |
 | `test_institutional_integration.py` | 5 | Pipeline integration with InstitutionalConfig |
-| `test_nsga2_calibrator.py` | 12 | NSGA-II calibration, Pareto front, knee-point |
-| `test_pareto_utils.py` | 10 | Pareto dominance, front extraction, utilities |
+| `test_nsga2_calibrator.py` | 18 | NSGA-II calibration, Pareto front, knee-point |
+| `test_pareto_utils.py` | 19 | Pareto dominance, front extraction, utilities |
 | `test_unavoidable_withdrawal.py` | 9 | Withdrawal probability, event types |
 | `test_gpa.py` | 9 | GPA accumulation, bounds, feedback loop |
-| `test_grading.py` | 47 | GradingConfig, outcome classification, semester grades |
-| `test_engine_grading.py` | 6 | Engine grading integration, floor-adjusted outcomes |
+| `test_grading.py` | 49 | GradingConfig, outcome classification, semester grades |
+| `test_engine_grading.py` | 14 | Engine grading integration, floor-adjusted outcomes |
 | `test_engine_config.py` | 19 | EngineConfig frozen dataclass, validation, replace |
 | `test_baulke_institutional.py` | 11 | Baulke institutional modulation, threshold scaling |
 | `test_pipeline_config.py` | 19 | PipelineConfig frozen dataclass, serialization |
 | `test_theory_protocol.py` | 32 | TheoryModule protocol, phase dispatch, auto-discovery, engagement deltas |
-| `test_dashboard.py` | 42 | Config bridge round-trip, distribution normalization, validation, chart builders, security, edge cases |
+| `test_dashboard.py` | 41 | Config bridge round-trip, distribution normalization, validation, chart builders, security, edge cases |
+| `test_dashboard_theme.py` | 5 | WCAG AA contrast, light-mode navbar CSS rules, `navbar_options` migration, responsive run-bar layout |
+| `test_dashboard_nav.py` | 3 | Two-panel mode-split skeleton (Research + Calibrate tabs), swap-point IDs, placeholder structure |
+| `test_report.py` | 11 | HTML/PDF rendering, chart figures, Turkish translation, dynamic value substitution, save to disk |
 
 CI runs tests across **Python 3.10, 3.11, and 3.12** via [GitHub Actions](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml).
