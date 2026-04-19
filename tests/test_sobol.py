@@ -91,6 +91,16 @@ class TestParameterValidation:
         with pytest.raises(ValueError, match="Unknown parameter prefix"):
             SobolAnalyzer(n_students=10, parameters=bad)
 
+    def test_invalid_inst_field_raises(self):
+        bad = (SobolParameter("inst.nonexistent_field", 0.1, 0.9, "test"),)
+        with pytest.raises(ValueError, match="Unknown InstitutionalConfig field"):
+            SobolAnalyzer(n_students=10, parameters=bad)
+
+    def test_invalid_grading_field_raises(self):
+        bad = (SobolParameter("grading.nonexistent_field", 0.1, 0.9, "test"),)
+        with pytest.raises(ValueError, match="Unknown GradingConfig field"):
+            SobolAnalyzer(n_students=10, parameters=bad)
+
     def test_default_space_passes_validation(self):
         """Full SOBOL_PARAMETER_SPACE validates without error."""
         analyzer = SobolAnalyzer(n_students=10, seed=42)
@@ -300,6 +310,27 @@ class TestSobolIntegration:
         assert len(rankings) == 2
         assert rankings[0].rank == 1
         assert rankings[1].rank == 2
+
+    @pytest.mark.slow
+    def test_parallel_run_matches_sequential_structure(self):
+        """
+        Parallel branch (`n_workers=2`) must produce the same dict structure
+        and result count as sequential. Uses real ProcessPoolExecutor — mocking
+        would skip the picklability + IPC paths we rely on in production.
+        """
+        subset = (
+            SobolParameter("config.dropout_base_rate", 0.50, 0.90, "Dropout scaling"),
+        )
+        analyzer = SobolAnalyzer(
+            n_students=10, seed=42, parameters=subset, n_workers=2,
+        )
+        results = analyzer.run(n_samples=4)
+        # 1 param → 1*(D+2) = 3 results per metric; 3 metrics
+        assert len(results) == 3
+        for r in results:
+            assert len(r.s1) == 1
+            assert len(r.st) == 1
+            assert r.n_simulations == 4 * (1 + 2)
 
     @pytest.mark.slow
     def test_engine_and_theory_overrides_in_run(self):

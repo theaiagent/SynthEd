@@ -47,9 +47,9 @@ ignore:
 #     once seeded → high coverage achievable
 #   - Validation + utils + data_output: pure logic → high coverage
 #   - Agents + grading: high coverage (mostly deterministic factories)
-#   - Analysis (Sobol, NSGA-II, Pareto): lower target because
-#     calibration runs are expensive integration tests; risk-driven
-#     uplift tracked in roadmap Phase 1.5
+#   - Analysis (Sobol, NSGA-II, Pareto): blocking 85% after Phase 1.5
+#     uplift; the parallel ProcessPoolExecutor branches are exercised
+#     by minimal real runs (n_workers=2) in the test suite
 #   - Dashboard: Shiny + Plotly UI, exercised by Playwright tests;
 #     UI code intrinsically harder to unit-test
 #   - Benchmarks: thin profile dataclasses → 100% achievable
@@ -145,9 +145,8 @@ component_management:
         - synthed/analysis/**
       statuses:
         - type: project
-          target: 70%
+          target: 85%
           threshold: 2%
-          informational: true   # roadmap Phase 1.5 lifts this toward 85%
     - component_id: dashboard
       name: Interactive dashboard
       paths:

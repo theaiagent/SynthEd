@@ -210,7 +210,7 @@ SynthEd/
 │   ├── doc_facts.py             # Documentation consistency checker
 │   ├── pipeline_config.py       # PipelineConfig frozen dataclass (16 params)
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                       # 811 pytest tests across 46 files
+├── tests/                       # 821 pytest tests across 46 files
 ├── docs/
 │   ├── GUIDE.md                 # User guide
 │   └── THEORY.md                # This file
@@ -239,7 +239,7 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 
 ## 🧪 Test Suite
 
-811 pytest tests across 46 files:
+821 pytest tests across 46 files:
 
 | Test File | Tests | Coverage |
 |-----------|-------|----------|
@@ -257,7 +257,7 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 | `test_llm_memory.py` | 14 | Immutability, role validation, add/clear |
 | `test_backstory_templates.py` | 17 | Templates, life events, regional contexts |
 | `test_name_pools.py` | 11 | Name pools, determinism, country context |
-| `test_sobol.py` | 37 | Parameter space, sampling, overrides, ranking, validation |
+| `test_sobol.py` | 40 | Parameter space, sampling, overrides, ranking, validation, parallel branch |
 | `test_trait_calibration.py` | 39 | OULAD targets, Optuna, loss functions, held-out validation |
 | `test_auto_bounds.py` | 20 | Generation, clipping, filtering, compatibility, edge cases |
 | `test_sensitivity.py` | 2 | OAT sweep, tornado chart |
@@ -275,7 +275,7 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 | `test_coverage_gaps.py` | 8 | Additional coverage edge cases |
 | `test_institutional_config.py` | 15 | InstitutionalConfig validation, scale_by, defaults |
 | `test_institutional_integration.py` | 5 | Pipeline integration with InstitutionalConfig |
-| `test_nsga2_calibrator.py` | 18 | NSGA-II calibration, Pareto front, knee-point |
+| `test_nsga2_calibrator.py` | 25 | NSGA-II calibration, Pareto front, knee-point, parallel branch, profile-object signatures |
 | `test_pareto_utils.py` | 19 | Pareto dominance, front extraction, utilities |
 | `test_unavoidable_withdrawal.py` | 9 | Withdrawal probability, event types |
 | `test_gpa.py` | 9 | GPA accumulation, bounds, feedback loop |
