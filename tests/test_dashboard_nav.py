@@ -6,6 +6,7 @@ panels and exposes the PR B swap-point anchor.
 """
 from __future__ import annotations
 
+import ast
 import inspect
 
 from synthed.dashboard import app as dashboard_app
@@ -33,10 +34,15 @@ def test_calibrate_placeholder_has_no_run_button():
     accidentally duplicated the Research content instead of placing a static placeholder.
     """
     src = inspect.getsource(dashboard_app)
-    assert "def calibrate_placeholder_ui" in src, (
-        "calibrate_placeholder_ui() factory must exist"
+    tree = ast.parse(src)
+    func_node = next(
+        (n for n in tree.body
+         if isinstance(n, ast.FunctionDef) and n.name == "calibrate_placeholder_ui"),
+        None,
     )
-    func_src = src.split("def calibrate_placeholder_ui")[1].split("\ndef ")[0]
+    assert func_node is not None, "calibrate_placeholder_ui() factory must exist"
+    func_src = ast.get_source_segment(src, func_node)
+    assert func_src is not None, "could not extract calibrate_placeholder_ui source"
     assert "run_simulation" not in func_src, (
         "Calibrate placeholder must not reference run_simulation (tab is inert in PR A)"
     )
