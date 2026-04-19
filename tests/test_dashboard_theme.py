@@ -97,6 +97,37 @@ def test_app_uses_navbar_options_not_legacy_inverse():
     )
 
 
+def test_focus_visible_outline_present():
+    """P1-6: keyboard focus must paint a visible outline (WCAG 2.4.7).
+
+    The default `outline: 0` from Bootstrap defeats the UA focus ring; we
+    re-introduce a strong outline via `:focus-visible` so mouse clicks stay
+    aesthetically clean while keyboard tabbing gets the high-contrast ring.
+    """
+    css = re.sub(r"\s+", " ", CUSTOM_CSS)
+    assert "*:focus-visible" in css, (
+        ":focus-visible rule missing — keyboard navigation has no visible focus indicator"
+    )
+    # Outline width must be at least 2px (3 is also acceptable)
+    assert re.search(r"\*:focus-visible\s*\{[^}]*outline:\s*[23]px\s+solid", css), (
+        ":focus-visible outline must be ≥2px solid for visibility"
+    )
+
+
+def test_section_heading_class_defined():
+    """P3-2: `.section-heading` class lifts muted text-secondary headings to
+    a stronger heading affordance (uppercase + bold) so 'Distributions',
+    'Presets', 'Gender' etc. read as section anchors, not captions.
+    """
+    css = re.sub(r"\s+", " ", CUSTOM_CSS)
+    match = re.search(r"\.section-heading\s*\{([^}]+)\}", css)
+    assert match, ".section-heading class missing from CUSTOM_CSS"
+    body = match.group(1)
+    assert "text-primary" in body, "section-heading must use --text-primary color"
+    assert "font-weight: 700" in body, "section-heading must be bold (700)"
+    assert "text-transform: uppercase" in body, "section-heading should be uppercase"
+
+
 def test_run_bar_uses_responsive_layout_columns():
     """P0-5: run-bar must use layout_columns with col_widths stacking at <lg.
 

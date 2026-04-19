@@ -105,7 +105,24 @@ body {
 }
 .form-control:focus, .form-select:focus {
     border-color: var(--accent) !important;
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15) !important;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5) !important;
+}
+
+/* P1-6 — Keyboard focus visibility (WCAG 2.4.7).
+   `:focus-visible` only triggers on keyboard navigation, so mouse clicks
+   keep the existing aesthetic; tab/shift-tab gets a strong ring. Modern
+   Chromium/Firefox follow the element's own border-radius for the outline
+   shape, so no `border-radius` override is needed (and one would clobber
+   pill/circular elements like .irs-handle and the `?` tooltip badge). */
+*:focus-visible {
+    outline: 2px solid var(--accent) !important;
+    outline-offset: 2px !important;
+}
+.accordion-button:focus, .btn:focus, .preset-btn:focus {
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5) !important;
+}
+.irs--shiny .irs-handle:focus-visible {
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.45) !important;
 }
 
 /* Labels */
@@ -308,6 +325,17 @@ div.shiny-html-output[id^="chart_"] {
     border-bottom: 1px solid var(--border);
     padding-bottom: 4px;
     margin-top: 12px !important;
+}
+
+/* P3-2 — Section headings ("Distributions", "Presets", "Gender") were
+   muted by `.text-secondary` and read as captions rather than anchors.
+   Stronger weight + uppercase tracking restores the heading affordance. */
+.section-heading {
+    color: var(--text-primary) !important;
+    font-weight: 700 !important;
+    font-size: 12px !important;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
 }
 
 /* Import file input placeholder fix */

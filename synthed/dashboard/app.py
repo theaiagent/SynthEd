@@ -155,6 +155,31 @@ app_ui = ui.page_navbar(
             });
             """
         ),
+        # P1-10 — set root lang and force `lang="en"` + `inputmode="decimal"`
+        # on every numeric input. Shiny renders dynamic editors after page
+        # load (distribution_editors etc.), so a MutationObserver re-applies
+        # the attributes to nodes added later.
+        ui.tags.script(
+            """
+            function applyNumericLocale(root) {
+                (root || document).querySelectorAll('input[type="number"]').forEach(function(el) {
+                    if (!el.hasAttribute('lang')) el.setAttribute('lang', 'en');
+                    if (!el.hasAttribute('inputmode')) el.setAttribute('inputmode', 'decimal');
+                });
+            }
+            document.addEventListener('DOMContentLoaded', function() {
+                document.documentElement.lang = 'en';
+                applyNumericLocale(document);
+                new MutationObserver(function(mutations) {
+                    mutations.forEach(function(m) {
+                        m.addedNodes.forEach(function(n) {
+                            if (n.nodeType === 1) applyNumericLocale(n);
+                        });
+                    });
+                }).observe(document.body, {childList: true, subtree: true});
+            });
+            """
+        ),
     ),
     ui.nav_panel("Research",
         ui.layout_sidebar(
@@ -162,7 +187,7 @@ app_ui = ui.page_navbar(
                 config_accordion(),
                 # Distribution editors for PersonaConfig
                 ui.hr(style="border-color:var(--border,#1E2130);"),
-                ui.h6("Distributions", class_="text-secondary"),
+                ui.h6("Distributions", class_="section-heading"),
                 ui.output_ui("distribution_editors"),
                 width="420px",
                 bg="#12141C",
