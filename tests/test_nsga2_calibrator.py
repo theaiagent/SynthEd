@@ -248,7 +248,7 @@ class TestNSGAIIBranches:
     """Coverage uplift for branches not exercised by existing integration tests."""
 
     @staticmethod
-    def _rankings_for(profile_default: bool = True) -> list[SobolRanking]:
+    def _rankings_for() -> list[SobolRanking]:
         return [
             SobolRanking(parameter="grading.grade_floor", s1=0.2, st=0.3, interaction=0.1, rank=1),
             SobolRanking(parameter="kember._QUALITY_FACTOR", s1=0.15, st=0.25, interaction=0.1, rank=2),
@@ -315,8 +315,9 @@ class TestNSGAIIBranches:
             )
 
     @pytest.mark.slow
-    def test_sequential_trial_exception_is_handled(self, monkeypatch):
+    def test_sequential_trial_exception_is_handled(self, monkeypatch, caplog):
         """A simulation exception on one trial does not crash the run; trial is marked FAIL."""
+        import logging
         import random
         rng = random.Random(7)
         call_count = {"n": 0}
@@ -337,16 +338,21 @@ class TestNSGAIIBranches:
         )
 
         cal = NSGAIICalibrator(n_students=15, seed=42)
-        # Should not raise — failed trial is reported via study.tell(FAIL)
-        result = cal.run(
-            profile="default",
-            pop_size=4,
-            n_trials=8,
-            sobol_rankings=self._rankings_for(),
-            sobol_top_n=3,
-        )
+        with caplog.at_level(logging.WARNING, logger="synthed.analysis.nsga2_calibrator"):
+            result = cal.run(
+                profile="default",
+                pop_size=4,
+                n_trials=8,
+                sobol_rankings=self._rankings_for(),
+                sobol_top_n=3,
+            )
         assert call_count["n"] >= 2
         assert isinstance(result.pareto_front, tuple)
+        # Confirm the FAIL branch ran by matching the warning emitted at line 385.
+        assert any(
+            "Synthetic worker failure" in rec.message
+            for rec in caplog.records
+        )
 
     @pytest.mark.slow
     def test_progress_log_emitted_at_milestone(self, monkeypatch, caplog):
@@ -394,6 +400,7 @@ class TestNSGAIIBranches:
             SobolRanking(parameter="grading.grade_floor", s1=0.2, st=0.3, interaction=0.1, rank=1),
         ]
         cal = NSGAIICalibrator(n_students=30, seed=42, n_workers=2)
+        assert cal._n_workers == 2  # guard against silent fallback to sequential
         try:
             result = cal.run(
                 profile="default",
