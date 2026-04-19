@@ -228,77 +228,42 @@ def test_scorecard_includes_footer_note():
 
 
 # ── Render-integration tests ──
-# These exercise the EXACT branch logic used inside app.py's `calibrate_area`
-# render — kept here so the logic is unit-testable without a live Shiny
-# session. If the logic changes in app.py, these tests must change in lockstep.
+# calibrate_area's body composes three contracts:
+#   1. None report → S1 empty state (tested below)
+#   2. non-None report → scorecard_table(_get_validation_results(report))
+#
+# Contract 2 is exercised by the per-component tests above plus the full
+# coverage of _get_validation_results in test_dashboard.py. We only assert
+# the wiring — not the branch logic, which now lives in app.py's module
+# scope and is covered by its own tests.
 
 
-def _run_calibrate_branch(report):
-    """Replicate the branch logic from app.py's calibrate_area render.
-
-    Keep this function byte-identical to the render body (minus the
-    @render.ui decoration and sim_results.get() call). If app.py drifts,
-    fix here first, then copy back.
-    """
-    if report is None:
-        return empty_state(
-            title="Run a simulation first",
-            body=(
-                "Use the Research tab to run a simulation; "
-                "validation results will appear here."
-            ),
-            icon="bi-rocket-takeoff",
-        )
-    validation = report.get("validation", {})
-    if isinstance(validation, dict):
-        results = validation.get("results", [])
-    elif isinstance(validation, list):
-        results = validation
-    else:
-        results = []
-    return scorecard_table(results)
-
-
-def test_calibrate_branch_none_report_returns_s1_empty_state():
-    html = str(_run_calibrate_branch(None))
+def test_calibrate_area_none_report_renders_s1_empty_state():
+    """S1 state: no simulation yet. Invoke the same empty_state() call
+    calibrate_area makes when sim_results.get() is None."""
+    html = str(empty_state(
+        title="Run a simulation first",
+        body=(
+            "Use the Research tab to run a simulation; "
+            "validation results will appear here."
+        ),
+        icon="bi-rocket-takeoff",
+    ))
     assert "Run a simulation first" in html
     assert "bi-rocket-takeoff" in html
 
 
-def test_calibrate_branch_missing_validation_returns_s4_empty_state():
-    html = str(_run_calibrate_branch({}))
-    # No "validation" key → empty list → scorecard_table → "No validation data".
-    assert "No validation data" in html
+def test_calibrate_area_source_composes_shared_helper():
+    """Regression guard: calibrate_area must route through
+    _get_validation_results (not inline the isinstance dispatch).
 
-
-def test_calibrate_branch_dict_validation_shape_renders_scorecard():
-    report = {
-        "validation": {
-            "results": [
-                {"test": "t1", "passed": True},
-                {"test": "t2", "passed": False},
-            ],
-        },
-    }
-    html = str(_run_calibrate_branch(report))
-    assert "1/2 tests passed" in html
-    assert "t1" in html and "t2" in html
-
-
-def test_calibrate_branch_bare_list_validation_shape_renders_scorecard():
-    """Older pipeline variants serialize validation as a bare list."""
-    report = {
-        "validation": [
-            {"test": "tA", "passed": True},
-        ],
-    }
-    html = str(_run_calibrate_branch(report))
-    assert "1/1 tests passed" in html
-    assert "tA" in html
-
-
-def test_calibrate_branch_unknown_validation_shape_falls_back_to_empty():
-    """Non-dict, non-list validation value should not raise; should render S4."""
-    report = {"validation": 42}  # nonsense value
-    html = str(_run_calibrate_branch(report))
-    assert "No validation data" in html
+    If someone reverts the Q1 refactor, this test catches it.
+    """
+    import inspect
+    from synthed.dashboard import app as dashboard_app
+    src = inspect.getsource(dashboard_app)
+    # Locate the calibrate_area function and assert it calls the shared helper.
+    assert "scorecard_table(_get_validation_results(report))" in src, (
+        "calibrate_area must call scorecard_table(_get_validation_results(report)) "
+        "— do not reintroduce inline isinstance dispatch."
+    )

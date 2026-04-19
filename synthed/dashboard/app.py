@@ -804,14 +804,7 @@ def server(input, output, session):
                 ),
                 icon="bi-rocket-takeoff",
             )
-        validation = report.get("validation", {})
-        if isinstance(validation, dict):
-            results = validation.get("results", [])
-        elif isinstance(validation, list):
-            results = validation
-        else:
-            results = []
-        return scorecard_table(results)
+        return scorecard_table(_get_validation_results(report))
 
 
 # ── App ──
