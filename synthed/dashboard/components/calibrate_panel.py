@@ -81,3 +81,32 @@ def _scorecard_row(r: dict):
         ui.tags.td(mark),
         title=str(r.get("details", "")),
     )
+
+
+def _scorecard_footer():
+    """Interpretive footnote printed below the scorecard table.
+
+    Wording rationale (from statistician round-3 review): the ~22 validation
+    tests share simulator state, which induces positive dependence. Under
+    positive dependence, Var(total false positives) is inflated vs the
+    independent-tests case, so clusters of flips are MORE likely under the
+    null than a Binomial(22, 0.05) would predict. "Persistent across runs"
+    means seed-varying reruns — a deterministic re-render of the same
+    report would trivially reproduce the same flip.
+    """
+    return ui.div(
+        ui.tags.p(
+            ui.tags.strong("Interpretation: "),
+            "Expected ≈1.1 false positives at α=0.05 across ~22 tests. "
+            "Tests share simulator state (positive dependence), so "
+            "clusters of flips are ",
+            ui.tags.em("more"),
+            " likely under the null than independence would suggest — a "
+            "cluster is not by itself evidence of a real regression. "
+            "Investigate flips that persist across runs with ",
+            ui.tags.strong("different seeds"),
+            "; dismiss single-run flips.",
+            class_="small text-muted mb-1",
+        ),
+        class_="mt-2",
+    )

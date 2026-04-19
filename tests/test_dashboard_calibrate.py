@@ -8,6 +8,7 @@ from synthed.dashboard.components.calibrate_panel import (
 from synthed.dashboard.components.calibrate_panel import empty_state
 from synthed.dashboard.components.calibrate_panel import _fmt_num
 from synthed.dashboard.components.calibrate_panel import _scorecard_row
+from synthed.dashboard.components.calibrate_panel import _scorecard_footer
 
 
 def test_calibrate_panel_ui_has_swap_point_id():
@@ -123,3 +124,24 @@ def test_scorecard_row_includes_test_and_metric_names():
     html = str(_scorecard_row(_sample_passing_result()))
     assert "dropout_rate" in html
     assert "overall" in html
+
+
+def test_scorecard_footer_mentions_expected_false_positives():
+    html = str(_scorecard_footer())
+    assert "false positives" in html
+    assert "α=0.05" in html
+    assert "~22 tests" in html
+
+
+def test_scorecard_footer_notes_positive_dependence():
+    """The revised stat-honest wording: variance under dependence is inflated,
+    so clusters are MORE likely under the null than independence suggests."""
+    html = str(_scorecard_footer())
+    assert "positive dependence" in html
+    assert "more" in html  # <em>more</em> likely under the null
+
+
+def test_scorecard_footer_notes_different_seeds():
+    """Persistent flips must mean seed-varying reruns, not re-renders."""
+    html = str(_scorecard_footer())
+    assert "different seeds" in html
