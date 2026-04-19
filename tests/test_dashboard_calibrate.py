@@ -9,6 +9,7 @@ from synthed.dashboard.components.calibrate_panel import empty_state
 from synthed.dashboard.components.calibrate_panel import _fmt_num
 from synthed.dashboard.components.calibrate_panel import _scorecard_row
 from synthed.dashboard.components.calibrate_panel import _scorecard_footer
+from synthed.dashboard.components.calibrate_panel import scorecard_table
 
 
 def test_calibrate_panel_ui_has_swap_point_id():
@@ -145,3 +146,82 @@ def test_scorecard_footer_notes_different_seeds():
     """Persistent flips must mean seed-varying reruns, not re-renders."""
     html = str(_scorecard_footer())
     assert "different seeds" in html
+
+
+def _three_results():
+    return [
+        {
+            "test": "t1", "metric": "m1",
+            "synthetic": 0.5, "reference": 0.45,
+            "statistic": 0.05, "p_value": 0.1,
+            "passed": True, "details": "",
+        },
+        {
+            "test": "t2", "metric": "m2",
+            "synthetic": 3, "reference": 5,
+            "statistic": None, "p_value": None,
+            "passed": False, "details": "range-check failed",
+        },
+        {
+            "test": "t3", "metric": "m3",
+            "synthetic": 0.8, "reference": 0.8,
+            "statistic": 0.0, "p_value": 1.0,
+            "passed": True, "details": "",
+        },
+    ]
+
+
+def test_scorecard_empty_list_renders_empty_state():
+    html = str(scorecard_table([]))
+    assert "No validation data" in html
+    assert "bi-info-circle" in html
+
+
+def test_scorecard_renders_row_per_result():
+    html = str(scorecard_table(_three_results()))
+    # Three <tr> rows inside <tbody> + 1 header row = 4 total <tr>.
+    assert html.count("<tr") == 4
+
+
+def test_scorecard_summary_counts_passed_over_total():
+    html = str(scorecard_table(_three_results()))
+    assert "2/3 tests passed" in html
+
+
+def test_scorecard_filters_non_dict_entries():
+    """Matches the validation_grade_sub tolerance at app.py:578."""
+    mixed = [None, "bad", {"test": "ok", "passed": True}]
+    html = str(scorecard_table(mixed))
+    assert html.count("<tr") == 2  # 1 header + 1 dict row
+    assert "ok" in html
+
+
+def test_scorecard_uses_accordion_widget():
+    """Regression guard: must use bslib accordion, not raw <details>.
+
+    theme.py has extensive .accordion-* CSS; a raw <details> would render
+    unthemed and inconsistent between dark/light mode.
+    """
+    html = str(scorecard_table(_three_results()))
+    assert "accordion" in html
+    assert "<details" not in html
+
+
+def test_scorecard_column_headers_present():
+    html = str(scorecard_table(_three_results()))
+    for header in ("Test", "Metric", "Synthetic", "Reference", "Stat", "p", "Pass"):
+        assert f">{header}<" in html
+
+
+def test_scorecard_table_classes_include_responsive_wrapper():
+    """Bootstrap handles horizontal overflow on small screens."""
+    html = str(scorecard_table(_three_results()))
+    assert "table-responsive" in html
+    assert "table table-sm table-hover" in html
+
+
+def test_scorecard_includes_footer_note():
+    """Happy path must embed the multiple-testing interpretation footer."""
+    html = str(scorecard_table(_three_results()))
+    assert "false positives" in html
+    assert "α=0.05" in html

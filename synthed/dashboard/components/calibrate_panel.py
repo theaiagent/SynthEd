@@ -110,3 +110,67 @@ def _scorecard_footer():
         ),
         class_="mt-2",
     )
+
+
+def scorecard_table(results: list[dict]):
+    """Collapsible Bootstrap table of validation tests.
+
+    Each dict in ``results`` is rendered as one row with columns:
+    Test | Metric | Synthetic | Reference | Stat | p | Pass. Missing or
+    None values display as "—" (handled by :func:`_scorecard_row`).
+    ``details`` surfaces as the row's ``title=`` attribute for accessible
+    hover text.
+
+    Non-dict entries in the list are silently filtered — matches the
+    validation_grade_sub tolerance in app.py:578, guarding against loosely
+    serialized validation reports.
+
+    An empty result list renders the "No validation data" empty state
+    instead of an empty table.
+
+    Uses bslib ``ui.accordion`` / ``ui.accordion_panel`` for collapsibility.
+    A raw ``<details>`` element would bypass theme.py's ``.accordion-*``
+    CSS and render inconsistently between dark and light mode — param_panel
+    uses the same widget for the sidebar panels, so this is the
+    project-consistent choice.
+    """
+    # Guard against non-dict entries. Same pattern as app.py:578.
+    results = [r for r in results if isinstance(r, dict)]
+
+    if not results:
+        return empty_state(
+            title="No validation data",
+            body="This run did not produce validation results.",
+            icon="bi-info-circle",
+        )
+
+    rows = [_scorecard_row(r) for r in results]
+    passed = sum(1 for r in results if r.get("passed"))
+    total = len(results)
+
+    return ui.accordion(
+        ui.accordion_panel(
+            f"{passed}/{total} tests passed",
+            ui.div(
+                ui.tags.table(
+                    ui.tags.thead(
+                        ui.tags.tr(
+                            ui.tags.th("Test"),
+                            ui.tags.th("Metric"),
+                            ui.tags.th("Synthetic"),
+                            ui.tags.th("Reference"),
+                            ui.tags.th("Stat"),
+                            ui.tags.th("p"),
+                            ui.tags.th("Pass"),
+                        ),
+                    ),
+                    ui.tags.tbody(*rows),
+                    class_="table table-sm table-hover",
+                ),
+                class_="table-responsive",
+            ),
+            _scorecard_footer(),
+            value="scorecard_panel",
+        ),
+        open="scorecard_panel",
+    )
