@@ -10,6 +10,26 @@ from __future__ import annotations
 from shiny import ui
 
 
+def empty_state(*, title: str, body: str, icon: str):
+    """Full-panel message used for S1 (no simulation yet) and S4 (no validation data).
+
+    Args:
+        title: Heading text (rendered as h3).
+        body: Paragraph text (rendered with text-muted).
+        icon: Bootstrap-icons class name (e.g. "bi-rocket-takeoff") without
+              the leading "bi" prefix space — the renderer prefixes it.
+    """
+    return ui.div(
+        ui.tags.i(
+            class_=f"bi {icon}",
+            style="font-size:56px;color:var(--text-muted);",
+        ),
+        ui.tags.h3(title, class_="mt-3"),
+        ui.tags.p(body, class_="text-muted mt-2"),
+        class_="text-center py-5",
+    )
+
+
 def calibrate_panel_ui():
     """Outer shell for the Calibrate tab.
 
