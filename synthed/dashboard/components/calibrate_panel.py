@@ -61,9 +61,10 @@ def _fmt_num(v):
 def _scorecard_row(r: dict):
     """Render a single validation result as a table row.
 
-    Missing fields fall back to "—". ``r["details"]`` is surfaced as the
-    row's ``title=`` attribute — Bootstrap tooltips use this for accessible
-    hover text without requiring extra JS wiring.
+    Missing fields fall back to "—". ``r["details"]`` is surfaced as both the
+    row's ``title=`` (browser-native hover tooltip) and ``aria-label=``
+    (screen-reader announcement on focus) when non-empty. Keyboard and touch
+    users get the same context as mouse users.
     """
     passed = r.get("passed", False)
     mark = (
@@ -71,6 +72,9 @@ def _scorecard_row(r: dict):
         if passed
         else ui.tags.span("✗", class_="text-danger fw-bold")
     )
+
+    details = str(r.get("details", ""))
+    extra = {"title": details, "aria-label": details} if details else {}
 
     return ui.tags.tr(
         ui.tags.td(r.get("test", "—")),
@@ -80,7 +84,7 @@ def _scorecard_row(r: dict):
         ui.tags.td(_fmt_num(r.get("statistic"))),
         ui.tags.td(_fmt_num(r.get("p_value"))),
         ui.tags.td(mark),
-        title=str(r.get("details", "")),
+        **extra,
     )
 
 

@@ -115,6 +115,19 @@ def test_scorecard_row_details_surfaces_as_title_attribute():
     assert 'title="dropout within tolerance"' in html
 
 
+def test_scorecard_row_details_surfaces_as_aria_label():
+    """Screen readers need the details text on focus, not just mouse hover."""
+    html = str(_scorecard_row(_sample_passing_result()))
+    assert 'aria-label="dropout within tolerance"' in html
+
+
+def test_scorecard_row_omits_title_and_aria_when_details_empty():
+    """Empty details must not emit empty title="" / aria-label="" attrs."""
+    html = str(_scorecard_row({"passed": True}))
+    assert 'title=""' not in html
+    assert 'aria-label=""' not in html
+
+
 def test_scorecard_row_missing_fields_render_em_dash():
     html = str(_scorecard_row({"passed": True}))
     # No test, no metric, no stats — all cells should show the em-dash default.
@@ -290,4 +303,18 @@ def test_calibrate_area_source_composes_shared_helper():
     assert "scorecard_table(_get_validation_results(report))" in src, (
         "calibrate_area must call scorecard_table(_get_validation_results(report)) "
         "— do not reintroduce inline isinstance dispatch."
+    )
+
+
+def test_get_validation_results_source_guards_non_list_results():
+    """Regression guard: _get_validation_results must coerce None/non-list
+    `validation.results` to [] so downstream consumers (scorecard_table,
+    validation_grade, chart_validation) can rely on iterability.
+    """
+    import inspect
+    from synthed.dashboard import app as dashboard_app
+    src = inspect.getsource(dashboard_app)
+    assert "raw if isinstance(raw, list) else []" in src, (
+        "_get_validation_results must coerce non-list `results` values to [] "
+        "— plain val.get('results', []) is not enough (returns None on explicit null)."
     )

@@ -667,10 +667,15 @@ def server(input, output, session):
         return ui.HTML(fig.to_html(full_html=False, include_plotlyjs=False))
 
     def _get_validation_results(report: dict) -> list:
-        """Extract validation results from report (handles nested structure)."""
+        """Extract validation results from report (handles nested structure).
+
+        Guarantees a list return — coerces ``None``/non-list ``results`` to ``[]``
+        so downstream consumers can rely on iterability without re-guarding.
+        """
         val = report.get("validation", {})
         if isinstance(val, dict):
-            return val.get("results", [])
+            raw = val.get("results")
+            return raw if isinstance(raw, list) else []
         if isinstance(val, list):
             return val
         return []
