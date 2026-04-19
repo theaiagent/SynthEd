@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Pre-commit hook: keep docs/THEORY.md test counts in sync.
+# Enable once per clone: git config core.hooksPath .githooks
+set -e
+
+if ! command -v python >/dev/null 2>&1; then
+  echo "pre-commit: python not found on PATH — skipping doc_facts sync." >&2
+  exit 0
+fi
+
+python -m synthed.doc_facts --fix
+
+if ! git diff --quiet -- docs/THEORY.md; then
+  git add docs/THEORY.md
+  echo "pre-commit: docs/THEORY.md re-synced by doc_facts and re-staged."
+fi

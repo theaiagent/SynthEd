@@ -10,8 +10,14 @@ Thank you for your interest in contributing to SynthEd! Whether you are a resear
 git clone https://github.com/theaiagent/SynthEd.git
 cd SynthEd
 pip install -e ".[dev]"
+git config core.hooksPath .githooks      # enable repo pre-commit hooks
 python -m pytest tests/ -q --tb=short   # all tests must pass
 ```
+
+The `core.hooksPath` step activates `.githooks/pre-commit`, which runs
+`python -m synthed.doc_facts --fix` before every commit and restages
+`docs/THEORY.md` if the test-count metrics drifted. Without it, the
+`doc-health` CI job will fail on any change that adds or removes tests.
 
 ### Project Structure
 
