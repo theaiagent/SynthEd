@@ -225,3 +225,80 @@ def test_scorecard_includes_footer_note():
     html = str(scorecard_table(_three_results()))
     assert "false positives" in html
     assert "α=0.05" in html
+
+
+# ── Render-integration tests ──
+# These exercise the EXACT branch logic used inside app.py's `calibrate_area`
+# render — kept here so the logic is unit-testable without a live Shiny
+# session. If the logic changes in app.py, these tests must change in lockstep.
+
+
+def _run_calibrate_branch(report):
+    """Replicate the branch logic from app.py's calibrate_area render.
+
+    Keep this function byte-identical to the render body (minus the
+    @render.ui decoration and sim_results.get() call). If app.py drifts,
+    fix here first, then copy back.
+    """
+    if report is None:
+        return empty_state(
+            title="Run a simulation first",
+            body=(
+                "Use the Research tab to run a simulation; "
+                "validation results will appear here."
+            ),
+            icon="bi-rocket-takeoff",
+        )
+    validation = report.get("validation", {})
+    if isinstance(validation, dict):
+        results = validation.get("results", [])
+    elif isinstance(validation, list):
+        results = validation
+    else:
+        results = []
+    return scorecard_table(results)
+
+
+def test_calibrate_branch_none_report_returns_s1_empty_state():
+    html = str(_run_calibrate_branch(None))
+    assert "Run a simulation first" in html
+    assert "bi-rocket-takeoff" in html
+
+
+def test_calibrate_branch_missing_validation_returns_s4_empty_state():
+    html = str(_run_calibrate_branch({}))
+    # No "validation" key → empty list → scorecard_table → "No validation data".
+    assert "No validation data" in html
+
+
+def test_calibrate_branch_dict_validation_shape_renders_scorecard():
+    report = {
+        "validation": {
+            "results": [
+                {"test": "t1", "passed": True},
+                {"test": "t2", "passed": False},
+            ],
+        },
+    }
+    html = str(_run_calibrate_branch(report))
+    assert "1/2 tests passed" in html
+    assert "t1" in html and "t2" in html
+
+
+def test_calibrate_branch_bare_list_validation_shape_renders_scorecard():
+    """Older pipeline variants serialize validation as a bare list."""
+    report = {
+        "validation": [
+            {"test": "tA", "passed": True},
+        ],
+    }
+    html = str(_run_calibrate_branch(report))
+    assert "1/1 tests passed" in html
+    assert "tA" in html
+
+
+def test_calibrate_branch_unknown_validation_shape_falls_back_to_empty():
+    """Non-dict, non-list validation value should not raise; should render S4."""
+    report = {"validation": 42}  # nonsense value
+    html = str(_run_calibrate_branch(report))
+    assert "No validation data" in html
