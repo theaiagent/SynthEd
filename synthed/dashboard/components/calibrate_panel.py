@@ -16,8 +16,9 @@ def empty_state(*, title: str, body: str, icon: str):
     Args:
         title: Heading text (rendered as h3).
         body: Paragraph text (rendered with text-muted).
-        icon: Bootstrap-icons class name (e.g. "bi-rocket-takeoff") without
-              the leading "bi" prefix space — the renderer prefixes it.
+        icon: Bootstrap Icons class name including the ``bi-`` prefix,
+              e.g. ``"bi-rocket-takeoff"``. The renderer also adds the
+              required base ``bi`` class, producing ``class="bi bi-rocket-takeoff"``.
     """
     return ui.div(
         ui.tags.i(
