@@ -385,7 +385,7 @@ workers = 1                    # CLI default (`--workers 1`); pass `--workers 8`
 
 ## 6. Diagnostic Visualizations
 
-The following diagnostic visualizations are **recommended** to accompany calibration results. As of v1.7.0 the calibration pipeline captures the raw data needed for most of them (e.g. `hv_history` per generation in each seed's output JSON, the full Pareto front in the same file, Sobol ST indices in the Sobol output), but chart *rendering* is deferred to the Phase 2 calibration release — see the Calibrate-tab placeholder in `synthed/dashboard/app.py` and the roadmap entry in `docs/superpowers/specs/2026-04-18-calibration-roadmap.md` for the planned implementation scope. Users who need these views immediately can build them from the JSON outputs in `calibration_output/`.
+The following diagnostic visualizations are **recommended** to accompany calibration results. As of v1.7.0 the calibration pipeline captures the raw data needed for most of them (e.g. `hv_history` per generation in each seed's output JSON, the full Pareto front in the same file, Sobol ST indices in the Sobol output), but chart *rendering* is deferred to the next calibration release — see the Calibrate-tab placeholder in `synthed/dashboard/app.py` for the planned implementation scope. Users who need these views immediately can build them from the JSON outputs in `calibration_output/`.
 
 ### 6.1 Implementation status (v1.7.0)
 

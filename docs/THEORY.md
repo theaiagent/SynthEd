@@ -8,7 +8,7 @@
 - [Design Decision: ODE is not Campus](#-design-decision-ode-is-not-campus)
 - [Emergent Properties](#-emergent-properties)
 - [Institutional Quality](#-institutional-quality)
-- [Grading & Outcome Classification](#-grading--outcome-classification)
+- [Grading and Outcome Classification](#-grading-and-outcome-classification)
 - [Project Structure](#-project-structure)
 - [Validation Suite](#-validation-suite)
 - [Test Suite](#-test-suite)
@@ -139,7 +139,7 @@ Each parameter ranges 0-1 with 0.5 as neutral. The `scale_by()` method applies m
 
 ---
 
-## 📊 Grading & Outcome Classification
+## 📊 Grading and Outcome Classification
 
 SynthEd supports two grading methods via `GradingConfig`:
 
