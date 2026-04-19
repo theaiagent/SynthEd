@@ -41,3 +41,17 @@ def calibrate_panel_ui():
         id="calibrate_content_area",
         class_="p-3",
     )
+
+
+def _fmt_num(v):
+    """Format a numeric cell value for display.
+
+    None renders as em-dash (matches how `—` is used elsewhere in the
+    dashboard for absent values). Floats use 4 significant figures.
+    Anything else (int, string, bool) falls through to ``str(v)``.
+    """
+    if v is None:
+        return "—"
+    if isinstance(v, float):
+        return f"{v:.4g}"
+    return str(v)

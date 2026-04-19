@@ -6,6 +6,7 @@ from synthed.dashboard.components.calibrate_panel import (
     calibrate_panel_ui,
 )
 from synthed.dashboard.components.calibrate_panel import empty_state
+from synthed.dashboard.components.calibrate_panel import _fmt_num
 
 
 def test_calibrate_panel_ui_has_swap_point_id():
@@ -36,3 +37,21 @@ def test_empty_state_uses_muted_text_for_body():
     """Body copy should use text-muted class for de-emphasized display."""
     html = str(empty_state(title="t", body="b", icon="bi-info-circle"))
     assert "text-muted" in html
+
+
+def test_fmt_num_none_is_em_dash():
+    assert _fmt_num(None) == "—"
+
+
+def test_fmt_num_float_uses_4_sig_figs():
+    # {v:.4g} → "0.1235" for 0.123456
+    assert _fmt_num(0.123456) == "0.1235"
+
+
+def test_fmt_num_int_passes_through_as_str():
+    assert _fmt_num(42) == "42"
+
+
+def test_fmt_num_string_passes_through_as_str():
+    # Guard for non-numeric reference values some validators may emit.
+    assert _fmt_num("range(0.3, 0.5)") == "range(0.3, 0.5)"
