@@ -87,26 +87,45 @@ def _scorecard_row(r: dict):
 def _scorecard_footer():
     """Interpretive footnote printed below the scorecard table.
 
-    Wording rationale (from statistician round-3 review): the ~22 validation
-    tests share simulator state, which induces positive dependence. Under
-    positive dependence, Var(total false positives) is inflated vs the
-    independent-tests case, so clusters of flips are MORE likely under the
-    null than a Binomial(22, 0.05) would predict. "Persistent across runs"
-    means seed-varying reruns — a deterministic re-render of the same
-    report would trivially reproduce the same flip.
+    Reflects the statistician round-4 review: the battery is heterogeneous
+    (α-governed hypothesis tests mixed with deterministic range/threshold/
+    sign checks), and validator._effective_alpha scales α down for N>500,
+    so the raw p column cannot be read against a fixed α=0.05.
     """
     return ui.div(
         ui.tags.p(
             ui.tags.strong("Interpretation: "),
-            "Expected ≈1.1 false positives at α=0.05 across ~22 tests. "
-            "Tests share simulator state (positive dependence), so "
-            "clusters of flips are ",
+            "The battery mixes α-governed hypothesis tests (KS, χ², z, t, "
+            "correlation) with deterministic range, threshold, and sign "
+            "checks. For the hypothesis-test subset, a handful of false-"
+            "positive flips per run is expected even under a correct "
+            "simulator; positive dependence between tests (shared "
+            "simulator state) inflates variance so clusters of flips are ",
             ui.tags.em("more"),
-            " likely under the null than independence would suggest — a "
-            "cluster is not by itself evidence of a real regression. "
-            "Investigate flips that persist across runs with ",
+            " likely than independence would predict — a cluster is not "
+            "by itself evidence of real regression.",
+            class_="small text-muted mb-1",
+        ),
+        ui.tags.p(
+            ui.tags.strong("Triage: "),
+            "For hypothesis tests, investigate flips that persist across ",
             ui.tags.strong("different seeds"),
-            "; dismiss single-run flips.",
+            "; for deterministic checks, persistence is tautological — "
+            "investigate distribution drift instead.",
+            class_="small text-muted mb-1",
+        ),
+        ui.tags.p(
+            ui.tags.strong("Effective α: "),
+            "for N > 500, α is scaled down to ",
+            ui.tags.code("max(0.05·√(200/N), 0.001)"),
+            " (see ",
+            ui.tags.code("CALIBRATION_METHODOLOGY.md"),
+            " §5); the ",
+            ui.tags.code("Pass"),
+            " column compares against the scaled threshold, not the raw "
+            "0.05 you see in the ",
+            ui.tags.code("p"),
+            " column.",
             class_="small text-muted mb-1",
         ),
         class_="mt-2",
@@ -122,9 +141,8 @@ def scorecard_table(results: list[dict]):
     ``details`` surfaces as the row's ``title=`` attribute for accessible
     hover text.
 
-    Non-dict entries in the list are silently filtered — matches the
-    validation_grade_sub tolerance in app.py:578, guarding against loosely
-    serialized validation reports.
+    Non-dict entries are filtered out and surfaced via a warning row at
+    the top of the panel so the user knows a malformed entry was dropped.
 
     An empty result list renders the "No validation data" empty state
     instead of an empty table.
@@ -135,8 +153,9 @@ def scorecard_table(results: list[dict]):
     uses the same widget for the sidebar panels, so this is the
     project-consistent choice.
     """
-    # Guard against non-dict entries. Same pattern as app.py:578.
+    original_len = len(results)
     results = [r for r in results if isinstance(r, dict)]
+    dropped = original_len - len(results)
 
     if not results:
         return empty_state(
@@ -149,28 +168,45 @@ def scorecard_table(results: list[dict]):
     passed = sum(1 for r in results if r.get("passed"))
     total = len(results)
 
+    panel_children = []
+    if dropped > 0:
+        panel_children.append(
+            ui.div(
+                ui.tags.i(class_="bi bi-exclamation-triangle me-2"),
+                ui.tags.strong("Warning: "),
+                f"{dropped} result{'s' if dropped != 1 else ''} "
+                "dropped from this report (malformed entries). "
+                "Displayed counts exclude them.",
+                class_="alert alert-warning py-2 mb-2",
+                role="alert",
+            )
+        )
+    panel_children.append(
+        ui.div(
+            ui.tags.table(
+                ui.tags.thead(
+                    ui.tags.tr(
+                        ui.tags.th("Test"),
+                        ui.tags.th("Metric"),
+                        ui.tags.th("Synthetic"),
+                        ui.tags.th("Reference"),
+                        ui.tags.th("Stat"),
+                        ui.tags.th("p"),
+                        ui.tags.th("Pass"),
+                    ),
+                ),
+                ui.tags.tbody(*rows),
+                class_="table table-sm table-hover",
+            ),
+            class_="table-responsive",
+        )
+    )
+    panel_children.append(_scorecard_footer())
+
     return ui.accordion(
         ui.accordion_panel(
             f"{passed}/{total} tests passed",
-            ui.div(
-                ui.tags.table(
-                    ui.tags.thead(
-                        ui.tags.tr(
-                            ui.tags.th("Test"),
-                            ui.tags.th("Metric"),
-                            ui.tags.th("Synthetic"),
-                            ui.tags.th("Reference"),
-                            ui.tags.th("Stat"),
-                            ui.tags.th("p"),
-                            ui.tags.th("Pass"),
-                        ),
-                    ),
-                    ui.tags.tbody(*rows),
-                    class_="table table-sm table-hover",
-                ),
-                class_="table-responsive",
-            ),
-            _scorecard_footer(),
+            *panel_children,
             value="scorecard_panel",
         ),
         open="scorecard_panel",

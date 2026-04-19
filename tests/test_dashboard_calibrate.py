@@ -127,25 +127,34 @@ def test_scorecard_row_includes_test_and_metric_names():
     assert "overall" in html
 
 
-def test_scorecard_footer_mentions_expected_false_positives():
+def test_scorecard_footer_notes_mixed_test_battery():
+    """Footer must distinguish α-governed tests from deterministic checks."""
     html = str(_scorecard_footer())
-    assert "false positives" in html
-    assert "α=0.05" in html
-    assert "~22 tests" in html
+    assert "hypothesis tests" in html
+    assert "deterministic" in html
 
 
 def test_scorecard_footer_notes_positive_dependence():
-    """The revised stat-honest wording: variance under dependence is inflated,
-    so clusters are MORE likely under the null than independence suggests."""
+    """Footer must warn that shared simulator state inflates cluster mass."""
     html = str(_scorecard_footer())
     assert "positive dependence" in html
-    assert "more" in html  # <em>more</em> likely under the null
+    assert "more" in html  # <em>more</em> likely than independence
 
 
-def test_scorecard_footer_notes_different_seeds():
-    """Persistent flips must mean seed-varying reruns, not re-renders."""
+def test_scorecard_footer_triage_advice_conditions_on_test_kind():
+    """Triage advice must split stochastic vs deterministic paths."""
     html = str(_scorecard_footer())
     assert "different seeds" in html
+    assert "distribution drift" in html
+
+
+def test_scorecard_footer_surfaces_effective_alpha_scaling():
+    """N>500 α-scaling must be surfaced to prevent misreading raw p."""
+    html = str(_scorecard_footer())
+    assert "Effective α" in html or "effective α" in html.lower()
+    assert "0.05" in html
+    assert "N" in html  # mentions N-dependence
+    assert "CALIBRATION_METHODOLOGY" in html
 
 
 def _three_results():
@@ -223,8 +232,23 @@ def test_scorecard_table_classes_include_responsive_wrapper():
 def test_scorecard_includes_footer_note():
     """Happy path must embed the multiple-testing interpretation footer."""
     html = str(scorecard_table(_three_results()))
-    assert "false positives" in html
-    assert "α=0.05" in html
+    assert "hypothesis tests" in html
+    assert "Effective α" in html or "effective α" in html.lower()
+
+
+def test_scorecard_warns_when_non_dict_entries_dropped():
+    """Dropped malformed entries must be surfaced, not silent."""
+    mixed = [None, "bad", {"test": "ok", "passed": True}]
+    html = str(scorecard_table(mixed))
+    assert "alert-warning" in html
+    assert "2" in html  # count of dropped entries
+    assert "dropped" in html.lower()
+
+
+def test_scorecard_no_warning_when_all_dicts():
+    """Clean inputs should not display a warning banner."""
+    html = str(scorecard_table(_three_results()))
+    assert "alert-warning" not in html
 
 
 # ── Render-integration tests ──
