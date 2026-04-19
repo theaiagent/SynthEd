@@ -24,6 +24,29 @@ class DocFacts:
     sobol_param_count: int
 
 
+def _parametrize_cardinality(func: ast.FunctionDef) -> int:
+    """Return the number of pytest collections produced by *func*.
+
+    pytest expands `@pytest.mark.parametrize("name", [...])` into one collected
+    test per element of the list/tuple, so a literal ast.FunctionDef count
+    undercounts parametrized tests. Recognises the common literal form; falls
+    back to 1 when the argument is dynamic (preserves prior behaviour).
+    """
+    cardinality = 1
+    for deco in func.decorator_list:
+        # Match pytest.mark.parametrize(...) call (any depth of attribute access).
+        if not (isinstance(deco, ast.Call) and isinstance(deco.func, ast.Attribute)
+                and deco.func.attr == "parametrize"):
+            continue
+        # parametrize(argname, argvalues, ...): argvalues is positional arg index 1
+        if len(deco.args) < 2:
+            continue
+        argvalues = deco.args[1]
+        if isinstance(argvalues, (ast.List, ast.Tuple)):
+            cardinality *= max(1, len(argvalues.elts))
+    return cardinality
+
+
 def collect() -> DocFacts:
     tests_dir = _ROOT / "tests"
     test_files = sorted(tests_dir.glob("test_*.py"))
@@ -31,7 +54,8 @@ def collect() -> DocFacts:
     for tf in test_files:
         tree = ast.parse(tf.read_text(encoding="utf-8"))
         test_count += sum(
-            1 for node in ast.walk(tree)
+            _parametrize_cardinality(node)
+            for node in ast.walk(tree)
             if isinstance(node, ast.FunctionDef) and node.name.startswith("test_")
         )
 

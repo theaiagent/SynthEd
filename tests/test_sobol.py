@@ -324,6 +324,7 @@ class TestSobolIntegration:
         analyzer = SobolAnalyzer(
             n_students=10, seed=42, parameters=subset, n_workers=2,
         )
+        assert analyzer._n_workers == 2  # guard against silent fallback to sequential
         results = analyzer.run(n_samples=4)
         # 1 param → 1*(D+2) = 3 results per metric; 3 metrics
         assert len(results) == 3

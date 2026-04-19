@@ -348,7 +348,8 @@ class TestNSGAIIBranches:
             )
         assert call_count["n"] >= 2
         assert isinstance(result.pareto_front, tuple)
-        # Confirm the FAIL branch ran by matching the warning emitted at line 385.
+        # Confirm the study.tell(state=TrialState.FAIL) branch in _run_sequential
+        # ran by matching the warning that path emits.
         assert any(
             "Synthetic worker failure" in rec.message
             for rec in caplog.records
@@ -356,9 +357,15 @@ class TestNSGAIIBranches:
 
     @pytest.mark.slow
     def test_progress_log_emitted_at_milestone(self, monkeypatch, caplog):
-        """Progress log fires every (pop_size * 5) completed trials."""
+        """A milestone progress log fires somewhere during the run.
+
+        The exact cadence (currently `pop_size * 5` trials) is an implementation
+        detail of `_run_sequential` / `_run_parallel`; this test asserts only the
+        *contract* — at least one `Progress: N/n_trials trials` log is emitted.
+        """
         import logging
         import random
+        import re
         rng = random.Random(11)
 
         def _mock_sim(**kwargs):
@@ -373,16 +380,20 @@ class TestNSGAIIBranches:
             _mock_sim,
         )
 
+        # n_trials chosen large enough to exceed any plausible cadence so the
+        # contract is exercised regardless of future tuning of the modulo.
+        n_trials = 10
         cal = NSGAIICalibrator(n_students=15, seed=42)
         with caplog.at_level(logging.INFO, logger="synthed.analysis.nsga2_calibrator"):
             cal.run(
                 profile="default",
                 pop_size=2,
-                n_trials=10,  # 10 % (2*5) == 0 triggers progress log
+                n_trials=n_trials,
                 sobol_rankings=self._rankings_for(),
                 sobol_top_n=3,
             )
-        assert any("Progress: 10/10 trials" in rec.message for rec in caplog.records)
+        progress = re.compile(rf"Progress:\s+\d+/{n_trials}\s+trials")
+        assert any(progress.search(rec.message) for rec in caplog.records)
 
     @pytest.mark.slow
     def test_parallel_branch_minimal_real_run(self):
@@ -392,29 +403,37 @@ class TestNSGAIIBranches:
         that re-import `_sim_runner`, bypassing parent-process patches. Use
         a small real run to exercise pickling + IPC + result aggregation.
 
-        Either outcome (Pareto result or NSGAIICalibrationError when all
-        trials happen to violate constraints) confirms `_run_parallel` ran;
-        we only need the parallel code path to execute for coverage.
+        Tiny populations can produce all-infeasible Pareto fronts on a single
+        seed; retry with a different seed before failing so that a
+        deterministic regression in `_run_parallel` (e.g., a pickling break
+        surfacing as `NSGAIICalibrationError` on every seed) still trips the
+        test rather than being silently absorbed.
         """
         rankings = [
             SobolRanking(parameter="grading.grade_floor", s1=0.2, st=0.3, interaction=0.1, rank=1),
         ]
-        cal = NSGAIICalibrator(n_students=30, seed=42, n_workers=2)
-        assert cal._n_workers == 2  # guard against silent fallback to sequential
-        try:
-            result = cal.run(
-                profile="default",
-                pop_size=2,
-                n_trials=4,
-                sobol_rankings=rankings,
-                sobol_top_n=1,
-            )
+        last_error: NSGAIICalibrationError | None = None
+        for seed in (42, 2024):
+            cal = NSGAIICalibrator(n_students=30, seed=seed, n_workers=2)
+            assert cal._n_workers == 2  # guard against silent fallback to sequential
+            try:
+                result = cal.run(
+                    profile="default",
+                    pop_size=2,
+                    n_trials=4,
+                    sobol_rankings=rankings,
+                    sobol_top_n=1,
+                )
+            except NSGAIICalibrationError as exc:
+                last_error = exc
+                continue
             assert isinstance(result, ParetoResult)
             assert result.n_evaluations == 4
-        except NSGAIICalibrationError:
-            # Tiny populations occasionally produce all-infeasible Pareto fronts.
-            # Coverage goal (running `_run_parallel`) is met regardless.
-            pass
+            return
+        pytest.fail(
+            f"`_run_parallel` produced no feasible solution on either retry seed; "
+            f"last error: {last_error}"
+        )
 
     @pytest.mark.slow
     def test_validate_solution_accepts_profile_object(self):
