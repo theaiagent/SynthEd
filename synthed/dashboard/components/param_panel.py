@@ -23,12 +23,23 @@ def _hint_text(field_name: str) -> ui.Tag | str:
 
 
 def _tooltip_icon(field_name: str) -> ui.Tag | str:
-    """Create an info tooltip icon for a parameter."""
+    """Create an info tooltip icon for a parameter.
+
+    The visible glyph is a single `?`; without an `aria-label` screen readers
+    announce only "question mark" (or nothing useful before the tooltip mounts
+    on hover/focus). Lifting the description into `aria-label` + `role="img"`
+    gives the icon a proper accessible name regardless of tooltip state.
+    """
     desc = get_description(field_name)
     if not desc:
         return ""
     return ui.tooltip(
-        ui.span("?", class_="badge rounded-pill bg-secondary", style="font-size:10px;cursor:help;"),
+        ui.span(
+            "?",
+            class_="badge rounded-pill bg-secondary",
+            style="font-size:10px;cursor:help;",
+            **{"aria-label": f"Help: {desc}", "role": "img"},
+        ),
         desc,
         placement="right",
     )
@@ -269,7 +280,7 @@ def engine_config_offcanvas() -> ui.Tag:
 def preset_buttons() -> ui.Tag:
     """Preset configuration buttons with active state via output_ui."""
     return ui.div(
-        ui.h6("Presets", class_="text-secondary mb-2"),
+        ui.h6("Presets", class_="section-heading mb-2"),
         ui.output_ui("preset_buttons_ui"),
         class_="mb-3",
     )

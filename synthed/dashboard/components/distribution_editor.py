@@ -30,7 +30,7 @@ def distribution_editor(input_id: str, label: str, values: dict[str, float]) -> 
         )
 
     return ui.div(
-        ui.tags.label(label, class_="text-secondary fw-bold", style="font-size:12px;"),
+        ui.tags.label(label, class_="section-heading", style="font-size:12px;"),
         *sliders,
         ui.output_ui(f"{input_id}_sum"),
         class_="mb-3 p-2",

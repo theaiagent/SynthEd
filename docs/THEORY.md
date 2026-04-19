@@ -210,7 +210,7 @@ SynthEd/
 │   ├── doc_facts.py             # Documentation consistency checker
 │   ├── pipeline_config.py       # PipelineConfig frozen dataclass (16 params)
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                       # 822 pytest tests across 46 files
+├── tests/                       # 829 pytest tests across 47 files
 ├── docs/
 │   ├── GUIDE.md                 # User guide
 │   └── THEORY.md                # This file
@@ -239,7 +239,7 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 
 ## 🧪 Test Suite
 
-822 pytest tests across 46 files:
+829 pytest tests across 47 files:
 
 | Test File | Tests | Coverage |
 |-----------|-------|----------|
@@ -286,8 +286,9 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 | `test_pipeline_config.py` | 19 | PipelineConfig frozen dataclass, serialization |
 | `test_theory_protocol.py` | 32 | TheoryModule protocol, phase dispatch, auto-discovery, engagement deltas |
 | `test_dashboard.py` | 41 | Config bridge round-trip, distribution normalization, validation, chart builders, security, edge cases |
-| `test_dashboard_theme.py` | 5 | WCAG AA contrast, light-mode navbar CSS rules, `navbar_options` migration, responsive run-bar layout |
+| `test_dashboard_theme.py` | 7 | WCAG AA contrast, light-mode navbar CSS rules, `navbar_options` migration, responsive run-bar layout, `:focus-visible` outline (P1-6), `.section-heading` class (P3-2) |
 | `test_dashboard_nav.py` | 3 | Two-panel mode-split skeleton (Research + Calibrate tabs), swap-point IDs, placeholder structure |
+| `test_dashboard_a11y.py` | 5 | Tooltip `aria-label` + `role="img"` direct + via `_slider_input` production path (P1-7), numeric-input locale script + root `lang="en"` (P1-10) |
 | `test_report.py` | 11 | HTML/PDF rendering, chart figures, Turkish translation, dynamic value substitution, save to disk |
 
 CI runs tests across **Python 3.10, 3.11, and 3.12** via [GitHub Actions](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml).

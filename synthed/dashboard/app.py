@@ -151,6 +151,38 @@ app_ui = ui.page_navbar(
             });
             """
         ),
+        # P1-10 — set root lang and force `lang="en"` + `inputmode="decimal"`
+        # on every numeric input. Shiny renders dynamic editors after page
+        # load (distribution_editors etc.), so a MutationObserver re-applies
+        # the attributes to nodes added later.
+        ui.tags.script(
+            """
+            function applyNumericLocale(root) {
+                function setNumericLocale(el) {
+                    el.setAttribute('lang', 'en');
+                    el.setAttribute('inputmode', 'decimal');
+                }
+                var scope = root || document;
+                // Process the root node itself (MutationObserver may pass an
+                // <input> directly when one is added without a wrapper).
+                if (scope.matches && scope.matches('input[type="number"]')) {
+                    setNumericLocale(scope);
+                }
+                scope.querySelectorAll('input[type="number"]').forEach(setNumericLocale);
+            }
+            document.addEventListener('DOMContentLoaded', function() {
+                document.documentElement.lang = 'en';
+                applyNumericLocale(document);
+                new MutationObserver(function(mutations) {
+                    mutations.forEach(function(m) {
+                        m.addedNodes.forEach(function(n) {
+                            if (n.nodeType === 1) applyNumericLocale(n);
+                        });
+                    });
+                }).observe(document.body, {childList: true, subtree: true});
+            });
+            """
+        ),
     ),
     ui.nav_panel("Research",
         ui.layout_sidebar(
@@ -158,7 +190,7 @@ app_ui = ui.page_navbar(
                 config_accordion(),
                 # Distribution editors for PersonaConfig
                 ui.hr(style="border-color:var(--border,#1E2130);"),
-                ui.h6("Distributions", class_="text-secondary"),
+                ui.h6("Distributions", class_="section-heading"),
                 ui.output_ui("distribution_editors"),
                 width="420px",
                 bg="#12141C",
