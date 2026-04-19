@@ -244,6 +244,234 @@ class TestNSGAIIIntegration:
         assert g_std >= 0.0
 
 
+class TestNSGAIIBranches:
+    """Coverage uplift for branches not exercised by existing integration tests."""
+
+    @staticmethod
+    def _rankings_for() -> list[SobolRanking]:
+        return [
+            SobolRanking(parameter="grading.grade_floor", s1=0.2, st=0.3, interaction=0.1, rank=1),
+            SobolRanking(parameter="kember._QUALITY_FACTOR", s1=0.15, st=0.25, interaction=0.1, rank=2),
+            SobolRanking(parameter="gonzalez._RECOVERY_BASE", s1=0.1, st=0.2, interaction=0.1, rank=3),
+            SobolRanking(parameter="baulke._DECISION_RISK_MULTIPLIER", s1=0.08, st=0.15, interaction=0.07, rank=4),
+            SobolRanking(parameter="engine._TINTO_ACADEMIC_WEIGHT", s1=0.05, st=0.10, interaction=0.05, rank=5),
+        ]
+
+    @pytest.mark.slow
+    def test_run_accepts_profile_object(self, monkeypatch):
+        """`profile` parameter accepts a BenchmarkProfile instance, not just a name."""
+        import random
+        from synthed.benchmarks.profiles import PROFILES
+
+        rng = random.Random(42)
+
+        def _mock_sim(**kwargs):
+            return {
+                "dropout_rate": 0.20 + rng.random() * 0.25,
+                "mean_gpa": 2.0 + rng.random() * 1.5,
+                "mean_engagement": 0.3 + rng.random() * 0.4,
+            }
+
+        monkeypatch.setattr(
+            "synthed.analysis.nsga2_calibrator.run_simulation_with_overrides",
+            _mock_sim,
+        )
+
+        profile_obj = PROFILES["default"]
+        cal = NSGAIICalibrator(n_students=20, seed=42)
+        result = cal.run(
+            profile=profile_obj,
+            pop_size=4,
+            n_trials=8,
+            sobol_rankings=self._rankings_for(),
+            sobol_top_n=3,
+        )
+        assert result.profile_name == profile_obj.name
+
+    @pytest.mark.slow
+    def test_no_feasible_solutions_raises(self, monkeypatch):
+        """When every trial violates constraints, NSGA-II raises NSGAIICalibrationError."""
+        # Engagement = 0.0 always violates the `0.1 - eng <= 0` constraint.
+        def _infeasible_sim(**kwargs):
+            return {
+                "dropout_rate": 0.30,
+                "mean_gpa": 2.5,
+                "mean_engagement": 0.0,
+            }
+
+        monkeypatch.setattr(
+            "synthed.analysis.nsga2_calibrator.run_simulation_with_overrides",
+            _infeasible_sim,
+        )
+
+        cal = NSGAIICalibrator(n_students=10, seed=42)
+        with pytest.raises(NSGAIICalibrationError, match="no feasible solutions"):
+            cal.run(
+                profile="default",
+                pop_size=4,
+                n_trials=8,
+                sobol_rankings=self._rankings_for(),
+                sobol_top_n=3,
+            )
+
+    @pytest.mark.slow
+    def test_sequential_trial_exception_is_handled(self, monkeypatch, caplog):
+        """A simulation exception on one trial does not crash the run; trial is marked FAIL."""
+        import logging
+        import random
+        rng = random.Random(7)
+        call_count = {"n": 0}
+
+        def _flaky_sim(**kwargs):
+            call_count["n"] += 1
+            if call_count["n"] == 2:
+                raise RuntimeError("Synthetic worker failure")
+            return {
+                "dropout_rate": 0.25 + rng.random() * 0.15,
+                "mean_gpa": 2.4 + rng.random() * 0.6,
+                "mean_engagement": 0.4 + rng.random() * 0.3,
+            }
+
+        monkeypatch.setattr(
+            "synthed.analysis.nsga2_calibrator.run_simulation_with_overrides",
+            _flaky_sim,
+        )
+
+        cal = NSGAIICalibrator(n_students=15, seed=42)
+        with caplog.at_level(logging.WARNING, logger="synthed.analysis.nsga2_calibrator"):
+            result = cal.run(
+                profile="default",
+                pop_size=4,
+                n_trials=8,
+                sobol_rankings=self._rankings_for(),
+                sobol_top_n=3,
+            )
+        assert call_count["n"] >= 2
+        assert isinstance(result.pareto_front, tuple)
+        # Confirm the study.tell(state=TrialState.FAIL) branch in _run_sequential
+        # ran by matching the warning that path emits.
+        assert any(
+            "Synthetic worker failure" in rec.message
+            for rec in caplog.records
+        )
+
+    @pytest.mark.slow
+    def test_progress_log_emitted_at_milestone(self, monkeypatch, caplog):
+        """A milestone progress log fires somewhere during the run.
+
+        The exact cadence (currently `pop_size * 5` trials) is an implementation
+        detail of `_run_sequential` / `_run_parallel`; this test asserts only the
+        *contract* — at least one `Progress: N/n_trials trials` log is emitted.
+        """
+        import logging
+        import random
+        import re
+        rng = random.Random(11)
+
+        def _mock_sim(**kwargs):
+            return {
+                "dropout_rate": 0.25 + rng.random() * 0.15,
+                "mean_gpa": 2.4 + rng.random() * 0.6,
+                "mean_engagement": 0.4 + rng.random() * 0.3,
+            }
+
+        monkeypatch.setattr(
+            "synthed.analysis.nsga2_calibrator.run_simulation_with_overrides",
+            _mock_sim,
+        )
+
+        # n_trials chosen large enough to exceed any plausible cadence so the
+        # contract is exercised regardless of future tuning of the modulo.
+        n_trials = 10
+        cal = NSGAIICalibrator(n_students=15, seed=42)
+        with caplog.at_level(logging.INFO, logger="synthed.analysis.nsga2_calibrator"):
+            cal.run(
+                profile="default",
+                pop_size=2,
+                n_trials=n_trials,
+                sobol_rankings=self._rankings_for(),
+                sobol_top_n=3,
+            )
+        progress = re.compile(rf"Progress:\s+\d+/{n_trials}\s+trials")
+        assert any(progress.search(rec.message) for rec in caplog.records)
+
+    @pytest.mark.slow
+    def test_parallel_branch_minimal_real_run(self):
+        """`_run_parallel` (n_workers=2) executes via real ProcessPoolExecutor.
+
+        Cannot use a monkeypatched fake: workers spawn fresh interpreters
+        that re-import `_sim_runner`, bypassing parent-process patches. Use
+        a small real run to exercise pickling + IPC + result aggregation.
+
+        Tiny populations can produce all-infeasible Pareto fronts on a single
+        seed; retry with a different seed before failing so that a
+        deterministic regression in `_run_parallel` (e.g., a pickling break
+        surfacing as `NSGAIICalibrationError` on every seed) still trips the
+        test rather than being silently absorbed.
+        """
+        rankings = [
+            SobolRanking(parameter="grading.grade_floor", s1=0.2, st=0.3, interaction=0.1, rank=1),
+        ]
+        last_error: NSGAIICalibrationError | None = None
+        for seed in (42, 2024):
+            cal = NSGAIICalibrator(n_students=30, seed=seed, n_workers=2)
+            assert cal._n_workers == 2  # guard against silent fallback to sequential
+            try:
+                result = cal.run(
+                    profile="default",
+                    pop_size=2,
+                    n_trials=4,
+                    sobol_rankings=rankings,
+                    sobol_top_n=1,
+                )
+            except NSGAIICalibrationError as exc:
+                last_error = exc
+                continue
+            assert isinstance(result, ParetoResult)
+            assert result.n_evaluations == 4
+            return
+        pytest.fail(
+            f"`_run_parallel` produced no feasible solution on either retry seed; "
+            f"last error: {last_error}"
+        )
+
+    @pytest.mark.slow
+    def test_validate_solution_accepts_profile_object(self):
+        from synthed.benchmarks.profiles import PROFILES
+        cal = NSGAIICalibrator(n_students=20, seed=42)
+        solution = ParetoSolution(
+            params={"grading.grade_floor": 0.45},
+            dropout_error=0.05, gpa_error=0.1, engagement_error=0.05,
+            achieved_dropout=0.30, achieved_gpa=2.5, achieved_engagement=0.5,
+        )
+        d_mean, d_std, g_mean, g_std = cal.validate_solution(
+            solution,
+            profile=PROFILES["default"],
+            n_students=20,
+            seeds=(42,),
+        )
+        assert 0.0 <= d_mean <= 1.0
+        assert 0.0 <= g_mean <= 4.0
+
+    @pytest.mark.slow
+    def test_reevaluate_pareto_front_accepts_profile_object(self):
+        from synthed.benchmarks.profiles import PROFILES
+        cal = NSGAIICalibrator(n_students=20, seed=42)
+        sol = ParetoSolution(
+            params={"grading.grade_floor": 0.45},
+            dropout_error=0.05, gpa_error=0.1, engagement_error=0.05,
+            achieved_dropout=0.37, achieved_gpa=2.5, achieved_engagement=0.5,
+        )
+        result = cal.reevaluate_pareto_front(
+            pareto_front=(sol,),
+            profile=PROFILES["default"],
+            n_students=20,
+            seeds=(42,),
+        )
+        assert isinstance(result, ParetoResult)
+        assert result.profile_name == PROFILES["default"].name
+
+
 class TestReevaluatePareto:
     @pytest.mark.slow
     def test_reevaluate_returns_new_pareto_result(self):
