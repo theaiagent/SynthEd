@@ -7,6 +7,7 @@ from synthed.dashboard.components.calibrate_panel import (
 )
 from synthed.dashboard.components.calibrate_panel import empty_state
 from synthed.dashboard.components.calibrate_panel import _fmt_num
+from synthed.dashboard.components.calibrate_panel import _scorecard_row
 
 
 def test_calibrate_panel_ui_has_swap_point_id():
@@ -55,3 +56,70 @@ def test_fmt_num_int_passes_through_as_str():
 def test_fmt_num_string_passes_through_as_str():
     # Guard for non-numeric reference values some validators may emit.
     assert _fmt_num("range(0.3, 0.5)") == "range(0.3, 0.5)"
+
+
+def _sample_passing_result():
+    return {
+        "test": "dropout_rate",
+        "metric": "overall",
+        "synthetic": 0.45,
+        "reference": 0.42,
+        "statistic": 0.031,
+        "p_value": 0.12,
+        "passed": True,
+        "details": "dropout within tolerance",
+    }
+
+
+def _sample_failing_result_with_none_stats():
+    return {
+        "test": "k_anonymity",
+        "metric": "privacy",
+        "synthetic": 4,
+        "reference": 5,
+        "statistic": None,
+        "p_value": None,
+        "passed": False,
+        "details": "below threshold",
+    }
+
+
+def test_scorecard_row_passed_uses_success_class():
+    html = str(_scorecard_row(_sample_passing_result()))
+    assert "text-success" in html
+    assert "✓" in html
+
+
+def test_scorecard_row_failed_uses_danger_class():
+    html = str(_scorecard_row(_sample_failing_result_with_none_stats()))
+    assert "text-danger" in html
+    assert "✗" in html
+
+
+def test_scorecard_row_none_statistic_renders_em_dash():
+    html = str(_scorecard_row(_sample_failing_result_with_none_stats()))
+    assert "—" in html
+
+
+def test_scorecard_row_float_uses_4_sig_figs():
+    # synthetic=0.45 is already short; use a longer float via details-free sample
+    r = dict(_sample_passing_result(), synthetic=0.123456)
+    html2 = str(_scorecard_row(r))
+    assert "0.1235" in html2
+
+
+def test_scorecard_row_details_surfaces_as_title_attribute():
+    html = str(_scorecard_row(_sample_passing_result()))
+    assert 'title="dropout within tolerance"' in html
+
+
+def test_scorecard_row_missing_fields_render_em_dash():
+    html = str(_scorecard_row({"passed": True}))
+    # No test, no metric, no stats — all cells should show the em-dash default.
+    assert "—" in html
+
+
+def test_scorecard_row_includes_test_and_metric_names():
+    html = str(_scorecard_row(_sample_passing_result()))
+    assert "dropout_rate" in html
+    assert "overall" in html

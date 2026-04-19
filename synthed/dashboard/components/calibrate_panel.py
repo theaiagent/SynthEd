@@ -55,3 +55,29 @@ def _fmt_num(v):
     if isinstance(v, float):
         return f"{v:.4g}"
     return str(v)
+
+
+def _scorecard_row(r: dict):
+    """Render a single validation result as a table row.
+
+    Missing fields fall back to "—". ``r["details"]`` is surfaced as the
+    row's ``title=`` attribute — Bootstrap tooltips use this for accessible
+    hover text without requiring extra JS wiring.
+    """
+    passed = r.get("passed", False)
+    mark = (
+        ui.tags.span("✓", class_="text-success fw-bold")
+        if passed
+        else ui.tags.span("✗", class_="text-danger fw-bold")
+    )
+
+    return ui.tags.tr(
+        ui.tags.td(r.get("test", "—")),
+        ui.tags.td(r.get("metric", "—")),
+        ui.tags.td(_fmt_num(r.get("synthetic"))),
+        ui.tags.td(_fmt_num(r.get("reference"))),
+        ui.tags.td(_fmt_num(r.get("statistic"))),
+        ui.tags.td(_fmt_num(r.get("p_value"))),
+        ui.tags.td(mark),
+        title=str(r.get("details", "")),
+    )
