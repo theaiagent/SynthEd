@@ -25,6 +25,11 @@ from .config_bridge import (
     MAX_IMPORT_SIZE_BYTES,
     MAX_N_STUDENTS,
 )
+from .components.calibrate_panel import (
+    calibrate_panel_ui,
+    empty_state,
+    scorecard_table,
+)
 from .components.param_panel import config_accordion
 from .components.results_panel import results_layout
 from .components.warnings import validate_config, preflight_checklist_ui
@@ -34,49 +39,6 @@ logger = logging.getLogger(__name__)
 
 
 # ── UI Layout ──
-
-
-def calibrate_placeholder_ui():
-    """Static placeholder for the Calibrate tab (PR A skeleton).
-
-    Reuses the empty-state pattern from results_area. PR B will replace the
-    content inside the #calibrate_content_area wrapper with real tooling.
-    The outer wrapper id is the stable swap point — do not rename.
-    """
-    return ui.div(
-        ui.div(
-            ui.tags.i(
-                class_="bi bi-rulers",
-                style="font-size:56px;color:var(--text-muted);",
-            ),
-            ui.tags.h3(
-                "Calibration mode — under construction",
-                class_="mt-3 text-secondary",
-            ),
-            ui.tags.p(
-                "This tab will host OULAD-indexed calibration tooling. "
-                "Use the Research tab for general simulation in the meantime.",
-                class_="text-muted mt-2",
-            ),
-            ui.tags.ul(
-                ui.tags.li(
-                    "OULAD reference overlays on engagement and GPA histograms"
-                ),
-                ui.tags.li(
-                    "Named validation test scorecard (replaces anonymous 14/21 counter)"
-                ),
-                ui.tags.li("Pareto front viewer for NSGA-II outputs"),
-                ui.tags.li("Hypervolume convergence chart"),
-                ui.tags.li("Seed-distance comparison (42 vs 2024)"),
-                class_="text-start text-muted mt-3 mx-auto",
-                style="max-width:520px;",
-            ),
-            class_="text-center py-5",
-        ),
-        id="calibrate_content_area",  # swap point for PR B — do not rename
-        class_="d-flex justify-content-center align-items-center",
-        style="min-height:60vh;",
-    )
 
 
 app_ui = ui.page_navbar(
@@ -237,7 +199,7 @@ app_ui = ui.page_navbar(
             ),
         ),
     ),
-    ui.nav_panel("Calibrate", calibrate_placeholder_ui()),
+    ui.nav_panel("Calibrate", calibrate_panel_ui()),
     ui.nav_spacer(),
     ui.nav_control(
         ui.input_action_button(
@@ -827,6 +789,29 @@ def server(input, output, session):
             vals[input_id] = dist
 
         return vals
+
+    # ── Calibrate tab renders ──
+
+    @render.ui
+    def calibrate_area():
+        report = sim_results.get()
+        if report is None:
+            return empty_state(
+                title="Run a simulation first",
+                body=(
+                    "Use the Research tab to run a simulation; "
+                    "validation results will appear here."
+                ),
+                icon="bi-rocket-takeoff",
+            )
+        validation = report.get("validation", {})
+        if isinstance(validation, dict):
+            results = validation.get("results", [])
+        elif isinstance(validation, list):
+            results = validation
+        else:
+            results = []
+        return scorecard_table(results)
 
 
 # ── App ──

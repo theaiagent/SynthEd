@@ -6,7 +6,6 @@ panels and exposes the PR B swap-point anchor.
 """
 from __future__ import annotations
 
-import ast
 import inspect
 
 from synthed.dashboard import app as dashboard_app
@@ -20,29 +19,21 @@ def test_navbar_has_two_panels():
 
 
 def test_calibrate_tab_has_swap_point_id():
-    """PR B swap target: the placeholder wrapper must carry id=calibrate_content_area."""
-    src = inspect.getsource(dashboard_app)
+    """PR B swap target: the Calibrate component must expose id=calibrate_content_area."""
+    from synthed.dashboard.components import calibrate_panel
+    src = inspect.getsource(calibrate_panel)
     assert 'id="calibrate_content_area"' in src, (
-        "Calibrate placeholder must expose id=calibrate_content_area for PR B swap"
+        "calibrate_panel_ui must expose id=calibrate_content_area for PR B swap"
     )
 
 
-def test_calibrate_placeholder_has_no_run_button():
-    """Regression guard: Calibrate tab must not share the Research run button input ID.
-
-    If this fails, the placeholder copied reactive machinery — a sign someone
-    accidentally duplicated the Research content instead of placing a static placeholder.
-    """
+def test_calibrate_panel_swap_uses_new_component():
+    """PR B regression guard: the Calibrate nav panel must call the new
+    component, not the deleted placeholder function."""
     src = inspect.getsource(dashboard_app)
-    tree = ast.parse(src)
-    func_node = next(
-        (n for n in tree.body
-         if isinstance(n, ast.FunctionDef) and n.name == "calibrate_placeholder_ui"),
-        None,
+    assert 'calibrate_panel_ui()' in src, (
+        "Calibrate nav panel should call calibrate_panel_ui() after PR B swap"
     )
-    assert func_node is not None, "calibrate_placeholder_ui() factory must exist"
-    func_src = ast.get_source_segment(src, func_node)
-    assert func_src is not None, "could not extract calibrate_placeholder_ui source"
-    assert "run_simulation" not in func_src, (
-        "Calibrate placeholder must not reference run_simulation (tab is inert in PR A)"
+    assert 'calibrate_placeholder_ui' not in src, (
+        "Dead code: calibrate_placeholder_ui should be removed after PR B"
     )
