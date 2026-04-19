@@ -15,9 +15,16 @@ python -m pytest tests/ -q --tb=short   # all tests must pass
 ```
 
 The `core.hooksPath` step activates `.githooks/pre-commit`, which runs
-`python -m synthed.doc_facts --fix` before every commit and restages
-`docs/THEORY.md` if the test-count metrics drifted. Without it, the
-`doc-health` CI job will fail on any change that adds or removes tests.
+`python -m synthed.doc_facts --fix` before every commit and restages the
+doc_facts-managed files (`docs/THEORY.md`, `synthed/analysis/sobol_sensitivity.py`,
+`.zenodo.json`) when they drift. Without it, the `doc-health` CI job will fail
+on any change that adds or removes tests, or alters the Sobol parameter space.
+
+The hook invokes `python -m synthed.doc_facts`, so the `synthed` package must
+be importable — keep your dev venv activated (or re-run `pip install -e ".[dev]"`)
+before committing, otherwise the hook errors with `ModuleNotFoundError`. If
+python/python3 is missing from PATH entirely, the hook exits cleanly and leaves
+sync to CI.
 
 ### Project Structure
 

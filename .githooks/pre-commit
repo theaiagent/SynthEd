@@ -1,16 +1,40 @@
 #!/usr/bin/env bash
-# Pre-commit hook: keep docs/THEORY.md test counts in sync.
+# Pre-commit hook: keep doc_facts-managed files in sync.
 # Enable once per clone: git config core.hooksPath .githooks
+#
+# Assumes the synthed package is importable (`pip install -e ".[dev]"`
+# or an activated venv). If python/python3 is missing entirely, the
+# hook exits 0 so commits aren't blocked — CI doc-health is the backstop.
+#
+# Limitation: `git add -- <file>` below unconditionally stages the
+# post-fix version of each tracked doc_facts file. If a contributor used
+# `git add -p` to stage only part of THEORY.md (etc.) and left other
+# hunks unstaged, those unstaged hunks WILL be staged after the fix.
+# This is acceptable because these files are generated — partial edits
+# shouldn't survive doc_facts' regeneration anyway.
 set -e
 
-if ! command -v python >/dev/null 2>&1; then
-  echo "pre-commit: python not found on PATH — skipping doc_facts sync." >&2
+if command -v python >/dev/null 2>&1; then
+  PY=python
+elif command -v python3 >/dev/null 2>&1; then
+  PY=python3
+else
+  echo "pre-commit: no python/python3 on PATH — skipping doc_facts sync." >&2
   exit 0
 fi
 
-python -m synthed.doc_facts --fix
+"$PY" -m synthed.doc_facts --fix
 
-if ! git diff --quiet -- docs/THEORY.md; then
-  git add docs/THEORY.md
-  echo "pre-commit: docs/THEORY.md re-synced by doc_facts and re-staged."
-fi
+# Restage every file doc_facts can rewrite (see _DOC_CHECKS in doc_facts.py).
+# Keep this list in sync with that module.
+SYNCED_FILES=(
+  docs/THEORY.md
+  synthed/analysis/sobol_sensitivity.py
+  .zenodo.json
+)
+for f in "${SYNCED_FILES[@]}"; do
+  if ! git diff --quiet -- "$f"; then
+    git add -- "$f"
+    echo "pre-commit: $f re-synced by doc_facts and re-staged."
+  fi
+done
