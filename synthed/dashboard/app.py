@@ -35,10 +35,6 @@ logger = logging.getLogger(__name__)
 
 # ── UI Layout ──
 
-# Stable input-ID constant so the literal string does not appear in the
-# calibrate_placeholder_ui source slice (test_dashboard_nav.py:test 3).
-_RUN_SIMULATION_INPUT_ID = "run_simulation"
-
 
 def calibrate_placeholder_ui():
     """Static placeholder for the Calibrate tab (PR A skeleton).
@@ -176,7 +172,7 @@ app_ui = ui.page_navbar(
                     ui.layout_columns(
                         ui.div(
                             ui.input_action_button(
-                                _RUN_SIMULATION_INPUT_ID,
+                                "run_simulation",
                                 ui.span(
                                     ui.tags.i(class_="bi bi-play-fill me-1"),
                                     "Run Simulation",
@@ -420,7 +416,7 @@ def server(input, output, session):
 
     # ── Run simulation ──
     @reactive.effect
-    @reactive.event(input[_RUN_SIMULATION_INPUT_ID])
+    @reactive.event(input.run_simulation)
     def _run_simulation():
         vals = _collect_current_values()
         issues = validate_config(vals)
