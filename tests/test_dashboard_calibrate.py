@@ -210,11 +210,13 @@ def test_scorecard_summary_counts_passed_over_total():
     assert "2/3 tests passed" in html
 
 
-def test_scorecard_filters_non_dict_entries():
-    """Matches the validation_grade_sub tolerance at app.py:578."""
-    mixed = [None, "bad", {"test": "ok", "passed": True}]
-    html = str(scorecard_table(mixed))
-    assert html.count("<tr") == 2  # 1 header + 1 dict row
+def test_scorecard_trusts_prefiltered_input():
+    """scorecard_table no longer re-filters. Canonical normalization is
+    in app.py's _get_validation_results — scorecard_table receives a
+    guaranteed list[dict] from its caller. Passing only dicts through here
+    mirrors the production wiring."""
+    html = str(scorecard_table([{"test": "ok", "passed": True}], dropped=0))
+    assert html.count("<tr") == 2  # 1 header + 1 row
     assert "ok" in html
 
 
@@ -249,17 +251,19 @@ def test_scorecard_includes_footer_note():
     assert "Effective α" in html or "effective α" in html.lower()
 
 
-def test_scorecard_warns_when_non_dict_entries_dropped():
-    """Dropped malformed entries must be surfaced, not silent."""
-    mixed = [None, "bad", {"test": "ok", "passed": True}]
-    html = str(scorecard_table(mixed))
+def test_scorecard_warns_when_dropped_count_positive():
+    """Dropped malformed entries must be surfaced via banner, not silent.
+    Canonical drop count comes from _get_validation_results — we pass it
+    in explicitly here via the dropped= kwarg.
+    """
+    html = str(scorecard_table([{"test": "ok", "passed": True}], dropped=2))
     assert "alert-warning" in html
     assert "2" in html  # count of dropped entries
     assert "dropped" in html.lower()
 
 
-def test_scorecard_no_warning_when_all_dicts():
-    """Clean inputs should not display a warning banner."""
+def test_scorecard_no_warning_when_dropped_zero():
+    """dropped=0 (default) omits the warning banner."""
     html = str(scorecard_table(_three_results()))
     assert "alert-warning" not in html
 
@@ -294,27 +298,42 @@ def test_calibrate_area_source_composes_shared_helper():
     """Regression guard: calibrate_area must route through
     _get_validation_results (not inline the isinstance dispatch).
 
-    If someone reverts the Q1 refactor, this test catches it.
+    The splat ``*_get_validation_results(report)`` unpacks the
+    ``(results, dropped)`` tuple the helper now returns.
     """
     import inspect
     from synthed.dashboard import app as dashboard_app
     src = inspect.getsource(dashboard_app)
-    # Locate the calibrate_area function and assert it calls the shared helper.
-    assert "scorecard_table(_get_validation_results(report))" in src, (
-        "calibrate_area must call scorecard_table(_get_validation_results(report)) "
+    assert "scorecard_table(*_get_validation_results(report))" in src, (
+        "calibrate_area must call scorecard_table(*_get_validation_results(report)) "
         "— do not reintroduce inline isinstance dispatch."
     )
 
 
-def test_get_validation_results_source_guards_non_list_results():
-    """Regression guard: _get_validation_results must coerce None/non-list
-    `validation.results` to [] so downstream consumers (scorecard_table,
-    validation_grade, chart_validation) can rely on iterability.
+def test_get_validation_results_source_is_canonical_normalizer():
+    """Regression guard: _get_validation_results must be the single
+    canonical normalizer — coerces None/non-list ``results`` to [],
+    filters non-dict rows, and returns ``(list[dict], dropped_count)``.
+    Consumers (scorecard_table, validation_grade, chart_validation) must
+    NOT re-filter.
     """
     import inspect
     from synthed.dashboard import app as dashboard_app
     src = inspect.getsource(dashboard_app)
+    assert "raw_list if isinstance(raw, list) else []" not in src  # sanity: old form gone
     assert "raw if isinstance(raw, list) else []" in src, (
         "_get_validation_results must coerce non-list `results` values to [] "
         "— plain val.get('results', []) is not enough (returns None on explicit null)."
+    )
+    # The helper must filter non-dict rows before returning — consumers no
+    # longer re-filter inline.
+    assert "[r for r in raw_list if isinstance(r, dict)]" in src, (
+        "_get_validation_results must filter non-dict rows so consumers "
+        "can drop their inline `isinstance(r, dict)` guards."
+    )
+    # Consumer side: validation_grade and validation_grade_sub must NOT
+    # re-apply the dict filter (that drifted across three sites pre-#94).
+    assert "isinstance(r, dict) and r.get(\"passed\")" not in src, (
+        "validation_grade / validation_grade_sub must stop inline dict "
+        "filtering now that _get_validation_results normalizes upstream."
     )

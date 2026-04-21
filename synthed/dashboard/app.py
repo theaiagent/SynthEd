@@ -513,10 +513,10 @@ def server(input, output, session):
         report = sim_results.get()
         if not report:
             return "—"
-        results = _get_validation_results(report)
+        results, _ = _get_validation_results(report)
         if not results:
             return "—"
-        passed = sum(1 for r in results if isinstance(r, dict) and r.get("passed"))
+        passed = sum(1 for r in results if r.get("passed"))
         total = len(results)
         if total == 0:
             return "—"
@@ -534,10 +534,10 @@ def server(input, output, session):
         report = sim_results.get()
         if not report:
             return ""
-        results = _get_validation_results(report)
+        results, _ = _get_validation_results(report)
         if not results:
             return ""
-        passed = sum(1 for r in results if isinstance(r, dict) and r.get("passed"))
+        passed = sum(1 for r in results if r.get("passed"))
         return f"{passed}/{len(results)} passed"
 
     # ── Chart settings helper ──
@@ -637,15 +637,13 @@ def server(input, output, session):
         report = sim_results.get()
         if not report:
             return ui.div()
-        results = _get_validation_results(report)
+        results, _ = _get_validation_results(report)
         if not results:
             return ui.div("No validation data", class_="text-secondary")
         # Group by test name prefix as proxy for levels
         categories = {"Demographics": [], "Correlations": [], "Temporal": [],
                       "Privacy": [], "Other": []}
         for r in results:
-            if not isinstance(r, dict):
-                continue
             test = r.get("test", "")
             if any(k in test for k in ("age", "gender", "employment", "dropout_rate", "gpa")):
                 categories["Demographics"].append(r)
@@ -666,19 +664,29 @@ def server(input, output, session):
         fig = charts.validation_radar(scores)
         return ui.HTML(fig.to_html(full_html=False, include_plotlyjs=False))
 
-    def _get_validation_results(report: dict) -> list:
-        """Extract validation results from report (handles nested structure).
+    def _get_validation_results(report: dict) -> tuple[list[dict], int]:
+        """Extract normalized validation results + count of non-dict entries dropped.
 
-        Guarantees a list return — coerces ``None``/non-list ``results`` to ``[]``
-        so downstream consumers can rely on iterability without re-guarding.
+        Returns ``(results, dropped)``:
+        - ``results`` is always ``list[dict]`` — ``None``/non-list ``results``
+          coerces to ``[]``, and any non-dict row in the list is filtered out.
+        - ``dropped`` is the count of non-dict entries that were silently
+          filtered — the scorecard surfaces this as a warning banner so a
+          malformed validator output isn't lost in the count.
+
+        Single canonical normalizer — consumers should NOT re-filter.
         """
         val = report.get("validation", {})
         if isinstance(val, dict):
             raw = val.get("results")
-            return raw if isinstance(raw, list) else []
-        if isinstance(val, list):
-            return val
-        return []
+            raw_list = raw if isinstance(raw, list) else []
+        elif isinstance(val, list):
+            raw_list = val
+        else:
+            raw_list = []
+
+        filtered = [r for r in raw_list if isinstance(r, dict)]
+        return filtered, len(raw_list) - len(filtered)
 
     # ── Config export ──
     @render.download(filename="synthed_config.json")
@@ -809,7 +817,7 @@ def server(input, output, session):
                 ),
                 icon="bi-rocket-takeoff",
             )
-        return scorecard_table(_get_validation_results(report))
+        return scorecard_table(*_get_validation_results(report))
 
 
 # ── App ──
