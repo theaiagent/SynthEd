@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import ast
+
 from synthed.dashboard.components.calibrate_panel import (
     calibrate_panel_ui,
 )
@@ -351,42 +353,94 @@ def test_get_validation_results_unknown_validation_type_returns_empty():
     assert (results, dropped) == ([], 0)
 
 
+def _find_function_def(module_tree: ast.AST, name: str) -> ast.FunctionDef | None:
+    """Locate the first FunctionDef with ``name`` anywhere in the tree
+    (handles nested definitions inside ``server()``).
+    """
+    for node in ast.walk(module_tree):
+        if isinstance(node, ast.FunctionDef) and node.name == name:
+            return node
+    return None
+
+
 def test_consumers_do_not_reintroduce_inline_dict_filter():
     """Architectural invariant: validation_grade / validation_grade_sub /
-    chart_validation must not re-filter — _get_validation_results is the
-    single canonical normalizer. Source-level check because behavioral
-    coverage would require invoking Shiny reactives.
+    chart_validation must not re-filter rows with ``isinstance(..., dict)``.
+    ``_get_validation_results`` is the single canonical normalizer.
+
+    AST-walks each consumer function body looking for any
+    ``isinstance(<any>, dict)`` Call — catches variable-rename / quote-style /
+    line-wrap variants the prior substring guard missed.
     """
     import inspect
     from synthed.dashboard import app as dashboard_app
+
     src = inspect.getsource(dashboard_app)
-    assert "isinstance(r, dict) and r.get(\"passed\")" not in src, (
-        "validation_grade / validation_grade_sub must stop inline dict "
-        "filtering — consolidation landed in _get_validation_results (#94)."
-    )
+    tree = ast.parse(src)
+
+    consumers = ("validation_grade", "validation_grade_sub", "chart_validation")
+    for name in consumers:
+        func = _find_function_def(tree, name)
+        assert func is not None, f"consumer {name} not found in app.py"
+        for node in ast.walk(func):
+            if (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Name)
+                and node.func.id == "isinstance"
+                and len(node.args) >= 2
+                and isinstance(node.args[1], ast.Name)
+                and node.args[1].id == "dict"
+            ):
+                raise AssertionError(
+                    f"{name} reintroduced inline `isinstance(..., dict)` at "
+                    f"line {node.lineno}. Consolidate the filter into "
+                    f"_get_validation_results (#94)."
+                )
 
 
-def test_calibrate_area_wires_tuple_unpack_into_scorecard_table(monkeypatch):
-    """calibrate_area must unpack _get_validation_results' tuple into
-    scorecard_table — regression guard for the Q1 refactor + #94 splat.
+def test_calibrate_area_unpacks_get_validation_results_tuple():
+    """AST guard: calibrate_area must call ``scorecard_table`` with the
+    splat of ``_get_validation_results(report)`` — the Q1 refactor + #94
+    tuple return contract.
+
+    AST-walks calibrate_area's body looking for a ``scorecard_table(...)``
+    Call whose sole argument is a ``Starred(Call(Name=_get_validation_results))``.
+    Catches splat-drop / rename / line-wrap variants that a substring or
+    monkeypatch-never-invoked guard would miss.
     """
+    import inspect
     from synthed.dashboard import app as dashboard_app
 
-    captured = {}
+    src = inspect.getsource(dashboard_app)
+    tree = ast.parse(src)
 
-    def fake_scorecard_table(results, dropped=0):
-        captured["results"] = results
-        captured["dropped"] = dropped
-        return "<fake/>"
+    func = _find_function_def(tree, "calibrate_area")
+    assert func is not None, "calibrate_area not found in app.py"
 
-    monkeypatch.setattr(dashboard_app, "scorecard_table", fake_scorecard_table)
+    found_splat_call = False
+    for node in ast.walk(func):
+        if not (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "scorecard_table"
+        ):
+            continue
+        # Expect exactly one positional arg: Starred(Call(Name=_get_validation_results, [Name=report]))
+        if len(node.args) == 1 and isinstance(node.args[0], ast.Starred):
+            inner = node.args[0].value
+            if (
+                isinstance(inner, ast.Call)
+                and isinstance(inner.func, ast.Name)
+                and inner.func.id == "_get_validation_results"
+                and len(inner.args) == 1
+                and isinstance(inner.args[0], ast.Name)
+                and inner.args[0].id == "report"
+            ):
+                found_splat_call = True
+                break
 
-    report = {"validation": {"results": [{"passed": True}, None]}}
-    results, dropped = dashboard_app._get_validation_results(report)
-    # Mirror the production expression: scorecard_table(*_get_validation_results(report))
-    fake_scorecard_table(*dashboard_app._get_validation_results(report))
-
-    assert captured["results"] == [{"passed": True}]
-    assert captured["dropped"] == 1
-    assert results == captured["results"]
-    assert dropped == captured["dropped"]
+    assert found_splat_call, (
+        "calibrate_area must call "
+        "scorecard_table(*_get_validation_results(report)) — do not drop "
+        "the splat, rename the helper, or reintroduce inline dispatch."
+    )
