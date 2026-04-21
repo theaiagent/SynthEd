@@ -248,6 +248,39 @@ def _approximate_weekly_dropouts(
     return weekly
 
 
+def _get_validation_results(report: dict) -> tuple[list[dict], int]:
+    """Extract normalized validation results + count of non-dict entries dropped.
+
+    Returns ``(results, dropped)``:
+    - ``results`` is always ``list[dict]`` — ``None``/non-list ``results``
+      coerces to ``[]``, and any non-dict row in the list is filtered out.
+    - ``dropped`` is the count of non-dict entries that were silently
+      filtered — the scorecard surfaces this as a warning banner so a
+      malformed validator output isn't lost in the count.
+
+    Single canonical normalizer — consumers should NOT re-filter.
+
+    Edge case (intentional silent swallow): when ``report["validation"]`` is a
+    dict but ``results`` is a non-list, non-None value (e.g. a stray scalar),
+    ``raw_list`` becomes ``[]`` and ``dropped`` stays ``0``. The user sees the
+    "No validation data" empty state with no malformed-container hint. This is
+    by design — the same outcome applies for an explicit ``results: null``
+    (no data), and container-level malformations should be caught at the
+    validator layer, not surfaced via the scorecard.
+    """
+    val = report.get("validation", {})
+    if isinstance(val, dict):
+        raw = val.get("results")
+        raw_list = raw if isinstance(raw, list) else []
+    elif isinstance(val, list):
+        raw_list = val
+    else:
+        raw_list = []
+
+    filtered = [r for r in raw_list if isinstance(r, dict)]
+    return filtered, len(raw_list) - len(filtered)
+
+
 # ── Server Logic ──
 
 def server(input, output, session):
@@ -663,30 +696,6 @@ def server(input, output, session):
             return ui.div("No validation categories", class_="text-secondary")
         fig = charts.validation_radar(scores)
         return ui.HTML(fig.to_html(full_html=False, include_plotlyjs=False))
-
-    def _get_validation_results(report: dict) -> tuple[list[dict], int]:
-        """Extract normalized validation results + count of non-dict entries dropped.
-
-        Returns ``(results, dropped)``:
-        - ``results`` is always ``list[dict]`` — ``None``/non-list ``results``
-          coerces to ``[]``, and any non-dict row in the list is filtered out.
-        - ``dropped`` is the count of non-dict entries that were silently
-          filtered — the scorecard surfaces this as a warning banner so a
-          malformed validator output isn't lost in the count.
-
-        Single canonical normalizer — consumers should NOT re-filter.
-        """
-        val = report.get("validation", {})
-        if isinstance(val, dict):
-            raw = val.get("results")
-            raw_list = raw if isinstance(raw, list) else []
-        elif isinstance(val, list):
-            raw_list = val
-        else:
-            raw_list = []
-
-        filtered = [r for r in raw_list if isinstance(r, dict)]
-        return filtered, len(raw_list) - len(filtered)
 
     # ── Config export ──
     @render.download(filename="synthed_config.json")

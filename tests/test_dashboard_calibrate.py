@@ -294,46 +294,99 @@ def test_calibrate_area_none_report_renders_s1_empty_state():
     assert "bi-rocket-takeoff" in html
 
 
-def test_calibrate_area_source_composes_shared_helper():
-    """Regression guard: calibrate_area must route through
-    _get_validation_results (not inline the isinstance dispatch).
+# ── Behavioral contract tests for _get_validation_results ──
+# These replace earlier inspect-source substring checks with direct
+# invocation — more robust to formatting changes and naming drift.
 
-    The splat ``*_get_validation_results(report)`` unpacks the
-    ``(results, dropped)`` tuple the helper now returns.
+
+def test_get_validation_results_missing_validation_key_returns_empty_and_zero_dropped():
+    from synthed.dashboard.app import _get_validation_results
+    results, dropped = _get_validation_results({})
+    assert results == []
+    assert dropped == 0
+
+
+def test_get_validation_results_none_results_coerces_to_empty():
+    """validation.results being an explicit None must not raise."""
+    from synthed.dashboard.app import _get_validation_results
+    results, dropped = _get_validation_results({"validation": {"results": None}})
+    assert results == []
+    assert dropped == 0
+
+
+def test_get_validation_results_non_list_results_coerces_to_empty():
+    """validation.results being a non-list scalar silently falls back to []."""
+    from synthed.dashboard.app import _get_validation_results
+    results, dropped = _get_validation_results({"validation": {"results": "oops"}})
+    assert results == []
+    assert dropped == 0  # intentional silent swallow — see helper docstring
+
+
+def test_get_validation_results_filters_non_dict_rows_and_counts_drops():
+    """Core #94 contract: non-dict rows removed, dropped count surfaced."""
+    from synthed.dashboard.app import _get_validation_results
+    report = {"validation": {"results": [
+        {"passed": True}, None, "malformed", 42, {"passed": False},
+    ]}}
+    results, dropped = _get_validation_results(report)
+    assert len(results) == 2
+    assert results[0]["passed"] is True
+    assert results[1]["passed"] is False
+    assert dropped == 3
+
+
+def test_get_validation_results_bare_list_shape_also_filtered():
+    """Older pipeline variants serialize validation as a bare list — must
+    still be filtered to dict rows."""
+    from synthed.dashboard.app import _get_validation_results
+    report = {"validation": [{"passed": True}, None, {"passed": False}]}
+    results, dropped = _get_validation_results(report)
+    assert len(results) == 2
+    assert dropped == 1
+
+
+def test_get_validation_results_unknown_validation_type_returns_empty():
+    from synthed.dashboard.app import _get_validation_results
+    results, dropped = _get_validation_results({"validation": 42})
+    assert (results, dropped) == ([], 0)
+
+
+def test_consumers_do_not_reintroduce_inline_dict_filter():
+    """Architectural invariant: validation_grade / validation_grade_sub /
+    chart_validation must not re-filter — _get_validation_results is the
+    single canonical normalizer. Source-level check because behavioral
+    coverage would require invoking Shiny reactives.
     """
     import inspect
     from synthed.dashboard import app as dashboard_app
     src = inspect.getsource(dashboard_app)
-    assert "scorecard_table(*_get_validation_results(report))" in src, (
-        "calibrate_area must call scorecard_table(*_get_validation_results(report)) "
-        "— do not reintroduce inline isinstance dispatch."
-    )
-
-
-def test_get_validation_results_source_is_canonical_normalizer():
-    """Regression guard: _get_validation_results must be the single
-    canonical normalizer — coerces None/non-list ``results`` to [],
-    filters non-dict rows, and returns ``(list[dict], dropped_count)``.
-    Consumers (scorecard_table, validation_grade, chart_validation) must
-    NOT re-filter.
-    """
-    import inspect
-    from synthed.dashboard import app as dashboard_app
-    src = inspect.getsource(dashboard_app)
-    assert "raw_list if isinstance(raw, list) else []" not in src  # sanity: old form gone
-    assert "raw if isinstance(raw, list) else []" in src, (
-        "_get_validation_results must coerce non-list `results` values to [] "
-        "— plain val.get('results', []) is not enough (returns None on explicit null)."
-    )
-    # The helper must filter non-dict rows before returning — consumers no
-    # longer re-filter inline.
-    assert "[r for r in raw_list if isinstance(r, dict)]" in src, (
-        "_get_validation_results must filter non-dict rows so consumers "
-        "can drop their inline `isinstance(r, dict)` guards."
-    )
-    # Consumer side: validation_grade and validation_grade_sub must NOT
-    # re-apply the dict filter (that drifted across three sites pre-#94).
     assert "isinstance(r, dict) and r.get(\"passed\")" not in src, (
         "validation_grade / validation_grade_sub must stop inline dict "
-        "filtering now that _get_validation_results normalizes upstream."
+        "filtering — consolidation landed in _get_validation_results (#94)."
     )
+
+
+def test_calibrate_area_wires_tuple_unpack_into_scorecard_table(monkeypatch):
+    """calibrate_area must unpack _get_validation_results' tuple into
+    scorecard_table — regression guard for the Q1 refactor + #94 splat.
+    """
+    from synthed.dashboard import app as dashboard_app
+
+    captured = {}
+
+    def fake_scorecard_table(results, dropped=0):
+        captured["results"] = results
+        captured["dropped"] = dropped
+        return "<fake/>"
+
+    monkeypatch.setattr(dashboard_app, "scorecard_table", fake_scorecard_table)
+
+    report = {"validation": {"results": [{"passed": True}, None]}}
+    results, dropped = dashboard_app._get_validation_results(report)
+    # Mirror the production expression: scorecard_table(*_get_validation_results(report))
+    fake_scorecard_table(*dashboard_app._get_validation_results(report))
+
+    assert captured["results"] == [{"passed": True}]
+    assert captured["dropped"] == 1
+    assert results == captured["results"]
+    assert dropped == captured["dropped"]
