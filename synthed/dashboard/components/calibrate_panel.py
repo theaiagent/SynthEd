@@ -136,7 +136,7 @@ def _scorecard_footer():
     )
 
 
-def scorecard_table(results: list[dict]):
+def scorecard_table(results: list[dict], dropped: int = 0):
     """Collapsible Bootstrap table of validation tests.
 
     Each dict in ``results`` is rendered as one row with columns:
@@ -145,8 +145,11 @@ def scorecard_table(results: list[dict]):
     ``details`` surfaces as the row's ``title=`` attribute for accessible
     hover text.
 
-    Non-dict entries are filtered out and surfaced via a warning row at
-    the top of the panel so the user knows a malformed entry was dropped.
+    ``dropped`` is the number of non-dict entries the caller already filtered
+    out (via the canonical ``_get_validation_results`` normalizer in app.py).
+    When > 0 a warning banner above the table discloses the count so the
+    user knows a malformed entry was skipped. This function does NOT re-
+    filter — it trusts its input is already ``list[dict]``.
 
     An empty result list renders the "No validation data" empty state
     instead of an empty table.
@@ -157,10 +160,6 @@ def scorecard_table(results: list[dict]):
     uses the same widget for the sidebar panels, so this is the
     project-consistent choice.
     """
-    original_len = len(results)
-    results = [r for r in results if isinstance(r, dict)]
-    dropped = original_len - len(results)
-
     if not results:
         return empty_state(
             title="No validation data",

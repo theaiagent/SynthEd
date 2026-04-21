@@ -11,6 +11,8 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import numpy as np
+
 
 @dataclass
 class ReferenceStatistics:
@@ -60,7 +62,12 @@ class ReferenceStatistics:
 
 @dataclass
 class ValidationResult:
-    """Result of a single validation test."""
+    """Result of a single validation test.
+
+    ``passed`` is strictly ``bool`` — enforced in ``__post_init__``. Downstream
+    consumers (scorecard summary counts, validation grades) rely on this so
+    they can do plain truthy reads without an ``is True`` guard at every site.
+    """
     test_name: str
     metric: str
     synthetic_value: float
@@ -69,3 +76,14 @@ class ValidationResult:
     p_value: float | None = None
     passed: bool = True
     details: str = ""
+
+    def __post_init__(self):
+        # numpy comparisons (e.g. ``ks_p > alpha``) emit ``np.bool_`` which is
+        # semantically a boolean but no longer a ``bool`` subclass on numpy 2.x.
+        # Coerce those to plain Python ``bool``; reject everything else.
+        if isinstance(self.passed, np.bool_):
+            self.passed = bool(self.passed)
+        elif not isinstance(self.passed, bool):
+            raise TypeError(
+                f"passed must be bool, got {type(self.passed).__name__}: {self.passed!r}"
+            )

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import ast
+
 from synthed.dashboard.components.calibrate_panel import (
     calibrate_panel_ui,
 )
@@ -210,11 +212,13 @@ def test_scorecard_summary_counts_passed_over_total():
     assert "2/3 tests passed" in html
 
 
-def test_scorecard_filters_non_dict_entries():
-    """Matches the validation_grade_sub tolerance at app.py:578."""
-    mixed = [None, "bad", {"test": "ok", "passed": True}]
-    html = str(scorecard_table(mixed))
-    assert html.count("<tr") == 2  # 1 header + 1 dict row
+def test_scorecard_trusts_prefiltered_input():
+    """scorecard_table no longer re-filters. Canonical normalization is
+    in app.py's _get_validation_results — scorecard_table receives a
+    guaranteed list[dict] from its caller. Passing only dicts through here
+    mirrors the production wiring."""
+    html = str(scorecard_table([{"test": "ok", "passed": True}], dropped=0))
+    assert html.count("<tr") == 2  # 1 header + 1 row
     assert "ok" in html
 
 
@@ -249,17 +253,19 @@ def test_scorecard_includes_footer_note():
     assert "Effective α" in html or "effective α" in html.lower()
 
 
-def test_scorecard_warns_when_non_dict_entries_dropped():
-    """Dropped malformed entries must be surfaced, not silent."""
-    mixed = [None, "bad", {"test": "ok", "passed": True}]
-    html = str(scorecard_table(mixed))
+def test_scorecard_warns_when_dropped_count_positive():
+    """Dropped malformed entries must be surfaced via banner, not silent.
+    Canonical drop count comes from _get_validation_results — we pass it
+    in explicitly here via the dropped= kwarg.
+    """
+    html = str(scorecard_table([{"test": "ok", "passed": True}], dropped=2))
     assert "alert-warning" in html
     assert "2" in html  # count of dropped entries
     assert "dropped" in html.lower()
 
 
-def test_scorecard_no_warning_when_all_dicts():
-    """Clean inputs should not display a warning banner."""
+def test_scorecard_no_warning_when_dropped_zero():
+    """dropped=0 (default) omits the warning banner."""
     html = str(scorecard_table(_three_results()))
     assert "alert-warning" not in html
 
@@ -290,31 +296,151 @@ def test_calibrate_area_none_report_renders_s1_empty_state():
     assert "bi-rocket-takeoff" in html
 
 
-def test_calibrate_area_source_composes_shared_helper():
-    """Regression guard: calibrate_area must route through
-    _get_validation_results (not inline the isinstance dispatch).
+# ── Behavioral contract tests for _get_validation_results ──
+# These replace earlier inspect-source substring checks with direct
+# invocation — more robust to formatting changes and naming drift.
 
-    If someone reverts the Q1 refactor, this test catches it.
+
+def test_get_validation_results_missing_validation_key_returns_empty_and_zero_dropped():
+    from synthed.dashboard.app import _get_validation_results
+    results, dropped = _get_validation_results({})
+    assert results == []
+    assert dropped == 0
+
+
+def test_get_validation_results_none_results_coerces_to_empty():
+    """validation.results being an explicit None must not raise."""
+    from synthed.dashboard.app import _get_validation_results
+    results, dropped = _get_validation_results({"validation": {"results": None}})
+    assert results == []
+    assert dropped == 0
+
+
+def test_get_validation_results_non_list_results_coerces_to_empty():
+    """validation.results being a non-list scalar silently falls back to []."""
+    from synthed.dashboard.app import _get_validation_results
+    results, dropped = _get_validation_results({"validation": {"results": "oops"}})
+    assert results == []
+    assert dropped == 0  # intentional silent swallow — see helper docstring
+
+
+def test_get_validation_results_filters_non_dict_rows_and_counts_drops():
+    """Core #94 contract: non-dict rows removed, dropped count surfaced."""
+    from synthed.dashboard.app import _get_validation_results
+    report = {"validation": {"results": [
+        {"passed": True}, None, "malformed", 42, {"passed": False},
+    ]}}
+    results, dropped = _get_validation_results(report)
+    assert len(results) == 2
+    assert results[0]["passed"] is True
+    assert results[1]["passed"] is False
+    assert dropped == 3
+
+
+def test_get_validation_results_bare_list_shape_also_filtered():
+    """Older pipeline variants serialize validation as a bare list — must
+    still be filtered to dict rows."""
+    from synthed.dashboard.app import _get_validation_results
+    report = {"validation": [{"passed": True}, None, {"passed": False}]}
+    results, dropped = _get_validation_results(report)
+    assert len(results) == 2
+    assert dropped == 1
+
+
+def test_get_validation_results_unknown_validation_type_returns_empty():
+    from synthed.dashboard.app import _get_validation_results
+    results, dropped = _get_validation_results({"validation": 42})
+    assert (results, dropped) == ([], 0)
+
+
+def _find_function_def(module_tree: ast.AST, name: str) -> ast.FunctionDef | None:
+    """Locate the first FunctionDef with ``name`` anywhere in the tree
+    (handles nested definitions inside ``server()``).
+    """
+    for node in ast.walk(module_tree):
+        if isinstance(node, ast.FunctionDef) and node.name == name:
+            return node
+    return None
+
+
+def test_consumers_do_not_reintroduce_inline_dict_filter():
+    """Architectural invariant: validation_grade / validation_grade_sub /
+    chart_validation must not re-filter rows with ``isinstance(..., dict)``.
+    ``_get_validation_results`` is the single canonical normalizer.
+
+    AST-walks each consumer function body looking for any
+    ``isinstance(<any>, dict)`` Call — catches variable-rename / quote-style /
+    line-wrap variants the prior substring guard missed.
     """
     import inspect
     from synthed.dashboard import app as dashboard_app
+
     src = inspect.getsource(dashboard_app)
-    # Locate the calibrate_area function and assert it calls the shared helper.
-    assert "scorecard_table(_get_validation_results(report))" in src, (
-        "calibrate_area must call scorecard_table(_get_validation_results(report)) "
-        "— do not reintroduce inline isinstance dispatch."
-    )
+    tree = ast.parse(src)
+
+    consumers = ("validation_grade", "validation_grade_sub", "chart_validation")
+    for name in consumers:
+        func = _find_function_def(tree, name)
+        assert func is not None, f"consumer {name} not found in app.py"
+        for node in ast.walk(func):
+            if (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Name)
+                and node.func.id == "isinstance"
+                and len(node.args) >= 2
+                and isinstance(node.args[1], ast.Name)
+                and node.args[1].id == "dict"
+            ):
+                raise AssertionError(
+                    f"{name} reintroduced inline `isinstance(..., dict)` at "
+                    f"line {node.lineno}. Consolidate the filter into "
+                    f"_get_validation_results (#94)."
+                )
 
 
-def test_get_validation_results_source_guards_non_list_results():
-    """Regression guard: _get_validation_results must coerce None/non-list
-    `validation.results` to [] so downstream consumers (scorecard_table,
-    validation_grade, chart_validation) can rely on iterability.
+def test_calibrate_area_unpacks_get_validation_results_tuple():
+    """AST guard: calibrate_area must call ``scorecard_table`` with the
+    splat of ``_get_validation_results(report)`` — the Q1 refactor + #94
+    tuple return contract.
+
+    AST-walks calibrate_area's body looking for a ``scorecard_table(...)``
+    Call whose sole argument is a ``Starred(Call(Name=_get_validation_results))``.
+    Catches splat-drop / rename / line-wrap variants that a substring or
+    monkeypatch-never-invoked guard would miss.
     """
     import inspect
     from synthed.dashboard import app as dashboard_app
+
     src = inspect.getsource(dashboard_app)
-    assert "raw if isinstance(raw, list) else []" in src, (
-        "_get_validation_results must coerce non-list `results` values to [] "
-        "— plain val.get('results', []) is not enough (returns None on explicit null)."
+    tree = ast.parse(src)
+
+    func = _find_function_def(tree, "calibrate_area")
+    assert func is not None, "calibrate_area not found in app.py"
+
+    found_splat_call = False
+    for node in ast.walk(func):
+        if not (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "scorecard_table"
+        ):
+            continue
+        # Expect exactly one positional arg: Starred(Call(Name=_get_validation_results, [Name=report]))
+        if len(node.args) == 1 and isinstance(node.args[0], ast.Starred):
+            inner = node.args[0].value
+            if (
+                isinstance(inner, ast.Call)
+                and isinstance(inner.func, ast.Name)
+                and inner.func.id == "_get_validation_results"
+                and len(inner.args) == 1
+                and isinstance(inner.args[0], ast.Name)
+                and inner.args[0].id == "report"
+            ):
+                found_splat_call = True
+                break
+
+    assert found_splat_call, (
+        "calibrate_area must call "
+        "scorecard_table(*_get_validation_results(report)) — do not drop "
+        "the splat, rename the helper, or reintroduce inline dispatch."
     )
