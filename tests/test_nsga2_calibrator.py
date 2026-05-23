@@ -1,3 +1,4 @@
+"""NSGA-II calibration, Pareto front, knee-point, parallel branch, profile-object signatures."""
 from __future__ import annotations
 
 import pytest

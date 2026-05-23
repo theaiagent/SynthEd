@@ -432,6 +432,15 @@ Cross-seed validation at n=1,000 students with 10 seeds (§4) yields the followi
 
 Any objective difference smaller than ~1 pp dropout (≈0.5 σ) or ~0.005 GPA is **below the noise floor** of the simulator at the validation sample size. NSGA-II cannot distinguish solutions whose objective values fall inside this band, and reported fit improvements within this band should not be interpreted as meaningful.
 
+**SSQ effect-size measurement (Issue #86).** A 50-seed empirical study (seeds 41–90, n=200 students per run) measured the paired per-seed dropout rate difference when varying `support_services_quality`:
+
+| Direction | Mean effect | Std | p10 | Interpretation |
+|-----------|-------------|-----|-----|----------------|
+| SSQ=0.5 → 0.8 (high support) | 0.0482 | 0.0325 | 0.0140 | ~4.8 pp dropout reduction |
+| SSQ=0.2 → 0.5 (low support) | 0.0687 | 0.0308 | 0.0295 | ~6.9 pp dropout increase |
+
+Both directional effects exceed the noise floor (p10 ≥ 0.012), confirming that `support_services_quality` has a robust, detectable effect on simulator outputs. The asymmetry (low SSQ has a stronger effect than high SSQ) reflects the inverted threshold modulation in the Baulke model. Integration test thresholds are set to `eps=0.008` based on these measurements (p10 ≥ 0.012 → >90% power).
+
 ### 7.3 Parameter identifiability
 
 The calibration optimizes 20 free parameters (Sobol-screened from 68 — see §2 *Parameter: `sobol_top_n = 20`*) against 2 scalar objectives. The local Jacobian of the forward map (parameters → objectives) has rank at most 2 (assuming the two objectives, `dropout_error` and `gpa_error`, are locally linearly independent — if they happen to be locally collinear along the optimum manifold, the effective rank could fall to 1 and the null space could grow to 19-D), so there are **at least 18 effectively unconstrained directions** in parameter space at any solution: many distinct parameter vectors produce statistically indistinguishable outputs on (dropout, GPA). Cross-seed comparison of knee-point parameter vectors at distance metric `compare_knee_points` consistently shows differences on the order of 0.3–0.4 (normalized RMS) even when both seeds achieve sub-percentage-point agreement on the calibration targets — observed empirically in the v1.7.0 outputs `calibration_output/nsga2_default_seed42.json` and `nsga2_default_seed2024.json`, reproducible by running `compare_knee_points` from `synthed/analysis/pareto_utils.py` on those files.

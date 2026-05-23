@@ -241,54 +241,58 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 
 879 pytest tests across 49 files:
 
+<!-- BEGIN:test_inventory -->
 | Test File | Tests | Coverage |
 |-----------|-------|----------|
-| `test_persona.py` | 27 | BigFive, engagement/dropout bounds, UUIDv7, disability |
-| `test_factory.py` | 26 | Population, seed determinism, attribute ranges, display_id |
-| `test_engine.py` | 12 | State, phases, engagement, dropout, std_engagement |
-| `test_social_network.py` | 11 | Links, degree, peer influence, decay, statistics |
-| `test_theories.py` | 29 | All 10 theory modules + unavoidable withdrawal, GPA feedback, coping, disability |
-| `test_pipeline_integration.py` | 25 | Full pipeline, validation, calibration, profiles |
-| `test_semester.py` | 19 | Carry-over, dropout persistence, prior_gpa blend |
-| `test_llm_enrichment.py` | 12 | Mock LLM, backstory export, error handling |
-| `test_llm_client.py` | 28 | Init, chat, retry, cache, cost, base_url, streaming |
-| `test_llm_cache.py` | 9 | TTL expiry, LRU eviction, defaults |
-| `test_llm_cost_warning.py` | 11 | Cost estimation, threshold, confirm_callback |
-| `test_llm_memory.py` | 14 | Immutability, role validation, add/clear |
-| `test_backstory_templates.py` | 17 | Templates, life events, regional contexts |
-| `test_name_pools.py` | 11 | Name pools, determinism, country context |
-| `test_sobol.py` | 40 | Parameter space, sampling, overrides, ranking, validation, parallel branch |
-| `test_trait_calibration.py` | 39 | OULAD targets, Optuna, loss functions, held-out validation |
-| `test_auto_bounds.py` | 20 | Generation, clipping, filtering, compatibility, edge cases |
-| `test_sensitivity.py` | 2 | OAT sweep, tornado chart |
-| `test_validator.py` | 9 | Report structure, z-test, grades, dropout range |
-| `test_calibration.py` | 11 | Interpolation, clamping, confidence, range estimation |
-| `test_oulad_export.py` | 35 | Mappings, 7-table export, schema, determinism |
-| `test_benchmarks.py` | 15 | Profiles, generator, report formatting, error handling |
-| `test_dual_track_gpa.py` | 12 | Perceived mastery fields, dual-track recording, theory module switching |
-| `test_opportunity_cost.py` | 5 | Opportunity cost pressure, time discount, backward compat |
-| `test_environmental_shocks.py` | 26 | Shock generation, engine integration, Baulke phase advance |
-| `test_environment.py` | 7 | Courses, exam weeks, positive events |
-| `test_utils.py` | 14 | Validation helpers, logging config |
-| `test_network_scaling.py` | 4 | Degree cap, sampling threshold |
-| `test_coverage_boost.py` | 37 | Edge cases, pipeline branches, Baulke phases |
-| `test_coverage_gaps.py` | 8 | Additional coverage edge cases |
+| `test_auto_bounds.py` | 20 | auto_bounds parameter generation |
+| `test_backstory_templates.py` | 17 | backstory template selection and prompt building |
+| `test_baulke_institutional.py` | 11 | Baulke institutional modulation via InstitutionalConfig. |
+| `test_benchmarks.py` | 15 | benchmark profiles and generator |
+| `test_calibration.py` | 11 | CalibrationMap interpolation and estimation |
+| `test_coverage_boost.py` | 37 | boost coverage from 93% to 95%+. |
+| `test_coverage_gaps.py` | 8 | close remaining coverage gaps |
+| `test_dashboard.py` | 42 | SynthEd Dashboard config bridge, distribution normalization, and charts |
+| `test_dashboard_a11y.py` | 5 | dashboard (audit P1-6/P1-7/P1-10/P3-2). |
+| `test_dashboard_calibrate.py` | 40 | the Calibrate tab UI components (PR B scorecard) |
+| `test_dashboard_nav.py` | 3 | the two-tab mode-split skeleton (PR A). |
+| `test_dashboard_theme.py` | 7 | dashboard theme & layout fixes (v1.7.0). |
+| `test_dual_track_gpa.py` | 12 | dual-track GPA: transcript GPA vs perceived mastery |
+| `test_engine.py` | 12 | the SimulationEngine |
+| `test_engine_config.py` | 19 | EngineConfig frozen dataclass |
+| `test_engine_grading.py` | 14 | GradingConfig |
+| `test_environment.py` | 7 | ODLEnvironment |
+| `test_environmental_shocks.py` | 26 | Environmental Shocks (Bean & Metzner Phase 3 — stochastic life events) |
+| `test_factory.py` | 26 | StudentFactory population generation |
+| `test_gpa.py` | 9 | GPA/academic success computation |
+| `test_grading.py` | 49 | GradingConfig and grading utilities |
 | `test_institutional_config.py` | 15 | InstitutionalConfig validation, scale_by, defaults |
-| `test_institutional_integration.py` | 5 | Pipeline integration with InstitutionalConfig |
+| `test_institutional_integration.py` | 5 | InstitutionalConfig wired into SimulationEngine |
+| `test_llm_cache.py` | 9 | LLM cache TTL expiry and LRU eviction |
+| `test_llm_client.py` | 28 | LLMClient with mocked OpenAI API |
+| `test_llm_cost_warning.py` | 11 | LLM cost estimation and warning system |
+| `test_llm_enrichment.py` | 12 | LLM enrichment feature: backstory generation, export, and error handling |
+| `test_llm_memory.py` | 14 | ConversationMemory and LLM streaming |
+| `test_name_pools.py` | 11 | name_pools module |
+| `test_network_scaling.py` | 4 | network scaling: sampling, degree caps, backward compatibility |
 | `test_nsga2_calibrator.py` | 25 | NSGA-II calibration, Pareto front, knee-point, parallel branch, profile-object signatures |
+| `test_opportunity_cost.py` | 5 | Kember opportunity cost mechanism |
+| `test_oulad_export.py` | 35 | OULAD-compatible export |
 | `test_pareto_utils.py` | 19 | Pareto dominance, front extraction, utilities |
-| `test_unavoidable_withdrawal.py` | 9 | Withdrawal probability, event types |
-| `test_gpa.py` | 9 | GPA accumulation, bounds, feedback loop |
-| `test_grading.py` | 49 | GradingConfig, outcome classification, semester grades |
-| `test_engine_grading.py` | 14 | Engine grading integration, floor-adjusted outcomes |
-| `test_engine_config.py` | 19 | EngineConfig frozen dataclass, validation, replace |
-| `test_baulke_institutional.py` | 11 | Baulke institutional modulation, threshold scaling |
-| `test_pipeline_config.py` | 19 | PipelineConfig frozen dataclass, serialization |
-| `test_theory_protocol.py` | 32 | TheoryModule protocol, phase dispatch, auto-discovery, engagement deltas |
-| `test_dashboard.py` | 41 | Config bridge round-trip, distribution normalization, validation, chart builders, security, edge cases |
-| `test_dashboard_theme.py` | 7 | WCAG AA contrast, light-mode navbar CSS rules, `navbar_options` migration, responsive run-bar layout, `:focus-visible` outline (P1-6), `.section-heading` class (P3-2) |
-| `test_dashboard_nav.py` | 3 | Two-panel mode-split skeleton (Research + Calibrate tabs), swap-point IDs, placeholder structure |
-| `test_dashboard_a11y.py` | 5 | Tooltip `aria-label` + `role="img"` direct + via `_slider_input` production path (P1-7), numeric-input locale script + root `lang="en"` (P1-10) |
-| `test_report.py` | 11 | HTML/PDF rendering, chart figures, Turkish translation, dynamic value substitution, save to disk |
+| `test_persona.py` | 27 | StudentPersona and BigFiveTraits |
+| `test_pipeline_config.py` | 19 | PipelineConfig frozen dataclass |
+| `test_pipeline_integration.py` | 25 | SynthEdPipeline |
+| `test_report.py` | 11 | SynthEd report generation module |
+| `test_semester.py` | 19 | MultiSemesterRunner carry-over and multi-semester logic |
+| `test_sensitivity.py` | 2 | sensitivity analysis module |
+| `test_sobol.py` | 40 | Sobol sensitivity analysis |
+| `test_social_network.py` | 11 | SocialNetwork |
+| `test_theories.py` | 29 | individual theory modules |
+| `test_theory_protocol.py` | 32 | TheoryModule Protocol, TheoryContext, and auto-discovery |
+| `test_trait_calibration.py` | 39 | OULAD target extraction and trait-based calibration |
+| `test_unavoidable_withdrawal.py` | 9 | the UnavoidableWithdrawal theory module |
+| `test_utils.py` | 14 | shared utility modules: validation and log_config |
+| `test_validation_types.py` | 10 | synthed.validation.types dataclasses |
+| `test_validator.py` | 9 | SyntheticDataValidator |
+<!-- END:test_inventory -->
 
 CI runs tests across **Python 3.10, 3.11, and 3.12** via [GitHub Actions](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml).

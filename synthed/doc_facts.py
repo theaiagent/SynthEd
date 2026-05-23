@@ -16,6 +16,9 @@ from pathlib import Path
 
 _ROOT = Path(__file__).resolve().parent.parent
 
+_INVENTORY_BEGIN = "<!-- BEGIN:test_inventory -->"
+_INVENTORY_END = "<!-- END:test_inventory -->"
+
 
 @dataclass(frozen=True)
 class DocFacts:
@@ -47,17 +50,47 @@ def _parametrize_cardinality(func: ast.FunctionDef) -> int:
     return cardinality
 
 
+def _extract_module_docstring(tree: ast.Module) -> str:
+    """Extract the module-level docstring from an AST, or return '\u2014'."""
+    if (tree.body
+            and isinstance(tree.body[0], ast.Expr)
+            and isinstance(tree.body[0].value, ast.Constant)
+            and isinstance(tree.body[0].value.value, str)):
+        # Take first line, strip surrounding whitespace
+        doc = tree.body[0].value.value.strip()
+        # Remove common prefixes like "Tests for ..." to keep coverage column concise
+        for prefix in ("Tests for ", "Test for ", "Integration tests: ",
+                       "Integration tests for the ", "Integration tests for ",
+                       "Structural tests for ", "Targeted tests to ",
+                       "Accessibility regression guards for the ",
+                       "Engine integration tests for "):
+            if doc.startswith(prefix):
+                doc = doc[len(prefix):]
+                break
+        # Remove trailing period
+        doc = doc.rstrip(".")
+        # Truncate at first newline (multi-line docstrings)
+        doc = doc.split("\n")[0].strip()
+        return doc
+    return "\u2014"
+
+
+def _count_file_tests(tree: ast.Module) -> int:
+    """Count test functions in an AST, accounting for parametrize."""
+    return sum(
+        _parametrize_cardinality(node)
+        for node in ast.walk(tree)
+        if isinstance(node, ast.FunctionDef) and node.name.startswith("test_")
+    )
+
+
 def collect() -> DocFacts:
     tests_dir = _ROOT / "tests"
     test_files = sorted(tests_dir.glob("test_*.py"))
     test_count = 0
     for tf in test_files:
         tree = ast.parse(tf.read_text(encoding="utf-8"))
-        test_count += sum(
-            _parametrize_cardinality(node)
-            for node in ast.walk(tree)
-            if isinstance(node, ast.FunctionDef) and node.name.startswith("test_")
-        )
+        test_count += _count_file_tests(tree)
 
     sobol_file = _ROOT / "synthed" / "analysis" / "sobol_sensitivity.py"
     sobol_text = sobol_file.read_text(encoding="utf-8")
@@ -68,6 +101,33 @@ def collect() -> DocFacts:
         test_file_count=len(test_files),
         sobol_param_count=sobol_param_count,
     )
+
+
+def _collect_test_inventory() -> list[tuple[str, int, str]]:
+    """Collect per-file test inventory: (filename, test_count, description).
+
+    Sorted alphabetically by filename.
+    """
+    tests_dir = _ROOT / "tests"
+    test_files = sorted(tests_dir.glob("test_*.py"))
+    inventory: list[tuple[str, int, str]] = []
+    for tf in test_files:
+        tree = ast.parse(tf.read_text(encoding="utf-8"))
+        count = _count_file_tests(tree)
+        description = _extract_module_docstring(tree)
+        inventory.append((tf.name, count, description))
+    return inventory
+
+
+def _generate_inventory_table(inventory: list[tuple[str, int, str]]) -> str:
+    """Generate a markdown table from the test inventory."""
+    lines = [
+        "| Test File | Tests | Coverage |",
+        "|-----------|-------|----------|",
+    ]
+    for filename, count, description in inventory:
+        lines.append(f"| `{filename}` | {count} | {description} |")
+    return "\n".join(lines)
 
 
 @dataclass(frozen=True)
@@ -132,9 +192,61 @@ _DOC_CHECKS: list[DocCheck] = [
 class Discrepancy:
     file: str
     metric: str
-    expected: int
-    found: int
+    expected: int | str
+    found: int | str
     description: str
+
+
+def _verify_inventory(problems: list[Discrepancy]) -> None:
+    """Check that the THEORY.md test inventory table matches source."""
+    theory_path = _ROOT / "docs" / "THEORY.md"
+    if not theory_path.exists():
+        return
+    text = theory_path.read_text(encoding="utf-8")
+    if _INVENTORY_BEGIN not in text or _INVENTORY_END not in text:
+        problems.append(Discrepancy(
+            "docs/THEORY.md", "test_inventory", "sentinels present",
+            "sentinels missing", "Test inventory sentinel comments",
+        ))
+        return
+
+    # Extract current table between sentinels
+    begin_idx = text.index(_INVENTORY_BEGIN) + len(_INVENTORY_BEGIN)
+    end_idx = text.index(_INVENTORY_END)
+    current_table = text[begin_idx:end_idx].strip()
+
+    # Generate expected table
+    inventory = _collect_test_inventory()
+    expected_table = _generate_inventory_table(inventory)
+
+    if current_table != expected_table:
+        problems.append(Discrepancy(
+            "docs/THEORY.md", "test_inventory",
+            f"{len(inventory)} files", "stale table",
+            "Test inventory table content",
+        ))
+
+
+def _fix_inventory() -> bool:
+    """Replace THEORY.md test inventory table between sentinels. Returns True if changed."""
+    theory_path = _ROOT / "docs" / "THEORY.md"
+    if not theory_path.exists():
+        return False
+    text = theory_path.read_text(encoding="utf-8")
+    if _INVENTORY_BEGIN not in text or _INVENTORY_END not in text:
+        return False
+
+    inventory = _collect_test_inventory()
+    new_table = _generate_inventory_table(inventory)
+
+    begin_idx = text.index(_INVENTORY_BEGIN) + len(_INVENTORY_BEGIN)
+    end_idx = text.index(_INVENTORY_END)
+
+    new_text = text[:begin_idx] + "\n" + new_table + "\n" + text[end_idx:]
+    if new_text != text:
+        theory_path.write_text(new_text, encoding="utf-8")
+        return True
+    return False
 
 
 def verify() -> list[Discrepancy]:
@@ -154,11 +266,12 @@ def verify() -> list[Discrepancy]:
                     check.file, check.metric, expected, found, check.description,
                 ))
 
+    _verify_inventory(problems)
     return problems
 
 
 def fix() -> list[str]:
-    """Auto-fix stale numbers in documentation files. Returns list of fixed files."""
+    """Auto-fix stale numbers and inventory table. Returns list of fixed files."""
     facts = collect()
     fixed_files: list[str] = []
 
@@ -182,6 +295,11 @@ def fix() -> list[str]:
             if check.file not in fixed_files:
                 fixed_files.append(check.file)
 
+    # Fix test inventory table
+    if _fix_inventory():
+        if "docs/THEORY.md" not in fixed_files:
+            fixed_files.append("docs/THEORY.md")
+
     return fixed_files
 
 
@@ -193,6 +311,13 @@ def main() -> None:
     facts = collect()
     print(f"Tests:        {facts.test_count} across {facts.test_file_count} files")
     print(f"Sobol params: {facts.sobol_param_count}")
+
+    # Show inventory summary
+    inventory = _collect_test_inventory()
+    print(f"Inventory:    {len(inventory)} test files with docstrings")
+    missing_docs = [name for name, _, desc in inventory if desc == "\u2014"]
+    if missing_docs:
+        print(f"  Missing docstrings: {', '.join(missing_docs)}")
     print()
 
     if args.fix:
@@ -202,7 +327,7 @@ def main() -> None:
             for f in fixed:
                 print(f"  {f}")
         else:
-            print("Nothing to fix — all docs consistent.")
+            print("Nothing to fix \u2014 all docs consistent.")
         return
 
     problems = verify()

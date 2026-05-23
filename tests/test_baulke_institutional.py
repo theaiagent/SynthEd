@@ -245,28 +245,30 @@ class TestIntegrationDropoutRate:
         return _run
 
     def test_high_ssq_lower_dropout(self, _run_simulation):
-        """SSQ=0.8 should produce lower mean dropout than SSQ=0.5 (10 seeds, eps=0.010).
+        """SSQ=0.8 should produce lower mean dropout than SSQ=0.5 (10 seeds, eps=0.008).
 
-        Directional smoke test. Not a regression guard for true effect sizes
-        below ~0.015 — eps=0.010 is a pending empirical calibration (issue #86).
+        Empirically calibrated (issue #86, 50-seed study):
+          mean effect = 0.0482, std = 0.0325, p10 = 0.0140.
+        eps = 0.008 gives > 90% power at observed effect distribution.
         """
         seeds = list(range(41, 51))
         default_rate = sum(_run_simulation(0.5, seed=s) for s in seeds) / len(seeds)
         high_ssq_rate = sum(_run_simulation(0.8, seed=s) for s in seeds) / len(seeds)
-        assert high_ssq_rate <= default_rate - 0.010, (
+        assert high_ssq_rate <= default_rate - 0.008, (
             f"SSQ=0.8 mean dropout {high_ssq_rate:.3f} should be < default {default_rate:.3f}"
         )
 
     def test_low_ssq_higher_dropout(self, _run_simulation):
-        """SSQ=0.2 should produce higher mean dropout than SSQ=0.5 (10 seeds, eps=0.010).
+        """SSQ=0.2 should produce higher mean dropout than SSQ=0.5 (10 seeds, eps=0.008).
 
-        Directional smoke test. Not a regression guard for true effect sizes
-        below ~0.015 — eps=0.010 is a pending empirical calibration (issue #86).
+        Empirically calibrated (issue #86, 50-seed study):
+          mean effect = 0.0687, std = 0.0308, p10 = 0.0295.
+        eps = 0.008 gives > 99% power at observed effect distribution.
         """
         seeds = list(range(41, 51))
         default_rate = sum(_run_simulation(0.5, seed=s) for s in seeds) / len(seeds)
         low_ssq_rate = sum(_run_simulation(0.2, seed=s) for s in seeds) / len(seeds)
-        assert low_ssq_rate >= default_rate + 0.010, (
+        assert low_ssq_rate >= default_rate + 0.008, (
             f"SSQ=0.2 mean dropout {low_ssq_rate:.3f} should be > default {default_rate:.3f}"
         )
 

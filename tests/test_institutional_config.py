@@ -1,3 +1,4 @@
+"""InstitutionalConfig validation, scale_by, defaults."""
 from __future__ import annotations
 
 import pytest
