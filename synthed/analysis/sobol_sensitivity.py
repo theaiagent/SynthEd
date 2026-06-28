@@ -27,6 +27,7 @@ from ._sim_runner import MODULE_ALIASES, run_simulation_with_overrides
 logger = logging.getLogger(__name__)
 
 _WORKER_TIMEOUT_S = 300  # align with nsga2_calibrator
+_MAX_SAMPLE_ATTEMPTS = 3  # initial try + retries before failing the Sobol run
 
 
 # ─────────────────────────────────────────────
@@ -382,6 +383,30 @@ class SobolAnalyzer:
     # Internal: simulation runner
     # ─────────────────────────────────────────
 
+    @staticmethod
+    def _result_with_retry(attempt_fn, *, max_attempts, label):
+        """Call ``attempt_fn`` up to ``max_attempts`` times; return first success.
+
+        Sobol's Saltelli matrix has a rigid row count and order, so a failed
+        sample cannot be dropped without corrupting the indices. Rather than
+        zero-fill (which silently contaminates the sensitivity estimates),
+        retry the sample and, if every attempt fails, raise so the run aborts.
+        """
+        last_exc: Exception | None = None
+        for attempt in range(1, max_attempts + 1):
+            try:
+                return attempt_fn()
+            except Exception as exc:  # noqa: BLE001 - any worker failure is retryable
+                last_exc = exc
+                logger.warning(
+                    "%s attempt %d/%d failed: %s", label, attempt, max_attempts, exc,
+                )
+        raise RuntimeError(
+            f"{label} failed after {max_attempts} attempts; aborting Sobol "
+            f"analysis to avoid contaminating sensitivity indices with "
+            f"placeholder values"
+        ) from last_exc
+
     def _run_simulations(self, samples: np.ndarray) -> list[dict]:
         """Run one simulation per sample row, collecting output metrics."""
         n_total = len(samples)
@@ -426,20 +451,30 @@ class SobolAnalyzer:
                 for i, od in enumerate(override_list)
             }
             completed = 0
+            failed_indices: list[int] = []
             for future in as_completed(future_to_idx, timeout=min(_WORKER_TIMEOUT_S * n_total, 86400)):
                 idx = future_to_idx[future]
                 try:
                     outputs[idx] = future.result(timeout=_WORKER_TIMEOUT_S)
                 except Exception as exc:
-                    logger.error("Sobol simulation %d/%d failed: %s", idx + 1, n_total, exc)
-                    outputs[idx] = {
-                        "dropout_rate": 0.0, "mean_engagement": 0.0, "mean_gpa": 0.0,
-                        "std_engagement": 0.0, "pass_rate": 0.0,
-                        "distinction_rate": 0.0, "fail_rate": 0.0,
-                    }
+                    logger.warning(
+                        "Sobol simulation %d/%d failed on first attempt; scheduling retry: %s",
+                        idx + 1, n_total, exc,
+                    )
+                    failed_indices.append(idx)
                 completed += 1
                 if completed % log_interval == 0:
                     logger.info("  Progress: %d/%d (%.0f%%)", completed, n_total, completed / n_total * 100)
+
+            # Retry failed samples; fail fast if any remains unrecoverable so
+            # placeholder values never contaminate the sensitivity indices.
+            for idx in failed_indices:
+                od = override_list[idx]
+                outputs[idx] = self._result_with_retry(
+                    lambda od=od: pool.submit(worker, overrides=od).result(timeout=_WORKER_TIMEOUT_S),
+                    max_attempts=_MAX_SAMPLE_ATTEMPTS,
+                    label=f"Sobol simulation {idx + 1}/{n_total}",
+                )
         finally:
             pool.shutdown(wait=False, cancel_futures=True)
 

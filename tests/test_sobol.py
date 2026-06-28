@@ -498,3 +498,68 @@ class TestSimRunnerCalibrationMode:
             "std_engagement", "pass_rate", "distinction_rate", "fail_rate",
         }
         assert expected_keys == set(result.keys())
+
+
+# ─────────────────────────────────────────────
+# Failure handling (audit v1, Finding 5)
+# ─────────────────────────────────────────────
+
+class TestResultWithRetry:
+    """A failed Sobol sample is retried, then the run fails fast.
+
+    Placeholder zeros must never enter the sensitivity indices (Saltelli's
+    rigid sample matrix forbids dropping rows), so a persistently failing
+    sample must raise rather than be silently zero-filled.
+    """
+
+    def test_returns_first_successful_result(self):
+        calls = []
+
+        def attempt():
+            calls.append(1)
+            if len(calls) < 3:
+                raise RuntimeError("transient")
+            return {"dropout_rate": 0.4}
+
+        result = SobolAnalyzer._result_with_retry(
+            attempt, max_attempts=3, label="Sobol simulation 1/4",
+        )
+        assert result == {"dropout_rate": 0.4}
+        assert len(calls) == 3
+
+    def test_raises_after_exhausting_attempts(self):
+        calls = []
+
+        def attempt():
+            calls.append(1)
+            raise ValueError("worker exploded")
+
+        with pytest.raises(RuntimeError, match="failed after 3 attempts"):
+            SobolAnalyzer._result_with_retry(
+                attempt, max_attempts=3, label="Sobol simulation 2/4",
+            )
+        assert len(calls) == 3
+
+    def test_chains_original_exception(self):
+        def attempt():
+            raise ValueError("root cause")
+
+        with pytest.raises(RuntimeError) as exc_info:
+            SobolAnalyzer._result_with_retry(
+                attempt, max_attempts=2, label="Sobol simulation 3/4",
+            )
+        assert isinstance(exc_info.value.__cause__, ValueError)
+        assert "root cause" in str(exc_info.value.__cause__)
+
+    def test_immediate_success_calls_once(self):
+        calls = []
+
+        def attempt():
+            calls.append(1)
+            return "ok"
+
+        result = SobolAnalyzer._result_with_retry(
+            attempt, max_attempts=3, label="Sobol simulation 4/4",
+        )
+        assert result == "ok"
+        assert len(calls) == 1
