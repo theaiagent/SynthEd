@@ -468,6 +468,8 @@ class SobolAnalyzer:
 
             # Retry failed samples; fail fast if any remains unrecoverable so
             # placeholder values never contaminate the sensitivity indices.
+            # Retries recover transient worker failures (timeout, worker death);
+            # a deterministic failure reproduces under the fixed seed and aborts.
             for idx in failed_indices:
                 od = override_list[idx]
                 outputs[idx] = self._result_with_retry(

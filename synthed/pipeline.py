@@ -527,8 +527,11 @@ class SynthEdPipeline:
                     "withdrawal_reason": state.withdrawal_reason or "",
                     "final_dropout_phase": state.dropout_phase,
                     "final_engagement": state.weekly_engagement_history[-1] if state.weekly_engagement_history else None,
-                    # Semester-mean engagement: drives engagement_gpa_correlation
-                    # validation. Mean (not final-week) avoids dropout-timing confound.
+                    # Semester-mean engagement drives engagement_gpa_correlation
+                    # validation. Mean (not final-week) is a stable, low-variance
+                    # summary; final-week engagement is a single noisy snapshot
+                    # truncated at each student's dropout week (history length varies),
+                    # so the mean is the more reliable GPA predictor.
                     "mean_engagement": sum(state.weekly_engagement_history) / len(state.weekly_engagement_history) if state.weekly_engagement_history else None,
                     "final_gpa": round(state.cumulative_gpa, 2) if state.gpa_count > 0 else None,
                     # Garrison et al. (2000)
