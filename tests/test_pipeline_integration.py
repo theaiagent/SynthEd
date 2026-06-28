@@ -32,12 +32,14 @@ class TestPipelineIntegration:
         validation = report["validation"]
         assert validation["summary"]["total_tests"] > 0
 
-    def test_pipeline_validation_includes_engagement_gpa_correlation(self, tmp_path):
+    @pytest.mark.parametrize("seed", [42, 7, 123])
+    def test_pipeline_validation_includes_engagement_gpa_correlation(self, tmp_path, seed):
         """Regression (audit v1, Finding 1): outcome data must expose
         ``mean_engagement`` so the ``engagement_gpa_correlation`` validation
         test actually runs instead of being silently skipped (the pipeline
-        previously emitted only ``final_engagement``)."""
-        pipeline = SynthEdPipeline(output_dir=str(tmp_path), seed=42)
+        previously emitted only ``final_engagement``). Checked across multiple
+        seeds so a seed-specific fluke cannot mask a regression."""
+        pipeline = SynthEdPipeline(output_dir=str(tmp_path), seed=seed)
         report = pipeline.run(n_students=50)
         test_names = {r["test"] for r in report["validation"]["results"]}
         assert "engagement_gpa_correlation" in test_names
