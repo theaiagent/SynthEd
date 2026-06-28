@@ -34,7 +34,7 @@ python run_pipeline.py --n 200      # or: pip install synthedu
 
 ### Simulation Engine
 - **10 Theory Modules** -- Tinto, Bean & Metzner, Kember, SDT, Garrison CoI, Moore, Rovai, Baulke, Epstein & Axtell, Gonzalez (+ unavoidable withdrawal mechanism)
-- **TheoryModule Protocol** -- 4-phase dispatch (individual, network, post-peer, engagement) with auto-discovery and `_ENGAGEMENT_ORDER` composition. New theories added with zero engine changes
+- **TheoryModule Protocol** -- 4-phase dispatch (individual, network, post-peer, engagement) with auto-discovery and `_ENGAGEMENT_ORDER` composition. Phase-method theories are added with zero engine changes; engagement-composition theories currently require a one-line registration in the engine
 - **Continuous Persona Spectrum** -- Employment intensity, family responsibility, internet reliability as [0,1] floats with Beta distributions. No binary gates -- all theory effects scale continuously
 - **Multi-Semester Simulation** -- Carry-over mechanics for engagement, GPA, coping, dropout phases
 - **GPA Feedback Loop** -- Cumulative GPA anchors cost-benefit, non-fit perception, and competence beliefs

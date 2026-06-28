@@ -2,6 +2,17 @@
 
 All notable changes to SynthEd are documented here.
 
+## [Unreleased]
+
+### Fixed
+- **`engagement_gpa_correlation` validation test silently never ran** (read-only audit v1, Finding 1 — CRITICAL): `_prepare_validation_data` emitted only `final_engagement` in each outcome dict, but `SyntheticDataValidator` reads `o.get("mean_engagement")` for the engagement–GPA Pearson test. The field was always `None`, so the `len(eng_xs) > 10` guard was never satisfied and the engagement–GPA test never appeared in the validation report (proven by the new regression test, which failed before the fix). Fix adds a `mean_engagement` field — the semester mean of `weekly_engagement_history` — to the outcome dict; mean rather than final-week engagement avoids the dropout-timing confound (withdrawn students show ~0 final-week engagement). New regression test `test_pipeline_validation_includes_engagement_gpa_correlation`.
+- **Sobol failed-sample handling no longer contaminates sensitivity indices** (audit v1, Finding 5 — HIGH): the parallel branch of `SobolAnalyzer._run_simulations` previously zero-filled any sample whose worker raised (`dropout_rate=0.0, mean_engagement=0.0, …`), blending fabricated zeros into the Saltelli matrix and silently skewing the S1/ST indices. Saltelli's rigid `n*(D+2)` row order forbids dropping a row, so the fix retries each failed sample up to `_MAX_SAMPLE_ATTEMPTS` (3) and raises `RuntimeError` if it still fails — fail fast instead of fabricating data. Behaviour change: an unrecoverable worker failure now aborts the run instead of returning contaminated indices. New `_result_with_retry` helper with four unit tests.
+- **`TheoryModule` protocol docstring corrected** (audit v1, Finding 3 — LOW): it stated that engagement-composition theories define `_PHASE_ORDER`; they define `_ENGAGEMENT_ORDER` (enforced in `engine.py`). `_PHASE_ORDER` governs phase-method *discovery* ordering. The docstring now documents both attributes accurately.
+
+### Changed
+- **README "zero engine changes" claim narrowed** (audit v1, Finding 2 — CRITICAL): the Simulation Engine feature line implied any new theory needs no engine edit. Only phase-method theories are auto-discovered; the six engagement-composition theories (Bean, Kember, Moore, Rovai, Gonzalez, PositiveEvents) are still manually instantiated in `engine.py` (tracked by an in-code TODO). Wording now distinguishes the two cases.
+- **PyPI classifier aligned with development stage** (audit v1, Finding 4 — MEDIUM): `Development Status :: 5 - Production/Stable` → `4 - Beta`, consistent with the README's "under active development — APIs and output formats may change between versions."
+
 ## [1.8.0] - 2026-05-23
 
 ### Added
