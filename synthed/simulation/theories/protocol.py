@@ -80,8 +80,10 @@ class TheoryModule(Protocol):
     Theories implement whichever phase methods they participate in.
     Unimplemented phases are skipped via ``hasattr`` checks.
 
-    Each theory that participates in engagement composition should
-    define ``_PHASE_ORDER: int`` for deterministic ordering.
+    Theories that participate in engagement composition (i.e. implement
+    ``contribute_engagement_delta``) must define ``_ENGAGEMENT_ORDER: int``
+    for deterministic dispatch ordering. Phase-method theories define
+    ``_PHASE_ORDER: int`` for deterministic discovery ordering.
     """
 
     def on_individual_step(self, ctx: TheoryContext) -> None:

@@ -210,7 +210,7 @@ SynthEd/
 │   ├── doc_facts.py             # Documentation consistency checker
 │   ├── pipeline_config.py       # PipelineConfig frozen dataclass (16 params)
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                       # 879 pytest tests across 49 files
+├── tests/                       # 890 pytest tests across 49 files
 ├── docs/
 │   ├── GUIDE.md                 # User guide
 │   └── THEORY.md                # This file
@@ -239,7 +239,7 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 
 ## 🧪 Test Suite
 
-879 pytest tests across 49 files:
+890 pytest tests across 49 files:
 
 <!-- BEGIN:test_inventory -->
 | Test File | Tests | Coverage |
@@ -280,11 +280,11 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 | `test_pareto_utils.py` | 19 | Pareto dominance, front extraction, utilities |
 | `test_persona.py` | 27 | StudentPersona and BigFiveTraits |
 | `test_pipeline_config.py` | 19 | PipelineConfig frozen dataclass |
-| `test_pipeline_integration.py` | 25 | SynthEdPipeline |
+| `test_pipeline_integration.py` | 28 | SynthEdPipeline |
 | `test_report.py` | 11 | SynthEd report generation module |
 | `test_semester.py` | 19 | MultiSemesterRunner carry-over and multi-semester logic |
 | `test_sensitivity.py` | 2 | sensitivity analysis module |
-| `test_sobol.py` | 40 | Sobol sensitivity analysis |
+| `test_sobol.py` | 48 | Sobol sensitivity analysis |
 | `test_social_network.py` | 11 | SocialNetwork |
 | `test_theories.py` | 29 | individual theory modules |
 | `test_theory_protocol.py` | 32 | TheoryModule Protocol, TheoryContext, and auto-discovery |

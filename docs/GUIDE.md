@@ -162,7 +162,7 @@ Theory modules implement a phase-based protocol for engine dispatch:
 - `on_post_peer_step(ctx)` — Phase 2 per-student post-peer (Epstein peer influence, Baulke)
 - `contribute_engagement_delta(ctx) -> float` — Engagement phase: each theory returns a per-step engagement adjustment that the engine sums into the weekly engagement update
 
-New theories are auto-discovered from `synthed/simulation/theories/` — no engine changes needed. Execution order is controlled by two class attributes: `_PHASE_ORDER` orders `on_individual_step` discovery, and `_ENGAGEMENT_ORDER` orders the engagement-phase dispatch (lower values run first).
+Phase-method theories (implementing `on_individual_step`/`on_network_step`/`on_post_peer_step`) are auto-discovered from `synthed/simulation/theories/` — no engine changes needed. Engagement-composition theories (which only implement `contribute_engagement_delta`) are currently registered manually in `engine.py` (see the in-code TODO). Execution order is controlled by two class attributes: `_PHASE_ORDER` orders phase-method discovery, and `_ENGAGEMENT_ORDER` orders the engagement-phase dispatch (lower values run first).
 
 ---
 

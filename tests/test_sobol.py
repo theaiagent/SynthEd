@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 import numpy as np
 import pytest
 
@@ -12,6 +14,12 @@ from synthed.analysis.sobol_sensitivity import (
     SobolResult,
 )
 from synthed.analysis._sim_runner import run_simulation_with_overrides
+from tests._parallel_fakes import (
+    always_failing_worker,
+    die_on_first_sighting_worker,
+    echo_first_param_worker,
+    hang_first_then_succeed_worker,
+)
 
 
 # ─────────────────────────────────────────────
@@ -498,3 +506,165 @@ class TestSimRunnerCalibrationMode:
             "std_engagement", "pass_rate", "distinction_rate", "fail_rate",
         }
         assert expected_keys == set(result.keys())
+
+
+# ─────────────────────────────────────────────
+# Failure handling (audit v1, Finding 5)
+# ─────────────────────────────────────────────
+
+class TestResultWithRetry:
+    """A failed Sobol sample is retried, then the run fails fast.
+
+    Placeholder zeros must never enter the sensitivity indices (Saltelli's
+    rigid sample matrix forbids dropping rows), so a persistently failing
+    sample must raise rather than be silently zero-filled.
+    """
+
+    def test_returns_first_successful_result(self):
+        """The first success after transient failures is returned (earlier tries retried)."""
+        calls = []
+
+        def attempt():
+            """Simulated worker: fail the first two calls, then succeed."""
+            calls.append(1)
+            if len(calls) < 3:
+                raise RuntimeError("transient")
+            return {"dropout_rate": 0.4}
+
+        result = SobolAnalyzer._result_with_retry(
+            attempt, max_attempts=3, label="Sobol simulation 1/4",
+        )
+        assert result == {"dropout_rate": 0.4}
+        assert len(calls) == 3
+
+    def test_raises_after_exhausting_attempts(self):
+        """Exhausting every attempt raises RuntimeError rather than a silent placeholder."""
+        calls = []
+
+        def attempt():
+            """Simulated worker: always fail."""
+            calls.append(1)
+            raise ValueError("worker exploded")
+
+        with pytest.raises(RuntimeError, match="failed after 3 attempts"):
+            SobolAnalyzer._result_with_retry(
+                attempt, max_attempts=3, label="Sobol simulation 2/4",
+            )
+        assert len(calls) == 3
+
+    def test_chains_original_exception(self):
+        """The raised RuntimeError chains the last underlying worker exception."""
+        def attempt():
+            """Simulated worker: always fail with a known root cause."""
+            raise ValueError("root cause")
+
+        with pytest.raises(RuntimeError) as exc_info:
+            SobolAnalyzer._result_with_retry(
+                attempt, max_attempts=2, label="Sobol simulation 3/4",
+            )
+        assert isinstance(exc_info.value.__cause__, ValueError)
+        assert "root cause" in str(exc_info.value.__cause__)
+
+    def test_immediate_success_calls_once(self):
+        """A sample that succeeds on the first call is not retried."""
+        calls = []
+
+        def attempt():
+            """Simulated worker: succeed immediately."""
+            calls.append(1)
+            return "ok"
+
+        result = SobolAnalyzer._result_with_retry(
+            attempt, max_attempts=3, label="Sobol simulation 4/4",
+        )
+        assert result == "ok"
+        assert len(calls) == 1
+
+
+# ─────────────────────────────────────────────
+# Parallel retry wiring (audit v1 Finding 5 / CodeRabbit)
+# ─────────────────────────────────────────────
+
+class TestParallelRetryWiring:
+    """End-to-end coverage of ``_run_simulations``' parallel failure handling.
+
+    Uses real ``ProcessPoolExecutor`` workers (no mocks) so the picklability,
+    IPC, broken-pool, and fresh-executor-retry paths are all exercised.
+    """
+
+    @pytest.mark.slow
+    def test_parallel_recovers_after_worker_death(self, tmp_path, monkeypatch):
+        """A worker that dies (breaks its pool) on first sighting still recovers.
+
+        Each retry runs on a fresh executor, so a pool broken by an abrupt
+        worker death does not doom the run: every sample is re-run in isolation
+        and no slot is left ``None`` or zero-filled.
+        """
+        monkeypatch.setenv("SOBOL_FLAKY_DIR", str(tmp_path))
+        monkeypatch.setattr(
+            "synthed.analysis.sobol_sensitivity.run_simulation_with_overrides",
+            die_on_first_sighting_worker,
+        )
+        subset = (SobolParameter("config.dropout_base_rate", 0.50, 0.90, "Dropout scaling"),)
+        analyzer = SobolAnalyzer(n_students=10, seed=42, parameters=subset, n_workers=2)
+        samples = analyzer.generate_samples(4)  # 4 * (1 + 2) = 12 rows
+        outputs = analyzer._run_simulations(samples)
+        assert len(outputs) == len(samples)
+        assert all(isinstance(o, dict) for o in outputs)
+        assert all(o.get("mean_engagement") is not None for o in outputs)
+
+    @pytest.mark.slow
+    def test_parallel_fail_fast_on_persistent_failure(self, monkeypatch):
+        """A sample that fails every attempt aborts the run instead of zero-filling.
+
+        Placeholder rows must never reach the Saltelli analysis, so an
+        unrecoverable sample raises ``RuntimeError`` rather than returning
+        fabricated metrics.
+        """
+        monkeypatch.setattr(
+            "synthed.analysis.sobol_sensitivity.run_simulation_with_overrides",
+            always_failing_worker,
+        )
+        subset = (SobolParameter("config.dropout_base_rate", 0.50, 0.90, "Dropout scaling"),)
+        analyzer = SobolAnalyzer(n_students=10, seed=42, parameters=subset, n_workers=2)
+        samples = analyzer.generate_samples(4)
+        with pytest.raises(RuntimeError, match="aborting Sobol analysis"):
+            analyzer._run_simulations(samples)
+
+    @pytest.mark.slow
+    def test_parallel_preserves_sample_order(self, monkeypatch):
+        """``outputs[i]`` corresponds to ``samples[i]`` — the future→index map keeps order."""
+        monkeypatch.setattr(
+            "synthed.analysis.sobol_sensitivity.run_simulation_with_overrides",
+            echo_first_param_worker,
+        )
+        subset = (SobolParameter("config.dropout_base_rate", 0.50, 0.90, "Dropout scaling"),)
+        analyzer = SobolAnalyzer(n_students=10, seed=42, parameters=subset, n_workers=2)
+        samples = analyzer.generate_samples(4)
+        outputs = analyzer._run_simulations(samples)
+        for i, o in enumerate(outputs):
+            assert o["dropout_rate"] == pytest.approx(float(samples[i][0]))
+
+    @pytest.mark.slow
+    def test_parallel_timeout_routes_unfinished_to_retry(self, tmp_path, monkeypatch, caplog):
+        """A parallel pass that exceeds its time budget (FuturesTimeout) routes the
+        unfinished samples to isolated retry, which recovers them — no None/placeholder
+        row reaches the analysis.
+        """
+        # Shrink the worker timeout so the parallel pass times out in ~seconds
+        # (as_completed budget = _WORKER_TIMEOUT_S * n_total) while the first
+        # sighting of each sample hangs past it.
+        monkeypatch.setattr("synthed.analysis.sobol_sensitivity._WORKER_TIMEOUT_S", 1)
+        monkeypatch.setenv("SOBOL_FLAKY_DIR", str(tmp_path))
+        monkeypatch.setattr(
+            "synthed.analysis.sobol_sensitivity.run_simulation_with_overrides",
+            hang_first_then_succeed_worker,
+        )
+        subset = (SobolParameter("config.dropout_base_rate", 0.50, 0.90, "Dropout scaling"),)
+        analyzer = SobolAnalyzer(n_students=10, seed=42, parameters=subset, n_workers=2)
+        samples = analyzer.generate_samples(1)  # 1 * (1 + 2) = 3 rows
+        with caplog.at_level(logging.WARNING, logger="synthed.analysis.sobol_sensitivity"):
+            outputs = analyzer._run_simulations(samples)
+        assert len(outputs) == len(samples)
+        assert all(isinstance(o, dict) and o.get("mean_engagement") is not None for o in outputs)
+        assert any("exceeded its time budget" in r.getMessage() for r in caplog.records)

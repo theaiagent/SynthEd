@@ -13,7 +13,7 @@ authors = [
     { name = "Halis Aykut Cosgun", email = "h.aykut.cosgun@gmail.com" },
 ]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Programming Language :: Python :: 3.10",
@@ -21,8 +21,13 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-    "numpy>=1.24.0",
-    "scipy>=1.10.0",
+    # Upper bounds pin out the scipy 1.18.0 + numpy 2.5.0 combo: scipy 1.18.0's
+    # array-API ks_1samp passes `where` positionally to ndtr, which numpy 2.5.0
+    # rejects ("ndtr() takes from 1 to 2 positional arguments but 3 were given"),
+    # breaking stats.kstest/pearsonr across the validation suite. scipy 1.17.x +
+    # numpy 2.4.x verified green; lift the caps once fixed upstream.
+    "numpy>=1.24.0,<2.5",
+    "scipy>=1.10.0,<1.18",
     "uuid_utils>=0.9.0,<1.0.0",
     "SALib>=1.4.0",
     "optuna>=3.0.0",
