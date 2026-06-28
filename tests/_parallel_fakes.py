@@ -9,6 +9,11 @@ from __future__ import annotations
 
 import hashlib
 import os
+import time
+
+# A first-sighting sample sleeps this long — must exceed the (test-shrunk)
+# worker timeout so its future is still unfinished when FuturesTimeout fires.
+_HANG_SECONDS = 5
 
 # A structurally valid metrics dict (same keys the real worker returns).
 VALID_METRICS = {
@@ -25,6 +30,26 @@ VALID_METRICS = {
 def always_failing_worker(overrides, n_students, seed, default_config, calibration_mode=True):
     """Always raise — used to verify fail-fast (the run must abort, not zero-fill)."""
     raise RuntimeError("deterministic worker failure")
+
+
+def hang_first_then_succeed_worker(overrides, n_students, seed, default_config, calibration_mode=True):
+    """Hang past the timeout the first time a sample is seen, then succeed.
+
+    The first execution per sample creates an ``O_EXCL`` marker and sleeps long
+    enough to exceed the (test-shrunk) worker timeout, leaving its future
+    unfinished so the parallel pass raises ``FuturesTimeout``; later executions
+    find the marker and return immediately. Verifies the timeout branch routes
+    unfinished samples to isolated retry and recovers them.
+    """
+    key = hashlib.md5(repr(sorted(overrides.items())).encode()).hexdigest()
+    marker = os.path.join(os.environ["SOBOL_FLAKY_DIR"], key)
+    try:
+        fd = os.open(marker, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except FileExistsError:
+        return dict(VALID_METRICS)
+    os.close(fd)
+    time.sleep(_HANG_SECONDS)
+    return dict(VALID_METRICS)
 
 
 def echo_first_param_worker(overrides, n_students, seed, default_config, calibration_mode=True):

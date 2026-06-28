@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 import numpy as np
 import pytest
 
@@ -16,6 +18,7 @@ from tests._parallel_fakes import (
     always_failing_worker,
     die_on_first_sighting_worker,
     echo_first_param_worker,
+    hang_first_then_succeed_worker,
 )
 
 
@@ -641,3 +644,27 @@ class TestParallelRetryWiring:
         outputs = analyzer._run_simulations(samples)
         for i, o in enumerate(outputs):
             assert o["dropout_rate"] == pytest.approx(float(samples[i][0]))
+
+    @pytest.mark.slow
+    def test_parallel_timeout_routes_unfinished_to_retry(self, tmp_path, monkeypatch, caplog):
+        """A parallel pass that exceeds its time budget (FuturesTimeout) routes the
+        unfinished samples to isolated retry, which recovers them — no None/placeholder
+        row reaches the analysis.
+        """
+        # Shrink the worker timeout so the parallel pass times out in ~seconds
+        # (as_completed budget = _WORKER_TIMEOUT_S * n_total) while the first
+        # sighting of each sample hangs past it.
+        monkeypatch.setattr("synthed.analysis.sobol_sensitivity._WORKER_TIMEOUT_S", 1)
+        monkeypatch.setenv("SOBOL_FLAKY_DIR", str(tmp_path))
+        monkeypatch.setattr(
+            "synthed.analysis.sobol_sensitivity.run_simulation_with_overrides",
+            hang_first_then_succeed_worker,
+        )
+        subset = (SobolParameter("config.dropout_base_rate", 0.50, 0.90, "Dropout scaling"),)
+        analyzer = SobolAnalyzer(n_students=10, seed=42, parameters=subset, n_workers=2)
+        samples = analyzer.generate_samples(1)  # 1 * (1 + 2) = 3 rows
+        with caplog.at_level(logging.WARNING, logger="synthed.analysis.sobol_sensitivity"):
+            outputs = analyzer._run_simulations(samples)
+        assert len(outputs) == len(samples)
+        assert all(isinstance(o, dict) and o.get("mean_engagement") is not None for o in outputs)
+        assert any("exceeded its time budget" in r.getMessage() for r in caplog.records)
