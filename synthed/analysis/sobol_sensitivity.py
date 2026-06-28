@@ -27,7 +27,11 @@ from ._sim_runner import MODULE_ALIASES, run_simulation_with_overrides
 logger = logging.getLogger(__name__)
 
 _WORKER_TIMEOUT_S = 300  # align with nsga2_calibrator
-_MAX_SAMPLE_ATTEMPTS = 3  # initial try + retries before failing the Sobol run
+# Isolated re-run attempts for a sample that fails or stalls in the parallel
+# pass. Total executions per sample = 1 (parallel pass) + up to this many
+# isolated retries (each on a fresh executor, see _run_sample_isolated), so a
+# single worker death costs at most one wasted retry.
+_MAX_SAMPLE_RETRY_ATTEMPTS = 2
 
 
 # ─────────────────────────────────────────────
@@ -407,6 +411,24 @@ class SobolAnalyzer:
             f"placeholder values"
         ) from last_exc
 
+    @staticmethod
+    def _run_sample_isolated(worker, overrides):
+        """Run a single sample in a throwaway one-worker pool, with timeout.
+
+        Retries use a *fresh* executor so a pool broken by an earlier worker
+        death (``BrokenProcessPool``) cannot doom the retry; the per-worker
+        timeout still bounds a hung sample.
+        """
+        from concurrent.futures import ProcessPoolExecutor
+
+        retry_pool = ProcessPoolExecutor(max_workers=1)
+        try:
+            return retry_pool.submit(worker, overrides=overrides).result(
+                timeout=_WORKER_TIMEOUT_S
+            )
+        finally:
+            retry_pool.shutdown(wait=False, cancel_futures=True)
+
     def _run_simulations(self, samples: np.ndarray) -> list[dict]:
         """Run one simulation per sample row, collecting output metrics."""
         n_total = len(samples)
@@ -430,7 +452,11 @@ class SobolAnalyzer:
             return outputs
 
         # Parallel execution (follows nsga2_calibrator._run_parallel pattern)
-        from concurrent.futures import ProcessPoolExecutor, as_completed
+        from concurrent.futures import (
+            ProcessPoolExecutor,
+            TimeoutError as FuturesTimeout,
+            as_completed,
+        )
         from functools import partial
 
         worker = partial(
@@ -444,6 +470,7 @@ class SobolAnalyzer:
         logger.info("Running %d simulations with %d workers...", n_total, self._n_workers)
         outputs: list[dict | None] = [None] * n_total
 
+        # First pass: run every sample once in a shared pool.
         pool = ProcessPoolExecutor(max_workers=self._n_workers)
         try:
             future_to_idx = {
@@ -451,33 +478,47 @@ class SobolAnalyzer:
                 for i, od in enumerate(override_list)
             }
             completed = 0
-            failed_indices: list[int] = []
-            for future in as_completed(future_to_idx, timeout=min(_WORKER_TIMEOUT_S * n_total, 86400)):
-                idx = future_to_idx[future]
-                try:
-                    outputs[idx] = future.result(timeout=_WORKER_TIMEOUT_S)
-                except Exception as exc:
-                    logger.warning(
-                        "Sobol simulation %d/%d failed on first attempt; scheduling retry: %s",
-                        idx + 1, n_total, exc,
-                    )
-                    failed_indices.append(idx)
-                completed += 1
-                if completed % log_interval == 0:
-                    logger.info("  Progress: %d/%d (%.0f%%)", completed, n_total, completed / n_total * 100)
-
-            # Retry failed samples; fail fast if any remains unrecoverable so
-            # placeholder values never contaminate the sensitivity indices.
-            # Retries recover transient worker failures (timeout, worker death);
-            # a deterministic failure reproduces under the fixed seed and aborts.
-            for idx in failed_indices:
-                od = override_list[idx]
-                outputs[idx] = self._result_with_retry(
-                    lambda od=od: pool.submit(worker, overrides=od).result(timeout=_WORKER_TIMEOUT_S),
-                    max_attempts=_MAX_SAMPLE_ATTEMPTS,
-                    label=f"Sobol simulation {idx + 1}/{n_total}",
+            try:
+                for future in as_completed(future_to_idx, timeout=min(_WORKER_TIMEOUT_S * n_total, 86400)):
+                    idx = future_to_idx[future]
+                    try:
+                        outputs[idx] = future.result()
+                    except Exception as exc:  # noqa: BLE001 - any worker failure is retryable
+                        logger.warning(
+                            "Sobol simulation %d/%d failed in the parallel pass: %s",
+                            idx + 1, n_total, exc,
+                        )
+                    completed += 1
+                    if completed % log_interval == 0:
+                        logger.info("  Progress: %d/%d (%.0f%%)", completed, n_total, completed / n_total * 100)
+            except FuturesTimeout:
+                logger.warning(
+                    "Parallel pass exceeded its time budget; %d sample(s) unfinished "
+                    "and will be retried in isolation.",
+                    sum(1 for o in outputs if o is None),
                 )
         finally:
+            # wait=False keeps normal completion fast (as_completed has already
+            # drained every future there, so nothing leaks). On the rare
+            # FuturesTimeout path, still-running workers finish in the background
+            # rather than being joined — a transient _n_workers+1 over-subscription
+            # during isolated retries, preferable to re-introducing the very stall
+            # that caused the timeout.
             pool.shutdown(wait=False, cancel_futures=True)
+
+        # Any sample without a result — failed OR unfinished/timed-out — is retried
+        # in isolation on a fresh executor, so neither placeholder values nor a pool
+        # broken by a worker death can contaminate the sensitivity indices. Fail fast
+        # if a sample is still unrecoverable after its retry budget.
+        failed_indices = [i for i in range(n_total) if outputs[i] is None]
+        if failed_indices:
+            logger.info("Retrying %d failed/unfinished sample(s) in isolation...", len(failed_indices))
+        for idx in failed_indices:
+            od = override_list[idx]
+            outputs[idx] = self._result_with_retry(
+                lambda od=od: self._run_sample_isolated(worker, od),
+                max_attempts=_MAX_SAMPLE_RETRY_ATTEMPTS,
+                label=f"Sobol simulation {idx + 1}/{n_total}",
+            )
 
         return outputs
