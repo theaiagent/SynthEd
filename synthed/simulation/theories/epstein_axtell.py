@@ -37,7 +37,9 @@ class EpsteinAxtellPeerInfluence:
         rng: np.random.Generator | None,
     ) -> None:
         """Link members of a co-activity group, sampling for large groups."""
-        unique = list(set(members))
+        # Preserve encounter order: UUID labels and hash randomization must not
+        # change which students receive the seeded random peer selections.
+        unique = list(dict.fromkeys(members))
         n = len(unique)
         if n < self._SAMPLING_THRESHOLD or rng is None:
             # All-pairs linking (existing behaviour)

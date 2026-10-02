@@ -1,23 +1,21 @@
 """
 CalibrationMap: Maps target dropout ranges to simulation parameters.
 
-Uses piecewise linear interpolation from empirically measured data points
+Uses piecewise linear interpolation from simulation-measured data points
 to estimate the dropout_base_rate needed to achieve a target dropout rate.
 """
 
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
-
-import numpy as np
+from dataclasses import dataclass, replace
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
 class CalibrationPoint:
-    """A single empirically measured calibration data point."""
+    """A mean dropout rate measured from repeated simulator runs."""
     n_semesters: int
     dropout_base_rate: float
     observed_dropout_rate: float
@@ -27,45 +25,104 @@ class CalibrationPoint:
 
 @dataclass(frozen=True)
 class CalibrationEstimate:
-    """Result of a calibration mapping."""
+    """Mapping result; confidence describes coverage, not statistical certainty."""
     estimated_dropout_base_rate: float
     validation_dropout_rate: float  # midpoint of target range
     validation_tolerance: float     # half-width of target range
-    confidence: str                 # "high" (interpolated) or "low" (edge/clamped)
+    confidence: str                 # legacy coverage label; low on clamping/ambiguity
     n_semesters: int
     source_data_points: int
+    observed_dropout_range: tuple[float, float] | None = None
+    clamped: bool = False
+    mapping_status: str = "interpolated"
+    candidate_base_rates: tuple[float, ...] = ()
+    reference_population_size: int | None = None
 
 
-# Empirically measured calibration data (N=500, 5 seeds averaged per point).
-# Measured 2026-04-14 post OULAD reference fix (corrected gender, employment, dropout_base_rate).
-# IMPORTANT: Re-measure if theory modules, engine weights, or RNG-consuming
-#            code paths change (even non-dropout features shift RNG sequence).
+# Default-model measurements: N=500, seeds 42..46, 14 weeks per semester.
+# Reproduce with scripts/measure_dropout_horizons.py; raw counts, seed variation,
+# resolved configuration, dependencies and source hashes are recorded in
+# docs/measurements/dropout-horizons.json. Re-measure after model/RNG changes.
 CALIBRATION_DATA: tuple[CalibrationPoint, ...] = (
-    # 1-semester sweep across dropout_base_rate values
-    CalibrationPoint(1, 0.20, 0.248, 500, 5),
-    CalibrationPoint(1, 0.30, 0.315, 500, 5),
-    CalibrationPoint(1, 0.40, 0.363, 500, 5),
-    CalibrationPoint(1, 0.50, 0.400, 500, 5),
-    CalibrationPoint(1, 0.60, 0.420, 500, 5),
-    CalibrationPoint(1, 0.70, 0.442, 500, 5),
-    CalibrationPoint(1, 0.80, 0.469, 500, 5),
-    CalibrationPoint(1, 0.90, 0.482, 500, 5),
-    CalibrationPoint(1, 0.95, 0.471, 500, 5),
-    # Multi-semester at default rate (0.46)
-    CalibrationPoint(2, 0.46, 0.678, 500, 5),
-    CalibrationPoint(4, 0.46, 0.908, 500, 5),
+    # 1-semester cumulative dropout (mean across seeds)
+    CalibrationPoint(1, 0.010, 0.0368, 500, 5),
+    CalibrationPoint(1, 0.025, 0.0480, 500, 5),
+    CalibrationPoint(1, 0.050, 0.0884, 500, 5),
+    CalibrationPoint(1, 0.075, 0.1256, 500, 5),
+    CalibrationPoint(1, 0.100, 0.1560, 500, 5),
+    CalibrationPoint(1, 0.200, 0.2500, 500, 5),
+    CalibrationPoint(1, 0.300, 0.3264, 500, 5),
+    CalibrationPoint(1, 0.400, 0.3736, 500, 5),
+    CalibrationPoint(1, 0.460, 0.3960, 500, 5),
+    CalibrationPoint(1, 0.500, 0.4100, 500, 5),
+    CalibrationPoint(1, 0.600, 0.4412, 500, 5),
+    CalibrationPoint(1, 0.700, 0.4580, 500, 5),
+    CalibrationPoint(1, 0.800, 0.4872, 500, 5),
+    CalibrationPoint(1, 0.900, 0.4968, 500, 5),
+    CalibrationPoint(1, 0.950, 0.4944, 500, 5),
+    # 2-semester cumulative dropout (mean across seeds)
+    CalibrationPoint(2, 0.010, 0.1300, 500, 5),
+    CalibrationPoint(2, 0.025, 0.1720, 500, 5),
+    CalibrationPoint(2, 0.050, 0.2932, 500, 5),
+    CalibrationPoint(2, 0.075, 0.3860, 500, 5),
+    CalibrationPoint(2, 0.100, 0.4504, 500, 5),
+    CalibrationPoint(2, 0.200, 0.5996, 500, 5),
+    CalibrationPoint(2, 0.300, 0.6736, 500, 5),
+    CalibrationPoint(2, 0.400, 0.7224, 500, 5),
+    CalibrationPoint(2, 0.460, 0.7348, 500, 5),
+    CalibrationPoint(2, 0.500, 0.7472, 500, 5),
+    CalibrationPoint(2, 0.600, 0.7708, 500, 5),
+    CalibrationPoint(2, 0.700, 0.7880, 500, 5),
+    CalibrationPoint(2, 0.800, 0.7948, 500, 5),
+    CalibrationPoint(2, 0.900, 0.8044, 500, 5),
+    CalibrationPoint(2, 0.950, 0.8128, 500, 5),
+    # 3-semester cumulative dropout (mean across seeds)
+    CalibrationPoint(3, 0.010, 0.2504, 500, 5),
+    CalibrationPoint(3, 0.025, 0.3260, 500, 5),
+    CalibrationPoint(3, 0.050, 0.5112, 500, 5),
+    CalibrationPoint(3, 0.075, 0.6220, 500, 5),
+    CalibrationPoint(3, 0.100, 0.6844, 500, 5),
+    CalibrationPoint(3, 0.200, 0.8220, 500, 5),
+    CalibrationPoint(3, 0.300, 0.8692, 500, 5),
+    CalibrationPoint(3, 0.400, 0.8928, 500, 5),
+    CalibrationPoint(3, 0.460, 0.8976, 500, 5),
+    CalibrationPoint(3, 0.500, 0.9076, 500, 5),
+    CalibrationPoint(3, 0.600, 0.9108, 500, 5),
+    CalibrationPoint(3, 0.700, 0.9192, 500, 5),
+    CalibrationPoint(3, 0.800, 0.9288, 500, 5),
+    CalibrationPoint(3, 0.900, 0.9212, 500, 5),
+    CalibrationPoint(3, 0.950, 0.9236, 500, 5),
+    # 4-semester cumulative dropout (mean across seeds)
+    CalibrationPoint(4, 0.010, 0.3696, 500, 5),
+    CalibrationPoint(4, 0.025, 0.4716, 500, 5),
+    CalibrationPoint(4, 0.050, 0.6696, 500, 5),
+    CalibrationPoint(4, 0.075, 0.7808, 500, 5),
+    CalibrationPoint(4, 0.100, 0.8320, 500, 5),
+    CalibrationPoint(4, 0.200, 0.9260, 500, 5),
+    CalibrationPoint(4, 0.300, 0.9472, 500, 5),
+    CalibrationPoint(4, 0.400, 0.9508, 500, 5),
+    CalibrationPoint(4, 0.460, 0.9604, 500, 5),
+    CalibrationPoint(4, 0.500, 0.9636, 500, 5),
+    CalibrationPoint(4, 0.600, 0.9588, 500, 5),
+    CalibrationPoint(4, 0.700, 0.9672, 500, 5),
+    CalibrationPoint(4, 0.800, 0.9668, 500, 5),
+    CalibrationPoint(4, 0.900, 0.9668, 500, 5),
+    CalibrationPoint(4, 0.950, 0.9652, 500, 5),
 )
 
+
 # Bounds for dropout_base_rate
-_MIN_BASE_RATE = 0.10
-_MAX_BASE_RATE = 0.95
+_MIN_BASE_RATE = 0.01  # PersonaConfig's validated lower bound
+_MAX_BASE_RATE = 1.0  # PersonaConfig's validated upper bound
 
 
 class CalibrationMap:
     """Maps target dropout rates to simulation parameters.
 
     Uses piecewise linear interpolation between known calibration points.
-    Clamps to known range — does not extrapolate.
+    Interpolates only between adjacent base-rate measurements. Multiple matching
+    segments or plateaus use the lowest candidate and report the ambiguity.
+    Clamps to the closest observed mean outside the measured range.
     """
 
     def __init__(
@@ -88,32 +145,46 @@ class CalibrationMap:
         Returns:
             CalibrationEstimate with estimated parameters and confidence.
         """
-        points = [p for p in self._data if p.n_semesters == n_semesters]
+        if not 0.0 <= target_dropout <= 1.0:
+            raise ValueError("target_dropout must be a finite value in [0, 1]")
+        points = sorted(
+            (p for p in self._data if p.n_semesters == n_semesters),
+            key=lambda p: p.dropout_base_rate,
+        )
 
-        semester_fallback = False
         if len(points) < 2:
-            # Not enough data for this semester count — fall back to
-            # 1-semester points and warn.
-            points = [p for p in self._data if p.n_semesters == 1]
-            if len(points) < 2:
-                raise ValueError("Insufficient calibration data")
-            semester_fallback = True
-            logger.warning(
-                "No calibration data for %d semesters, using 1-semester data",
-                n_semesters,
+            raise ValueError(
+                f"Insufficient calibration data for {n_semesters} semester(s): "
+                "at least two matching points are required. Supply a measured "
+                "CalibrationMap for this horizon, or run without target_dropout_range."
             )
 
-        # Sort by observed dropout rate for interpolation
-        points = sorted(points, key=lambda p: p.observed_dropout_rate)
-
-        observed = np.array([p.observed_dropout_rate for p in points])
-        base_rates = np.array([p.dropout_base_rate for p in points])
-
-        # Determine confidence — forced low on semester fallback
-        min_observed = observed[0]
-        max_observed = observed[-1]
+        # 'high' describes interpolation coverage, not statistical confidence.
+        min_observed = min(p.observed_dropout_rate for p in points)
+        max_observed = max(p.observed_dropout_rate for p in points)
         clamped = target_dropout < min_observed or target_dropout > max_observed
-        confidence = "low" if (clamped or semester_fallback) else "high"
+        candidates = {p.dropout_base_rate for p in points
+                      if p.observed_dropout_rate == target_dropout}
+        exact_match = bool(candidates)
+        for left, right in zip(points, points[1:]):
+            lo, hi = sorted((left.observed_dropout_rate, right.observed_dropout_rate))
+            if lo < target_dropout < hi:
+                fraction = ((target_dropout - left.observed_dropout_rate)
+                            / (right.observed_dropout_rate - left.observed_dropout_rate))
+                candidates.add(left.dropout_base_rate + fraction * (
+                    right.dropout_base_rate - left.dropout_base_rate
+                ))
+
+        if clamped:
+            estimated_rate = min(points, key=lambda p: (
+                abs(p.observed_dropout_rate - target_dropout), p.dropout_base_rate,
+            )).dropout_base_rate
+            mapping_status = "clamped"
+        else:
+            estimated_rate = min(candidates)
+            mapping_status = ("multiple_matches" if len(candidates) > 1
+                              else "measured" if exact_match else "interpolated")
+        confidence = "low" if clamped or len(candidates) > 1 else "high"
 
         if clamped:
             logger.warning(
@@ -122,8 +193,6 @@ class CalibrationMap:
                 target_dropout, min_observed, max_observed, n_semesters,
             )
 
-        # Piecewise linear interpolation (with edge clamping)
-        estimated_rate = float(np.interp(target_dropout, observed, base_rates))
         estimated_rate = max(_MIN_BASE_RATE, min(_MAX_BASE_RATE, estimated_rate))
 
         return CalibrationEstimate(
@@ -133,6 +202,12 @@ class CalibrationMap:
             confidence=confidence,
             n_semesters=n_semesters,
             source_data_points=len(points),
+            observed_dropout_range=(float(min_observed), float(max_observed)),
+            clamped=clamped,
+            mapping_status=mapping_status,
+            candidate_base_rates=tuple(sorted(candidates)),
+            reference_population_size=(points[0].n_students
+                                       if len({p.n_students for p in points}) == 1 else None),
         )
 
     def estimate_from_range(
@@ -163,11 +238,7 @@ class CalibrationMap:
 
         result = self.estimate(midpoint, n_semesters)
 
-        return CalibrationEstimate(
-            estimated_dropout_base_rate=result.estimated_dropout_base_rate,
-            validation_dropout_rate=midpoint,
+        return replace(
+            result,
             validation_tolerance=tolerance,
-            confidence=result.confidence,
-            n_semesters=n_semesters,
-            source_data_points=result.source_data_points,
         )

@@ -4,6 +4,12 @@ All notable changes to SynthEd are documented here.
 
 ## [Unreleased]
 
+### Fixed
+- **Dropout targeting across semesters:** replace the one-semester fallback with measured curves for 1–4 semesters, including the valid low-base-rate region. Interpolation follows adjacent parameter measurements and reports ambiguous or clamped estimates, configuration mismatches, and actual target attainment. Reproducible measurements and independent-seed checks accompany the curves.
+- **Multi-semester state continuity:** apply configured engagement recovery after persona initialization and retain raw mastery accumulators alongside transcript GPA. Report semester-specific and cumulative dropout separately.
+- **Seeded peer sampling:** preserve participant encounter order when deduplicating activity groups, preventing UUID labels and hash order from changing simulation trajectories.
+- **Multi-semester validation:** use complete observed engagement histories and the full simulation horizon for global dropout timing. Clarify the scope of validation grades and replace stale GUIDE targeting figures with measured results.
+
 ## [1.8.1] - 2026-06-29
 
 ### Fixed
