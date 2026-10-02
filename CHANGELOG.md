@@ -4,6 +4,9 @@ All notable changes to SynthEd are documented here.
 
 ## [Unreleased]
 
+### Changed
+- Pin both CodeQL analysis steps to `v4.38.2`, retaining the current v4 release instead of reverting to `v4.37.3`.
+
 ## [1.8.1] - 2026-06-29
 
 ### Fixed
