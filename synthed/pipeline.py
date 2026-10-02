@@ -214,6 +214,25 @@ class SynthEdPipeline:
         estimate = calibration_map.estimate_from_range(
             config.target_dropout_range, config.n_semesters,
         )
+        from .simulation.semester import SemesterCarryOverConfig
+
+        defaults = PipelineConfig()
+        self._calibration_reference_matches = (
+            replace(config.persona_config, dropout_base_rate=defaults.persona_config.dropout_base_rate)
+            == defaults.persona_config
+            and all(getattr(config, name) == getattr(defaults, name) for name in (
+                "environment", "institutional_config", "grading_config", "engine_config",
+            ))
+            and (config.n_semesters == 1 or
+                 (config.carry_over_config or SemesterCarryOverConfig()) == SemesterCarryOverConfig())
+        )
+        if not self._calibration_reference_matches:
+            estimate = replace(estimate, confidence="low")
+            logger.warning(
+                "Dropout targeting uses a default-model calibration curve, but "
+                "the simulation configuration differs. Validate the transfer estimate "
+                "across seeds or measure a curve for this configuration."
+            )
         self._calibration_estimate = estimate
 
         midpoint = (config.target_dropout_range[0] + config.target_dropout_range[1]) / 2
@@ -355,11 +374,26 @@ class SynthEdPipeline:
         # Include calibration info when dropout targeting is active
         if self._calibration_estimate is not None:
             est = self._calibration_estimate
+            population_match = n_students == est.reference_population_size
+            if not population_match:
+                logger.warning(
+                    "Dropout targeting was measured with %s students; this run uses %d. "
+                    "Peer-network behavior may also vary with population size.",
+                    est.reference_population_size, n_students,
+                )
             report["dropout_targeting"] = {
                 "target_range": self.target_dropout_range,
                 "estimated_base_rate": est.estimated_dropout_base_rate,
-                "confidence": est.confidence,
+                "confidence": est.confidence if population_match else "low",
                 "n_semesters": est.n_semesters,
+                "source_data_points": est.source_data_points,
+                "observed_dropout_range": est.observed_dropout_range,
+                "clamped": est.clamped,
+                "mapping_status": est.mapping_status,
+                "candidate_base_rates": est.candidate_base_rates,
+                "reference_configuration_match": self._calibration_reference_matches,
+                "reference_population_size": est.reference_population_size,
+                "population_size_match": population_match,
             }
 
         # Pre-enrichment cost check
@@ -386,6 +420,7 @@ class SynthEdPipeline:
         logger.info("[2/4] Simulating %d weeks of ODL interactions (%d semester(s))...",
                      total_weeks, self.n_semesters)
         t0 = time.time()
+        engagement_histories = None
         if self.n_semesters <= 1:
             records, states, network = self.engine.run(students)
         else:
@@ -396,9 +431,23 @@ class SynthEdPipeline:
                 target_dropout_range=self.target_dropout_range,
             )
             result = runner.run(students)
+            engagement_histories = result.engagement_histories
             records, states, network = (
                 result.all_records, result.final_states, result.final_network,
             )
+            cumulative_dropouts = 0
+            report["semester_summary"] = []
+            for semester in result.semester_results:
+                entrants = len(semester.states)
+                dropouts = sum(s.has_dropped_out for s in semester.states.values())
+                cumulative_dropouts += dropouts
+                report["semester_summary"].append({
+                    "semester": semester.semester_index + 1,
+                    "students_at_start": entrants,
+                    "dropouts": dropouts,
+                    "conditional_dropout_rate": dropouts / entrants if entrants else None,
+                    "cumulative_dropout_rate": cumulative_dropouts / n_students,
+                })
             if result.interim_reports:
                 report["interim_reports"] = [
                     {
@@ -411,6 +460,19 @@ class SynthEdPipeline:
                 ]
         report["timing"]["simulation_sec"] = round(time.time() - t0, 2)
         report["simulation_summary"] = self.engine.summary_statistics(states)
+        if self.target_dropout_range is not None:
+            actual = report["simulation_summary"]["dropout_rate"]
+            lower, upper = self.target_dropout_range
+            achieved = lower <= actual <= upper
+            report["dropout_targeting"].update(
+                actual_dropout_rate=actual, target_achieved=achieved,
+            )
+            if not achieved:
+                logger.warning(
+                    "Observed dropout %.3f is outside target range %s after %d "
+                    "semester(s); calibration is an estimate, not a guarantee.",
+                    actual, self.target_dropout_range, self.n_semesters,
+                )
         report["network_summary"] = network.network_statistics(states)
         logger.info("      Done. %d interaction records generated. Dropout rate: %.2f%%",
                     len(records), report['simulation_summary']['dropout_rate'] * 100)
@@ -440,11 +502,11 @@ class SynthEdPipeline:
         t0 = time.time()
 
         students_data, outcomes_data, weekly_eng = self._prepare_validation_data(
-            students, states, network
+            students, states, network, engagement_histories=engagement_histories,
         )
 
         validation_report = self.validator.validate_all(
-            students_data, outcomes_data, weekly_eng
+            students_data, outcomes_data, weekly_eng, total_weeks=total_weeks,
         )
         report["timing"]["validation_sec"] = round(time.time() - t0, 2)
         report["validation"] = validation_report
@@ -473,12 +535,15 @@ class SynthEdPipeline:
         students: list,
         states: dict,
         network: Any,
+        *,
+        engagement_histories: dict[str, list[float]] | None = None,
     ) -> tuple[list, list, dict]:
         """Build students_data, outcomes_data, and weekly_eng dicts for validation.
 
         Prepares all four factor clusters (student characteristics, skills,
         external factors, internal factors) plus Garrison CoI and Epstein-Axtell
-        network degree fields required by SyntheticDataValidator.
+        network degree fields required by SyntheticDataValidator. Multi-semester
+        callers supply full histories separately from semester-local theory state.
         """
         students_data = []
         for s in students:
@@ -517,6 +582,8 @@ class SynthEdPipeline:
         for s in students:
             state = states.get(s.id)
             if state:
+                history = (engagement_histories.get(s.id, []) if engagement_histories is not None
+                           else state.weekly_engagement_history)
                 coi = state.coi_state
                 coi_composite = (coi.social_presence + coi.cognitive_presence + coi.teaching_presence) / 3
                 outcomes_data.append({
@@ -526,13 +593,9 @@ class SynthEdPipeline:
                     "dropout_week": state.dropout_week,
                     "withdrawal_reason": state.withdrawal_reason or "",
                     "final_dropout_phase": state.dropout_phase,
-                    "final_engagement": state.weekly_engagement_history[-1] if state.weekly_engagement_history else None,
-                    # Semester-mean engagement drives engagement_gpa_correlation
-                    # validation. Mean (not final-week) is a stable, low-variance
-                    # summary; final-week engagement is a single noisy snapshot
-                    # truncated at each student's dropout week (history length varies),
-                    # so the mean is the more reliable GPA predictor.
-                    "mean_engagement": sum(state.weekly_engagement_history) / len(state.weekly_engagement_history) if state.weekly_engagement_history else None,
+                    "final_engagement": history[-1] if history else None,
+                    # Mean over observed weeks; no zero padding after dropout.
+                    "mean_engagement": sum(history) / len(history) if history else None,
                     "final_gpa": round(state.cumulative_gpa, 2) if state.gpa_count > 0 else None,
                     # Garrison et al. (2000)
                     "coi_composite": round(coi_composite, 3),
@@ -547,7 +610,7 @@ class SynthEdPipeline:
                     "network_degree": network.get_degree(s.id),
                 })
 
-        weekly_eng = {
+        weekly_eng = engagement_histories if engagement_histories is not None else {
             sid: st.weekly_engagement_history
             for sid, st in states.items()
         }

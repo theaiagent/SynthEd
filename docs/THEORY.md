@@ -210,7 +210,7 @@ SynthEd/
 │   ├── doc_facts.py             # Documentation consistency checker
 │   ├── pipeline_config.py       # PipelineConfig frozen dataclass (16 params)
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                       # 890 pytest tests across 49 files
+├── tests/                       # 927 pytest tests across 49 files
 ├── docs/
 │   ├── GUIDE.md                 # User guide
 │   └── THEORY.md                # This file
@@ -239,7 +239,7 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 
 ## 🧪 Test Suite
 
-890 pytest tests across 49 files:
+927 pytest tests across 49 files:
 
 <!-- BEGIN:test_inventory -->
 | Test File | Tests | Coverage |
@@ -248,7 +248,7 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 | `test_backstory_templates.py` | 17 | backstory template selection and prompt building |
 | `test_baulke_institutional.py` | 11 | Baulke institutional modulation via InstitutionalConfig. |
 | `test_benchmarks.py` | 15 | benchmark profiles and generator |
-| `test_calibration.py` | 11 | CalibrationMap interpolation and estimation |
+| `test_calibration.py` | 23 | CalibrationMap interpolation and estimation |
 | `test_coverage_boost.py` | 37 | boost coverage from 93% to 95%+. |
 | `test_coverage_gaps.py` | 8 | close remaining coverage gaps |
 | `test_dashboard.py` | 42 | SynthEd Dashboard config bridge, distribution normalization, and charts |
@@ -257,7 +257,7 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 | `test_dashboard_nav.py` | 3 | the two-tab mode-split skeleton (PR A). |
 | `test_dashboard_theme.py` | 7 | dashboard theme & layout fixes (v1.7.0). |
 | `test_dual_track_gpa.py` | 12 | dual-track GPA: transcript GPA vs perceived mastery |
-| `test_engine.py` | 12 | the SimulationEngine |
+| `test_engine.py` | 14 | the SimulationEngine |
 | `test_engine_config.py` | 19 | EngineConfig frozen dataclass |
 | `test_engine_grading.py` | 14 | GradingConfig |
 | `test_environment.py` | 7 | ODLEnvironment |
@@ -273,16 +273,16 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 | `test_llm_enrichment.py` | 12 | LLM enrichment feature: backstory generation, export, and error handling |
 | `test_llm_memory.py` | 14 | ConversationMemory and LLM streaming |
 | `test_name_pools.py` | 11 | name_pools module |
-| `test_network_scaling.py` | 4 | network scaling: sampling, degree caps, backward compatibility |
+| `test_network_scaling.py` | 7 | network scaling: sampling, degree caps, backward compatibility |
 | `test_nsga2_calibrator.py` | 25 | NSGA-II calibration, Pareto front, knee-point, parallel branch, profile-object signatures |
 | `test_opportunity_cost.py` | 5 | Kember opportunity cost mechanism |
 | `test_oulad_export.py` | 35 | OULAD-compatible export |
 | `test_pareto_utils.py` | 19 | Pareto dominance, front extraction, utilities |
 | `test_persona.py` | 27 | StudentPersona and BigFiveTraits |
 | `test_pipeline_config.py` | 19 | PipelineConfig frozen dataclass |
-| `test_pipeline_integration.py` | 28 | SynthEdPipeline |
+| `test_pipeline_integration.py` | 40 | SynthEdPipeline |
 | `test_report.py` | 11 | SynthEd report generation module |
-| `test_semester.py` | 19 | MultiSemesterRunner carry-over and multi-semester logic |
+| `test_semester.py` | 26 | MultiSemesterRunner carry-over and multi-semester logic |
 | `test_sensitivity.py` | 2 | sensitivity analysis module |
 | `test_sobol.py` | 48 | Sobol sensitivity analysis |
 | `test_social_network.py` | 11 | SocialNetwork |
@@ -292,7 +292,7 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 | `test_unavoidable_withdrawal.py` | 9 | the UnavoidableWithdrawal theory module |
 | `test_utils.py` | 14 | shared utility modules: validation and log_config |
 | `test_validation_types.py` | 10 | synthed.validation.types dataclasses |
-| `test_validator.py` | 9 | SyntheticDataValidator |
+| `test_validator.py` | 10 | SyntheticDataValidator |
 <!-- END:test_inventory -->
 
 CI runs tests across **Python 3.10, 3.11, and 3.12** via [GitHub Actions](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml).

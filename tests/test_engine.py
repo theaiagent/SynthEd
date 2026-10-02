@@ -1,5 +1,7 @@
 """Tests for the SimulationEngine."""
 
+import pytest
+
 from synthed.agents.factory import StudentFactory
 from synthed.simulation.engine import SimulationEngine
 from synthed.simulation.environment import ODLEnvironment
@@ -44,12 +46,15 @@ class TestSimulationEngine:
         for state in states.values():
             assert state.dropout_phase <= 5
 
-    def test_deterministic_with_seed(self):
-        _, _, states1, _, _ = self._run_sim(n=15, seed=42)
-        _, _, states2, _, _ = self._run_sim(n=15, seed=42)
-        dropouts1 = sum(1 for s in states1.values() if s.has_dropped_out)
-        dropouts2 = sum(1 for s in states2.values() if s.has_dropped_out)
-        assert dropouts1 == dropouts2
+    @pytest.mark.parametrize("seed", [42, 7, 123])
+    def test_deterministic_with_seed(self, seed):
+        """Fresh UUIDs preserve full trajectories even when peer groups are sampled."""
+        _, _, states1, _, _ = self._run_sim(n=300, seed=seed)
+        _, _, states2, _, _ = self._run_sim(n=300, seed=seed)
+        for first, second in zip(states1.values(), states2.values()):
+            assert first.weekly_engagement_history == second.weekly_engagement_history
+            assert first.dropout_week == second.dropout_week
+            assert first.cumulative_gpa == second.cumulative_gpa
 
     def test_empty_student_list(self):
         env = ODLEnvironment()
