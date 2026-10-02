@@ -4,6 +4,9 @@ All notable changes to SynthEd are documented here.
 
 ## [Unreleased]
 
+### Changed
+- Update `actions/setup-python` to v7 in CI and package publishing workflows; the configured Python versions remain unchanged.
+
 ## [1.8.1] - 2026-06-29
 
 ### Fixed
