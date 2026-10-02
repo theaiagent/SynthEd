@@ -4,6 +4,9 @@ All notable changes to SynthEd are documented here.
 
 ## [Unreleased]
 
+### Changed
+- Update the test badge action to `v1.9.0` for its GitHub Gist API compatibility and awaited update requests.
+
 ## [1.8.1] - 2026-06-29
 
 ### Fixed
