@@ -4,6 +4,9 @@ All notable changes to SynthEd are documented here.
 
 ## [Unreleased]
 
+### Added
+- **Long-horizon diagnostics:** add a reproducible engagement observer, bounded mechanism ablations, complete validation evidence across five seeds, and a staged plan for trajectory calibration. Production model coefficients are unchanged.
+
 ### Fixed
 - **Dropout targeting across semesters:** replace the one-semester fallback with measured curves for 1–4 semesters, including the valid low-base-rate region. Interpolation follows adjacent parameter measurements and reports ambiguous or clamped estimates, configuration mismatches, and actual target attainment. Reproducible measurements and independent-seed checks accompany the curves.
 - **Multi-semester state continuity:** apply configured engagement recovery after persona initialization and retain raw mastery accumulators alongside transcript GPA. Report semester-specific and cumulative dropout separately.

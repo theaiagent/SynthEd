@@ -94,6 +94,10 @@ accumulators. They do not impose a decreasing hazard or retune theory coefficien
 to obtain an attractive curve. Real institutional cohort data and a justified
 calibration objective are needed before making such claims.
 
+The [long-horizon diagnosis](LONG_HORIZON_DIAGNOSIS.md) traces these dynamics,
+compares eight controlled scenarios across five seeds, and specifies the next
+mechanism audit and empirical calibration steps.
+
 ## What an A/B validation grade means
 
 The grade is an unweighted summary of the fraction of executed validation checks

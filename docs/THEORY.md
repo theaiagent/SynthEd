@@ -210,7 +210,7 @@ SynthEd/
 │   ├── doc_facts.py             # Documentation consistency checker
 │   ├── pipeline_config.py       # PipelineConfig frozen dataclass (16 params)
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                       # 927 pytest tests across 49 files
+├── tests/                       # 942 pytest tests across 50 files
 ├── docs/
 │   ├── GUIDE.md                 # User guide
 │   └── THEORY.md                # This file
@@ -239,7 +239,7 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 
 ## 🧪 Test Suite
 
-927 pytest tests across 49 files:
+942 pytest tests across 50 files:
 
 <!-- BEGIN:test_inventory -->
 | Test File | Tests | Coverage |
@@ -265,6 +265,7 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 | `test_factory.py` | 26 | StudentFactory population generation |
 | `test_gpa.py` | 9 | GPA/academic success computation |
 | `test_grading.py` | 49 | GradingConfig and grading utilities |
+| `test_horizon_diagnostics.py` | 15 | Guard the diagnostic observer against changing the stochastic model |
 | `test_institutional_config.py` | 15 | InstitutionalConfig validation, scale_by, defaults |
 | `test_institutional_integration.py` | 5 | InstitutionalConfig wired into SimulationEngine |
 | `test_llm_cache.py` | 9 | LLM cache TTL expiry and LRU eviction |
