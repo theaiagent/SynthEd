@@ -4,6 +4,9 @@ All notable changes to SynthEd are documented here.
 
 ## [Unreleased]
 
+### Changed
+- Allow `uuid-utils` 1.x alongside the supported 0.x releases. Student identifiers continue to use the compatible, no-argument `uuid7()` API.
+
 ## [1.8.1] - 2026-06-29
 
 ### Fixed
