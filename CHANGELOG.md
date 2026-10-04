@@ -6,6 +6,7 @@ All notable changes to SynthEd are documented here.
 
 ### Changed
 - Update `actions/setup-python` to v7 in CI and package publishing workflows; the configured Python versions remain unchanged.
+- Pin both CodeQL analysis steps to `v4.38.2`, retaining the current v4 release instead of reverting to `v4.37.3`.
 
 ### Added
 - **Long-horizon diagnostics:** add a reproducible engagement observer, bounded mechanism ablations, complete validation evidence across five seeds, and a staged plan for trajectory calibration. Production model coefficients are unchanged.
