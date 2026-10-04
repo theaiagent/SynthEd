@@ -77,7 +77,7 @@ SynthEd's persona attributes and simulation mechanics are grounded in ten establ
 |---|--------|--------|-----------------|
 | 1 | **Tinto's Student Integration Model** (1975) | Sociology (Durkheim) | Academic & social integration drive engagement. Social integration weighted lower in ODE context. |
 | 2 | **Bean & Metzner** (1985) | Non-traditional students | Environmental factors (work, family, finances) are the **dominant** dropout predictors in ODE. Includes stochastic unavoidable withdrawal events (illness, death, relocation) via Lazarus & Folkman's (1984) stress-coping framework. |
-| 3 | **Kember's Process Model** (1989) | Distance education | Dynamic `perceived_cost_benefit` updated weekly based on academic outcomes. |
+| 3 | **Kember's Process Model** (1989) | Distance education | Dynamic `perceived_cost_benefit` recalculated on graded items, exam weeks or persistent missed streaks. The missed-event penalty additionally requires a new miss that week; existing cost-benefit effects persist. |
 | 4 | **Moore's Transactional Distance** (1993) | Distance education | Course structure and dialogue interact with learner autonomy. |
 | 5 | **Self-Determination Theory** (Deci & Ryan, 1985) | Psychology | Intrinsic/extrinsic motivation and amotivation predict persistence. |
 | 6 | **Community of Inquiry** (Garrison et al., 2000) | Online learning | Three presences (social, cognitive, teaching) co-evolve with Tinto's integration. |
@@ -210,7 +210,7 @@ SynthEd/
 │   ├── doc_facts.py             # Documentation consistency checker
 │   ├── pipeline_config.py       # PipelineConfig frozen dataclass (16 params)
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                       # 890 pytest tests across 49 files
+├── tests/                       # 969 pytest tests across 51 files
 ├── docs/
 │   ├── GUIDE.md                 # User guide
 │   └── THEORY.md                # This file
@@ -239,7 +239,7 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 
 ## 🧪 Test Suite
 
-890 pytest tests across 49 files:
+969 pytest tests across 51 files:
 
 <!-- BEGIN:test_inventory -->
 | Test File | Tests | Coverage |
@@ -248,7 +248,7 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 | `test_backstory_templates.py` | 17 | backstory template selection and prompt building |
 | `test_baulke_institutional.py` | 11 | Baulke institutional modulation via InstitutionalConfig. |
 | `test_benchmarks.py` | 15 | benchmark profiles and generator |
-| `test_calibration.py` | 11 | CalibrationMap interpolation and estimation |
+| `test_calibration.py` | 23 | CalibrationMap interpolation and estimation |
 | `test_coverage_boost.py` | 37 | boost coverage from 93% to 95%+. |
 | `test_coverage_gaps.py` | 8 | close remaining coverage gaps |
 | `test_dashboard.py` | 42 | SynthEd Dashboard config bridge, distribution normalization, and charts |
@@ -257,7 +257,7 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 | `test_dashboard_nav.py` | 3 | the two-tab mode-split skeleton (PR A). |
 | `test_dashboard_theme.py` | 7 | dashboard theme & layout fixes (v1.7.0). |
 | `test_dual_track_gpa.py` | 12 | dual-track GPA: transcript GPA vs perceived mastery |
-| `test_engine.py` | 12 | the SimulationEngine |
+| `test_engine.py` | 17 | the SimulationEngine |
 | `test_engine_config.py` | 19 | EngineConfig frozen dataclass |
 | `test_engine_grading.py` | 14 | GradingConfig |
 | `test_environment.py` | 7 | ODLEnvironment |
@@ -265,34 +265,36 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 | `test_factory.py` | 26 | StudentFactory population generation |
 | `test_gpa.py` | 9 | GPA/academic success computation |
 | `test_grading.py` | 49 | GradingConfig and grading utilities |
+| `test_horizon_diagnostics.py` | 15 | Guard the diagnostic observer against changing the stochastic model |
 | `test_institutional_config.py` | 15 | InstitutionalConfig validation, scale_by, defaults |
 | `test_institutional_integration.py` | 5 | InstitutionalConfig wired into SimulationEngine |
+| `test_kember_events.py` | 18 | Kember current-week missed events, persistent feedback and engine integration |
 | `test_llm_cache.py` | 9 | LLM cache TTL expiry and LRU eviction |
 | `test_llm_client.py` | 28 | LLMClient with mocked OpenAI API |
 | `test_llm_cost_warning.py` | 11 | LLM cost estimation and warning system |
 | `test_llm_enrichment.py` | 12 | LLM enrichment feature: backstory generation, export, and error handling |
 | `test_llm_memory.py` | 14 | ConversationMemory and LLM streaming |
 | `test_name_pools.py` | 11 | name_pools module |
-| `test_network_scaling.py` | 4 | network scaling: sampling, degree caps, backward compatibility |
+| `test_network_scaling.py` | 7 | network scaling: sampling, degree caps, backward compatibility |
 | `test_nsga2_calibrator.py` | 25 | NSGA-II calibration, Pareto front, knee-point, parallel branch, profile-object signatures |
 | `test_opportunity_cost.py` | 5 | Kember opportunity cost mechanism |
 | `test_oulad_export.py` | 35 | OULAD-compatible export |
 | `test_pareto_utils.py` | 19 | Pareto dominance, front extraction, utilities |
 | `test_persona.py` | 27 | StudentPersona and BigFiveTraits |
 | `test_pipeline_config.py` | 19 | PipelineConfig frozen dataclass |
-| `test_pipeline_integration.py` | 28 | SynthEdPipeline |
+| `test_pipeline_integration.py` | 40 | SynthEdPipeline |
 | `test_report.py` | 11 | SynthEd report generation module |
-| `test_semester.py` | 19 | MultiSemesterRunner carry-over and multi-semester logic |
+| `test_semester.py` | 26 | MultiSemesterRunner carry-over and multi-semester logic |
 | `test_sensitivity.py` | 2 | sensitivity analysis module |
 | `test_sobol.py` | 48 | Sobol sensitivity analysis |
 | `test_social_network.py` | 11 | SocialNetwork |
-| `test_theories.py` | 29 | individual theory modules |
+| `test_theories.py` | 35 | individual theory modules |
 | `test_theory_protocol.py` | 32 | TheoryModule Protocol, TheoryContext, and auto-discovery |
 | `test_trait_calibration.py` | 39 | OULAD target extraction and trait-based calibration |
 | `test_unavoidable_withdrawal.py` | 9 | the UnavoidableWithdrawal theory module |
 | `test_utils.py` | 14 | shared utility modules: validation and log_config |
 | `test_validation_types.py` | 10 | synthed.validation.types dataclasses |
-| `test_validator.py` | 9 | SyntheticDataValidator |
+| `test_validator.py` | 10 | SyntheticDataValidator |
 <!-- END:test_inventory -->
 
 CI runs tests across **Python 3.10, 3.11, and 3.12** via [GitHub Actions](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml).
