@@ -4,6 +4,9 @@ All notable changes to SynthEd are documented here.
 
 ## [Unreleased]
 
+### Changed
+- Pin both CodeQL analysis steps to `v4.38.2`, retaining the current v4 release instead of reverting to `v4.37.3`.
+
 ### Added
 - **Long-horizon diagnostics:** add a reproducible engagement observer, bounded mechanism ablations, complete validation evidence across five seeds, and a staged plan for trajectory calibration. Production model coefficients are unchanged.
 
