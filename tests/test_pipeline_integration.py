@@ -53,6 +53,57 @@ class TestPipelineIntegration:
 class TestPipelineCalibration:
     """Tests for _apply_calibration and target_dropout_range (lines 71, 95-113)."""
 
+    @pytest.mark.parametrize("n_semesters", [1, 2, 4])
+    def test_default_targeting_averages_inside_range_on_heldout_seeds(self, n_semesters):
+        """The documented target works on seeds outside the measurement grid."""
+        rates = []
+        for seed in (47, 48, 49):
+            report = SynthEdPipeline(config=PipelineConfig(
+                output_dir=None, seed=seed, n_semesters=n_semesters,
+                target_dropout_range=(0.30, 0.45),
+            ), _calibration_mode=True).run(n_students=500)
+            rates.append(report["simulation_summary"]["dropout_rate"])
+            assert report["validation"]["summary"]["total_tests"] > 0
+        assert 0.30 <= sum(rates) / len(rates) <= 0.45
+
+    def test_custom_environment_marks_default_curve_as_transfer_estimate(self, tmp_path):
+        """A different horizon in weeks must not be presented as a matched curve."""
+        from synthed.simulation.environment import ODLEnvironment
+
+        pipeline = SynthEdPipeline(config=PipelineConfig(
+            output_dir=str(tmp_path), environment=ODLEnvironment(total_weeks=6),
+            target_dropout_range=(0.30, 0.45),
+        ))
+        report = pipeline.run(n_students=20)
+        assert report["dropout_targeting"]["reference_configuration_match"] is False
+        assert report["dropout_targeting"]["confidence"] == "low"
+
+    def test_different_cohort_size_is_reported_as_transfer_estimate(self, tmp_path):
+        """Cohort size changes peer interactions as well as sampling variance."""
+        report = SynthEdPipeline(config=PipelineConfig(
+            output_dir=str(tmp_path), target_dropout_range=(0.30, 0.45),
+        )).run(n_students=20)
+        targeting = report["dropout_targeting"]
+        assert targeting["reference_population_size"] == 500
+        assert targeting["population_size_match"] is False
+        assert targeting["confidence"] == "low"
+
+    def test_validation_uses_whole_run_engagement_without_mutating_state(self):
+        """Lifetime GPA is compared with the full observed engagement history."""
+        from synthed.agents.persona import StudentPersona
+        from synthed.simulation.social_network import SocialNetwork
+        from synthed.simulation.state import SimulationState
+
+        student = StudentPersona()
+        state = SimulationState(student_id=student.id, weekly_engagement_history=[0.2, 0.1])
+        histories = {student.id: [0.8, 0.7, 0.2, 0.1]}
+        _, outcomes, weekly = SynthEdPipeline._prepare_validation_data(
+            [student], {student.id: state}, SocialNetwork(), engagement_histories=histories,
+        )
+        assert outcomes[0]["mean_engagement"] == pytest.approx(0.45)
+        assert weekly == histories
+        assert state.weekly_engagement_history == [0.2, 0.1]
+
     def test_target_dropout_range_triggers_calibration(self, tmp_path):
         """Pipeline with target_dropout_range applies calibration (line 71)."""
         pipeline = SynthEdPipeline(
@@ -90,6 +141,21 @@ class TestPipelineCalibration:
         assert "estimated_base_rate" in dt
         assert "confidence" in dt
 
+    @pytest.mark.parametrize("seed", [42, 7, 123])
+    def test_targeting_report_records_actual_achievement(self, tmp_path, seed):
+        """The report checks the observed outcome rather than promising a target."""
+        pipeline = SynthEdPipeline(config=PipelineConfig(
+            output_dir=str(tmp_path), seed=seed, n_semesters=4,
+            target_dropout_range=(0.01, 0.02),
+        ))
+        report = pipeline.run(n_students=30)
+        dt = report["dropout_targeting"]
+        actual = report["simulation_summary"]["dropout_rate"]
+        assert dt["actual_dropout_rate"] == actual
+        assert dt["target_achieved"] == (0.01 <= actual <= 0.02)
+        assert dt["clamped"] is True
+        assert len(dt["observed_dropout_range"]) == 2
+
 
 class TestPipelineFromProfile:
     """Tests for SynthEdPipeline.from_profile classmethod (lines 133-142)."""
@@ -114,6 +180,22 @@ class TestPipelineFromProfile:
 
 class TestPipelineMultiSemesterInterim:
     """Tests for multi-semester interim reports (line 224)."""
+
+    @pytest.mark.parametrize("seed", [42, 7, 123])
+    def test_semester_rates_use_survivor_denominators(self, tmp_path, seed):
+        """Conditional rates describe entrants; cumulative rates use the cohort."""
+        report = SynthEdPipeline(config=PipelineConfig(
+            output_dir=str(tmp_path), seed=seed, n_semesters=4,
+        )).run(n_students=30)
+        cumulative = 0
+        for row in report["semester_summary"]:
+            assert row["students_at_start"] == 30 - cumulative
+            cumulative += row["dropouts"]
+            expected = (row["dropouts"] / row["students_at_start"]
+                        if row["students_at_start"] else None)
+            assert row["conditional_dropout_rate"] == expected
+            assert row["cumulative_dropout_rate"] == cumulative / 30
+        assert cumulative / 30 == report["simulation_summary"]["dropout_rate"]
 
     def test_multi_semester_with_target_range_has_interim_reports(self, tmp_path):
         """Multi-semester pipeline with target_dropout_range includes interim_reports."""

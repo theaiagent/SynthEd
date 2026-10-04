@@ -20,7 +20,7 @@ class KemberCostBenefit:
 
     # ── tuneable constants ──
     _QUALITY_FACTOR: float = 0.04            # cost-benefit sensitivity to academic quality
-    _MISSED_PENALTY: float = 0.03            # penalty per missed-assignment streak event
+    _MISSED_PENALTY: float = 0.03            # one charge per eligible week with a new miss
     _TD_PENALTY_FACTOR: float = 0.02         # Moore TD influence on perceived value
     _TEACHING_PRESENCE_FACTOR: float = 0.03  # Garrison teaching presence boost
     _COI_COMPOSITE_FACTOR: float = 0.02      # CoI composite influence on value
@@ -46,8 +46,12 @@ class KemberCostBenefit:
         Recalculate cost-benefit perception after academic events.
 
         Triggered when graded items are submitted, during exam weeks,
-        or after missed assignment streaks. Cumulative GPA anchors the
-        perceived return on educational investment.
+        or while a missed assignment streak persists. The missed-event charge
+        additionally requires a new miss in the current week, read from the
+        engine's semester-local event memory. Explicit ``week`` takes precedence
+        over ``context['week']``; without either, no new miss can be established.
+        Past cost-benefit changes and the other recalculation inputs still apply.
+        Perceived mastery anchors the return on educational investment.
         """
         # Poor performance reduces perceived cost-benefit
         recent_quality = [r.quality_score for r in records
@@ -60,7 +64,13 @@ class KemberCostBenefit:
             )  # [inst: instructional_design_quality]
             state.perceived_cost_benefit += (avg_q - 0.5) * effective_qf
         elif state.missed_assignments_streak >= 2:
-            state.perceived_cost_benefit -= self._MISSED_PENALTY
+            event_week = week if week is not None else context.get("week")
+            if event_week is not None and any(
+                event.get("event_type") == "missed_assignment"
+                and event.get("week") == event_week
+                for event in state.memory
+            ):
+                state.perceived_cost_benefit -= self._MISSED_PENALTY
 
         # Moore -> Kember: high transactional distance reduces perceived value
         state.perceived_cost_benefit -= (avg_td - 0.5) * self._TD_PENALTY_FACTOR

@@ -1,6 +1,9 @@
 """Tests for individual theory modules."""
 
 import numpy as np
+import pytest
+
+from copy import deepcopy
 
 from synthed.agents.persona import StudentPersona, BigFiveTraits
 from synthed.simulation.state import InteractionRecord, SimulationState, CommunityOfInquiryState
@@ -120,14 +123,16 @@ class TestBaulke:
 
 class TestKember:
     def test_missed_assignments_lower_cost_benefit(self):
+        """A current missed assignment in an established streak lowers perceived value."""
         kember = KemberCostBenefit()
         student = StudentPersona()
         state = _make_state(
             missed_assignments_streak=3,
             perceived_cost_benefit=0.6,
+            memory=[{"week": 1, "event_type": "missed_assignment"}],
         )
         records = []  # no academic submissions
-        kember.recalculate(student, state, {}, records, avg_td=0.5)
+        kember.recalculate(student, state, {}, records, avg_td=0.5, week=1)
         assert state.perceived_cost_benefit < 0.6
 
 
@@ -143,6 +148,42 @@ class TestSDT:
 
 
 class TestGonzalez:
+    @pytest.mark.parametrize("enrolled", [[], ["CS101"], ["CS101", "MATH201"]])
+    def test_unenrolled_assignments_do_not_add_exhaustion(self, enrolled):
+        """Assignments outside the student's active courses add no workload."""
+        student = StudentPersona()
+        original_student = deepcopy(student)
+        model = GonzalezExhaustion()
+        expected = _make_state(courses_active=enrolled,
+                               exhaustion=ExhaustionState(exhaustion_level=0.3))
+        actual = deepcopy(expected)
+        context = {"active_assignments": [*enrolled, "OTHER"]}
+        original_context = deepcopy(context)
+
+        model.update_exhaustion(student, expected, 1, {"active_assignments": enrolled}, [])
+        model.update_exhaustion(student, actual, 1, context, [])
+
+        assert actual.exhaustion == expected.exhaustion
+        assert student == original_student
+        assert context == original_context
+
+    @pytest.mark.parametrize("flexibility", [0.0, 0.5, 1.0])
+    def test_each_enrolled_assignment_retains_its_scaled_load(self, flexibility):
+        """Enrolled workload keeps the existing coefficient and institutional scaling."""
+        from synthed.simulation.institutional import InstitutionalConfig, scale_by
+
+        student = StudentPersona()
+        model = GonzalezExhaustion()
+        inst = InstitutionalConfig(curriculum_flexibility=flexibility)
+        no_due = _make_state(courses_active=["CS101", "MATH201"],
+                             exhaustion=ExhaustionState(exhaustion_level=0.3))
+        two_due = deepcopy(no_due)
+        model.update_exhaustion(student, no_due, 1, {}, [], inst=inst)
+        model.update_exhaustion(student, two_due, 1,
+                                {"active_assignments": ["CS101", "MATH201"]}, [], inst=inst)
+        expected_load = 2 * scale_by(model._ASSIGNMENT_LOAD_WEIGHT, 1.0 - flexibility)
+        assert two_due.exhaustion.exhaustion_level - no_due.exhaustion.exhaustion_level == pytest.approx(expected_load)
+
     def test_assignments_increase_exhaustion(self):
         gonzalez = GonzalezExhaustion()
         student = StudentPersona(
@@ -151,7 +192,7 @@ class TestGonzalez:
             financial_stress=0.7, self_regulation=0.3,
             personality=BigFiveTraits(conscientiousness=0.3),
         )
-        state = _make_state()
+        state = _make_state(courses_active=["CS101", "MATH201", "EDU301"])
         state.exhaustion = ExhaustionState(exhaustion_level=0.0)
         context = {"active_assignments": ["CS101", "MATH201", "EDU301"]}
         gonzalez.update_exhaustion(student, state, 1, context, [])
@@ -194,6 +235,7 @@ class TestKemberGPAFeedback:
         assert state.perceived_cost_benefit < 0.50
 
     def test_no_gpa_items_no_gpa_effect(self):
+        """Without graded items, a fresh miss lowers value without a mastery effect."""
         kember = KemberCostBenefit()
         student = StudentPersona()
         state = _make_state(
@@ -201,9 +243,10 @@ class TestKemberGPAFeedback:
             missed_assignments_streak=3,
             gpa_count=0,
             cumulative_gpa=0.0,
+            memory=[{"week": 1, "event_type": "missed_assignment"}],
         )
-        # With no GPA items, only missed streak should affect cost-benefit
-        kember.recalculate(student, state, {}, [], avg_td=0.5)
+        # With no GPA items, only the current missed event affects cost-benefit.
+        kember.recalculate(student, state, {}, [], avg_td=0.5, week=1)
         # Should still decrease (missed streak), but NOT from GPA
         assert state.perceived_cost_benefit < 0.50
 

@@ -103,6 +103,15 @@ class MultiSemesterResult:
     final_network: SocialNetwork
     interim_reports: list[SemesterInterimReport]
 
+    @property
+    def engagement_histories(self) -> dict[str, list[float]]:
+        """Concatenate observed terms for validation without changing theory state."""
+        histories: dict[str, list[float]] = {}
+        for semester in self.semester_results:
+            for sid, state in semester.states.items():
+                histories.setdefault(sid, []).extend(state.weekly_engagement_history)
+        return histories
+
 
 # ─────────────────────────────────────────────
 # Runner
@@ -308,12 +317,6 @@ def _create_carry_over_persona(
         state.academic_integration, 0.01, 0.95,
     ))
 
-    # Engagement recovers slightly during break
-    recovered_engagement = float(np.clip(
-        state.current_engagement + config.engagement_recovery,
-        0.01, config.engagement_recovery_cap,
-    ))
-
     # Cost-benefit gets small positive adjustment (Kember: break reflection)
     new_cost_benefit = float(np.clip(
         state.perceived_cost_benefit + config.cost_benefit_recovery,
@@ -334,7 +337,6 @@ def _create_carry_over_persona(
         original,
         academic_integration=new_academic_integration,
         social_integration=new_social_integration,
-        base_engagement_probability=recovered_engagement,
         perceived_cost_benefit=new_cost_benefit,
         prior_gpa=round(new_prior_gpa, 2),
     )
@@ -382,6 +384,12 @@ def _build_state_overrides(
     )
 
     return {
+        # Persona construction recomputes base engagement, so carry evolved
+        # engagement into the simulation state after that initialization.
+        "current_engagement": float(np.clip(
+            state.current_engagement + config.engagement_recovery,
+            0.01, config.engagement_recovery_cap,
+        )),
         "dropout_phase": new_dropout_phase,
         "has_dropped_out": False,
         "dropout_week": None,
@@ -391,10 +399,12 @@ def _build_state_overrides(
         "memory": [],
         "exhaustion": new_exhaustion,
         "coi_state": new_coi,
-        # GPA accumulator carries forward across semesters
+        # Both grade tracks retain the same graded-item history across semesters.
         "cumulative_gpa": state.cumulative_gpa,
         "gpa_points_sum": state.gpa_points_sum,
         "gpa_count": state.gpa_count,
+        "perceived_mastery_sum": state.perceived_mastery_sum,
+        "perceived_mastery_count": state.perceived_mastery_count,
         # Coping skill partially retained across break (Bean & Metzner)
         "coping_factor": float(np.clip(
             state.coping_factor * config.coping_retention,

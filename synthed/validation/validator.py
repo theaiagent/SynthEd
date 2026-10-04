@@ -93,6 +93,8 @@ class SyntheticDataValidator:
         students_data: list[dict],
         outcomes_data: list[dict],
         weekly_engagement: dict[str, list[float]] | None = None,
+        *,
+        total_weeks: int | None = None,
     ) -> dict[str, Any]:
         """
         Run all validation checks and return a comprehensive report.
@@ -101,6 +103,8 @@ class SyntheticDataValidator:
             students_data: List of student attribute dictionaries.
             outcomes_data: List of outcome dictionaries.
             weekly_engagement: Dict mapping student_id to weekly engagement list.
+            total_weeks: Planned simulation horizon, matching global dropout weeks.
+                If omitted, infer it from the longest supplied trajectory.
 
         Returns:
             Validation report dictionary.
@@ -116,7 +120,9 @@ class SyntheticDataValidator:
 
         # Level 3: Temporal coherence
         if weekly_engagement:
-            results.extend(self._validate_temporal(weekly_engagement, outcomes_data))
+            results.extend(self._validate_temporal(
+                weekly_engagement, outcomes_data, total_weeks=total_weeks,
+            ))
 
         # Level 4: Privacy
         results.extend(self._validate_privacy(students_data))
@@ -482,6 +488,8 @@ class SyntheticDataValidator:
         self,
         weekly_engagement: dict[str, list[float]],
         outcomes: list[dict],
+        *,
+        total_weeks: int | None = None,
     ) -> list[ValidationResult]:
         """Level 3: Validate temporal coherence of engagement trajectories."""
         results = []
@@ -538,8 +546,9 @@ class SyntheticDataValidator:
             if sid in outcome_map and outcome_map[sid].get("has_dropped_out")
             and outcome_map[sid].get("dropout_week") is not None
         ]
-        if dropout_weeks:
-            total_weeks = max(len(t) for t in weekly_engagement.values() if t)
+        if total_weeks is None:
+            total_weeks = max((len(t) for t in weekly_engagement.values()), default=0)
+        if dropout_weeks and total_weeks > 0:
             midpoint = total_weeks / 2
             early_dropouts = sum(1 for w in dropout_weeks if w <= midpoint)
             early_rate = early_dropouts / len(dropout_weeks)
@@ -549,7 +558,8 @@ class SyntheticDataValidator:
                 synthetic_value=early_rate,
                 reference_value=0.50,
                 passed=early_rate >= 0.30,  # at least 30% drop in first half
-                details=f"{early_rate:.0%} of dropouts occur in first half of semester",
+                details=f"{early_rate:.0%} of dropouts occur in first half of "
+                        f"the {total_weeks}-week simulation",
             ))
 
         return results

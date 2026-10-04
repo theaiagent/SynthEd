@@ -1,0 +1,4468 @@
+{
+  "git_revision": "511a4d7c5f7ebef1834f441c6f4d408deae8a05f",
+  "source_sha256": {
+    "scripts/measure_dropout_horizons.py": "36e0bfbb5b86ae34c1dc9ab1138d1be340d7c3c3599892ef07076e871b9337bf",
+    "synthed/__init__.py": "cda35960f44ff96bac62366b3383a94cae51c05a7f5389c2f777a164826f69bd",
+    "synthed/agents/__init__.py": "44202f18ebc2043784718263c74ed467859e2a224a4ed0bde469bac69e235bc6",
+    "synthed/agents/backstory_templates.py": "b7f67c4d54fb18048f95acc37fca80730b97329639f17440b783a94f0705b93b",
+    "synthed/agents/factory.py": "6f3a3435b805c8477ebf9a2daa4b39d3ffa0e90fd3275e7892460d2162a1217e",
+    "synthed/agents/name_pools.py": "5661f2ce6ee5bc11b73082f6c26ffc387ed3e0166aee2c118b41fa673f86fc7f",
+    "synthed/agents/persona.py": "cde3017fa72fd07b744a2305b84b0958b7046e80a7f563e3d540aacfa2128d93",
+    "synthed/analysis/__init__.py": "1b69748f0a61a1467a8ba30b202961b5171a80aa91056d6acd78b001941edf6e",
+    "synthed/analysis/_sim_runner.py": "af9438e1ec9e764b726fcf5f899ccdc66520f533e5bd44a9f3c61fee13ae8c4d",
+    "synthed/analysis/auto_bounds.py": "e88f4c05da16fcba90edea51a5be1b49b2b9631bfa75e5d70c69297785d25f1d",
+    "synthed/analysis/nsga2_calibrator.py": "78ecf7822fcd1c0e1700ee75926a1ee90b565b2c8e9c8dd0b542ee5d5f7674a8",
+    "synthed/analysis/oulad_targets.py": "7fe5e92bd1cee1ce66cd7e9b2ea03489a5fdeadf4e47517312764eb46fd1b826",
+    "synthed/analysis/oulad_validator.py": "0ec4a507d62e1ca10a6c723aaa73e7e220ca2519adf01730c35b27727ddac373",
+    "synthed/analysis/pareto_utils.py": "584d09e92a89428f6aa0bdb22cbbb7716d2800b06c4cece65958503af3edfd6c",
+    "synthed/analysis/sensitivity.py": "20ffe4a310db61e2a1d26dc7c07294755b41687cc7597437b91a429beb0bf358",
+    "synthed/analysis/sobol_sensitivity.py": "9014d3f025e3ba9a0061d79cebae8167327d5ff2d4b70ad15c6f94ee86e2e292",
+    "synthed/analysis/trait_calibrator.py": "7255c2327cc57ad38e971f399d911769f191719f2b13fe787bc894bf4194d645",
+    "synthed/benchmarks/__init__.py": "b437477ec82a242135541fd26d7785776a391344c7f7d9491f80d08cbd965809",
+    "synthed/benchmarks/generator.py": "21f2e6be7a3ab8cc8e37d4eaa5e72b9349424bb7538ffefec1ae4ddc071bca1a",
+    "synthed/benchmarks/profiles.py": "5d4bfe4191f8e7a3fa96578edd3c6fee8c7ff75ad60e2c32e4887a30591b7780",
+    "synthed/calibration.py": "94cca272dd0eb29f2693d38e190e0687a22815aaecb4883463c049ef2b0e6364",
+    "synthed/dashboard/__init__.py": "5779b678a698c2dcabaf79752e24615709d05e8fa59e118b496dae893c667fa2",
+    "synthed/dashboard/__main__.py": "e7ad56b53c107c6277b2d17fbbe4303467c9034b35e1dc2cf0c5be7b64f8dde2",
+    "synthed/dashboard/app.py": "34ecd8ce688ea06503d3253446ff57c30c0fbdf10c9e9f38edb7af0253847464",
+    "synthed/dashboard/charts.py": "28fcd20b1f74078aca29349bc671608bf1aa6c7d38e2db43e05573e02e7e63d9",
+    "synthed/dashboard/components/__init__.py": "69073eb61482686bcc103b68258b6777fddc89321d246ab0cbe29536bd191a93",
+    "synthed/dashboard/components/calibrate_panel.py": "1b7364d04534c6a9a5a3f5eada788132d10e042291d9246dcb2e441a6b4c9baf",
+    "synthed/dashboard/components/distribution_editor.py": "5f10bb87b49ce080ca6e6ad1860d8f55752def3da5890bc6ef4472a384168555",
+    "synthed/dashboard/components/param_panel.py": "95f544423a5ef8936827ed405ee8f1474ab5fc8cc62bb70e2f6e1b81044b1ab1",
+    "synthed/dashboard/components/results_panel.py": "e616d3df3de7b17284b1848bfc11eb092e92ecd3ceace6b8784a9dfd3c428f69",
+    "synthed/dashboard/components/warnings.py": "432d5e12ae42f537f488219f83d0258bb0e114e8bdfc452638aa770481af2f7c",
+    "synthed/dashboard/config_bridge.py": "c18e2fac5f1c034600f5827d7e89f171f780a71fe2bea8b49ad1234dcb3b1a59",
+    "synthed/dashboard/theme.py": "cc32698fac131b491fe4d2495c84aa4382684f3e61140b617a009262ebd9774d",
+    "synthed/data_output/__init__.py": "54c1ab35d112f06393807f99b7c2c5528229832ce59408f236a819d66f41eb16",
+    "synthed/data_output/exporter.py": "1fbaa459dcc8229ca447d2c3c2888513a7927f41361cd3720a09b2340201ca75",
+    "synthed/data_output/oulad_exporter.py": "4b3e50b83bbb498233547dce7577dc5d690d4be512f86f448443bb8cca7f3119",
+    "synthed/data_output/oulad_mappings.py": "158adc5195afb7b5ff8e23976214e9f773699b239d501249daf4825c41f8a670",
+    "synthed/doc_facts.py": "def742220502d7c60f65124f0dad7e441456c725152a2f2827b04ba7ef75ae49",
+    "synthed/pipeline.py": "d8024815c729e117114a322544dffac5f6af2be123833ddeb540c97aeed33f33",
+    "synthed/pipeline_config.py": "aa9be4c094518ef116cca1f7c35dc38b214df891000593add2d6f1754a779e72",
+    "synthed/report/__init__.py": "385b859294c9c9c3fcf1a10fe9ac5bc8d0166db8626db83ec1935bdaa8a10731",
+    "synthed/report/charts.py": "c134998ad88f72909cad5299c0465e49dd7264849bcca91dd311083065ff005f",
+    "synthed/report/generator.py": "3b9082016d78021bbdbebecc1ddb5eb3af36975fc2b79a8fbcb0096d2c2956e8",
+    "synthed/report/translations.py": "feefd9a8820f6cd5c02b652b017e097e904b46944aa18c49bd59dacc2a2ca29a",
+    "synthed/simulation/__init__.py": "b3d5937464858a3ab5089b9fef7773b8fcb12fffa5feeceb12726eeb855d634a",
+    "synthed/simulation/engine.py": "6bb40bc0bf4eabb3711e786f794203ab77622d84fe3339466d7cfeab256b67a0",
+    "synthed/simulation/engine_config.py": "7eda1e1432b0b0bfaa57740dacd325006a7d076380f012f0e98cbc80c318697c",
+    "synthed/simulation/environment.py": "f18f2cf77d37d8935f6f8acd569951cdc6644584bb04c644a8ca36bbd09457ae",
+    "synthed/simulation/grading.py": "94f1be7e2f238b587ed623bb054418b1b1918845480c3bef91f3ac3dc6ee970c",
+    "synthed/simulation/institutional.py": "0c550c7995514f3a9723e138a05ea7f3f3e51f89c2ff001b9e2a0118e8821d65",
+    "synthed/simulation/semester.py": "439d566f3c053c2efb2e12ffdbd03b49deee218943fc77b66e09db0abbade1db",
+    "synthed/simulation/social_network.py": "e502759edd9fb0b62745258ef0a3798cd0222e02b60e9dbd1c5438a94d4ef81e",
+    "synthed/simulation/state.py": "3e59b0fe266e8b55948667a5ea7d59a65c7b2d6551f42ab39e3f2f4c8df5af9f",
+    "synthed/simulation/statistics.py": "8b064d0adc3f0fc5dfd53427b3fd4bab3f8b30df4791c1cd48b9fc51a87cab0a",
+    "synthed/simulation/theories/__init__.py": "13bbea0f60305ded4374a653b7af6d3fab882a5c7c9b6daf7266e80df2a0293b",
+    "synthed/simulation/theories/academic_exhaustion.py": "e842b078acb6b0ecebc0baf8ccd6421f18d0706b5f897e62440b02cf42acddc1",
+    "synthed/simulation/theories/baulke.py": "040cbd9698996e3450cc0b463d98fb8bff091fc9a5d84afd1d0abff9680c5004",
+    "synthed/simulation/theories/bean_metzner.py": "1cb65ea7544968f8310e85f2f77550179914478cfe95f6305ed0cf923cee6335",
+    "synthed/simulation/theories/epstein_axtell.py": "c424a33d9ab142431022676c736e2aca39e180df121d8ea458c9b5e19e1eeb07",
+    "synthed/simulation/theories/garrison_coi.py": "2ca303a4c419ad13387087097914bac6658ffb7f8bb21753de75b40d77c7a98f",
+    "synthed/simulation/theories/kember.py": "a44a94a73469260f5badd353b35bdac395ff9d9329c8f0cb9e489d3cd0c6b924",
+    "synthed/simulation/theories/moore_td.py": "666b352f752325c077510dd3f6f5387095c964995e22e428115a4c8db32f2bdd",
+    "synthed/simulation/theories/positive_events.py": "981885d0ca06896a7171948a222e4653b250d2bc015c5b22bce8560a9a84c8ee",
+    "synthed/simulation/theories/protocol.py": "c529d47798e0ff9fdaf1da18ec16948c7d597958900ce0443dcb03b628e05f0b",
+    "synthed/simulation/theories/rovai.py": "4e3859c73ac324751501486f4ae782f0169b315dd1934719dbaa18ac7f28d4b0",
+    "synthed/simulation/theories/sdt_motivation.py": "269f004d036680911ecd42119f40572bc49e53585b1514646341e2ee6c668a94",
+    "synthed/simulation/theories/tinto.py": "d4bc59cd4b9196246b41c97c8229abbd90d952609434014112688be34d8bcd67",
+    "synthed/simulation/theories/unavoidable_withdrawal.py": "fc26ad52c622a91d7c4210f179c84bf40dc063593d9e22704da5532d783f2c09",
+    "synthed/utils/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "synthed/utils/llm.py": "d486b4bd516582c0567865ab685b890340306a43bc39f0ee7ccc3f5af83dbd54",
+    "synthed/utils/llm_memory.py": "54d842eb1e0ed396b2354ec6662654431b1903d601bad5fb060903a942fc3e44",
+    "synthed/utils/log_config.py": "3ae7926e4eda2ef075e6badaa6f99bd22cdbdbbc33d2deef7a7d3b21f3bac450",
+    "synthed/utils/validation.py": "8f95493a624de878e4393b61d10ef8b9422cc89c956dbbde57dd713010c20542",
+    "synthed/validation/__init__.py": "c534293487b10e034056739a8cf5ddecd4d7dd3ff345d6675972b830d5aeac10",
+    "synthed/validation/types.py": "4eea434cbffb50946931a2b8b6fc2c6d41a4dabc8f7670e87f36a51e80e593da",
+    "synthed/validation/validator.py": "db198d6c623f3d1a003500435cc95f7990843cf8b704fb9aa8bea1da440945b1",
+    "scripts/measure_assignment_scope.py": "d19c0b1f8cbe8bc64b43fdcfe1fbdfa12cae38a315b2e14e36e02cc285f4332d",
+    "scripts/diagnose_dropout_horizons.py": "4db11c9026342698182b7a75c78cde7a081724bc5ab1fdd84ac7605119892ab8"
+  },
+  "python": "3.12.14",
+  "dependencies": {
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "uuid-utils": "0.17.1"
+  },
+  "n_students": 500,
+  "seeds": [
+    42,
+    43,
+    44,
+    45,
+    46
+  ],
+  "horizons": [
+    1,
+    2,
+    4
+  ],
+  "config": {
+    "persona_config": {
+      "age_range": [
+        18,
+        55
+      ],
+      "gender_distribution": {
+        "male": 0.55,
+        "female": 0.45
+      },
+      "employment_rate": 0.69,
+      "has_family_rate": 0.52,
+      "financial_stress_mean": 0.55,
+      "prior_gpa_mean": 2.3,
+      "prior_gpa_std": 0.8,
+      "digital_literacy_mean": 0.5,
+      "digital_literacy_std": 0.22,
+      "self_regulation_mean": 0.42,
+      "self_regulation_std": 0.2,
+      "motivation_levels": {
+        "intrinsic": 0.25,
+        "extrinsic": 0.45,
+        "amotivation": 0.3
+      },
+      "socioeconomic_distribution": {
+        "low": 0.3,
+        "middle": 0.5,
+        "high": 0.2
+      },
+      "prior_education_distribution": {
+        "high_school": 0.5,
+        "associate": 0.3,
+        "bachelor": 0.2
+      },
+      "device_distribution": {
+        "laptop": 0.4,
+        "desktop": 0.15,
+        "mobile": 0.35,
+        "tablet": 0.1
+      },
+      "goal_orientation_distribution": {
+        "mastery": 0.35,
+        "performance": 0.4,
+        "avoidance": 0.25
+      },
+      "learning_style_distribution": {
+        "visual": 0.35,
+        "auditory": 0.2,
+        "reading": 0.3,
+        "kinesthetic": 0.15
+      },
+      "dropout_base_rate": 0.46,
+      "unavoidable_withdrawal_rate": 0.003,
+      "disability_rate": 0.1,
+      "generate_names": false
+    },
+    "environment": {
+      "semester_name": "Fall 2026",
+      "total_weeks": 14,
+      "courses": [
+        {
+          "id": "CS101",
+          "name": "Introduction to Computer Science",
+          "difficulty": 0.4,
+          "weekly_workload_hours": 5,
+          "has_forum": true,
+          "has_live_sessions": true,
+          "num_assignments": 4,
+          "midterm_week": 7,
+          "final_week": 14,
+          "assignment_weeks": [
+            3,
+            6,
+            10,
+            13
+          ],
+          "structure_level": 0.6,
+          "dialogue_frequency": 0.5,
+          "instructor_responsiveness": 0.6
+        },
+        {
+          "id": "MATH201",
+          "name": "Statistics for Social Sciences",
+          "difficulty": 0.6,
+          "weekly_workload_hours": 6,
+          "has_forum": true,
+          "has_live_sessions": false,
+          "num_assignments": 5,
+          "midterm_week": 7,
+          "final_week": 14,
+          "assignment_weeks": [
+            2,
+            5,
+            8,
+            11,
+            13
+          ],
+          "structure_level": 0.7,
+          "dialogue_frequency": 0.2,
+          "instructor_responsiveness": 0.4
+        },
+        {
+          "id": "EDU301",
+          "name": "Foundations of Distance Education",
+          "difficulty": 0.3,
+          "weekly_workload_hours": 4,
+          "has_forum": true,
+          "has_live_sessions": true,
+          "num_assignments": 3,
+          "midterm_week": 7,
+          "final_week": 14,
+          "assignment_weeks": [
+            4,
+            9,
+            13
+          ],
+          "structure_level": 0.3,
+          "dialogue_frequency": 0.6,
+          "instructor_responsiveness": 0.7
+        },
+        {
+          "id": "PSY202",
+          "name": "Educational Psychology",
+          "difficulty": 0.5,
+          "weekly_workload_hours": 5,
+          "has_forum": true,
+          "has_live_sessions": false,
+          "num_assignments": 4,
+          "midterm_week": 7,
+          "final_week": 14,
+          "assignment_weeks": [
+            3,
+            6,
+            10,
+            13
+          ],
+          "structure_level": 0.5,
+          "dialogue_frequency": 0.3,
+          "instructor_responsiveness": 0.5
+        }
+      ],
+      "scheduled_events": {
+        "1": "semester_start",
+        "3": "first_assignment_deadline",
+        "7": "midterm_exams",
+        "10": "registration_withdrawal_deadline",
+        "13": "final_assignment_deadline",
+        "14": "final_exams"
+      },
+      "positive_events": {
+        "1": "orientation_welcome",
+        "3": "financial_aid_disbursement",
+        "7": "semester_break",
+        "10": "peer_study_group"
+      }
+    },
+    "institutional_config": {
+      "instructional_design_quality": 0.5,
+      "teaching_presence_baseline": 0.5,
+      "support_services_quality": 0.5,
+      "technology_quality": 0.5,
+      "curriculum_flexibility": 0.5
+    },
+    "grading_config": {
+      "scale": 100,
+      "assessment_mode": "mixed",
+      "midterm_weight": 0.4,
+      "final_weight": 0.6,
+      "midterm_components": {
+        "exam": 0.5,
+        "assignment": 0.3,
+        "forum": 0.2
+      },
+      "distribution": "beta",
+      "dist_alpha": 5.0,
+      "dist_beta": 3.0,
+      "grading_method": "absolute",
+      "grade_floor": 0.45,
+      "pass_threshold": 0.64,
+      "distinction_threshold": 0.73,
+      "dual_hurdle": false,
+      "component_pass_thresholds": {},
+      "exam_eligibility_threshold": null,
+      "late_penalty": 0.05,
+      "noise_std": 0.05,
+      "missing_policy": "zero"
+    },
+    "engine_config": {
+      "_LOGIN_ENG_MULTIPLIER": 5.0,
+      "_LOGIN_LITERACY_FLOOR": 0.5,
+      "_LOGIN_LITERACY_SCALE": 0.5,
+      "_LOGIN_DURATION_MEAN_FACTOR": 25.0,
+      "_LOGIN_DURATION_STD": 12.0,
+      "_LOGIN_DURATION_MIN": 5.0,
+      "_FORUM_READ_ENG_FACTOR": 0.7,
+      "_FORUM_READ_LITERACY_FLOOR": 0.5,
+      "_FORUM_READ_LITERACY_SCALE": 0.5,
+      "_FORUM_READ_EXP_MEAN": 10.0,
+      "_FORUM_POST_ENG_FACTOR": 0.25,
+      "_FORUM_POST_EXTRA_FLOOR": 0.4,
+      "_FORUM_POST_EXTRA_WEIGHT": 0.3,
+      "_FORUM_POST_SOCIAL_WEIGHT": 0.3,
+      "_FORUM_POST_DURATION_MEAN": 15.0,
+      "_FORUM_POST_DURATION_STD": 5.0,
+      "_FORUM_POST_LENGTH_MEAN": 80.0,
+      "_FORUM_POST_LENGTH_STD": 30.0,
+      "_ASSIGN_SUBMIT_REG_WEIGHT": 0.3,
+      "_ASSIGN_SUBMIT_TIME_WEIGHT": 0.2,
+      "_ASSIGN_SUBMIT_CONSC_WEIGHT": 0.2,
+      "_ASSIGN_SUBMIT_BASE": 0.3,
+      "_ASSIGN_GPA_WEIGHT": 0.25,
+      "_ASSIGN_ENG_WEIGHT": 0.25,
+      "_ASSIGN_EFFICACY_WEIGHT": 0.2,
+      "_ASSIGN_READING_WEIGHT": 0.15,
+      "_ASSIGN_NOISE_WEIGHT": 0.15,
+      "_ASSIGN_NOISE_STD": 0.15,
+      "_GPA_SCALE": 4.0,
+      "_MISSED_IMPACT": -0.3,
+      "_LIVE_ENG_FACTOR": 0.5,
+      "_LIVE_EMPLOYED_PENALTY": 0.4,
+      "_LIVE_DURATION_MEAN": 55.0,
+      "_LIVE_DURATION_STD": 10.0,
+      "_EXAM_TAKE_HIGH_ENG_PROB": 0.95,
+      "_EXAM_TAKE_ENG_THRESHOLD": 0.3,
+      "_EXAM_TAKE_LOW_MULTIPLIER": 2.5,
+      "_EXAM_GPA_WEIGHT": 0.2,
+      "_EXAM_ENG_WEIGHT": 0.2,
+      "_EXAM_EFFICACY_WEIGHT": 0.2,
+      "_EXAM_REG_WEIGHT": 0.15,
+      "_EXAM_READING_WEIGHT": 0.1,
+      "_EXAM_NOISE_WEIGHT": 0.15,
+      "_EXAM_NOISE_STD": 0.18,
+      "_DECAY_DAMPING_FACTOR": 0.5,
+      "_TINTO_ACADEMIC_WEIGHT": 0.06,
+      "_TINTO_SOCIAL_WEIGHT": 0.02,
+      "_TINTO_DECAY_BASE": 0.05,
+      "_MOTIVATION_INTRINSIC_BOOST": 0.02,
+      "_MOTIVATION_AMOTIVATION_PENALTY": 0.025,
+      "_TD_EFFECT_FACTOR": 0.03,
+      "_COI_SOCIAL_WEIGHT": 0.01,
+      "_COI_COGNITIVE_WEIGHT": 0.02,
+      "_COI_TEACHING_WEIGHT": 0.01,
+      "_COI_BASELINE_OFFSET": 0.02,
+      "_HIGH_QUALITY_THRESHOLD": 0.7,
+      "_HIGH_QUALITY_BOOST": 0.025,
+      "_LOW_QUALITY_THRESHOLD": 0.3,
+      "_LOW_QUALITY_PENALTY": 0.035,
+      "_MISSED_STREAK_PENALTY": 0.04,
+      "_MISSED_STREAK_CAP": 3,
+      "_NEUROTICISM_EXAM_FACTOR": 0.04,
+      "_CB_FEEDBACK_FACTOR": 0.02,
+      "_ENGAGEMENT_CLIP_LO": 0.01,
+      "_ENGAGEMENT_CLIP_HI": 0.99,
+      "_INST_QUALITY_SCALE_LOW": 0.7,
+      "_INST_QUALITY_SCALE_HIGH": 1.3,
+      "_NETWORK_DECAY_RATE": 0.02,
+      "_COI_DEGREE_FACTOR": 0.005,
+      "_COI_DEGREE_CAP": 0.03
+    },
+    "reference_stats": {
+      "age_mean": 28.0,
+      "age_std": 8.0,
+      "gender_distribution": {
+        "male": 0.55,
+        "female": 0.45
+      },
+      "employment_rate": 0.69,
+      "gpa_mean": 3.03,
+      "gpa_std": 0.75,
+      "dropout_rate": 0.312,
+      "dropout_range": [
+        0.2,
+        0.45
+      ],
+      "pass_rate": null,
+      "distinction_rate": null,
+      "avg_weekly_logins": null,
+      "avg_forum_posts_per_student": null
+    },
+    "seed": 42,
+    "n_semesters": 1,
+    "carry_over_config": null,
+    "target_dropout_range": null,
+    "output_dir": null,
+    "export_oulad": false,
+    "llm_model": "gpt-4o-mini",
+    "llm_base_url": null,
+    "use_llm": false,
+    "cost_threshold": 1.0
+  },
+  "expected_runs": 15,
+  "complete": true,
+  "runs": [
+    {
+      "n_semesters": 1,
+      "seed": 42,
+      "simulation_summary": {
+        "total_students": 500,
+        "dropout_count": 163,
+        "dropout_rate": 0.326,
+        "mean_dropout_week": 10.07361963190184,
+        "std_dropout_week": 2.502902075612505,
+        "mean_final_engagement": 0.16259255626493438,
+        "std_final_engagement": 0.10631053857518521,
+        "mean_final_gpa": 2.863182260425732,
+        "retained_students": 337,
+        "dropout_phase_distribution": {
+          "phase_0": 19,
+          "phase_1": 17,
+          "phase_2": 13,
+          "phase_3": 159,
+          "phase_4": 129,
+          "phase_5": 162,
+          "unavoidable_withdrawal": 1
+        },
+        "unavoidable_withdrawal_count": 1,
+        "unavoidable_withdrawal_reasons": {
+          "forced_relocation": 1
+        },
+        "pass_rate": 0.352,
+        "distinction_rate": 0.08,
+        "fail_rate": 0.242,
+        "withdrawn_rate": 0.326,
+        "outcome_distribution": {
+          "Fail": 121,
+          "Pass": 176,
+          "Withdrawn": 163,
+          "Distinction": 40
+        },
+        "grading_scale": 100
+      },
+      "validation": {
+        "summary": {
+          "total_tests": 22,
+          "passed": 19,
+          "failed": 3,
+          "pass_rate": 0.8636363636363636,
+          "overall_quality": "B (Good)"
+        },
+        "results": [
+          {
+            "test": "age_distribution",
+            "metric": "KS-test",
+            "synthetic": 28.338,
+            "reference": 28.0,
+            "statistic": 0.1327,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "Age mean: synth=28.3, ref=28.0"
+          },
+          {
+            "test": "gender_distribution",
+            "metric": "Chi-squared",
+            "synthetic": 0.0323,
+            "reference": 0.0,
+            "statistic": 0.0323,
+            "p_value": 0.8573,
+            "passed": true,
+            "details": "Gender proportions match reference: p=0.8573"
+          },
+          {
+            "test": "employment_rate",
+            "metric": "Proportion Z-test",
+            "synthetic": 0.65,
+            "reference": 0.69,
+            "statistic": -1.9339,
+            "p_value": 0.0531,
+            "passed": true,
+            "details": "Employment: synth=65.00%, ref=69.00%"
+          },
+          {
+            "test": "gpa_distribution",
+            "metric": "KS-test",
+            "synthetic": 2.3054,
+            "reference": 3.03,
+            "statistic": 0.394,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "GPA mean: synth=2.31, ref=3.03"
+          },
+          {
+            "test": "dropout_rate",
+            "metric": "Range check",
+            "synthetic": 0.326,
+            "reference": 0.325,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Dropout: synth=32.60%, target=[20.00%, 45.00%]"
+          },
+          {
+            "test": "tinto_conscientiousness_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": -0.2123,
+            "reference": -0.2,
+            "statistic": -0.2123,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Conscientiousness-dropout (Poropat 2009: expected negative): r=-0.212"
+          },
+          {
+            "test": "bandura_self_efficacy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2178,
+            "reference": 0.3,
+            "statistic": 0.2178,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-efficacy-engagement (Bandura 1997: expected positive): r=0.218"
+          },
+          {
+            "test": "rovai_self_regulation_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.3325,
+            "reference": 0.25,
+            "statistic": 0.3325,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-regulation-engagement (Rovai 2003: expected positive): r=0.333"
+          },
+          {
+            "test": "bean_metzner_financial_stress_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": 0.4239,
+            "reference": 0.15,
+            "statistic": 0.4239,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Financial stress-dropout (Bean & Metzner 1985: expected positive): r=0.424"
+          },
+          {
+            "test": "tinto_goal_commitment_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.1331,
+            "reference": 0.2,
+            "statistic": 0.1331,
+            "p_value": 0.0029,
+            "passed": true,
+            "details": "Goal commitment-engagement (Tinto 1975: expected positive): r=0.133"
+          },
+          {
+            "test": "moore_autonomy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2463,
+            "reference": 0.2,
+            "statistic": 0.2463,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Learner autonomy-engagement (Moore 1993: expected positive): r=0.246"
+          },
+          {
+            "test": "garrison_coi_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2929,
+            "reference": 0.3,
+            "statistic": 0.2929,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "CoI composite-engagement (Garrison 2000: expected positive): r=0.293"
+          },
+          {
+            "test": "epstein_network_degree_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.3539,
+            "reference": 0.2,
+            "statistic": 0.3539,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Network degree-engagement (Epstein & Axtell 1996: expected positive): r=0.354"
+          },
+          {
+            "test": "kember_cost_benefit_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2024,
+            "reference": 0.25,
+            "statistic": 0.2024,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Cost-benefit-engagement (Kember 1989: expected positive): r=0.202"
+          },
+          {
+            "test": "sdt_intrinsic_vs_amotivation",
+            "metric": "Independent t-test",
+            "synthetic": 0.1559,
+            "reference": 0.1238,
+            "statistic": 3.3827,
+            "p_value": 0.0008,
+            "passed": true,
+            "details": "Intrinsic eng=0.156 vs amotivation=0.124 (Deci & Ryan 1985: intrinsic > amotivation)"
+          },
+          {
+            "test": "gpa_dropout_correlation",
+            "metric": "Point-biserial r",
+            "synthetic": -0.2521,
+            "reference": -0.2,
+            "statistic": -0.2521,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "GPA-dropout: r=-0.252 (expected negative: higher GPA \u2192 less dropout)"
+          },
+          {
+            "test": "baulke_phase_distribution",
+            "metric": "Decided phase proportion",
+            "synthetic": 0.324,
+            "reference": 0.312,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Phase 5 (decided): 32%, dropout target: 31%"
+          },
+          {
+            "test": "engagement_gpa_correlation",
+            "metric": "Pearson r",
+            "synthetic": 0.5146,
+            "reference": 0.2,
+            "statistic": 0.5146,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Engagement-GPA: r=0.515 (expected positive: higher engagement \u2192 higher GPA)"
+          },
+          {
+            "test": "engagement_trajectory_divergence",
+            "metric": "Mean difference",
+            "synthetic": 0.0553,
+            "reference": 0.1,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Retained final eng: 0.163, Dropout final: 0.107"
+          },
+          {
+            "test": "dropout_negative_trend_rate",
+            "metric": "Proportion",
+            "synthetic": 0.9939,
+            "reference": 0.6,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "99% of dropout students show declining engagement"
+          },
+          {
+            "test": "dropout_early_attrition",
+            "metric": "Early dropout proportion",
+            "synthetic": 0.1595,
+            "reference": 0.5,
+            "statistic": null,
+            "p_value": null,
+            "passed": false,
+            "details": "16% of dropouts occur in first half of the 14-week simulation"
+          },
+          {
+            "test": "k_anonymity",
+            "metric": "Minimum k",
+            "synthetic": 1.0,
+            "reference": 2.0,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Min k=1, Avg k=3.8 (N=500). Synthetic data has no real individuals \u2014 privacy risk is inherently zero."
+          }
+        ]
+      },
+      "undefined_validation_fields": []
+    },
+    {
+      "n_semesters": 1,
+      "seed": 43,
+      "simulation_summary": {
+        "total_students": 500,
+        "dropout_count": 204,
+        "dropout_rate": 0.408,
+        "mean_dropout_week": 10.446078431372548,
+        "std_dropout_week": 2.509205466333894,
+        "mean_final_engagement": 0.16764693178233983,
+        "std_final_engagement": 0.11363701449532225,
+        "mean_final_gpa": 2.856514480046749,
+        "retained_students": 296,
+        "dropout_phase_distribution": {
+          "phase_0": 26,
+          "phase_1": 9,
+          "phase_2": 9,
+          "phase_3": 146,
+          "phase_4": 106,
+          "phase_5": 202,
+          "unavoidable_withdrawal": 2
+        },
+        "unavoidable_withdrawal_count": 2,
+        "unavoidable_withdrawal_reasons": {
+          "serious_illness": 2
+        },
+        "pass_rate": 0.312,
+        "distinction_rate": 0.06,
+        "fail_rate": 0.22,
+        "withdrawn_rate": 0.408,
+        "outcome_distribution": {
+          "Withdrawn": 204,
+          "Pass": 156,
+          "Fail": 110,
+          "Distinction": 30
+        },
+        "grading_scale": 100
+      },
+      "validation": {
+        "summary": {
+          "total_tests": 22,
+          "passed": 19,
+          "failed": 3,
+          "pass_rate": 0.8636363636363636,
+          "overall_quality": "B (Good)"
+        },
+        "results": [
+          {
+            "test": "age_distribution",
+            "metric": "KS-test",
+            "synthetic": 27.854,
+            "reference": 28.0,
+            "statistic": 0.1243,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "Age mean: synth=27.9, ref=28.0"
+          },
+          {
+            "test": "gender_distribution",
+            "metric": "Chi-squared",
+            "synthetic": 0.1293,
+            "reference": 0.0,
+            "statistic": 0.1293,
+            "p_value": 0.7192,
+            "passed": true,
+            "details": "Gender proportions match reference: p=0.7192"
+          },
+          {
+            "test": "employment_rate",
+            "metric": "Proportion Z-test",
+            "synthetic": 0.676,
+            "reference": 0.69,
+            "statistic": -0.6769,
+            "p_value": 0.4985,
+            "passed": true,
+            "details": "Employment: synth=67.60%, ref=69.00%"
+          },
+          {
+            "test": "gpa_distribution",
+            "metric": "KS-test",
+            "synthetic": 2.32,
+            "reference": 3.03,
+            "statistic": 0.382,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "GPA mean: synth=2.32, ref=3.03"
+          },
+          {
+            "test": "dropout_rate",
+            "metric": "Range check",
+            "synthetic": 0.408,
+            "reference": 0.325,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Dropout: synth=40.80%, target=[20.00%, 45.00%]"
+          },
+          {
+            "test": "tinto_conscientiousness_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": -0.1877,
+            "reference": -0.2,
+            "statistic": -0.1877,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Conscientiousness-dropout (Poropat 2009: expected negative): r=-0.188"
+          },
+          {
+            "test": "bandura_self_efficacy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2576,
+            "reference": 0.3,
+            "statistic": 0.2576,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-efficacy-engagement (Bandura 1997: expected positive): r=0.258"
+          },
+          {
+            "test": "rovai_self_regulation_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.3606,
+            "reference": 0.25,
+            "statistic": 0.3606,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-regulation-engagement (Rovai 2003: expected positive): r=0.361"
+          },
+          {
+            "test": "bean_metzner_financial_stress_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": 0.4854,
+            "reference": 0.15,
+            "statistic": 0.4854,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Financial stress-dropout (Bean & Metzner 1985: expected positive): r=0.485"
+          },
+          {
+            "test": "tinto_goal_commitment_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2264,
+            "reference": 0.2,
+            "statistic": 0.2264,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Goal commitment-engagement (Tinto 1975: expected positive): r=0.226"
+          },
+          {
+            "test": "moore_autonomy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2804,
+            "reference": 0.2,
+            "statistic": 0.2804,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Learner autonomy-engagement (Moore 1993: expected positive): r=0.280"
+          },
+          {
+            "test": "garrison_coi_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2993,
+            "reference": 0.3,
+            "statistic": 0.2993,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "CoI composite-engagement (Garrison 2000: expected positive): r=0.299"
+          },
+          {
+            "test": "epstein_network_degree_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.3214,
+            "reference": 0.2,
+            "statistic": 0.3214,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Network degree-engagement (Epstein & Axtell 1996: expected positive): r=0.321"
+          },
+          {
+            "test": "kember_cost_benefit_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.1956,
+            "reference": 0.25,
+            "statistic": 0.1956,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Cost-benefit-engagement (Kember 1989: expected positive): r=0.196"
+          },
+          {
+            "test": "sdt_intrinsic_vs_amotivation",
+            "metric": "Independent t-test",
+            "synthetic": 0.1592,
+            "reference": 0.1205,
+            "statistic": 3.8318,
+            "p_value": 0.0002,
+            "passed": true,
+            "details": "Intrinsic eng=0.159 vs amotivation=0.121 (Deci & Ryan 1985: intrinsic > amotivation)"
+          },
+          {
+            "test": "gpa_dropout_correlation",
+            "metric": "Point-biserial r",
+            "synthetic": -0.2321,
+            "reference": -0.2,
+            "statistic": -0.2321,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "GPA-dropout: r=-0.232 (expected negative: higher GPA \u2192 less dropout)"
+          },
+          {
+            "test": "baulke_phase_distribution",
+            "metric": "Decided phase proportion",
+            "synthetic": 0.404,
+            "reference": 0.312,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Phase 5 (decided): 40%, dropout target: 31%"
+          },
+          {
+            "test": "engagement_gpa_correlation",
+            "metric": "Pearson r",
+            "synthetic": 0.5224,
+            "reference": 0.2,
+            "statistic": 0.5224,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Engagement-GPA: r=0.522 (expected positive: higher engagement \u2192 higher GPA)"
+          },
+          {
+            "test": "engagement_trajectory_divergence",
+            "metric": "Mean difference",
+            "synthetic": 0.0582,
+            "reference": 0.1,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Retained final eng: 0.168, Dropout final: 0.109"
+          },
+          {
+            "test": "dropout_negative_trend_rate",
+            "metric": "Proportion",
+            "synthetic": 0.9951,
+            "reference": 0.6,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "100% of dropout students show declining engagement"
+          },
+          {
+            "test": "dropout_early_attrition",
+            "metric": "Early dropout proportion",
+            "synthetic": 0.1373,
+            "reference": 0.5,
+            "statistic": null,
+            "p_value": null,
+            "passed": false,
+            "details": "14% of dropouts occur in first half of the 14-week simulation"
+          },
+          {
+            "test": "k_anonymity",
+            "metric": "Minimum k",
+            "synthetic": 1.0,
+            "reference": 2.0,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Min k=1, Avg k=3.9 (N=500). Synthetic data has no real individuals \u2014 privacy risk is inherently zero."
+          }
+        ]
+      },
+      "undefined_validation_fields": []
+    },
+    {
+      "n_semesters": 1,
+      "seed": 44,
+      "simulation_summary": {
+        "total_students": 500,
+        "dropout_count": 186,
+        "dropout_rate": 0.372,
+        "mean_dropout_week": 10.32258064516129,
+        "std_dropout_week": 2.232031189912827,
+        "mean_final_engagement": 0.19579420915612233,
+        "std_final_engagement": 0.1547554633124976,
+        "mean_final_gpa": 2.864457197266793,
+        "retained_students": 314,
+        "dropout_phase_distribution": {
+          "phase_0": 32,
+          "phase_1": 21,
+          "phase_2": 14,
+          "phase_3": 125,
+          "phase_4": 122,
+          "phase_5": 186
+        },
+        "unavoidable_withdrawal_count": 0,
+        "unavoidable_withdrawal_reasons": {},
+        "pass_rate": 0.292,
+        "distinction_rate": 0.102,
+        "fail_rate": 0.234,
+        "withdrawn_rate": 0.372,
+        "outcome_distribution": {
+          "Fail": 117,
+          "Distinction": 51,
+          "Withdrawn": 186,
+          "Pass": 146
+        },
+        "grading_scale": 100
+      },
+      "validation": {
+        "summary": {
+          "total_tests": 22,
+          "passed": 19,
+          "failed": 3,
+          "pass_rate": 0.8636363636363636,
+          "overall_quality": "B (Good)"
+        },
+        "results": [
+          {
+            "test": "age_distribution",
+            "metric": "KS-test",
+            "synthetic": 28.318,
+            "reference": 28.0,
+            "statistic": 0.1263,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "Age mean: synth=28.3, ref=28.0"
+          },
+          {
+            "test": "gender_distribution",
+            "metric": "Chi-squared",
+            "synthetic": 0.1293,
+            "reference": 0.0,
+            "statistic": 0.1293,
+            "p_value": 0.7192,
+            "passed": true,
+            "details": "Gender proportions match reference: p=0.7192"
+          },
+          {
+            "test": "employment_rate",
+            "metric": "Proportion Z-test",
+            "synthetic": 0.708,
+            "reference": 0.69,
+            "statistic": 0.8703,
+            "p_value": 0.3842,
+            "passed": true,
+            "details": "Employment: synth=70.80%, ref=69.00%"
+          },
+          {
+            "test": "gpa_distribution",
+            "metric": "KS-test",
+            "synthetic": 2.2792,
+            "reference": 3.03,
+            "statistic": 0.406,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "GPA mean: synth=2.28, ref=3.03"
+          },
+          {
+            "test": "dropout_rate",
+            "metric": "Range check",
+            "synthetic": 0.372,
+            "reference": 0.325,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Dropout: synth=37.20%, target=[20.00%, 45.00%]"
+          },
+          {
+            "test": "tinto_conscientiousness_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": -0.1793,
+            "reference": -0.2,
+            "statistic": -0.1793,
+            "p_value": 0.0001,
+            "passed": true,
+            "details": "Conscientiousness-dropout (Poropat 2009: expected negative): r=-0.179"
+          },
+          {
+            "test": "bandura_self_efficacy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2413,
+            "reference": 0.3,
+            "statistic": 0.2413,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-efficacy-engagement (Bandura 1997: expected positive): r=0.241"
+          },
+          {
+            "test": "rovai_self_regulation_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.391,
+            "reference": 0.25,
+            "statistic": 0.391,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-regulation-engagement (Rovai 2003: expected positive): r=0.391"
+          },
+          {
+            "test": "bean_metzner_financial_stress_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": 0.4865,
+            "reference": 0.15,
+            "statistic": 0.4865,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Financial stress-dropout (Bean & Metzner 1985: expected positive): r=0.486"
+          },
+          {
+            "test": "tinto_goal_commitment_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.1808,
+            "reference": 0.2,
+            "statistic": 0.1808,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Goal commitment-engagement (Tinto 1975: expected positive): r=0.181"
+          },
+          {
+            "test": "moore_autonomy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.3378,
+            "reference": 0.2,
+            "statistic": 0.3378,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Learner autonomy-engagement (Moore 1993: expected positive): r=0.338"
+          },
+          {
+            "test": "garrison_coi_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.457,
+            "reference": 0.3,
+            "statistic": 0.457,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "CoI composite-engagement (Garrison 2000: expected positive): r=0.457"
+          },
+          {
+            "test": "epstein_network_degree_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.4782,
+            "reference": 0.2,
+            "statistic": 0.4782,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Network degree-engagement (Epstein & Axtell 1996: expected positive): r=0.478"
+          },
+          {
+            "test": "kember_cost_benefit_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2912,
+            "reference": 0.25,
+            "statistic": 0.2912,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Cost-benefit-engagement (Kember 1989: expected positive): r=0.291"
+          },
+          {
+            "test": "sdt_intrinsic_vs_amotivation",
+            "metric": "Independent t-test",
+            "synthetic": 0.1821,
+            "reference": 0.1413,
+            "statistic": 2.6564,
+            "p_value": 0.0084,
+            "passed": true,
+            "details": "Intrinsic eng=0.182 vs amotivation=0.141 (Deci & Ryan 1985: intrinsic > amotivation)"
+          },
+          {
+            "test": "gpa_dropout_correlation",
+            "metric": "Point-biserial r",
+            "synthetic": -0.2922,
+            "reference": -0.2,
+            "statistic": -0.2922,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "GPA-dropout: r=-0.292 (expected negative: higher GPA \u2192 less dropout)"
+          },
+          {
+            "test": "baulke_phase_distribution",
+            "metric": "Decided phase proportion",
+            "synthetic": 0.372,
+            "reference": 0.312,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Phase 5 (decided): 37%, dropout target: 31%"
+          },
+          {
+            "test": "engagement_gpa_correlation",
+            "metric": "Pearson r",
+            "synthetic": 0.6211,
+            "reference": 0.2,
+            "statistic": 0.6211,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Engagement-GPA: r=0.621 (expected positive: higher engagement \u2192 higher GPA)"
+          },
+          {
+            "test": "engagement_trajectory_divergence",
+            "metric": "Mean difference",
+            "synthetic": 0.0884,
+            "reference": 0.1,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Retained final eng: 0.196, Dropout final: 0.107"
+          },
+          {
+            "test": "dropout_negative_trend_rate",
+            "metric": "Proportion",
+            "synthetic": 1.0,
+            "reference": 0.6,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "100% of dropout students show declining engagement"
+          },
+          {
+            "test": "dropout_early_attrition",
+            "metric": "Early dropout proportion",
+            "synthetic": 0.1075,
+            "reference": 0.5,
+            "statistic": null,
+            "p_value": null,
+            "passed": false,
+            "details": "11% of dropouts occur in first half of the 14-week simulation"
+          },
+          {
+            "test": "k_anonymity",
+            "metric": "Minimum k",
+            "synthetic": 1.0,
+            "reference": 2.0,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Min k=1, Avg k=3.7 (N=500). Synthetic data has no real individuals \u2014 privacy risk is inherently zero."
+          }
+        ]
+      },
+      "undefined_validation_fields": []
+    },
+    {
+      "n_semesters": 1,
+      "seed": 45,
+      "simulation_summary": {
+        "total_students": 500,
+        "dropout_count": 213,
+        "dropout_rate": 0.426,
+        "mean_dropout_week": 10.39906103286385,
+        "std_dropout_week": 2.5720416363996876,
+        "mean_final_engagement": 0.166557209426103,
+        "std_final_engagement": 0.12660336910252235,
+        "mean_final_gpa": 2.849281848781343,
+        "retained_students": 287,
+        "dropout_phase_distribution": {
+          "phase_0": 20,
+          "phase_1": 10,
+          "phase_2": 7,
+          "phase_3": 130,
+          "phase_4": 120,
+          "phase_5": 212,
+          "unavoidable_withdrawal": 1
+        },
+        "unavoidable_withdrawal_count": 1,
+        "unavoidable_withdrawal_reasons": {
+          "serious_illness": 1
+        },
+        "pass_rate": 0.284,
+        "distinction_rate": 0.074,
+        "fail_rate": 0.216,
+        "withdrawn_rate": 0.426,
+        "outcome_distribution": {
+          "Fail": 108,
+          "Withdrawn": 213,
+          "Distinction": 37,
+          "Pass": 142
+        },
+        "grading_scale": 100
+      },
+      "validation": {
+        "summary": {
+          "total_tests": 22,
+          "passed": 19,
+          "failed": 3,
+          "pass_rate": 0.8636363636363636,
+          "overall_quality": "B (Good)"
+        },
+        "results": [
+          {
+            "test": "age_distribution",
+            "metric": "KS-test",
+            "synthetic": 28.394,
+            "reference": 28.0,
+            "statistic": 0.1223,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "Age mean: synth=28.4, ref=28.0"
+          },
+          {
+            "test": "gender_distribution",
+            "metric": "Chi-squared",
+            "synthetic": 1.5838,
+            "reference": 0.0,
+            "statistic": 1.5838,
+            "p_value": 0.2082,
+            "passed": true,
+            "details": "Gender proportions match reference: p=0.2082"
+          },
+          {
+            "test": "employment_rate",
+            "metric": "Proportion Z-test",
+            "synthetic": 0.682,
+            "reference": 0.69,
+            "statistic": -0.3868,
+            "p_value": 0.6989,
+            "passed": true,
+            "details": "Employment: synth=68.20%, ref=69.00%"
+          },
+          {
+            "test": "gpa_distribution",
+            "metric": "KS-test",
+            "synthetic": 2.2913,
+            "reference": 3.03,
+            "statistic": 0.38,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "GPA mean: synth=2.29, ref=3.03"
+          },
+          {
+            "test": "dropout_rate",
+            "metric": "Range check",
+            "synthetic": 0.426,
+            "reference": 0.325,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Dropout: synth=42.60%, target=[20.00%, 45.00%]"
+          },
+          {
+            "test": "tinto_conscientiousness_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": -0.1497,
+            "reference": -0.2,
+            "statistic": -0.1497,
+            "p_value": 0.0008,
+            "passed": true,
+            "details": "Conscientiousness-dropout (Poropat 2009: expected negative): r=-0.150"
+          },
+          {
+            "test": "bandura_self_efficacy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.258,
+            "reference": 0.3,
+            "statistic": 0.258,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-efficacy-engagement (Bandura 1997: expected positive): r=0.258"
+          },
+          {
+            "test": "rovai_self_regulation_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.3816,
+            "reference": 0.25,
+            "statistic": 0.3816,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-regulation-engagement (Rovai 2003: expected positive): r=0.382"
+          },
+          {
+            "test": "bean_metzner_financial_stress_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": 0.427,
+            "reference": 0.15,
+            "statistic": 0.427,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Financial stress-dropout (Bean & Metzner 1985: expected positive): r=0.427"
+          },
+          {
+            "test": "tinto_goal_commitment_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.1464,
+            "reference": 0.2,
+            "statistic": 0.1464,
+            "p_value": 0.001,
+            "passed": true,
+            "details": "Goal commitment-engagement (Tinto 1975: expected positive): r=0.146"
+          },
+          {
+            "test": "moore_autonomy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2546,
+            "reference": 0.2,
+            "statistic": 0.2546,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Learner autonomy-engagement (Moore 1993: expected positive): r=0.255"
+          },
+          {
+            "test": "garrison_coi_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.419,
+            "reference": 0.3,
+            "statistic": 0.419,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "CoI composite-engagement (Garrison 2000: expected positive): r=0.419"
+          },
+          {
+            "test": "epstein_network_degree_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.4712,
+            "reference": 0.2,
+            "statistic": 0.4712,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Network degree-engagement (Epstein & Axtell 1996: expected positive): r=0.471"
+          },
+          {
+            "test": "kember_cost_benefit_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.1735,
+            "reference": 0.25,
+            "statistic": 0.1735,
+            "p_value": 0.0001,
+            "passed": true,
+            "details": "Cost-benefit-engagement (Kember 1989: expected positive): r=0.173"
+          },
+          {
+            "test": "sdt_intrinsic_vs_amotivation",
+            "metric": "Independent t-test",
+            "synthetic": 0.1665,
+            "reference": 0.1178,
+            "statistic": 4.1857,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Intrinsic eng=0.166 vs amotivation=0.118 (Deci & Ryan 1985: intrinsic > amotivation)"
+          },
+          {
+            "test": "gpa_dropout_correlation",
+            "metric": "Point-biserial r",
+            "synthetic": -0.2019,
+            "reference": -0.2,
+            "statistic": -0.2019,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "GPA-dropout: r=-0.202 (expected negative: higher GPA \u2192 less dropout)"
+          },
+          {
+            "test": "baulke_phase_distribution",
+            "metric": "Decided phase proportion",
+            "synthetic": 0.424,
+            "reference": 0.312,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Phase 5 (decided): 42%, dropout target: 31%"
+          },
+          {
+            "test": "engagement_gpa_correlation",
+            "metric": "Pearson r",
+            "synthetic": 0.5465,
+            "reference": 0.2,
+            "statistic": 0.5465,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Engagement-GPA: r=0.547 (expected positive: higher engagement \u2192 higher GPA)"
+          },
+          {
+            "test": "engagement_trajectory_divergence",
+            "metric": "Mean difference",
+            "synthetic": 0.0581,
+            "reference": 0.1,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Retained final eng: 0.167, Dropout final: 0.108"
+          },
+          {
+            "test": "dropout_negative_trend_rate",
+            "metric": "Proportion",
+            "synthetic": 1.0,
+            "reference": 0.6,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "100% of dropout students show declining engagement"
+          },
+          {
+            "test": "dropout_early_attrition",
+            "metric": "Early dropout proportion",
+            "synthetic": 0.1737,
+            "reference": 0.5,
+            "statistic": null,
+            "p_value": null,
+            "passed": false,
+            "details": "17% of dropouts occur in first half of the 14-week simulation"
+          },
+          {
+            "test": "k_anonymity",
+            "metric": "Minimum k",
+            "synthetic": 1.0,
+            "reference": 2.0,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Min k=1, Avg k=3.7 (N=500). Synthetic data has no real individuals \u2014 privacy risk is inherently zero."
+          }
+        ]
+      },
+      "undefined_validation_fields": []
+    },
+    {
+      "n_semesters": 1,
+      "seed": 46,
+      "simulation_summary": {
+        "total_students": 500,
+        "dropout_count": 202,
+        "dropout_rate": 0.404,
+        "mean_dropout_week": 9.871287128712872,
+        "std_dropout_week": 2.3908379836558886,
+        "mean_final_engagement": 0.16496895270041878,
+        "std_final_engagement": 0.10930228843630643,
+        "mean_final_gpa": 2.862010921165969,
+        "retained_students": 298,
+        "dropout_phase_distribution": {
+          "phase_0": 17,
+          "phase_1": 19,
+          "phase_2": 7,
+          "phase_3": 117,
+          "phase_4": 138,
+          "phase_5": 199,
+          "unavoidable_withdrawal": 3
+        },
+        "unavoidable_withdrawal_count": 3,
+        "unavoidable_withdrawal_reasons": {
+          "military_deployment": 1,
+          "legal_issues": 1,
+          "serious_illness": 1
+        },
+        "pass_rate": 0.292,
+        "distinction_rate": 0.064,
+        "fail_rate": 0.24,
+        "withdrawn_rate": 0.404,
+        "outcome_distribution": {
+          "Pass": 146,
+          "Withdrawn": 202,
+          "Fail": 120,
+          "Distinction": 32
+        },
+        "grading_scale": 100
+      },
+      "validation": {
+        "summary": {
+          "total_tests": 22,
+          "passed": 18,
+          "failed": 4,
+          "pass_rate": 0.8181818181818182,
+          "overall_quality": "B (Good)"
+        },
+        "results": [
+          {
+            "test": "age_distribution",
+            "metric": "KS-test",
+            "synthetic": 28.268,
+            "reference": 28.0,
+            "statistic": 0.1287,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "Age mean: synth=28.3, ref=28.0"
+          },
+          {
+            "test": "gender_distribution",
+            "metric": "Chi-squared",
+            "synthetic": 8.2747,
+            "reference": 0.0,
+            "statistic": 8.2747,
+            "p_value": 0.004,
+            "passed": false,
+            "details": "Gender proportions match reference: p=0.0040"
+          },
+          {
+            "test": "employment_rate",
+            "metric": "Proportion Z-test",
+            "synthetic": 0.678,
+            "reference": 0.69,
+            "statistic": -0.5802,
+            "p_value": 0.5618,
+            "passed": true,
+            "details": "Employment: synth=67.80%, ref=69.00%"
+          },
+          {
+            "test": "gpa_distribution",
+            "metric": "KS-test",
+            "synthetic": 2.2867,
+            "reference": 3.03,
+            "statistic": 0.386,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "GPA mean: synth=2.29, ref=3.03"
+          },
+          {
+            "test": "dropout_rate",
+            "metric": "Range check",
+            "synthetic": 0.404,
+            "reference": 0.325,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Dropout: synth=40.40%, target=[20.00%, 45.00%]"
+          },
+          {
+            "test": "tinto_conscientiousness_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": -0.1581,
+            "reference": -0.2,
+            "statistic": -0.1581,
+            "p_value": 0.0004,
+            "passed": true,
+            "details": "Conscientiousness-dropout (Poropat 2009: expected negative): r=-0.158"
+          },
+          {
+            "test": "bandura_self_efficacy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.1553,
+            "reference": 0.3,
+            "statistic": 0.1553,
+            "p_value": 0.0005,
+            "passed": true,
+            "details": "Self-efficacy-engagement (Bandura 1997: expected positive): r=0.155"
+          },
+          {
+            "test": "rovai_self_regulation_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.3514,
+            "reference": 0.25,
+            "statistic": 0.3514,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-regulation-engagement (Rovai 2003: expected positive): r=0.351"
+          },
+          {
+            "test": "bean_metzner_financial_stress_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": 0.4093,
+            "reference": 0.15,
+            "statistic": 0.4093,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Financial stress-dropout (Bean & Metzner 1985: expected positive): r=0.409"
+          },
+          {
+            "test": "tinto_goal_commitment_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.1827,
+            "reference": 0.2,
+            "statistic": 0.1827,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Goal commitment-engagement (Tinto 1975: expected positive): r=0.183"
+          },
+          {
+            "test": "moore_autonomy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2628,
+            "reference": 0.2,
+            "statistic": 0.2628,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Learner autonomy-engagement (Moore 1993: expected positive): r=0.263"
+          },
+          {
+            "test": "garrison_coi_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2844,
+            "reference": 0.3,
+            "statistic": 0.2844,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "CoI composite-engagement (Garrison 2000: expected positive): r=0.284"
+          },
+          {
+            "test": "epstein_network_degree_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.3964,
+            "reference": 0.2,
+            "statistic": 0.3964,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Network degree-engagement (Epstein & Axtell 1996: expected positive): r=0.396"
+          },
+          {
+            "test": "kember_cost_benefit_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2573,
+            "reference": 0.25,
+            "statistic": 0.2573,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Cost-benefit-engagement (Kember 1989: expected positive): r=0.257"
+          },
+          {
+            "test": "sdt_intrinsic_vs_amotivation",
+            "metric": "Independent t-test",
+            "synthetic": 0.171,
+            "reference": 0.1238,
+            "statistic": 3.97,
+            "p_value": 0.0001,
+            "passed": true,
+            "details": "Intrinsic eng=0.171 vs amotivation=0.124 (Deci & Ryan 1985: intrinsic > amotivation)"
+          },
+          {
+            "test": "gpa_dropout_correlation",
+            "metric": "Point-biserial r",
+            "synthetic": -0.1326,
+            "reference": -0.2,
+            "statistic": -0.1326,
+            "p_value": 0.0041,
+            "passed": true,
+            "details": "GPA-dropout: r=-0.133 (expected negative: higher GPA \u2192 less dropout)"
+          },
+          {
+            "test": "baulke_phase_distribution",
+            "metric": "Decided phase proportion",
+            "synthetic": 0.398,
+            "reference": 0.312,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Phase 5 (decided): 40%, dropout target: 31%"
+          },
+          {
+            "test": "engagement_gpa_correlation",
+            "metric": "Pearson r",
+            "synthetic": 0.4878,
+            "reference": 0.2,
+            "statistic": 0.4878,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Engagement-GPA: r=0.488 (expected positive: higher engagement \u2192 higher GPA)"
+          },
+          {
+            "test": "engagement_trajectory_divergence",
+            "metric": "Mean difference",
+            "synthetic": 0.0544,
+            "reference": 0.1,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Retained final eng: 0.165, Dropout final: 0.111"
+          },
+          {
+            "test": "dropout_negative_trend_rate",
+            "metric": "Proportion",
+            "synthetic": 0.995,
+            "reference": 0.6,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "100% of dropout students show declining engagement"
+          },
+          {
+            "test": "dropout_early_attrition",
+            "metric": "Early dropout proportion",
+            "synthetic": 0.1832,
+            "reference": 0.5,
+            "statistic": null,
+            "p_value": null,
+            "passed": false,
+            "details": "18% of dropouts occur in first half of the 14-week simulation"
+          },
+          {
+            "test": "k_anonymity",
+            "metric": "Minimum k",
+            "synthetic": 1.0,
+            "reference": 2.0,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Min k=1, Avg k=3.6 (N=500). Synthetic data has no real individuals \u2014 privacy risk is inherently zero."
+          }
+        ]
+      },
+      "undefined_validation_fields": []
+    },
+    {
+      "n_semesters": 2,
+      "seed": 42,
+      "simulation_summary": {
+        "total_students": 500,
+        "dropout_count": 341,
+        "dropout_rate": 0.682,
+        "mean_dropout_week": 16.50439882697947,
+        "std_dropout_week": 6.849715494179373,
+        "mean_final_engagement": 0.12774861792728068,
+        "std_final_engagement": 0.035317274287145074,
+        "mean_final_gpa": 2.8530869337018836,
+        "retained_students": 159,
+        "dropout_phase_distribution": {
+          "phase_1": 1,
+          "phase_2": 9,
+          "phase_3": 60,
+          "phase_4": 89,
+          "phase_5": 340,
+          "unavoidable_withdrawal": 1
+        },
+        "unavoidable_withdrawal_count": 1,
+        "unavoidable_withdrawal_reasons": {
+          "forced_relocation": 1
+        },
+        "pass_rate": 0.158,
+        "distinction_rate": 0.006,
+        "fail_rate": 0.154,
+        "withdrawn_rate": 0.682,
+        "outcome_distribution": {
+          "Pass": 79,
+          "Withdrawn": 341,
+          "Fail": 77,
+          "Distinction": 3
+        },
+        "grading_scale": 100
+      },
+      "validation": {
+        "summary": {
+          "total_tests": 22,
+          "passed": 18,
+          "failed": 4,
+          "pass_rate": 0.8181818181818182,
+          "overall_quality": "B (Good)"
+        },
+        "results": [
+          {
+            "test": "age_distribution",
+            "metric": "KS-test",
+            "synthetic": 28.338,
+            "reference": 28.0,
+            "statistic": 0.1327,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "Age mean: synth=28.3, ref=28.0"
+          },
+          {
+            "test": "gender_distribution",
+            "metric": "Chi-squared",
+            "synthetic": 0.0323,
+            "reference": 0.0,
+            "statistic": 0.0323,
+            "p_value": 0.8573,
+            "passed": true,
+            "details": "Gender proportions match reference: p=0.8573"
+          },
+          {
+            "test": "employment_rate",
+            "metric": "Proportion Z-test",
+            "synthetic": 0.65,
+            "reference": 0.69,
+            "statistic": -1.9339,
+            "p_value": 0.0531,
+            "passed": true,
+            "details": "Employment: synth=65.00%, ref=69.00%"
+          },
+          {
+            "test": "gpa_distribution",
+            "metric": "KS-test",
+            "synthetic": 2.3054,
+            "reference": 3.03,
+            "statistic": 0.394,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "GPA mean: synth=2.31, ref=3.03"
+          },
+          {
+            "test": "dropout_rate",
+            "metric": "Range check",
+            "synthetic": 0.682,
+            "reference": 0.325,
+            "statistic": null,
+            "p_value": null,
+            "passed": false,
+            "details": "Dropout: synth=68.20%, target=[20.00%, 45.00%]"
+          },
+          {
+            "test": "tinto_conscientiousness_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": -0.243,
+            "reference": -0.2,
+            "statistic": -0.243,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Conscientiousness-dropout (Poropat 2009: expected negative): r=-0.243"
+          },
+          {
+            "test": "bandura_self_efficacy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2035,
+            "reference": 0.3,
+            "statistic": 0.2035,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-efficacy-engagement (Bandura 1997: expected positive): r=0.203"
+          },
+          {
+            "test": "rovai_self_regulation_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.5401,
+            "reference": 0.25,
+            "statistic": 0.5401,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-regulation-engagement (Rovai 2003: expected positive): r=0.540"
+          },
+          {
+            "test": "bean_metzner_financial_stress_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": 0.3435,
+            "reference": 0.15,
+            "statistic": 0.3435,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Financial stress-dropout (Bean & Metzner 1985: expected positive): r=0.344"
+          },
+          {
+            "test": "tinto_goal_commitment_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.3964,
+            "reference": 0.2,
+            "statistic": 0.3964,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Goal commitment-engagement (Tinto 1975: expected positive): r=0.396"
+          },
+          {
+            "test": "moore_autonomy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.4115,
+            "reference": 0.2,
+            "statistic": 0.4115,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Learner autonomy-engagement (Moore 1993: expected positive): r=0.411"
+          },
+          {
+            "test": "garrison_coi_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.0289,
+            "reference": 0.3,
+            "statistic": 0.0289,
+            "p_value": 0.52,
+            "passed": true,
+            "details": "CoI composite-engagement (Garrison 2000: expected positive): r=0.029"
+          },
+          {
+            "test": "epstein_network_degree_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2328,
+            "reference": 0.2,
+            "statistic": 0.2328,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Network degree-engagement (Epstein & Axtell 1996: expected positive): r=0.233"
+          },
+          {
+            "test": "kember_cost_benefit_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2135,
+            "reference": 0.25,
+            "statistic": 0.2135,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Cost-benefit-engagement (Kember 1989: expected positive): r=0.214"
+          },
+          {
+            "test": "sdt_intrinsic_vs_amotivation",
+            "metric": "Independent t-test",
+            "synthetic": 0.127,
+            "reference": 0.1068,
+            "statistic": 5.5197,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Intrinsic eng=0.127 vs amotivation=0.107 (Deci & Ryan 1985: intrinsic > amotivation)"
+          },
+          {
+            "test": "gpa_dropout_correlation",
+            "metric": "Point-biserial r",
+            "synthetic": -0.2614,
+            "reference": -0.2,
+            "statistic": -0.2614,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "GPA-dropout: r=-0.261 (expected negative: higher GPA \u2192 less dropout)"
+          },
+          {
+            "test": "baulke_phase_distribution",
+            "metric": "Decided phase proportion",
+            "synthetic": 0.68,
+            "reference": 0.312,
+            "statistic": null,
+            "p_value": null,
+            "passed": false,
+            "details": "Phase 5 (decided): 68%, dropout target: 31%"
+          },
+          {
+            "test": "engagement_gpa_correlation",
+            "metric": "Pearson r",
+            "synthetic": 0.4216,
+            "reference": 0.2,
+            "statistic": 0.4216,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Engagement-GPA: r=0.422 (expected positive: higher engagement \u2192 higher GPA)"
+          },
+          {
+            "test": "engagement_trajectory_divergence",
+            "metric": "Mean difference",
+            "synthetic": 0.0179,
+            "reference": 0.1,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Retained final eng: 0.128, Dropout final: 0.110"
+          },
+          {
+            "test": "dropout_negative_trend_rate",
+            "metric": "Proportion",
+            "synthetic": 0.9971,
+            "reference": 0.6,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "100% of dropout students show declining engagement"
+          },
+          {
+            "test": "dropout_early_attrition",
+            "metric": "Early dropout proportion",
+            "synthetic": 0.478,
+            "reference": 0.5,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "48% of dropouts occur in first half of the 28-week simulation"
+          },
+          {
+            "test": "k_anonymity",
+            "metric": "Minimum k",
+            "synthetic": 1.0,
+            "reference": 2.0,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Min k=1, Avg k=3.8 (N=500). Synthetic data has no real individuals \u2014 privacy risk is inherently zero."
+          }
+        ]
+      },
+      "undefined_validation_fields": []
+    },
+    {
+      "n_semesters": 2,
+      "seed": 43,
+      "simulation_summary": {
+        "total_students": 500,
+        "dropout_count": 359,
+        "dropout_rate": 0.718,
+        "mean_dropout_week": 15.671309192200557,
+        "std_dropout_week": 6.672859945023899,
+        "mean_final_engagement": 0.133304159928784,
+        "std_final_engagement": 0.05736745107472451,
+        "mean_final_gpa": 2.848019507456496,
+        "retained_students": 141,
+        "dropout_phase_distribution": {
+          "phase_0": 2,
+          "phase_1": 1,
+          "phase_2": 8,
+          "phase_3": 60,
+          "phase_4": 70,
+          "phase_5": 357,
+          "unavoidable_withdrawal": 2
+        },
+        "unavoidable_withdrawal_count": 2,
+        "unavoidable_withdrawal_reasons": {
+          "serious_illness": 2
+        },
+        "pass_rate": 0.106,
+        "distinction_rate": 0.012,
+        "fail_rate": 0.164,
+        "withdrawn_rate": 0.718,
+        "outcome_distribution": {
+          "Withdrawn": 359,
+          "Fail": 82,
+          "Pass": 53,
+          "Distinction": 6
+        },
+        "grading_scale": 100
+      },
+      "validation": {
+        "summary": {
+          "total_tests": 22,
+          "passed": 18,
+          "failed": 4,
+          "pass_rate": 0.8181818181818182,
+          "overall_quality": "B (Good)"
+        },
+        "results": [
+          {
+            "test": "age_distribution",
+            "metric": "KS-test",
+            "synthetic": 27.854,
+            "reference": 28.0,
+            "statistic": 0.1243,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "Age mean: synth=27.9, ref=28.0"
+          },
+          {
+            "test": "gender_distribution",
+            "metric": "Chi-squared",
+            "synthetic": 0.1293,
+            "reference": 0.0,
+            "statistic": 0.1293,
+            "p_value": 0.7192,
+            "passed": true,
+            "details": "Gender proportions match reference: p=0.7192"
+          },
+          {
+            "test": "employment_rate",
+            "metric": "Proportion Z-test",
+            "synthetic": 0.676,
+            "reference": 0.69,
+            "statistic": -0.6769,
+            "p_value": 0.4985,
+            "passed": true,
+            "details": "Employment: synth=67.60%, ref=69.00%"
+          },
+          {
+            "test": "gpa_distribution",
+            "metric": "KS-test",
+            "synthetic": 2.32,
+            "reference": 3.03,
+            "statistic": 0.382,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "GPA mean: synth=2.32, ref=3.03"
+          },
+          {
+            "test": "dropout_rate",
+            "metric": "Range check",
+            "synthetic": 0.718,
+            "reference": 0.325,
+            "statistic": null,
+            "p_value": null,
+            "passed": false,
+            "details": "Dropout: synth=71.80%, target=[20.00%, 45.00%]"
+          },
+          {
+            "test": "tinto_conscientiousness_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": -0.2187,
+            "reference": -0.2,
+            "statistic": -0.2187,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Conscientiousness-dropout (Poropat 2009: expected negative): r=-0.219"
+          },
+          {
+            "test": "bandura_self_efficacy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2346,
+            "reference": 0.3,
+            "statistic": 0.2346,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-efficacy-engagement (Bandura 1997: expected positive): r=0.235"
+          },
+          {
+            "test": "rovai_self_regulation_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.3506,
+            "reference": 0.25,
+            "statistic": 0.3506,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-regulation-engagement (Rovai 2003: expected positive): r=0.351"
+          },
+          {
+            "test": "bean_metzner_financial_stress_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": 0.3837,
+            "reference": 0.15,
+            "statistic": 0.3837,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Financial stress-dropout (Bean & Metzner 1985: expected positive): r=0.384"
+          },
+          {
+            "test": "tinto_goal_commitment_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2816,
+            "reference": 0.2,
+            "statistic": 0.2816,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Goal commitment-engagement (Tinto 1975: expected positive): r=0.282"
+          },
+          {
+            "test": "moore_autonomy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.3157,
+            "reference": 0.2,
+            "statistic": 0.3157,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Learner autonomy-engagement (Moore 1993: expected positive): r=0.316"
+          },
+          {
+            "test": "garrison_coi_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.007,
+            "reference": 0.3,
+            "statistic": 0.007,
+            "p_value": 0.8752,
+            "passed": true,
+            "details": "CoI composite-engagement (Garrison 2000: expected positive): r=0.007"
+          },
+          {
+            "test": "epstein_network_degree_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.1669,
+            "reference": 0.2,
+            "statistic": 0.1669,
+            "p_value": 0.0002,
+            "passed": true,
+            "details": "Network degree-engagement (Epstein & Axtell 1996: expected positive): r=0.167"
+          },
+          {
+            "test": "kember_cost_benefit_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.1514,
+            "reference": 0.25,
+            "statistic": 0.1514,
+            "p_value": 0.0007,
+            "passed": true,
+            "details": "Cost-benefit-engagement (Kember 1989: expected positive): r=0.151"
+          },
+          {
+            "test": "sdt_intrinsic_vs_amotivation",
+            "metric": "Independent t-test",
+            "synthetic": 0.1227,
+            "reference": 0.106,
+            "statistic": 4.283,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Intrinsic eng=0.123 vs amotivation=0.106 (Deci & Ryan 1985: intrinsic > amotivation)"
+          },
+          {
+            "test": "gpa_dropout_correlation",
+            "metric": "Point-biserial r",
+            "synthetic": -0.2751,
+            "reference": -0.2,
+            "statistic": -0.2751,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "GPA-dropout: r=-0.275 (expected negative: higher GPA \u2192 less dropout)"
+          },
+          {
+            "test": "baulke_phase_distribution",
+            "metric": "Decided phase proportion",
+            "synthetic": 0.714,
+            "reference": 0.312,
+            "statistic": null,
+            "p_value": null,
+            "passed": false,
+            "details": "Phase 5 (decided): 71%, dropout target: 31%"
+          },
+          {
+            "test": "engagement_gpa_correlation",
+            "metric": "Pearson r",
+            "synthetic": 0.465,
+            "reference": 0.2,
+            "statistic": 0.465,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Engagement-GPA: r=0.465 (expected positive: higher engagement \u2192 higher GPA)"
+          },
+          {
+            "test": "engagement_trajectory_divergence",
+            "metric": "Mean difference",
+            "synthetic": 0.0235,
+            "reference": 0.1,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Retained final eng: 0.133, Dropout final: 0.110"
+          },
+          {
+            "test": "dropout_negative_trend_rate",
+            "metric": "Proportion",
+            "synthetic": 0.9972,
+            "reference": 0.6,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "100% of dropout students show declining engagement"
+          },
+          {
+            "test": "dropout_early_attrition",
+            "metric": "Early dropout proportion",
+            "synthetic": 0.5682,
+            "reference": 0.5,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "57% of dropouts occur in first half of the 28-week simulation"
+          },
+          {
+            "test": "k_anonymity",
+            "metric": "Minimum k",
+            "synthetic": 1.0,
+            "reference": 2.0,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Min k=1, Avg k=3.9 (N=500). Synthetic data has no real individuals \u2014 privacy risk is inherently zero."
+          }
+        ]
+      },
+      "undefined_validation_fields": []
+    },
+    {
+      "n_semesters": 2,
+      "seed": 44,
+      "simulation_summary": {
+        "total_students": 500,
+        "dropout_count": 347,
+        "dropout_rate": 0.694,
+        "mean_dropout_week": 16.05187319884726,
+        "std_dropout_week": 6.748906685374929,
+        "mean_final_engagement": 0.16135661392371228,
+        "std_final_engagement": 0.12039376905647389,
+        "mean_final_gpa": 2.8532335580558903,
+        "retained_students": 153,
+        "dropout_phase_distribution": {
+          "phase_0": 7,
+          "phase_1": 7,
+          "phase_2": 12,
+          "phase_3": 50,
+          "phase_4": 77,
+          "phase_5": 346,
+          "unavoidable_withdrawal": 1
+        },
+        "unavoidable_withdrawal_count": 1,
+        "unavoidable_withdrawal_reasons": {
+          "serious_illness": 1
+        },
+        "pass_rate": 0.12,
+        "distinction_rate": 0.038,
+        "fail_rate": 0.148,
+        "withdrawn_rate": 0.694,
+        "outcome_distribution": {
+          "Withdrawn": 347,
+          "Fail": 74,
+          "Pass": 60,
+          "Distinction": 19
+        },
+        "grading_scale": 100
+      },
+      "validation": {
+        "summary": {
+          "total_tests": 22,
+          "passed": 18,
+          "failed": 4,
+          "pass_rate": 0.8181818181818182,
+          "overall_quality": "B (Good)"
+        },
+        "results": [
+          {
+            "test": "age_distribution",
+            "metric": "KS-test",
+            "synthetic": 28.318,
+            "reference": 28.0,
+            "statistic": 0.1263,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "Age mean: synth=28.3, ref=28.0"
+          },
+          {
+            "test": "gender_distribution",
+            "metric": "Chi-squared",
+            "synthetic": 0.1293,
+            "reference": 0.0,
+            "statistic": 0.1293,
+            "p_value": 0.7192,
+            "passed": true,
+            "details": "Gender proportions match reference: p=0.7192"
+          },
+          {
+            "test": "employment_rate",
+            "metric": "Proportion Z-test",
+            "synthetic": 0.708,
+            "reference": 0.69,
+            "statistic": 0.8703,
+            "p_value": 0.3842,
+            "passed": true,
+            "details": "Employment: synth=70.80%, ref=69.00%"
+          },
+          {
+            "test": "gpa_distribution",
+            "metric": "KS-test",
+            "synthetic": 2.2792,
+            "reference": 3.03,
+            "statistic": 0.406,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "GPA mean: synth=2.28, ref=3.03"
+          },
+          {
+            "test": "dropout_rate",
+            "metric": "Range check",
+            "synthetic": 0.694,
+            "reference": 0.325,
+            "statistic": null,
+            "p_value": null,
+            "passed": false,
+            "details": "Dropout: synth=69.40%, target=[20.00%, 45.00%]"
+          },
+          {
+            "test": "tinto_conscientiousness_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": -0.1838,
+            "reference": -0.2,
+            "statistic": -0.1838,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Conscientiousness-dropout (Poropat 2009: expected negative): r=-0.184"
+          },
+          {
+            "test": "bandura_self_efficacy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2664,
+            "reference": 0.3,
+            "statistic": 0.2664,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-efficacy-engagement (Bandura 1997: expected positive): r=0.266"
+          },
+          {
+            "test": "rovai_self_regulation_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2979,
+            "reference": 0.25,
+            "statistic": 0.2979,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-regulation-engagement (Rovai 2003: expected positive): r=0.298"
+          },
+          {
+            "test": "bean_metzner_financial_stress_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": 0.4354,
+            "reference": 0.15,
+            "statistic": 0.4354,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Financial stress-dropout (Bean & Metzner 1985: expected positive): r=0.435"
+          },
+          {
+            "test": "tinto_goal_commitment_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2317,
+            "reference": 0.2,
+            "statistic": 0.2317,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Goal commitment-engagement (Tinto 1975: expected positive): r=0.232"
+          },
+          {
+            "test": "moore_autonomy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2763,
+            "reference": 0.2,
+            "statistic": 0.2763,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Learner autonomy-engagement (Moore 1993: expected positive): r=0.276"
+          },
+          {
+            "test": "garrison_coi_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2319,
+            "reference": 0.3,
+            "statistic": 0.2319,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "CoI composite-engagement (Garrison 2000: expected positive): r=0.232"
+          },
+          {
+            "test": "epstein_network_degree_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.4541,
+            "reference": 0.2,
+            "statistic": 0.4541,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Network degree-engagement (Epstein & Axtell 1996: expected positive): r=0.454"
+          },
+          {
+            "test": "kember_cost_benefit_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.217,
+            "reference": 0.25,
+            "statistic": 0.217,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Cost-benefit-engagement (Kember 1989: expected positive): r=0.217"
+          },
+          {
+            "test": "sdt_intrinsic_vs_amotivation",
+            "metric": "Independent t-test",
+            "synthetic": 0.145,
+            "reference": 0.1079,
+            "statistic": 4.62,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Intrinsic eng=0.145 vs amotivation=0.108 (Deci & Ryan 1985: intrinsic > amotivation)"
+          },
+          {
+            "test": "gpa_dropout_correlation",
+            "metric": "Point-biserial r",
+            "synthetic": -0.3616,
+            "reference": -0.2,
+            "statistic": -0.3616,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "GPA-dropout: r=-0.362 (expected negative: higher GPA \u2192 less dropout)"
+          },
+          {
+            "test": "baulke_phase_distribution",
+            "metric": "Decided phase proportion",
+            "synthetic": 0.692,
+            "reference": 0.312,
+            "statistic": null,
+            "p_value": null,
+            "passed": false,
+            "details": "Phase 5 (decided): 69%, dropout target: 31%"
+          },
+          {
+            "test": "engagement_gpa_correlation",
+            "metric": "Pearson r",
+            "synthetic": 0.5728,
+            "reference": 0.2,
+            "statistic": 0.5728,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Engagement-GPA: r=0.573 (expected positive: higher engagement \u2192 higher GPA)"
+          },
+          {
+            "test": "engagement_trajectory_divergence",
+            "metric": "Mean difference",
+            "synthetic": 0.0501,
+            "reference": 0.1,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Retained final eng: 0.161, Dropout final: 0.111"
+          },
+          {
+            "test": "dropout_negative_trend_rate",
+            "metric": "Proportion",
+            "synthetic": 1.0,
+            "reference": 0.6,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "100% of dropout students show declining engagement"
+          },
+          {
+            "test": "dropout_early_attrition",
+            "metric": "Early dropout proportion",
+            "synthetic": 0.536,
+            "reference": 0.5,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "54% of dropouts occur in first half of the 28-week simulation"
+          },
+          {
+            "test": "k_anonymity",
+            "metric": "Minimum k",
+            "synthetic": 1.0,
+            "reference": 2.0,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Min k=1, Avg k=3.7 (N=500). Synthetic data has no real individuals \u2014 privacy risk is inherently zero."
+          }
+        ]
+      },
+      "undefined_validation_fields": []
+    },
+    {
+      "n_semesters": 2,
+      "seed": 45,
+      "simulation_summary": {
+        "total_students": 500,
+        "dropout_count": 368,
+        "dropout_rate": 0.736,
+        "mean_dropout_week": 15.521739130434783,
+        "std_dropout_week": 6.725968914958688,
+        "mean_final_engagement": 0.14617937818159438,
+        "std_final_engagement": 0.10587671979026227,
+        "mean_final_gpa": 2.8408411968898117,
+        "retained_students": 132,
+        "dropout_phase_distribution": {
+          "phase_0": 4,
+          "phase_1": 2,
+          "phase_2": 3,
+          "phase_3": 42,
+          "phase_4": 81,
+          "phase_5": 367,
+          "unavoidable_withdrawal": 1
+        },
+        "unavoidable_withdrawal_count": 1,
+        "unavoidable_withdrawal_reasons": {
+          "serious_illness": 1
+        },
+        "pass_rate": 0.108,
+        "distinction_rate": 0.016,
+        "fail_rate": 0.14,
+        "withdrawn_rate": 0.736,
+        "outcome_distribution": {
+          "Withdrawn": 368,
+          "Fail": 70,
+          "Pass": 54,
+          "Distinction": 8
+        },
+        "grading_scale": 100
+      },
+      "validation": {
+        "summary": {
+          "total_tests": 22,
+          "passed": 18,
+          "failed": 4,
+          "pass_rate": 0.8181818181818182,
+          "overall_quality": "B (Good)"
+        },
+        "results": [
+          {
+            "test": "age_distribution",
+            "metric": "KS-test",
+            "synthetic": 28.394,
+            "reference": 28.0,
+            "statistic": 0.1223,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "Age mean: synth=28.4, ref=28.0"
+          },
+          {
+            "test": "gender_distribution",
+            "metric": "Chi-squared",
+            "synthetic": 1.5838,
+            "reference": 0.0,
+            "statistic": 1.5838,
+            "p_value": 0.2082,
+            "passed": true,
+            "details": "Gender proportions match reference: p=0.2082"
+          },
+          {
+            "test": "employment_rate",
+            "metric": "Proportion Z-test",
+            "synthetic": 0.682,
+            "reference": 0.69,
+            "statistic": -0.3868,
+            "p_value": 0.6989,
+            "passed": true,
+            "details": "Employment: synth=68.20%, ref=69.00%"
+          },
+          {
+            "test": "gpa_distribution",
+            "metric": "KS-test",
+            "synthetic": 2.2913,
+            "reference": 3.03,
+            "statistic": 0.38,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "GPA mean: synth=2.29, ref=3.03"
+          },
+          {
+            "test": "dropout_rate",
+            "metric": "Range check",
+            "synthetic": 0.736,
+            "reference": 0.325,
+            "statistic": null,
+            "p_value": null,
+            "passed": false,
+            "details": "Dropout: synth=73.60%, target=[20.00%, 45.00%]"
+          },
+          {
+            "test": "tinto_conscientiousness_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": -0.1272,
+            "reference": -0.2,
+            "statistic": -0.1272,
+            "p_value": 0.0044,
+            "passed": true,
+            "details": "Conscientiousness-dropout (Poropat 2009: expected negative): r=-0.127"
+          },
+          {
+            "test": "bandura_self_efficacy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2766,
+            "reference": 0.3,
+            "statistic": 0.2766,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-efficacy-engagement (Bandura 1997: expected positive): r=0.277"
+          },
+          {
+            "test": "rovai_self_regulation_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.353,
+            "reference": 0.25,
+            "statistic": 0.353,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-regulation-engagement (Rovai 2003: expected positive): r=0.353"
+          },
+          {
+            "test": "bean_metzner_financial_stress_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": 0.4128,
+            "reference": 0.15,
+            "statistic": 0.4128,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Financial stress-dropout (Bean & Metzner 1985: expected positive): r=0.413"
+          },
+          {
+            "test": "tinto_goal_commitment_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.1988,
+            "reference": 0.2,
+            "statistic": 0.1988,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Goal commitment-engagement (Tinto 1975: expected positive): r=0.199"
+          },
+          {
+            "test": "moore_autonomy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2686,
+            "reference": 0.2,
+            "statistic": 0.2686,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Learner autonomy-engagement (Moore 1993: expected positive): r=0.269"
+          },
+          {
+            "test": "garrison_coi_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.1334,
+            "reference": 0.3,
+            "statistic": 0.1334,
+            "p_value": 0.0028,
+            "passed": true,
+            "details": "CoI composite-engagement (Garrison 2000: expected positive): r=0.133"
+          },
+          {
+            "test": "epstein_network_degree_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.4657,
+            "reference": 0.2,
+            "statistic": 0.4657,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Network degree-engagement (Epstein & Axtell 1996: expected positive): r=0.466"
+          },
+          {
+            "test": "kember_cost_benefit_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.1588,
+            "reference": 0.25,
+            "statistic": 0.1588,
+            "p_value": 0.0004,
+            "passed": true,
+            "details": "Cost-benefit-engagement (Kember 1989: expected positive): r=0.159"
+          },
+          {
+            "test": "sdt_intrinsic_vs_amotivation",
+            "metric": "Independent t-test",
+            "synthetic": 0.1343,
+            "reference": 0.1046,
+            "statistic": 4.9329,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Intrinsic eng=0.134 vs amotivation=0.105 (Deci & Ryan 1985: intrinsic > amotivation)"
+          },
+          {
+            "test": "gpa_dropout_correlation",
+            "metric": "Point-biserial r",
+            "synthetic": -0.2792,
+            "reference": -0.2,
+            "statistic": -0.2792,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "GPA-dropout: r=-0.279 (expected negative: higher GPA \u2192 less dropout)"
+          },
+          {
+            "test": "baulke_phase_distribution",
+            "metric": "Decided phase proportion",
+            "synthetic": 0.734,
+            "reference": 0.312,
+            "statistic": null,
+            "p_value": null,
+            "passed": false,
+            "details": "Phase 5 (decided): 73%, dropout target: 31%"
+          },
+          {
+            "test": "engagement_gpa_correlation",
+            "metric": "Pearson r",
+            "synthetic": 0.4904,
+            "reference": 0.2,
+            "statistic": 0.4904,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Engagement-GPA: r=0.490 (expected positive: higher engagement \u2192 higher GPA)"
+          },
+          {
+            "test": "engagement_trajectory_divergence",
+            "metric": "Mean difference",
+            "synthetic": 0.0356,
+            "reference": 0.1,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Retained final eng: 0.146, Dropout final: 0.111"
+          },
+          {
+            "test": "dropout_negative_trend_rate",
+            "metric": "Proportion",
+            "synthetic": 1.0,
+            "reference": 0.6,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "100% of dropout students show declining engagement"
+          },
+          {
+            "test": "dropout_early_attrition",
+            "metric": "Early dropout proportion",
+            "synthetic": 0.5788,
+            "reference": 0.5,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "58% of dropouts occur in first half of the 28-week simulation"
+          },
+          {
+            "test": "k_anonymity",
+            "metric": "Minimum k",
+            "synthetic": 1.0,
+            "reference": 2.0,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Min k=1, Avg k=3.7 (N=500). Synthetic data has no real individuals \u2014 privacy risk is inherently zero."
+          }
+        ]
+      },
+      "undefined_validation_fields": []
+    },
+    {
+      "n_semesters": 2,
+      "seed": 46,
+      "simulation_summary": {
+        "total_students": 500,
+        "dropout_count": 381,
+        "dropout_rate": 0.762,
+        "mean_dropout_week": 15.711286089238845,
+        "std_dropout_week": 6.810182562527296,
+        "mean_final_engagement": 0.13169465922021503,
+        "std_final_engagement": 0.06415378739397157,
+        "mean_final_gpa": 2.8554873295975725,
+        "retained_students": 119,
+        "dropout_phase_distribution": {
+          "phase_0": 2,
+          "phase_1": 1,
+          "phase_2": 3,
+          "phase_3": 41,
+          "phase_4": 72,
+          "phase_5": 378,
+          "unavoidable_withdrawal": 3
+        },
+        "unavoidable_withdrawal_count": 3,
+        "unavoidable_withdrawal_reasons": {
+          "military_deployment": 1,
+          "legal_issues": 1,
+          "serious_illness": 1
+        },
+        "pass_rate": 0.086,
+        "distinction_rate": 0.012,
+        "fail_rate": 0.14,
+        "withdrawn_rate": 0.762,
+        "outcome_distribution": {
+          "Fail": 70,
+          "Withdrawn": 381,
+          "Pass": 43,
+          "Distinction": 6
+        },
+        "grading_scale": 100
+      },
+      "validation": {
+        "summary": {
+          "total_tests": 22,
+          "passed": 17,
+          "failed": 5,
+          "pass_rate": 0.7727272727272727,
+          "overall_quality": "B (Good)"
+        },
+        "results": [
+          {
+            "test": "age_distribution",
+            "metric": "KS-test",
+            "synthetic": 28.268,
+            "reference": 28.0,
+            "statistic": 0.1287,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "Age mean: synth=28.3, ref=28.0"
+          },
+          {
+            "test": "gender_distribution",
+            "metric": "Chi-squared",
+            "synthetic": 8.2747,
+            "reference": 0.0,
+            "statistic": 8.2747,
+            "p_value": 0.004,
+            "passed": false,
+            "details": "Gender proportions match reference: p=0.0040"
+          },
+          {
+            "test": "employment_rate",
+            "metric": "Proportion Z-test",
+            "synthetic": 0.678,
+            "reference": 0.69,
+            "statistic": -0.5802,
+            "p_value": 0.5618,
+            "passed": true,
+            "details": "Employment: synth=67.80%, ref=69.00%"
+          },
+          {
+            "test": "gpa_distribution",
+            "metric": "KS-test",
+            "synthetic": 2.2867,
+            "reference": 3.03,
+            "statistic": 0.386,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "GPA mean: synth=2.29, ref=3.03"
+          },
+          {
+            "test": "dropout_rate",
+            "metric": "Range check",
+            "synthetic": 0.762,
+            "reference": 0.325,
+            "statistic": null,
+            "p_value": null,
+            "passed": false,
+            "details": "Dropout: synth=76.20%, target=[20.00%, 45.00%]"
+          },
+          {
+            "test": "tinto_conscientiousness_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": -0.123,
+            "reference": -0.2,
+            "statistic": -0.123,
+            "p_value": 0.0059,
+            "passed": true,
+            "details": "Conscientiousness-dropout (Poropat 2009: expected negative): r=-0.123"
+          },
+          {
+            "test": "bandura_self_efficacy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2214,
+            "reference": 0.3,
+            "statistic": 0.2214,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-efficacy-engagement (Bandura 1997: expected positive): r=0.221"
+          },
+          {
+            "test": "rovai_self_regulation_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.3761,
+            "reference": 0.25,
+            "statistic": 0.3761,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-regulation-engagement (Rovai 2003: expected positive): r=0.376"
+          },
+          {
+            "test": "bean_metzner_financial_stress_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": 0.4106,
+            "reference": 0.15,
+            "statistic": 0.4106,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Financial stress-dropout (Bean & Metzner 1985: expected positive): r=0.411"
+          },
+          {
+            "test": "tinto_goal_commitment_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.3376,
+            "reference": 0.2,
+            "statistic": 0.3376,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Goal commitment-engagement (Tinto 1975: expected positive): r=0.338"
+          },
+          {
+            "test": "moore_autonomy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2551,
+            "reference": 0.2,
+            "statistic": 0.2551,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Learner autonomy-engagement (Moore 1993: expected positive): r=0.255"
+          },
+          {
+            "test": "garrison_coi_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.0448,
+            "reference": 0.3,
+            "statistic": 0.0448,
+            "p_value": 0.3176,
+            "passed": true,
+            "details": "CoI composite-engagement (Garrison 2000: expected positive): r=0.045"
+          },
+          {
+            "test": "epstein_network_degree_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.3091,
+            "reference": 0.2,
+            "statistic": 0.3091,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Network degree-engagement (Epstein & Axtell 1996: expected positive): r=0.309"
+          },
+          {
+            "test": "kember_cost_benefit_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2517,
+            "reference": 0.25,
+            "statistic": 0.2517,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Cost-benefit-engagement (Kember 1989: expected positive): r=0.252"
+          },
+          {
+            "test": "sdt_intrinsic_vs_amotivation",
+            "metric": "Independent t-test",
+            "synthetic": 0.1327,
+            "reference": 0.1022,
+            "statistic": 5.9187,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Intrinsic eng=0.133 vs amotivation=0.102 (Deci & Ryan 1985: intrinsic > amotivation)"
+          },
+          {
+            "test": "gpa_dropout_correlation",
+            "metric": "Point-biserial r",
+            "synthetic": -0.1317,
+            "reference": -0.2,
+            "statistic": -0.1317,
+            "p_value": 0.0044,
+            "passed": true,
+            "details": "GPA-dropout: r=-0.132 (expected negative: higher GPA \u2192 less dropout)"
+          },
+          {
+            "test": "baulke_phase_distribution",
+            "metric": "Decided phase proportion",
+            "synthetic": 0.756,
+            "reference": 0.312,
+            "statistic": null,
+            "p_value": null,
+            "passed": false,
+            "details": "Phase 5 (decided): 76%, dropout target: 31%"
+          },
+          {
+            "test": "engagement_gpa_correlation",
+            "metric": "Pearson r",
+            "synthetic": 0.4646,
+            "reference": 0.2,
+            "statistic": 0.4646,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Engagement-GPA: r=0.465 (expected positive: higher engagement \u2192 higher GPA)"
+          },
+          {
+            "test": "engagement_trajectory_divergence",
+            "metric": "Mean difference",
+            "synthetic": 0.0196,
+            "reference": 0.1,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Retained final eng: 0.132, Dropout final: 0.112"
+          },
+          {
+            "test": "dropout_negative_trend_rate",
+            "metric": "Proportion",
+            "synthetic": 0.9974,
+            "reference": 0.6,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "100% of dropout students show declining engagement"
+          },
+          {
+            "test": "dropout_early_attrition",
+            "metric": "Early dropout proportion",
+            "synthetic": 0.5302,
+            "reference": 0.5,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "53% of dropouts occur in first half of the 28-week simulation"
+          },
+          {
+            "test": "k_anonymity",
+            "metric": "Minimum k",
+            "synthetic": 1.0,
+            "reference": 2.0,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Min k=1, Avg k=3.6 (N=500). Synthetic data has no real individuals \u2014 privacy risk is inherently zero."
+          }
+        ]
+      },
+      "undefined_validation_fields": []
+    },
+    {
+      "n_semesters": 4,
+      "seed": 42,
+      "simulation_summary": {
+        "total_students": 500,
+        "dropout_count": 479,
+        "dropout_rate": 0.958,
+        "mean_dropout_week": 23.350730688935283,
+        "std_dropout_week": 12.806173260534488,
+        "mean_final_engagement": 0.12755238095238094,
+        "std_final_engagement": 0.011204032821887077,
+        "mean_final_gpa": 2.8498744671824188,
+        "retained_students": 21,
+        "dropout_phase_distribution": {
+          "phase_2": 4,
+          "phase_3": 2,
+          "phase_4": 15,
+          "phase_5": 478,
+          "unavoidable_withdrawal": 1
+        },
+        "unavoidable_withdrawal_count": 1,
+        "unavoidable_withdrawal_reasons": {
+          "forced_relocation": 1
+        },
+        "pass_rate": 0.018,
+        "distinction_rate": 0.0,
+        "fail_rate": 0.024,
+        "withdrawn_rate": 0.958,
+        "outcome_distribution": {
+          "Withdrawn": 479,
+          "Fail": 12,
+          "Pass": 9
+        },
+        "grading_scale": 100
+      },
+      "validation": {
+        "summary": {
+          "total_tests": 22,
+          "passed": 16,
+          "failed": 6,
+          "pass_rate": 0.7272727272727273,
+          "overall_quality": "C (Acceptable)"
+        },
+        "results": [
+          {
+            "test": "age_distribution",
+            "metric": "KS-test",
+            "synthetic": 28.338,
+            "reference": 28.0,
+            "statistic": 0.1327,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "Age mean: synth=28.3, ref=28.0"
+          },
+          {
+            "test": "gender_distribution",
+            "metric": "Chi-squared",
+            "synthetic": 0.0323,
+            "reference": 0.0,
+            "statistic": 0.0323,
+            "p_value": 0.8573,
+            "passed": true,
+            "details": "Gender proportions match reference: p=0.8573"
+          },
+          {
+            "test": "employment_rate",
+            "metric": "Proportion Z-test",
+            "synthetic": 0.65,
+            "reference": 0.69,
+            "statistic": -1.9339,
+            "p_value": 0.0531,
+            "passed": true,
+            "details": "Employment: synth=65.00%, ref=69.00%"
+          },
+          {
+            "test": "gpa_distribution",
+            "metric": "KS-test",
+            "synthetic": 2.3054,
+            "reference": 3.03,
+            "statistic": 0.394,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "GPA mean: synth=2.31, ref=3.03"
+          },
+          {
+            "test": "dropout_rate",
+            "metric": "Range check",
+            "synthetic": 0.958,
+            "reference": 0.325,
+            "statistic": null,
+            "p_value": null,
+            "passed": false,
+            "details": "Dropout: synth=95.80%, target=[20.00%, 45.00%]"
+          },
+          {
+            "test": "tinto_conscientiousness_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": -0.1111,
+            "reference": -0.2,
+            "statistic": -0.1111,
+            "p_value": 0.0129,
+            "passed": true,
+            "details": "Conscientiousness-dropout (Poropat 2009: expected negative): r=-0.111"
+          },
+          {
+            "test": "bandura_self_efficacy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2987,
+            "reference": 0.3,
+            "statistic": 0.2987,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-efficacy-engagement (Bandura 1997: expected positive): r=0.299"
+          },
+          {
+            "test": "rovai_self_regulation_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.6504,
+            "reference": 0.25,
+            "statistic": 0.6504,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-regulation-engagement (Rovai 2003: expected positive): r=0.650"
+          },
+          {
+            "test": "bean_metzner_financial_stress_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": 0.2016,
+            "reference": 0.15,
+            "statistic": 0.2016,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Financial stress-dropout (Bean & Metzner 1985: expected positive): r=0.202"
+          },
+          {
+            "test": "tinto_goal_commitment_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.5442,
+            "reference": 0.2,
+            "statistic": 0.5442,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Goal commitment-engagement (Tinto 1975: expected positive): r=0.544"
+          },
+          {
+            "test": "moore_autonomy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.5045,
+            "reference": 0.2,
+            "statistic": 0.5045,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Learner autonomy-engagement (Moore 1993: expected positive): r=0.504"
+          },
+          {
+            "test": "garrison_coi_engagement",
+            "metric": "Pearson r",
+            "synthetic": -0.2073,
+            "reference": 0.3,
+            "statistic": -0.2073,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "CoI composite-engagement (Garrison 2000: expected positive): r=-0.207"
+          },
+          {
+            "test": "epstein_network_degree_engagement",
+            "metric": "Pearson r",
+            "synthetic": null,
+            "reference": 0.2,
+            "statistic": null,
+            "p_value": null,
+            "passed": false,
+            "details": "Network degree-engagement (Epstein & Axtell 1996: expected positive): r=nan"
+          },
+          {
+            "test": "kember_cost_benefit_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2485,
+            "reference": 0.25,
+            "statistic": 0.2485,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Cost-benefit-engagement (Kember 1989: expected positive): r=0.248"
+          },
+          {
+            "test": "sdt_intrinsic_vs_amotivation",
+            "metric": "Independent t-test",
+            "synthetic": 0.1232,
+            "reference": 0.1046,
+            "statistic": 8.5107,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Intrinsic eng=0.123 vs amotivation=0.105 (Deci & Ryan 1985: intrinsic > amotivation)"
+          },
+          {
+            "test": "gpa_dropout_correlation",
+            "metric": "Point-biserial r",
+            "synthetic": -0.0922,
+            "reference": -0.2,
+            "statistic": -0.0922,
+            "p_value": 0.0456,
+            "passed": true,
+            "details": "GPA-dropout: r=-0.092 (expected negative: higher GPA \u2192 less dropout)"
+          },
+          {
+            "test": "baulke_phase_distribution",
+            "metric": "Decided phase proportion",
+            "synthetic": 0.956,
+            "reference": 0.312,
+            "statistic": null,
+            "p_value": null,
+            "passed": false,
+            "details": "Phase 5 (decided): 96%, dropout target: 31%"
+          },
+          {
+            "test": "engagement_gpa_correlation",
+            "metric": "Pearson r",
+            "synthetic": 0.343,
+            "reference": 0.2,
+            "statistic": 0.343,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Engagement-GPA: r=0.343 (expected positive: higher engagement \u2192 higher GPA)"
+          },
+          {
+            "test": "engagement_trajectory_divergence",
+            "metric": "Mean difference",
+            "synthetic": 0.0145,
+            "reference": 0.1,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Retained final eng: 0.128, Dropout final: 0.113"
+          },
+          {
+            "test": "dropout_negative_trend_rate",
+            "metric": "Proportion",
+            "synthetic": 0.9979,
+            "reference": 0.6,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "100% of dropout students show declining engagement"
+          },
+          {
+            "test": "dropout_early_attrition",
+            "metric": "Early dropout proportion",
+            "synthetic": 0.7119,
+            "reference": 0.5,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "71% of dropouts occur in first half of the 56-week simulation"
+          },
+          {
+            "test": "k_anonymity",
+            "metric": "Minimum k",
+            "synthetic": 1.0,
+            "reference": 2.0,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Min k=1, Avg k=3.8 (N=500). Synthetic data has no real individuals \u2014 privacy risk is inherently zero."
+          }
+        ]
+      },
+      "undefined_validation_fields": [
+        "results[12].synthetic",
+        "results[12].statistic",
+        "results[12].p_value"
+      ]
+    },
+    {
+      "n_semesters": 4,
+      "seed": 43,
+      "simulation_summary": {
+        "total_students": 500,
+        "dropout_count": 478,
+        "dropout_rate": 0.956,
+        "mean_dropout_week": 21.98326359832636,
+        "std_dropout_week": 12.90339598100631,
+        "mean_final_engagement": 0.13113181818181815,
+        "std_final_engagement": 0.015404548807639326,
+        "mean_final_gpa": 2.844884013398282,
+        "retained_students": 22,
+        "dropout_phase_distribution": {
+          "phase_2": 5,
+          "phase_3": 2,
+          "phase_4": 15,
+          "phase_5": 476,
+          "unavoidable_withdrawal": 2
+        },
+        "unavoidable_withdrawal_count": 2,
+        "unavoidable_withdrawal_reasons": {
+          "serious_illness": 2
+        },
+        "pass_rate": 0.018,
+        "distinction_rate": 0.0,
+        "fail_rate": 0.026,
+        "withdrawn_rate": 0.956,
+        "outcome_distribution": {
+          "Withdrawn": 478,
+          "Fail": 13,
+          "Pass": 9
+        },
+        "grading_scale": 100
+      },
+      "validation": {
+        "summary": {
+          "total_tests": 22,
+          "passed": 16,
+          "failed": 6,
+          "pass_rate": 0.7272727272727273,
+          "overall_quality": "C (Acceptable)"
+        },
+        "results": [
+          {
+            "test": "age_distribution",
+            "metric": "KS-test",
+            "synthetic": 27.854,
+            "reference": 28.0,
+            "statistic": 0.1243,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "Age mean: synth=27.9, ref=28.0"
+          },
+          {
+            "test": "gender_distribution",
+            "metric": "Chi-squared",
+            "synthetic": 0.1293,
+            "reference": 0.0,
+            "statistic": 0.1293,
+            "p_value": 0.7192,
+            "passed": true,
+            "details": "Gender proportions match reference: p=0.7192"
+          },
+          {
+            "test": "employment_rate",
+            "metric": "Proportion Z-test",
+            "synthetic": 0.676,
+            "reference": 0.69,
+            "statistic": -0.6769,
+            "p_value": 0.4985,
+            "passed": true,
+            "details": "Employment: synth=67.60%, ref=69.00%"
+          },
+          {
+            "test": "gpa_distribution",
+            "metric": "KS-test",
+            "synthetic": 2.32,
+            "reference": 3.03,
+            "statistic": 0.382,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "GPA mean: synth=2.32, ref=3.03"
+          },
+          {
+            "test": "dropout_rate",
+            "metric": "Range check",
+            "synthetic": 0.956,
+            "reference": 0.325,
+            "statistic": null,
+            "p_value": null,
+            "passed": false,
+            "details": "Dropout: synth=95.60%, target=[20.00%, 45.00%]"
+          },
+          {
+            "test": "tinto_conscientiousness_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": -0.1487,
+            "reference": -0.2,
+            "statistic": -0.1487,
+            "p_value": 0.0009,
+            "passed": true,
+            "details": "Conscientiousness-dropout (Poropat 2009: expected negative): r=-0.149"
+          },
+          {
+            "test": "bandura_self_efficacy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2624,
+            "reference": 0.3,
+            "statistic": 0.2624,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-efficacy-engagement (Bandura 1997: expected positive): r=0.262"
+          },
+          {
+            "test": "rovai_self_regulation_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.4799,
+            "reference": 0.25,
+            "statistic": 0.4799,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-regulation-engagement (Rovai 2003: expected positive): r=0.480"
+          },
+          {
+            "test": "bean_metzner_financial_stress_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": 0.1973,
+            "reference": 0.15,
+            "statistic": 0.1973,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Financial stress-dropout (Bean & Metzner 1985: expected positive): r=0.197"
+          },
+          {
+            "test": "tinto_goal_commitment_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.4485,
+            "reference": 0.2,
+            "statistic": 0.4485,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Goal commitment-engagement (Tinto 1975: expected positive): r=0.449"
+          },
+          {
+            "test": "moore_autonomy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.4216,
+            "reference": 0.2,
+            "statistic": 0.4216,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Learner autonomy-engagement (Moore 1993: expected positive): r=0.422"
+          },
+          {
+            "test": "garrison_coi_engagement",
+            "metric": "Pearson r",
+            "synthetic": -0.1486,
+            "reference": 0.3,
+            "statistic": -0.1486,
+            "p_value": 0.0009,
+            "passed": false,
+            "details": "CoI composite-engagement (Garrison 2000: expected positive): r=-0.149"
+          },
+          {
+            "test": "epstein_network_degree_engagement",
+            "metric": "Pearson r",
+            "synthetic": null,
+            "reference": 0.2,
+            "statistic": null,
+            "p_value": null,
+            "passed": false,
+            "details": "Network degree-engagement (Epstein & Axtell 1996: expected positive): r=nan"
+          },
+          {
+            "test": "kember_cost_benefit_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2153,
+            "reference": 0.25,
+            "statistic": 0.2153,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Cost-benefit-engagement (Kember 1989: expected positive): r=0.215"
+          },
+          {
+            "test": "sdt_intrinsic_vs_amotivation",
+            "metric": "Independent t-test",
+            "synthetic": 0.1218,
+            "reference": 0.1024,
+            "statistic": 9.7009,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Intrinsic eng=0.122 vs amotivation=0.102 (Deci & Ryan 1985: intrinsic > amotivation)"
+          },
+          {
+            "test": "gpa_dropout_correlation",
+            "metric": "Point-biserial r",
+            "synthetic": -0.1718,
+            "reference": -0.2,
+            "statistic": -0.1718,
+            "p_value": 0.0002,
+            "passed": true,
+            "details": "GPA-dropout: r=-0.172 (expected negative: higher GPA \u2192 less dropout)"
+          },
+          {
+            "test": "baulke_phase_distribution",
+            "metric": "Decided phase proportion",
+            "synthetic": 0.952,
+            "reference": 0.312,
+            "statistic": null,
+            "p_value": null,
+            "passed": false,
+            "details": "Phase 5 (decided): 95%, dropout target: 31%"
+          },
+          {
+            "test": "engagement_gpa_correlation",
+            "metric": "Pearson r",
+            "synthetic": 0.3542,
+            "reference": 0.2,
+            "statistic": 0.3542,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Engagement-GPA: r=0.354 (expected positive: higher engagement \u2192 higher GPA)"
+          },
+          {
+            "test": "engagement_trajectory_divergence",
+            "metric": "Mean difference",
+            "synthetic": 0.0187,
+            "reference": 0.1,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Retained final eng: 0.131, Dropout final: 0.112"
+          },
+          {
+            "test": "dropout_negative_trend_rate",
+            "metric": "Proportion",
+            "synthetic": 0.9979,
+            "reference": 0.6,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "100% of dropout students show declining engagement"
+          },
+          {
+            "test": "dropout_early_attrition",
+            "metric": "Early dropout proportion",
+            "synthetic": 0.751,
+            "reference": 0.5,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "75% of dropouts occur in first half of the 56-week simulation"
+          },
+          {
+            "test": "k_anonymity",
+            "metric": "Minimum k",
+            "synthetic": 1.0,
+            "reference": 2.0,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Min k=1, Avg k=3.9 (N=500). Synthetic data has no real individuals \u2014 privacy risk is inherently zero."
+          }
+        ]
+      },
+      "undefined_validation_fields": [
+        "results[12].synthetic",
+        "results[12].statistic",
+        "results[12].p_value"
+      ]
+    },
+    {
+      "n_semesters": 4,
+      "seed": 44,
+      "simulation_summary": {
+        "total_students": 500,
+        "dropout_count": 466,
+        "dropout_rate": 0.932,
+        "mean_dropout_week": 22.53862660944206,
+        "std_dropout_week": 13.172819975109011,
+        "mean_final_engagement": 0.1662639927531847,
+        "std_final_engagement": 0.15317052796235453,
+        "mean_final_gpa": 2.848392266828696,
+        "retained_students": 34,
+        "dropout_phase_distribution": {
+          "phase_0": 1,
+          "phase_1": 1,
+          "phase_2": 2,
+          "phase_3": 11,
+          "phase_4": 19,
+          "phase_5": 465,
+          "unavoidable_withdrawal": 1
+        },
+        "unavoidable_withdrawal_count": 1,
+        "unavoidable_withdrawal_reasons": {
+          "serious_illness": 1
+        },
+        "pass_rate": 0.028,
+        "distinction_rate": 0.004,
+        "fail_rate": 0.036,
+        "withdrawn_rate": 0.932,
+        "outcome_distribution": {
+          "Withdrawn": 466,
+          "Pass": 14,
+          "Fail": 18,
+          "Distinction": 2
+        },
+        "grading_scale": 100
+      },
+      "validation": {
+        "summary": {
+          "total_tests": 22,
+          "passed": 17,
+          "failed": 5,
+          "pass_rate": 0.7727272727272727,
+          "overall_quality": "B (Good)"
+        },
+        "results": [
+          {
+            "test": "age_distribution",
+            "metric": "KS-test",
+            "synthetic": 28.318,
+            "reference": 28.0,
+            "statistic": 0.1263,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "Age mean: synth=28.3, ref=28.0"
+          },
+          {
+            "test": "gender_distribution",
+            "metric": "Chi-squared",
+            "synthetic": 0.1293,
+            "reference": 0.0,
+            "statistic": 0.1293,
+            "p_value": 0.7192,
+            "passed": true,
+            "details": "Gender proportions match reference: p=0.7192"
+          },
+          {
+            "test": "employment_rate",
+            "metric": "Proportion Z-test",
+            "synthetic": 0.708,
+            "reference": 0.69,
+            "statistic": 0.8703,
+            "p_value": 0.3842,
+            "passed": true,
+            "details": "Employment: synth=70.80%, ref=69.00%"
+          },
+          {
+            "test": "gpa_distribution",
+            "metric": "KS-test",
+            "synthetic": 2.2792,
+            "reference": 3.03,
+            "statistic": 0.406,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "GPA mean: synth=2.28, ref=3.03"
+          },
+          {
+            "test": "dropout_rate",
+            "metric": "Range check",
+            "synthetic": 0.932,
+            "reference": 0.325,
+            "statistic": null,
+            "p_value": null,
+            "passed": false,
+            "details": "Dropout: synth=93.20%, target=[20.00%, 45.00%]"
+          },
+          {
+            "test": "tinto_conscientiousness_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": -0.1367,
+            "reference": -0.2,
+            "statistic": -0.1367,
+            "p_value": 0.0022,
+            "passed": true,
+            "details": "Conscientiousness-dropout (Poropat 2009: expected negative): r=-0.137"
+          },
+          {
+            "test": "bandura_self_efficacy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2594,
+            "reference": 0.3,
+            "statistic": 0.2594,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-efficacy-engagement (Bandura 1997: expected positive): r=0.259"
+          },
+          {
+            "test": "rovai_self_regulation_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.3038,
+            "reference": 0.25,
+            "statistic": 0.3038,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-regulation-engagement (Rovai 2003: expected positive): r=0.304"
+          },
+          {
+            "test": "bean_metzner_financial_stress_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": 0.2155,
+            "reference": 0.15,
+            "statistic": 0.2155,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Financial stress-dropout (Bean & Metzner 1985: expected positive): r=0.215"
+          },
+          {
+            "test": "tinto_goal_commitment_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2589,
+            "reference": 0.2,
+            "statistic": 0.2589,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Goal commitment-engagement (Tinto 1975: expected positive): r=0.259"
+          },
+          {
+            "test": "moore_autonomy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2423,
+            "reference": 0.2,
+            "statistic": 0.2423,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Learner autonomy-engagement (Moore 1993: expected positive): r=0.242"
+          },
+          {
+            "test": "garrison_coi_engagement",
+            "metric": "Pearson r",
+            "synthetic": -0.0366,
+            "reference": 0.3,
+            "statistic": -0.0366,
+            "p_value": 0.4139,
+            "passed": false,
+            "details": "CoI composite-engagement (Garrison 2000: expected positive): r=-0.037"
+          },
+          {
+            "test": "epstein_network_degree_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.1387,
+            "reference": 0.2,
+            "statistic": 0.1387,
+            "p_value": 0.0019,
+            "passed": true,
+            "details": "Network degree-engagement (Epstein & Axtell 1996: expected positive): r=0.139"
+          },
+          {
+            "test": "kember_cost_benefit_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.144,
+            "reference": 0.25,
+            "statistic": 0.144,
+            "p_value": 0.0012,
+            "passed": true,
+            "details": "Cost-benefit-engagement (Kember 1989: expected positive): r=0.144"
+          },
+          {
+            "test": "sdt_intrinsic_vs_amotivation",
+            "metric": "Independent t-test",
+            "synthetic": 0.1257,
+            "reference": 0.1042,
+            "statistic": 6.6231,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Intrinsic eng=0.126 vs amotivation=0.104 (Deci & Ryan 1985: intrinsic > amotivation)"
+          },
+          {
+            "test": "gpa_dropout_correlation",
+            "metric": "Point-biserial r",
+            "synthetic": -0.2494,
+            "reference": -0.2,
+            "statistic": -0.2494,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "GPA-dropout: r=-0.249 (expected negative: higher GPA \u2192 less dropout)"
+          },
+          {
+            "test": "baulke_phase_distribution",
+            "metric": "Decided phase proportion",
+            "synthetic": 0.93,
+            "reference": 0.312,
+            "statistic": null,
+            "p_value": null,
+            "passed": false,
+            "details": "Phase 5 (decided): 93%, dropout target: 31%"
+          },
+          {
+            "test": "engagement_gpa_correlation",
+            "metric": "Pearson r",
+            "synthetic": 0.5016,
+            "reference": 0.2,
+            "statistic": 0.5016,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Engagement-GPA: r=0.502 (expected positive: higher engagement \u2192 higher GPA)"
+          },
+          {
+            "test": "engagement_trajectory_divergence",
+            "metric": "Mean difference",
+            "synthetic": 0.053,
+            "reference": 0.1,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Retained final eng: 0.166, Dropout final: 0.113"
+          },
+          {
+            "test": "dropout_negative_trend_rate",
+            "metric": "Proportion",
+            "synthetic": 1.0,
+            "reference": 0.6,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "100% of dropout students show declining engagement"
+          },
+          {
+            "test": "dropout_early_attrition",
+            "metric": "Early dropout proportion",
+            "synthetic": 0.7446,
+            "reference": 0.5,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "74% of dropouts occur in first half of the 56-week simulation"
+          },
+          {
+            "test": "k_anonymity",
+            "metric": "Minimum k",
+            "synthetic": 1.0,
+            "reference": 2.0,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Min k=1, Avg k=3.7 (N=500). Synthetic data has no real individuals \u2014 privacy risk is inherently zero."
+          }
+        ]
+      },
+      "undefined_validation_fields": []
+    },
+    {
+      "n_semesters": 4,
+      "seed": 45,
+      "simulation_summary": {
+        "total_students": 500,
+        "dropout_count": 478,
+        "dropout_rate": 0.956,
+        "mean_dropout_week": 21.246861924686193,
+        "std_dropout_week": 12.487891230747369,
+        "mean_final_engagement": 0.21607388274537428,
+        "std_final_engagement": 0.2519835037115435,
+        "mean_final_gpa": 2.838266172901198,
+        "retained_students": 22,
+        "dropout_phase_distribution": {
+          "phase_0": 2,
+          "phase_1": 1,
+          "phase_2": 3,
+          "phase_3": 3,
+          "phase_4": 13,
+          "phase_5": 477,
+          "unavoidable_withdrawal": 1
+        },
+        "unavoidable_withdrawal_count": 1,
+        "unavoidable_withdrawal_reasons": {
+          "serious_illness": 1
+        },
+        "pass_rate": 0.008,
+        "distinction_rate": 0.006,
+        "fail_rate": 0.03,
+        "withdrawn_rate": 0.956,
+        "outcome_distribution": {
+          "Withdrawn": 478,
+          "Pass": 4,
+          "Fail": 15,
+          "Distinction": 3
+        },
+        "grading_scale": 100
+      },
+      "validation": {
+        "summary": {
+          "total_tests": 22,
+          "passed": 16,
+          "failed": 6,
+          "pass_rate": 0.7272727272727273,
+          "overall_quality": "C (Acceptable)"
+        },
+        "results": [
+          {
+            "test": "age_distribution",
+            "metric": "KS-test",
+            "synthetic": 28.394,
+            "reference": 28.0,
+            "statistic": 0.1223,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "Age mean: synth=28.4, ref=28.0"
+          },
+          {
+            "test": "gender_distribution",
+            "metric": "Chi-squared",
+            "synthetic": 1.5838,
+            "reference": 0.0,
+            "statistic": 1.5838,
+            "p_value": 0.2082,
+            "passed": true,
+            "details": "Gender proportions match reference: p=0.2082"
+          },
+          {
+            "test": "employment_rate",
+            "metric": "Proportion Z-test",
+            "synthetic": 0.682,
+            "reference": 0.69,
+            "statistic": -0.3868,
+            "p_value": 0.6989,
+            "passed": true,
+            "details": "Employment: synth=68.20%, ref=69.00%"
+          },
+          {
+            "test": "gpa_distribution",
+            "metric": "KS-test",
+            "synthetic": 2.2913,
+            "reference": 3.03,
+            "statistic": 0.38,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "GPA mean: synth=2.29, ref=3.03"
+          },
+          {
+            "test": "dropout_rate",
+            "metric": "Range check",
+            "synthetic": 0.956,
+            "reference": 0.325,
+            "statistic": null,
+            "p_value": null,
+            "passed": false,
+            "details": "Dropout: synth=95.60%, target=[20.00%, 45.00%]"
+          },
+          {
+            "test": "tinto_conscientiousness_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": -0.144,
+            "reference": -0.2,
+            "statistic": -0.144,
+            "p_value": 0.0012,
+            "passed": true,
+            "details": "Conscientiousness-dropout (Poropat 2009: expected negative): r=-0.144"
+          },
+          {
+            "test": "bandura_self_efficacy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2533,
+            "reference": 0.3,
+            "statistic": 0.2533,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-efficacy-engagement (Bandura 1997: expected positive): r=0.253"
+          },
+          {
+            "test": "rovai_self_regulation_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.3332,
+            "reference": 0.25,
+            "statistic": 0.3332,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-regulation-engagement (Rovai 2003: expected positive): r=0.333"
+          },
+          {
+            "test": "bean_metzner_financial_stress_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": 0.1921,
+            "reference": 0.15,
+            "statistic": 0.1921,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Financial stress-dropout (Bean & Metzner 1985: expected positive): r=0.192"
+          },
+          {
+            "test": "tinto_goal_commitment_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2172,
+            "reference": 0.2,
+            "statistic": 0.2172,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Goal commitment-engagement (Tinto 1975: expected positive): r=0.217"
+          },
+          {
+            "test": "moore_autonomy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.257,
+            "reference": 0.2,
+            "statistic": 0.257,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Learner autonomy-engagement (Moore 1993: expected positive): r=0.257"
+          },
+          {
+            "test": "garrison_coi_engagement",
+            "metric": "Pearson r",
+            "synthetic": -0.0316,
+            "reference": 0.3,
+            "statistic": -0.0316,
+            "p_value": 0.4813,
+            "passed": false,
+            "details": "CoI composite-engagement (Garrison 2000: expected positive): r=-0.032"
+          },
+          {
+            "test": "epstein_network_degree_engagement",
+            "metric": "Pearson r",
+            "synthetic": null,
+            "reference": 0.2,
+            "statistic": null,
+            "p_value": null,
+            "passed": false,
+            "details": "Network degree-engagement (Epstein & Axtell 1996: expected positive): r=nan"
+          },
+          {
+            "test": "kember_cost_benefit_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.111,
+            "reference": 0.25,
+            "statistic": 0.111,
+            "p_value": 0.013,
+            "passed": true,
+            "details": "Cost-benefit-engagement (Kember 1989: expected positive): r=0.111"
+          },
+          {
+            "test": "sdt_intrinsic_vs_amotivation",
+            "metric": "Independent t-test",
+            "synthetic": 0.1357,
+            "reference": 0.1044,
+            "statistic": 4.5243,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Intrinsic eng=0.136 vs amotivation=0.104 (Deci & Ryan 1985: intrinsic > amotivation)"
+          },
+          {
+            "test": "gpa_dropout_correlation",
+            "metric": "Point-biserial r",
+            "synthetic": -0.158,
+            "reference": -0.2,
+            "statistic": -0.158,
+            "p_value": 0.0007,
+            "passed": true,
+            "details": "GPA-dropout: r=-0.158 (expected negative: higher GPA \u2192 less dropout)"
+          },
+          {
+            "test": "baulke_phase_distribution",
+            "metric": "Decided phase proportion",
+            "synthetic": 0.954,
+            "reference": 0.312,
+            "statistic": null,
+            "p_value": null,
+            "passed": false,
+            "details": "Phase 5 (decided): 95%, dropout target: 31%"
+          },
+          {
+            "test": "engagement_gpa_correlation",
+            "metric": "Pearson r",
+            "synthetic": 0.4398,
+            "reference": 0.2,
+            "statistic": 0.4398,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Engagement-GPA: r=0.440 (expected positive: higher engagement \u2192 higher GPA)"
+          },
+          {
+            "test": "engagement_trajectory_divergence",
+            "metric": "Mean difference",
+            "synthetic": 0.1025,
+            "reference": 0.1,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Retained final eng: 0.216, Dropout final: 0.114"
+          },
+          {
+            "test": "dropout_negative_trend_rate",
+            "metric": "Proportion",
+            "synthetic": 1.0,
+            "reference": 0.6,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "100% of dropout students show declining engagement"
+          },
+          {
+            "test": "dropout_early_attrition",
+            "metric": "Early dropout proportion",
+            "synthetic": 0.7699,
+            "reference": 0.5,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "77% of dropouts occur in first half of the 56-week simulation"
+          },
+          {
+            "test": "k_anonymity",
+            "metric": "Minimum k",
+            "synthetic": 1.0,
+            "reference": 2.0,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Min k=1, Avg k=3.7 (N=500). Synthetic data has no real individuals \u2014 privacy risk is inherently zero."
+          }
+        ]
+      },
+      "undefined_validation_fields": [
+        "results[12].synthetic",
+        "results[12].statistic",
+        "results[12].p_value"
+      ]
+    },
+    {
+      "n_semesters": 4,
+      "seed": 46,
+      "simulation_summary": {
+        "total_students": 500,
+        "dropout_count": 481,
+        "dropout_rate": 0.962,
+        "mean_dropout_week": 20.449064449064448,
+        "std_dropout_week": 11.397833444688185,
+        "mean_final_engagement": 0.17140113157894735,
+        "std_final_engagement": 0.19387365479433155,
+        "mean_final_gpa": 2.8533464692851065,
+        "retained_students": 19,
+        "dropout_phase_distribution": {
+          "phase_0": 1,
+          "phase_2": 4,
+          "phase_3": 4,
+          "phase_4": 10,
+          "phase_5": 477,
+          "unavoidable_withdrawal": 4
+        },
+        "unavoidable_withdrawal_count": 4,
+        "unavoidable_withdrawal_reasons": {
+          "military_deployment": 2,
+          "legal_issues": 1,
+          "serious_illness": 1
+        },
+        "pass_rate": 0.01,
+        "distinction_rate": 0.002,
+        "fail_rate": 0.026,
+        "withdrawn_rate": 0.962,
+        "outcome_distribution": {
+          "Withdrawn": 481,
+          "Fail": 13,
+          "Pass": 5,
+          "Distinction": 1
+        },
+        "grading_scale": 100
+      },
+      "validation": {
+        "summary": {
+          "total_tests": 22,
+          "passed": 16,
+          "failed": 6,
+          "pass_rate": 0.7272727272727273,
+          "overall_quality": "C (Acceptable)"
+        },
+        "results": [
+          {
+            "test": "age_distribution",
+            "metric": "KS-test",
+            "synthetic": 28.268,
+            "reference": 28.0,
+            "statistic": 0.1287,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "Age mean: synth=28.3, ref=28.0"
+          },
+          {
+            "test": "gender_distribution",
+            "metric": "Chi-squared",
+            "synthetic": 8.2747,
+            "reference": 0.0,
+            "statistic": 8.2747,
+            "p_value": 0.004,
+            "passed": false,
+            "details": "Gender proportions match reference: p=0.0040"
+          },
+          {
+            "test": "employment_rate",
+            "metric": "Proportion Z-test",
+            "synthetic": 0.678,
+            "reference": 0.69,
+            "statistic": -0.5802,
+            "p_value": 0.5618,
+            "passed": true,
+            "details": "Employment: synth=67.80%, ref=69.00%"
+          },
+          {
+            "test": "gpa_distribution",
+            "metric": "KS-test",
+            "synthetic": 2.2867,
+            "reference": 3.03,
+            "statistic": 0.386,
+            "p_value": 0.0,
+            "passed": false,
+            "details": "GPA mean: synth=2.29, ref=3.03"
+          },
+          {
+            "test": "dropout_rate",
+            "metric": "Range check",
+            "synthetic": 0.962,
+            "reference": 0.325,
+            "statistic": null,
+            "p_value": null,
+            "passed": false,
+            "details": "Dropout: synth=96.20%, target=[20.00%, 45.00%]"
+          },
+          {
+            "test": "tinto_conscientiousness_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": -0.0761,
+            "reference": -0.2,
+            "statistic": -0.0761,
+            "p_value": 0.0891,
+            "passed": true,
+            "details": "Conscientiousness-dropout (Poropat 2009: expected negative): r=-0.076"
+          },
+          {
+            "test": "bandura_self_efficacy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.1925,
+            "reference": 0.3,
+            "statistic": 0.1925,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-efficacy-engagement (Bandura 1997: expected positive): r=0.193"
+          },
+          {
+            "test": "rovai_self_regulation_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.3142,
+            "reference": 0.25,
+            "statistic": 0.3142,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Self-regulation-engagement (Rovai 2003: expected positive): r=0.314"
+          },
+          {
+            "test": "bean_metzner_financial_stress_dropout",
+            "metric": "Point-biserial r",
+            "synthetic": 0.2169,
+            "reference": 0.15,
+            "statistic": 0.2169,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Financial stress-dropout (Bean & Metzner 1985: expected positive): r=0.217"
+          },
+          {
+            "test": "tinto_goal_commitment_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2982,
+            "reference": 0.2,
+            "statistic": 0.2982,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Goal commitment-engagement (Tinto 1975: expected positive): r=0.298"
+          },
+          {
+            "test": "moore_autonomy_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2435,
+            "reference": 0.2,
+            "statistic": 0.2435,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Learner autonomy-engagement (Moore 1993: expected positive): r=0.244"
+          },
+          {
+            "test": "garrison_coi_engagement",
+            "metric": "Pearson r",
+            "synthetic": -0.0305,
+            "reference": 0.3,
+            "statistic": -0.0305,
+            "p_value": 0.4967,
+            "passed": false,
+            "details": "CoI composite-engagement (Garrison 2000: expected positive): r=-0.030"
+          },
+          {
+            "test": "epstein_network_degree_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.0085,
+            "reference": 0.2,
+            "statistic": 0.0085,
+            "p_value": 0.8498,
+            "passed": true,
+            "details": "Network degree-engagement (Epstein & Axtell 1996: expected positive): r=0.008"
+          },
+          {
+            "test": "kember_cost_benefit_engagement",
+            "metric": "Pearson r",
+            "synthetic": 0.2199,
+            "reference": 0.25,
+            "statistic": 0.2199,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Cost-benefit-engagement (Kember 1989: expected positive): r=0.220"
+          },
+          {
+            "test": "sdt_intrinsic_vs_amotivation",
+            "metric": "Independent t-test",
+            "synthetic": 0.1272,
+            "reference": 0.1017,
+            "statistic": 6.5536,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Intrinsic eng=0.127 vs amotivation=0.102 (Deci & Ryan 1985: intrinsic > amotivation)"
+          },
+          {
+            "test": "gpa_dropout_correlation",
+            "metric": "Point-biserial r",
+            "synthetic": -0.1271,
+            "reference": -0.2,
+            "statistic": -0.1271,
+            "p_value": 0.006,
+            "passed": true,
+            "details": "GPA-dropout: r=-0.127 (expected negative: higher GPA \u2192 less dropout)"
+          },
+          {
+            "test": "baulke_phase_distribution",
+            "metric": "Decided phase proportion",
+            "synthetic": 0.954,
+            "reference": 0.312,
+            "statistic": null,
+            "p_value": null,
+            "passed": false,
+            "details": "Phase 5 (decided): 95%, dropout target: 31%"
+          },
+          {
+            "test": "engagement_gpa_correlation",
+            "metric": "Pearson r",
+            "synthetic": 0.4225,
+            "reference": 0.2,
+            "statistic": 0.4225,
+            "p_value": 0.0,
+            "passed": true,
+            "details": "Engagement-GPA: r=0.423 (expected positive: higher engagement \u2192 higher GPA)"
+          },
+          {
+            "test": "engagement_trajectory_divergence",
+            "metric": "Mean difference",
+            "synthetic": 0.0578,
+            "reference": 0.1,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Retained final eng: 0.171, Dropout final: 0.114"
+          },
+          {
+            "test": "dropout_negative_trend_rate",
+            "metric": "Proportion",
+            "synthetic": 0.9979,
+            "reference": 0.6,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "100% of dropout students show declining engagement"
+          },
+          {
+            "test": "dropout_early_attrition",
+            "metric": "Early dropout proportion",
+            "synthetic": 0.7921,
+            "reference": 0.5,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "79% of dropouts occur in first half of the 56-week simulation"
+          },
+          {
+            "test": "k_anonymity",
+            "metric": "Minimum k",
+            "synthetic": 1.0,
+            "reference": 2.0,
+            "statistic": null,
+            "p_value": null,
+            "passed": true,
+            "details": "Min k=1, Avg k=3.6 (N=500). Synthetic data has no real individuals \u2014 privacy risk is inherently zero."
+          }
+        ]
+      },
+      "undefined_validation_fields": []
+    }
+  ]
+}

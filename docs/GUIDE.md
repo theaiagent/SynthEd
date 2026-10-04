@@ -281,21 +281,54 @@ Relative mode applies t-score standardization across the cohort. Students are cl
 
 ## 🎯 Dropout Targeting
 
-Instead of manually tuning `dropout_base_rate`, specify the desired range:
+Specify a desired **cumulative dropout range at the end of the run**:
 
 ```python
-pipeline = SynthEdPipeline(
-    target_dropout_range=(0.30, 0.45),  # auto-calibrates
+from synthed.pipeline_config import PipelineConfig
+
+pipeline = SynthEdPipeline(config=PipelineConfig(
+    target_dropout_range=(0.30, 0.45),
+    n_semesters=2,
     seed=42,
-)
+))
 report = pipeline.run(n_students=300)
+print(report["dropout_targeting"]["target_achieved"])
 ```
 
-| Semesters | Default Dropout Rate (base=0.46) | Quality |
-|-----------|----------------------------------|---------|
-| 1 (14 weeks) | ~38% | A (Excellent) |
-| 2 (28 weeks) | ~68% | B (Good) |
-| 4 (56 weeks) | ~91% | B (Good) |
+The built-in curves cover 1–4 semesters of 14 weeks with default model settings.
+Each horizon uses its own measurements; an unsupported horizon raises an error.
+Changing the population distributions, environment, grading, engine or carry-over
+settings makes the default curve a transfer estimate, flagged in the report.
+`population_size_match` separately checks the measured N=500 cohort size; other
+sizes are flagged with low coverage confidence because peer interactions can change.
+Seed variation also affects observed results; targeting is not a guarantee.
+
+| Duration | Default cumulative dropout, no targeting | Mean dropout with a 30–45% target |
+|----------|------------------------------------------|----------------------------------|
+| 1 semester (14 weeks) | 35.60% | 36.88% |
+| 2 semesters (28 weeks) | 63.48% | 36.80% |
+| 4 semesters (56 weeks) | 88.60% | 34.96% |
+
+Both columns use N=500. Default means use seeds 42–46; targeting checks use
+held-out seeds 47–51. These are simulation measurements, not real-world retention
+benchmarks. All 15 targeting runs met the range in this check; this does not
+guarantee attainment with other seeds or settings. See
+[measurement evidence and limitations](DROPOUT_TARGETING.md).
+
+`dropout_targeting` reports the measured mean range (`observed_dropout_range`),
+`mapping_status`, `clamped`, `reference_configuration_match`, actual dropout and
+`target_achieved`. Outside-grid targets use the closest measured mean and a warning.
+Multiple curve matches are reported; the lowest candidate base rate is selected.
+The legacy `confidence` label describes mapping coverage, not a statistical
+confidence level or the probability that a run will meet its target.
+
+For multi-semester runs, `semester_summary` separates dropout among students who
+entered each semester from cumulative dropout relative to the initial cohort.
+The cumulative rate cannot decrease; the conditional semester rate can rise or fall.
+
+**Validation grades:** A/B grades summarize the fraction of executed checks that
+pass. They do not establish external validity or realistic multi-year retention.
+With targeting enabled, the dropout check uses the requested range as its reference.
 
 ---
 
@@ -314,14 +347,19 @@ report = pipeline.run(n_students=300)
 
 | Carries Over | Resets |
 |-------------|--------|
-| Academic integration | Weekly engagement history |
+| Academic integration | Theory-facing weekly engagement history |
 | Social integration (70% retained) | Memory/event log |
 | Engagement (with +0.05 recovery) | Missed assignments streak |
 | Dropout phase (regressed by 1) | Dropout status |
 | Cost-benefit (with +0.03 recovery) | Network links (decayed) |
 | Prior GPA (60/40 blend with earned GPA) | |
+| Transcript GPA and raw mastery accumulators | |
 | Coping factor (70% retained) | |
 | Exhaustion (reduced 60%) | |
+
+Validation concatenates observed engagement histories across terms separately and
+uses the full simulation horizon for global dropout weeks. Theory state continues
+to use semester-local histories.
 
 ---
 
@@ -737,7 +775,7 @@ config = PersonaConfig(
 3. Too high? Decrease `dropout_base_rate` or increase `self_regulation_mean`
 4. N < 100 → high variance between runs
 
-> **Why:** `dropout_base_rate` is a scaling factor, not the literal rate. The `CalibrationMap` maps target rates to base rates via interpolation. Observed 1-semester range across the `CALIBRATION_DATA` grid: ~0.25 to ~0.48 (measured dropout_rate at base_rate 0.20 → 0.95, N=500, 5 seeds).
+> **Why:** `dropout_base_rate` is a scaling factor, not the literal rate. The built-in grid now covers base rates 0.01–0.95 for each of 1–4 semesters. Check `observed_dropout_range`, `clamped` and `actual_dropout_rate` in the report. These bounds describe observed means on the measured default-model grid, not universal achievable limits. See [calibration measurements](DROPOUT_TARGETING.md).
 
 ---
 
@@ -848,7 +886,11 @@ UUIDv7 embeds wall-clock time. Same seed at different times produces different I
 
 #### Calibration data staleness
 
-`CALIBRATION_DATA` in `calibration.py` was measured 2026-04-14 (post OULAD reference fix). Re-measure if you modify theory modules or engine weights (N=500, 5 seeds per point).
+`CALIBRATION_DATA` in `calibration.py` is derived from
+[`measurements/dropout-horizons.json`](measurements/dropout-horizons.json), which
+records raw counts, resolved configuration, dependencies and model source hashes.
+Re-measure after changing model or RNG-consuming code; use
+`python scripts/measure_dropout_horizons.py --output output/dropout-horizons.json`.
 
 ---
 
