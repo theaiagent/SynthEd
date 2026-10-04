@@ -5,6 +5,7 @@ All notable changes to SynthEd are documented here.
 ## [Unreleased]
 
 ### Changed
+- Update `actions/setup-python` to v7 in CI and package publishing workflows; the configured Python versions remain unchanged.
 - Pin both CodeQL analysis steps to `v4.38.2`, retaining the current v4 release instead of reverting to `v4.37.3`.
 
 ### Added
