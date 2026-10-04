@@ -6,6 +6,9 @@ All notable changes to SynthEd are documented here.
 
 ### Changed
 - Allow `uuid-utils` 1.x alongside the supported 0.x releases. Student identifiers continue to use the compatible, no-argument `uuid7()` API.
+- Update the test badge action to `v1.9.0` for its GitHub Gist API compatibility and awaited update requests.
+- Update `actions/setup-python` to v7 in CI and package publishing workflows; the configured Python versions remain unchanged.
+- Pin both CodeQL analysis steps to `v4.38.2`, retaining the current v4 release instead of reverting to `v4.37.3`.
 
 ### Added
 - **Long-horizon diagnostics:** add a reproducible engagement observer, bounded mechanism ablations, complete validation evidence across five seeds, and a staged plan for trajectory calibration. Production model coefficients are unchanged.
