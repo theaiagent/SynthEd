@@ -7,6 +7,17 @@ class TestSyntheticDataValidator:
     def setup_method(self):
         self.validator = SyntheticDataValidator()
 
+    def test_early_attrition_uses_full_simulation_horizon(self):
+        """Week 20 is early in a 56-week run despite a short final-term history."""
+        outcomes = [{"student_id": "drop", "has_dropped_out": True, "dropout_week": 20}]
+        results = self.validator._validate_temporal(
+            {"drop": [0.4, 0.3]}, outcomes, total_weeks=56,
+        )
+        timing = next(r for r in results if r.test_name == "dropout_early_attrition")
+        assert timing.synthetic_value == 1.0
+        assert timing.passed
+
+
     def test_validate_all_returns_report_structure(self):
         validator = SyntheticDataValidator()
         students = [

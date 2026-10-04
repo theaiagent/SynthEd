@@ -1,12 +1,31 @@
 """Tests for network scaling: sampling, degree caps, backward compatibility."""
 
 import numpy as np
+import pytest
 
 from synthed.simulation.social_network import SocialNetwork
 from synthed.simulation.theories.epstein_axtell import EpsteinAxtellPeerInfluence
 
 
 class TestLinkGroup:
+    @pytest.mark.parametrize("seed", [42, 7, 123])
+    def test_sampled_network_is_invariant_to_identifier_labels(self, seed):
+        """Changing UUID labels must not change seeded peer choices."""
+        ea = EpsteinAxtellPeerInfluence()
+        size = ea._SAMPLING_THRESHOLD + 10
+        graphs = []
+        for prefix in ("original", "renamed"):
+            members = [f"{prefix}-{i}" for i in range(size)]
+            indices = {sid: i for i, sid in enumerate(members)}
+            net = SocialNetwork()
+            ea._link_group(members + members[:3], net, 0.05, "forum", np.random.default_rng(seed))
+            graphs.append([
+                sorted((indices[other], net.get_link(sid, other).strength)
+                       for other in net.get_neighbors(sid))
+                for sid in members
+            ])
+        assert graphs[0] == graphs[1]
+
     def test_small_group_all_pairs(self):
         """10 members, _link_group with rng=None -> all pairs."""
         ea = EpsteinAxtellPeerInfluence()
