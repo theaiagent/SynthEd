@@ -13,7 +13,44 @@ from synthed.calibration import (
 
 class TestCalibrationMap:
     def setup_method(self):
-        self.cal = CalibrationMap()
+        """Use a fixed monotone fixture so unit tests do not freeze measured rates."""
+        self.cal = CalibrationMap(data=(
+            CalibrationPoint(1, 0.20, 0.248, 500, 5),
+            CalibrationPoint(1, 0.40, 0.363, 500, 5),
+            CalibrationPoint(1, 0.60, 0.420, 500, 5),
+            CalibrationPoint(1, 0.90, 0.482, 500, 5),
+        ))
+
+    def test_nonmonotone_curve_uses_adjacent_base_rate_segments(self):
+        """Do not invent segments by sorting noisy observations before inversion."""
+        cal = CalibrationMap(data=(
+            CalibrationPoint(4, 0.20, 0.80, 500, 5),
+            CalibrationPoint(4, 0.40, 0.92, 500, 5),
+            CalibrationPoint(4, 0.60, 0.88, 500, 5),
+            CalibrationPoint(4, 0.80, 0.96, 500, 5),
+        ))
+        result = cal.estimate(0.90, 4)
+        assert result.candidate_base_rates == pytest.approx((0.3666666666666667, 0.50, 0.65))
+        assert result.estimated_dropout_base_rate == pytest.approx(0.3666666666666667)
+        assert result.mapping_status == "multiple_matches"
+        assert result.confidence == "low"
+
+    def test_flat_segment_reports_ambiguous_measured_matches(self):
+        """An observed plateau uses the lowest matching base without division by zero."""
+        cal = CalibrationMap(data=(
+            CalibrationPoint(2, 0.10, 0.30, 500, 5),
+            CalibrationPoint(2, 0.20, 0.30, 500, 5),
+        ))
+        result = cal.estimate(0.30, 2)
+        assert result.estimated_dropout_base_rate == 0.10
+        assert result.mapping_status == "multiple_matches"
+        assert result.candidate_base_rates == (0.10, 0.20)
+
+    @pytest.mark.parametrize("target", [float("nan"), float("inf"), -0.1, 1.1])
+    def test_invalid_target_raises(self, target):
+        """Invalid targets cannot produce nonfinite simulation parameters."""
+        with pytest.raises(ValueError, match="target_dropout"):
+            self.cal.estimate(target)
 
     def test_estimate_known_point(self):
         """Estimation at a known observed dropout should return its base_rate."""
@@ -47,11 +84,49 @@ class TestCalibrationMap:
         assert result.confidence == "low"
 
     def test_estimate_multi_semester(self):
-        """2-semester estimation uses 2-semester data point."""
-        # Only one 2-sem point (rate=0.46, observed=0.678)
-        # With only 1 point for n_semesters=2, falls back to 1-sem data
-        result = self.cal.estimate(0.40, n_semesters=2)
-        assert result.source_data_points >= 2
+        """Identical targets use the curve for the requested horizon."""
+        cal = CalibrationMap(data=(
+            CalibrationPoint(1, 0.20, 0.20, 500, 5),
+            CalibrationPoint(1, 0.60, 0.40, 500, 5),
+            CalibrationPoint(2, 0.10, 0.20, 500, 5),
+            CalibrationPoint(2, 0.30, 0.40, 500, 5),
+        ))
+        assert cal.estimate(0.30, 1).estimated_dropout_base_rate == pytest.approx(0.40)
+        assert cal.estimate(0.30, 2).estimated_dropout_base_rate == pytest.approx(0.20)
+
+    @pytest.mark.parametrize("n_semesters", [2, 4, 8])
+    def test_missing_horizon_never_uses_single_semester_data(self, n_semesters):
+        """Incomplete horizon data fail explicitly instead of borrowing a curve."""
+        cal = CalibrationMap(data=(
+            CalibrationPoint(1, 0.20, 0.20, 500, 5),
+            CalibrationPoint(1, 0.60, 0.40, 500, 5),
+            CalibrationPoint(2, 0.46, 0.68, 500, 5),
+        ))
+        with pytest.raises(ValueError, match=f"{n_semesters} semester"):
+            cal.estimate_from_range((0.30, 0.45), n_semesters)
+
+    def test_low_base_rates_are_not_raised_above_measured_value(self):
+        """Long-horizon targeting can use the persona model's lower domain."""
+        cal = CalibrationMap(data=(
+            CalibrationPoint(4, 0.01, 0.30, 500, 5),
+            CalibrationPoint(4, 0.05, 0.50, 500, 5),
+        ))
+        result = cal.estimate_from_range((0.30, 0.50), 4)
+        assert result.estimated_dropout_base_rate == pytest.approx(0.03)
+        assert result.observed_dropout_range == (0.30, 0.50)
+        assert result.clamped is False
+
+    def test_clamping_is_preserved_in_range_estimate(self):
+        """Callers can identify estimates outside the measured response range."""
+        cal = CalibrationMap(data=(
+            CalibrationPoint(4, 0.01, 0.30, 500, 5),
+            CalibrationPoint(4, 0.05, 0.50, 500, 5),
+        ))
+        result = cal.estimate_from_range((0.10, 0.20), 4)
+        assert result.clamped is True
+        assert result.confidence == "low"
+        assert result.observed_dropout_range == (0.30, 0.50)
+        assert result.estimated_dropout_base_rate == pytest.approx(0.01)
 
     def test_estimate_from_range_basic(self):
         """Range-based estimation uses midpoint and computes tolerance."""
@@ -74,9 +149,29 @@ class TestCalibrationMap:
             self.cal.estimate_from_range((0.40, 1.0))  # upper must be < 1
 
     def test_calibration_data_sorted_by_semester(self):
-        """Calibration data has entries for at least 1 semester."""
-        sem1 = [p for p in CALIBRATION_DATA if p.n_semesters == 1]
-        assert len(sem1) >= 5
+        """Every built-in horizon has the same measured base-rate grid."""
+        grids = [{p.dropout_base_rate for p in CALIBRATION_DATA if p.n_semesters == sem}
+                 for sem in (1, 2, 3, 4)]
+        assert len(grids[0]) >= 5
+        assert all(grid == grids[0] for grid in grids)
+
+    def test_builtin_curves_match_saved_measurements(self):
+        """Published means derive from complete seed runs and actual dropout counts."""
+        import json
+        from pathlib import Path
+
+        data = json.loads((Path(__file__).resolve().parents[1] /
+                           "docs/measurements/dropout-horizons.json").read_text())
+        for point in CALIBRATION_DATA:
+            runs = [r for r in data["runs"] if r["base_rate"] == point.dropout_base_rate]
+            assert sorted(r["seed"] for r in runs) == sorted(data["seeds"])
+            assert len(runs) == point.seed_count
+            assert data["n_students"] == point.n_students
+            dropped = sum(sum(s["dropped"] for s in r["semesters"][:point.n_semesters])
+                          for r in runs)
+            assert point.observed_dropout_rate == pytest.approx(
+                dropped / (point.n_students * point.seed_count)
+            )
 
     def test_custom_calibration_data(self):
         """CalibrationMap accepts custom calibration points."""

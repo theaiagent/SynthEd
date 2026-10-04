@@ -1,0 +1,3490 @@
+{
+  "git_revision": "7ebc22c7a8f2add702bd2da35794568c2d863e45",
+  "source_sha256": {
+    "scripts/measure_dropout_horizons.py": "36e0bfbb5b86ae34c1dc9ab1138d1be340d7c3c3599892ef07076e871b9337bf",
+    "synthed/__init__.py": "cda35960f44ff96bac62366b3383a94cae51c05a7f5389c2f777a164826f69bd",
+    "synthed/agents/__init__.py": "44202f18ebc2043784718263c74ed467859e2a224a4ed0bde469bac69e235bc6",
+    "synthed/agents/backstory_templates.py": "b7f67c4d54fb18048f95acc37fca80730b97329639f17440b783a94f0705b93b",
+    "synthed/agents/factory.py": "6f3a3435b805c8477ebf9a2daa4b39d3ffa0e90fd3275e7892460d2162a1217e",
+    "synthed/agents/name_pools.py": "5661f2ce6ee5bc11b73082f6c26ffc387ed3e0166aee2c118b41fa673f86fc7f",
+    "synthed/agents/persona.py": "cde3017fa72fd07b744a2305b84b0958b7046e80a7f563e3d540aacfa2128d93",
+    "synthed/analysis/__init__.py": "1b69748f0a61a1467a8ba30b202961b5171a80aa91056d6acd78b001941edf6e",
+    "synthed/analysis/_sim_runner.py": "af9438e1ec9e764b726fcf5f899ccdc66520f533e5bd44a9f3c61fee13ae8c4d",
+    "synthed/analysis/auto_bounds.py": "e88f4c05da16fcba90edea51a5be1b49b2b9631bfa75e5d70c69297785d25f1d",
+    "synthed/analysis/nsga2_calibrator.py": "78ecf7822fcd1c0e1700ee75926a1ee90b565b2c8e9c8dd0b542ee5d5f7674a8",
+    "synthed/analysis/oulad_targets.py": "7fe5e92bd1cee1ce66cd7e9b2ea03489a5fdeadf4e47517312764eb46fd1b826",
+    "synthed/analysis/oulad_validator.py": "0ec4a507d62e1ca10a6c723aaa73e7e220ca2519adf01730c35b27727ddac373",
+    "synthed/analysis/pareto_utils.py": "584d09e92a89428f6aa0bdb22cbbb7716d2800b06c4cece65958503af3edfd6c",
+    "synthed/analysis/sensitivity.py": "20ffe4a310db61e2a1d26dc7c07294755b41687cc7597437b91a429beb0bf358",
+    "synthed/analysis/sobol_sensitivity.py": "9014d3f025e3ba9a0061d79cebae8167327d5ff2d4b70ad15c6f94ee86e2e292",
+    "synthed/analysis/trait_calibrator.py": "7255c2327cc57ad38e971f399d911769f191719f2b13fe787bc894bf4194d645",
+    "synthed/benchmarks/__init__.py": "b437477ec82a242135541fd26d7785776a391344c7f7d9491f80d08cbd965809",
+    "synthed/benchmarks/generator.py": "21f2e6be7a3ab8cc8e37d4eaa5e72b9349424bb7538ffefec1ae4ddc071bca1a",
+    "synthed/benchmarks/profiles.py": "5d4bfe4191f8e7a3fa96578edd3c6fee8c7ff75ad60e2c32e4887a30591b7780",
+    "synthed/calibration.py": "096f9a91331ed7f5a1e13406d5a9152875c0d32b21ce415a1e6bfd6ea4ca3d33",
+    "synthed/dashboard/__init__.py": "5779b678a698c2dcabaf79752e24615709d05e8fa59e118b496dae893c667fa2",
+    "synthed/dashboard/__main__.py": "e7ad56b53c107c6277b2d17fbbe4303467c9034b35e1dc2cf0c5be7b64f8dde2",
+    "synthed/dashboard/app.py": "34ecd8ce688ea06503d3253446ff57c30c0fbdf10c9e9f38edb7af0253847464",
+    "synthed/dashboard/charts.py": "28fcd20b1f74078aca29349bc671608bf1aa6c7d38e2db43e05573e02e7e63d9",
+    "synthed/dashboard/components/__init__.py": "69073eb61482686bcc103b68258b6777fddc89321d246ab0cbe29536bd191a93",
+    "synthed/dashboard/components/calibrate_panel.py": "1b7364d04534c6a9a5a3f5eada788132d10e042291d9246dcb2e441a6b4c9baf",
+    "synthed/dashboard/components/distribution_editor.py": "5f10bb87b49ce080ca6e6ad1860d8f55752def3da5890bc6ef4472a384168555",
+    "synthed/dashboard/components/param_panel.py": "95f544423a5ef8936827ed405ee8f1474ab5fc8cc62bb70e2f6e1b81044b1ab1",
+    "synthed/dashboard/components/results_panel.py": "e616d3df3de7b17284b1848bfc11eb092e92ecd3ceace6b8784a9dfd3c428f69",
+    "synthed/dashboard/components/warnings.py": "432d5e12ae42f537f488219f83d0258bb0e114e8bdfc452638aa770481af2f7c",
+    "synthed/dashboard/config_bridge.py": "c18e2fac5f1c034600f5827d7e89f171f780a71fe2bea8b49ad1234dcb3b1a59",
+    "synthed/dashboard/theme.py": "cc32698fac131b491fe4d2495c84aa4382684f3e61140b617a009262ebd9774d",
+    "synthed/data_output/__init__.py": "54c1ab35d112f06393807f99b7c2c5528229832ce59408f236a819d66f41eb16",
+    "synthed/data_output/exporter.py": "1fbaa459dcc8229ca447d2c3c2888513a7927f41361cd3720a09b2340201ca75",
+    "synthed/data_output/oulad_exporter.py": "4b3e50b83bbb498233547dce7577dc5d690d4be512f86f448443bb8cca7f3119",
+    "synthed/data_output/oulad_mappings.py": "158adc5195afb7b5ff8e23976214e9f773699b239d501249daf4825c41f8a670",
+    "synthed/doc_facts.py": "def742220502d7c60f65124f0dad7e441456c725152a2f2827b04ba7ef75ae49",
+    "synthed/pipeline.py": "d8024815c729e117114a322544dffac5f6af2be123833ddeb540c97aeed33f33",
+    "synthed/pipeline_config.py": "aa9be4c094518ef116cca1f7c35dc38b214df891000593add2d6f1754a779e72",
+    "synthed/report/__init__.py": "385b859294c9c9c3fcf1a10fe9ac5bc8d0166db8626db83ec1935bdaa8a10731",
+    "synthed/report/charts.py": "c134998ad88f72909cad5299c0465e49dd7264849bcca91dd311083065ff005f",
+    "synthed/report/generator.py": "3b9082016d78021bbdbebecc1ddb5eb3af36975fc2b79a8fbcb0096d2c2956e8",
+    "synthed/report/translations.py": "feefd9a8820f6cd5c02b652b017e097e904b46944aa18c49bd59dacc2a2ca29a",
+    "synthed/simulation/__init__.py": "b3d5937464858a3ab5089b9fef7773b8fcb12fffa5feeceb12726eeb855d634a",
+    "synthed/simulation/engine.py": "6bb40bc0bf4eabb3711e786f794203ab77622d84fe3339466d7cfeab256b67a0",
+    "synthed/simulation/engine_config.py": "7eda1e1432b0b0bfaa57740dacd325006a7d076380f012f0e98cbc80c318697c",
+    "synthed/simulation/environment.py": "f18f2cf77d37d8935f6f8acd569951cdc6644584bb04c644a8ca36bbd09457ae",
+    "synthed/simulation/grading.py": "94f1be7e2f238b587ed623bb054418b1b1918845480c3bef91f3ac3dc6ee970c",
+    "synthed/simulation/institutional.py": "0c550c7995514f3a9723e138a05ea7f3f3e51f89c2ff001b9e2a0118e8821d65",
+    "synthed/simulation/semester.py": "439d566f3c053c2efb2e12ffdbd03b49deee218943fc77b66e09db0abbade1db",
+    "synthed/simulation/social_network.py": "e502759edd9fb0b62745258ef0a3798cd0222e02b60e9dbd1c5438a94d4ef81e",
+    "synthed/simulation/state.py": "3e59b0fe266e8b55948667a5ea7d59a65c7b2d6551f42ab39e3f2f4c8df5af9f",
+    "synthed/simulation/statistics.py": "8b064d0adc3f0fc5dfd53427b3fd4bab3f8b30df4791c1cd48b9fc51a87cab0a",
+    "synthed/simulation/theories/__init__.py": "13bbea0f60305ded4374a653b7af6d3fab882a5c7c9b6daf7266e80df2a0293b",
+    "synthed/simulation/theories/academic_exhaustion.py": "e842b078acb6b0ecebc0baf8ccd6421f18d0706b5f897e62440b02cf42acddc1",
+    "synthed/simulation/theories/baulke.py": "040cbd9698996e3450cc0b463d98fb8bff091fc9a5d84afd1d0abff9680c5004",
+    "synthed/simulation/theories/bean_metzner.py": "1cb65ea7544968f8310e85f2f77550179914478cfe95f6305ed0cf923cee6335",
+    "synthed/simulation/theories/epstein_axtell.py": "c424a33d9ab142431022676c736e2aca39e180df121d8ea458c9b5e19e1eeb07",
+    "synthed/simulation/theories/garrison_coi.py": "2ca303a4c419ad13387087097914bac6658ffb7f8bb21753de75b40d77c7a98f",
+    "synthed/simulation/theories/kember.py": "4682f48534e17bf70eb11f426a1923bb65ffa078e85fb29fd0c34147a1535929",
+    "synthed/simulation/theories/moore_td.py": "666b352f752325c077510dd3f6f5387095c964995e22e428115a4c8db32f2bdd",
+    "synthed/simulation/theories/positive_events.py": "981885d0ca06896a7171948a222e4653b250d2bc015c5b22bce8560a9a84c8ee",
+    "synthed/simulation/theories/protocol.py": "c529d47798e0ff9fdaf1da18ec16948c7d597958900ce0443dcb03b628e05f0b",
+    "synthed/simulation/theories/rovai.py": "4e3859c73ac324751501486f4ae782f0169b315dd1934719dbaa18ac7f28d4b0",
+    "synthed/simulation/theories/sdt_motivation.py": "269f004d036680911ecd42119f40572bc49e53585b1514646341e2ee6c668a94",
+    "synthed/simulation/theories/tinto.py": "d4bc59cd4b9196246b41c97c8229abbd90d952609434014112688be34d8bcd67",
+    "synthed/simulation/theories/unavoidable_withdrawal.py": "fc26ad52c622a91d7c4210f179c84bf40dc063593d9e22704da5532d783f2c09",
+    "synthed/utils/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "synthed/utils/llm.py": "d486b4bd516582c0567865ab685b890340306a43bc39f0ee7ccc3f5af83dbd54",
+    "synthed/utils/llm_memory.py": "54d842eb1e0ed396b2354ec6662654431b1903d601bad5fb060903a942fc3e44",
+    "synthed/utils/log_config.py": "3ae7926e4eda2ef075e6badaa6f99bd22cdbdbbc33d2deef7a7d3b21f3bac450",
+    "synthed/utils/validation.py": "8f95493a624de878e4393b61d10ef8b9422cc89c956dbbde57dd713010c20542",
+    "synthed/validation/__init__.py": "c534293487b10e034056739a8cf5ddecd4d7dd3ff345d6675972b830d5aeac10",
+    "synthed/validation/types.py": "4eea434cbffb50946931a2b8b6fc2c6d41a4dabc8f7670e87f36a51e80e593da",
+    "synthed/validation/validator.py": "db198d6c623f3d1a003500435cc95f7990843cf8b704fb9aa8bea1da440945b1"
+  },
+  "python": "3.12.14",
+  "dependencies": {
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "uuid-utils": "0.17.1"
+  },
+  "n_students": 500,
+  "seeds": [
+    42,
+    43,
+    44,
+    45,
+    46
+  ],
+  "base_rates": [
+    0.01,
+    0.025,
+    0.05,
+    0.075,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.46,
+    0.5,
+    0.6,
+    0.7,
+    0.8,
+    0.9,
+    0.95
+  ],
+  "config": {
+    "persona_config": {
+      "age_range": [
+        18,
+        55
+      ],
+      "gender_distribution": {
+        "male": 0.55,
+        "female": 0.45
+      },
+      "employment_rate": 0.69,
+      "has_family_rate": 0.52,
+      "financial_stress_mean": 0.55,
+      "prior_gpa_mean": 2.3,
+      "prior_gpa_std": 0.8,
+      "digital_literacy_mean": 0.5,
+      "digital_literacy_std": 0.22,
+      "self_regulation_mean": 0.42,
+      "self_regulation_std": 0.2,
+      "motivation_levels": {
+        "intrinsic": 0.25,
+        "extrinsic": 0.45,
+        "amotivation": 0.3
+      },
+      "socioeconomic_distribution": {
+        "low": 0.3,
+        "middle": 0.5,
+        "high": 0.2
+      },
+      "prior_education_distribution": {
+        "high_school": 0.5,
+        "associate": 0.3,
+        "bachelor": 0.2
+      },
+      "device_distribution": {
+        "laptop": 0.4,
+        "desktop": 0.15,
+        "mobile": 0.35,
+        "tablet": 0.1
+      },
+      "goal_orientation_distribution": {
+        "mastery": 0.35,
+        "performance": 0.4,
+        "avoidance": 0.25
+      },
+      "learning_style_distribution": {
+        "visual": 0.35,
+        "auditory": 0.2,
+        "reading": 0.3,
+        "kinesthetic": 0.15
+      },
+      "dropout_base_rate": 0.46,
+      "unavoidable_withdrawal_rate": 0.003,
+      "disability_rate": 0.1,
+      "generate_names": false
+    },
+    "environment": {
+      "semester_name": "Fall 2026",
+      "total_weeks": 14,
+      "courses": [
+        {
+          "id": "CS101",
+          "name": "Introduction to Computer Science",
+          "difficulty": 0.4,
+          "weekly_workload_hours": 5,
+          "has_forum": true,
+          "has_live_sessions": true,
+          "num_assignments": 4,
+          "midterm_week": 7,
+          "final_week": 14,
+          "assignment_weeks": [
+            3,
+            6,
+            10,
+            13
+          ],
+          "structure_level": 0.6,
+          "dialogue_frequency": 0.5,
+          "instructor_responsiveness": 0.6
+        },
+        {
+          "id": "MATH201",
+          "name": "Statistics for Social Sciences",
+          "difficulty": 0.6,
+          "weekly_workload_hours": 6,
+          "has_forum": true,
+          "has_live_sessions": false,
+          "num_assignments": 5,
+          "midterm_week": 7,
+          "final_week": 14,
+          "assignment_weeks": [
+            2,
+            5,
+            8,
+            11,
+            13
+          ],
+          "structure_level": 0.7,
+          "dialogue_frequency": 0.2,
+          "instructor_responsiveness": 0.4
+        },
+        {
+          "id": "EDU301",
+          "name": "Foundations of Distance Education",
+          "difficulty": 0.3,
+          "weekly_workload_hours": 4,
+          "has_forum": true,
+          "has_live_sessions": true,
+          "num_assignments": 3,
+          "midterm_week": 7,
+          "final_week": 14,
+          "assignment_weeks": [
+            4,
+            9,
+            13
+          ],
+          "structure_level": 0.3,
+          "dialogue_frequency": 0.6,
+          "instructor_responsiveness": 0.7
+        },
+        {
+          "id": "PSY202",
+          "name": "Educational Psychology",
+          "difficulty": 0.5,
+          "weekly_workload_hours": 5,
+          "has_forum": true,
+          "has_live_sessions": false,
+          "num_assignments": 4,
+          "midterm_week": 7,
+          "final_week": 14,
+          "assignment_weeks": [
+            3,
+            6,
+            10,
+            13
+          ],
+          "structure_level": 0.5,
+          "dialogue_frequency": 0.3,
+          "instructor_responsiveness": 0.5
+        }
+      ],
+      "scheduled_events": {
+        "1": "semester_start",
+        "3": "first_assignment_deadline",
+        "7": "midterm_exams",
+        "10": "registration_withdrawal_deadline",
+        "13": "final_assignment_deadline",
+        "14": "final_exams"
+      },
+      "positive_events": {
+        "1": "orientation_welcome",
+        "3": "financial_aid_disbursement",
+        "7": "semester_break",
+        "10": "peer_study_group"
+      }
+    },
+    "institutional_config": {
+      "instructional_design_quality": 0.5,
+      "teaching_presence_baseline": 0.5,
+      "support_services_quality": 0.5,
+      "technology_quality": 0.5,
+      "curriculum_flexibility": 0.5
+    },
+    "grading_config": {
+      "scale": 100,
+      "assessment_mode": "mixed",
+      "midterm_weight": 0.4,
+      "final_weight": 0.6,
+      "midterm_components": {
+        "exam": 0.5,
+        "assignment": 0.3,
+        "forum": 0.2
+      },
+      "distribution": "beta",
+      "dist_alpha": 5.0,
+      "dist_beta": 3.0,
+      "grading_method": "absolute",
+      "grade_floor": 0.45,
+      "pass_threshold": 0.64,
+      "distinction_threshold": 0.73,
+      "dual_hurdle": false,
+      "component_pass_thresholds": {},
+      "exam_eligibility_threshold": null,
+      "late_penalty": 0.05,
+      "noise_std": 0.05,
+      "missing_policy": "zero"
+    },
+    "engine_config": {
+      "_LOGIN_ENG_MULTIPLIER": 5.0,
+      "_LOGIN_LITERACY_FLOOR": 0.5,
+      "_LOGIN_LITERACY_SCALE": 0.5,
+      "_LOGIN_DURATION_MEAN_FACTOR": 25.0,
+      "_LOGIN_DURATION_STD": 12.0,
+      "_LOGIN_DURATION_MIN": 5.0,
+      "_FORUM_READ_ENG_FACTOR": 0.7,
+      "_FORUM_READ_LITERACY_FLOOR": 0.5,
+      "_FORUM_READ_LITERACY_SCALE": 0.5,
+      "_FORUM_READ_EXP_MEAN": 10.0,
+      "_FORUM_POST_ENG_FACTOR": 0.25,
+      "_FORUM_POST_EXTRA_FLOOR": 0.4,
+      "_FORUM_POST_EXTRA_WEIGHT": 0.3,
+      "_FORUM_POST_SOCIAL_WEIGHT": 0.3,
+      "_FORUM_POST_DURATION_MEAN": 15.0,
+      "_FORUM_POST_DURATION_STD": 5.0,
+      "_FORUM_POST_LENGTH_MEAN": 80.0,
+      "_FORUM_POST_LENGTH_STD": 30.0,
+      "_ASSIGN_SUBMIT_REG_WEIGHT": 0.3,
+      "_ASSIGN_SUBMIT_TIME_WEIGHT": 0.2,
+      "_ASSIGN_SUBMIT_CONSC_WEIGHT": 0.2,
+      "_ASSIGN_SUBMIT_BASE": 0.3,
+      "_ASSIGN_GPA_WEIGHT": 0.25,
+      "_ASSIGN_ENG_WEIGHT": 0.25,
+      "_ASSIGN_EFFICACY_WEIGHT": 0.2,
+      "_ASSIGN_READING_WEIGHT": 0.15,
+      "_ASSIGN_NOISE_WEIGHT": 0.15,
+      "_ASSIGN_NOISE_STD": 0.15,
+      "_GPA_SCALE": 4.0,
+      "_MISSED_IMPACT": -0.3,
+      "_LIVE_ENG_FACTOR": 0.5,
+      "_LIVE_EMPLOYED_PENALTY": 0.4,
+      "_LIVE_DURATION_MEAN": 55.0,
+      "_LIVE_DURATION_STD": 10.0,
+      "_EXAM_TAKE_HIGH_ENG_PROB": 0.95,
+      "_EXAM_TAKE_ENG_THRESHOLD": 0.3,
+      "_EXAM_TAKE_LOW_MULTIPLIER": 2.5,
+      "_EXAM_GPA_WEIGHT": 0.2,
+      "_EXAM_ENG_WEIGHT": 0.2,
+      "_EXAM_EFFICACY_WEIGHT": 0.2,
+      "_EXAM_REG_WEIGHT": 0.15,
+      "_EXAM_READING_WEIGHT": 0.1,
+      "_EXAM_NOISE_WEIGHT": 0.15,
+      "_EXAM_NOISE_STD": 0.18,
+      "_DECAY_DAMPING_FACTOR": 0.5,
+      "_TINTO_ACADEMIC_WEIGHT": 0.06,
+      "_TINTO_SOCIAL_WEIGHT": 0.02,
+      "_TINTO_DECAY_BASE": 0.05,
+      "_MOTIVATION_INTRINSIC_BOOST": 0.02,
+      "_MOTIVATION_AMOTIVATION_PENALTY": 0.025,
+      "_TD_EFFECT_FACTOR": 0.03,
+      "_COI_SOCIAL_WEIGHT": 0.01,
+      "_COI_COGNITIVE_WEIGHT": 0.02,
+      "_COI_TEACHING_WEIGHT": 0.01,
+      "_COI_BASELINE_OFFSET": 0.02,
+      "_HIGH_QUALITY_THRESHOLD": 0.7,
+      "_HIGH_QUALITY_BOOST": 0.025,
+      "_LOW_QUALITY_THRESHOLD": 0.3,
+      "_LOW_QUALITY_PENALTY": 0.035,
+      "_MISSED_STREAK_PENALTY": 0.04,
+      "_MISSED_STREAK_CAP": 3,
+      "_NEUROTICISM_EXAM_FACTOR": 0.04,
+      "_CB_FEEDBACK_FACTOR": 0.02,
+      "_ENGAGEMENT_CLIP_LO": 0.01,
+      "_ENGAGEMENT_CLIP_HI": 0.99,
+      "_INST_QUALITY_SCALE_LOW": 0.7,
+      "_INST_QUALITY_SCALE_HIGH": 1.3,
+      "_NETWORK_DECAY_RATE": 0.02,
+      "_COI_DEGREE_FACTOR": 0.005,
+      "_COI_DEGREE_CAP": 0.03
+    },
+    "reference_stats": {
+      "age_mean": 28.0,
+      "age_std": 8.0,
+      "gender_distribution": {
+        "male": 0.55,
+        "female": 0.45
+      },
+      "employment_rate": 0.69,
+      "gpa_mean": 3.03,
+      "gpa_std": 0.75,
+      "dropout_rate": 0.312,
+      "dropout_range": [
+        0.2,
+        0.45
+      ],
+      "pass_rate": null,
+      "distinction_rate": null,
+      "avg_weekly_logins": null,
+      "avg_forum_posts_per_student": null
+    },
+    "seed": 42,
+    "n_semesters": 4,
+    "carry_over_config": null,
+    "target_dropout_range": null,
+    "output_dir": null,
+    "export_oulad": false,
+    "llm_model": "gpt-4o-mini",
+    "llm_base_url": null,
+    "use_llm": false,
+    "cost_threshold": 1.0
+  },
+  "resolved_carry_over": {
+    "engagement_recovery": 0.05,
+    "engagement_recovery_cap": 0.8,
+    "social_integration_decay": 0.7,
+    "network_link_decay": 0.3,
+    "dropout_phase_regression": 1,
+    "exhaustion_recovery": 0.6,
+    "cost_benefit_recovery": 0.03,
+    "prior_gpa_blend_alpha": 0.6,
+    "coping_retention": 0.7
+  },
+  "runs": [
+    {
+      "base_rate": 0.01,
+      "seed": 42,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 11,
+          "conditional_dropout_rate": 0.022,
+          "cumulative_dropout_rate": 0.022
+        },
+        {
+          "semester": 2,
+          "at_risk": 489,
+          "dropped": 36,
+          "conditional_dropout_rate": 0.0736196319018405,
+          "cumulative_dropout_rate": 0.094
+        },
+        {
+          "semester": 3,
+          "at_risk": 453,
+          "dropped": 52,
+          "conditional_dropout_rate": 0.11479028697571744,
+          "cumulative_dropout_rate": 0.198
+        },
+        {
+          "semester": 4,
+          "at_risk": 401,
+          "dropped": 47,
+          "conditional_dropout_rate": 0.1172069825436409,
+          "cumulative_dropout_rate": 0.292
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 18,
+        "failed": 4,
+        "pass_rate": 0.8181818181818182,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.01,
+      "seed": 43,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 18,
+          "conditional_dropout_rate": 0.036,
+          "cumulative_dropout_rate": 0.036
+        },
+        {
+          "semester": 2,
+          "at_risk": 482,
+          "dropped": 36,
+          "conditional_dropout_rate": 0.07468879668049792,
+          "cumulative_dropout_rate": 0.108
+        },
+        {
+          "semester": 3,
+          "at_risk": 446,
+          "dropped": 43,
+          "conditional_dropout_rate": 0.09641255605381166,
+          "cumulative_dropout_rate": 0.194
+        },
+        {
+          "semester": 4,
+          "at_risk": 403,
+          "dropped": 50,
+          "conditional_dropout_rate": 0.12406947890818859,
+          "cumulative_dropout_rate": 0.294
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 18,
+        "failed": 4,
+        "pass_rate": 0.8181818181818182,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.01,
+      "seed": 44,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 14,
+          "conditional_dropout_rate": 0.028,
+          "cumulative_dropout_rate": 0.028
+        },
+        {
+          "semester": 2,
+          "at_risk": 486,
+          "dropped": 42,
+          "conditional_dropout_rate": 0.08641975308641975,
+          "cumulative_dropout_rate": 0.112
+        },
+        {
+          "semester": 3,
+          "at_risk": 444,
+          "dropped": 51,
+          "conditional_dropout_rate": 0.11486486486486487,
+          "cumulative_dropout_rate": 0.214
+        },
+        {
+          "semester": 4,
+          "at_risk": 393,
+          "dropped": 51,
+          "conditional_dropout_rate": 0.1297709923664122,
+          "cumulative_dropout_rate": 0.316
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 18,
+        "failed": 4,
+        "pass_rate": 0.8181818181818182,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.01,
+      "seed": 45,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 16,
+          "conditional_dropout_rate": 0.032,
+          "cumulative_dropout_rate": 0.032
+        },
+        {
+          "semester": 2,
+          "at_risk": 484,
+          "dropped": 49,
+          "conditional_dropout_rate": 0.1012396694214876,
+          "cumulative_dropout_rate": 0.13
+        },
+        {
+          "semester": 3,
+          "at_risk": 435,
+          "dropped": 58,
+          "conditional_dropout_rate": 0.13333333333333333,
+          "cumulative_dropout_rate": 0.246
+        },
+        {
+          "semester": 4,
+          "at_risk": 377,
+          "dropped": 51,
+          "conditional_dropout_rate": 0.13527851458885942,
+          "cumulative_dropout_rate": 0.348
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 18,
+        "failed": 4,
+        "pass_rate": 0.8181818181818182,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.01,
+      "seed": 46,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 19,
+          "conditional_dropout_rate": 0.038,
+          "cumulative_dropout_rate": 0.038
+        },
+        {
+          "semester": 2,
+          "at_risk": 481,
+          "dropped": 35,
+          "conditional_dropout_rate": 0.07276507276507277,
+          "cumulative_dropout_rate": 0.108
+        },
+        {
+          "semester": 3,
+          "at_risk": 446,
+          "dropped": 53,
+          "conditional_dropout_rate": 0.11883408071748879,
+          "cumulative_dropout_rate": 0.214
+        },
+        {
+          "semester": 4,
+          "at_risk": 393,
+          "dropped": 56,
+          "conditional_dropout_rate": 0.14249363867684478,
+          "cumulative_dropout_rate": 0.326
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 18,
+        "failed": 4,
+        "pass_rate": 0.8181818181818182,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.025,
+      "seed": 42,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 13,
+          "conditional_dropout_rate": 0.026,
+          "cumulative_dropout_rate": 0.026
+        },
+        {
+          "semester": 2,
+          "at_risk": 487,
+          "dropped": 44,
+          "conditional_dropout_rate": 0.09034907597535935,
+          "cumulative_dropout_rate": 0.114
+        },
+        {
+          "semester": 3,
+          "at_risk": 443,
+          "dropped": 71,
+          "conditional_dropout_rate": 0.16027088036117382,
+          "cumulative_dropout_rate": 0.256
+        },
+        {
+          "semester": 4,
+          "at_risk": 372,
+          "dropped": 69,
+          "conditional_dropout_rate": 0.18548387096774194,
+          "cumulative_dropout_rate": 0.394
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.025,
+      "seed": 43,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 23,
+          "conditional_dropout_rate": 0.046,
+          "cumulative_dropout_rate": 0.046
+        },
+        {
+          "semester": 2,
+          "at_risk": 477,
+          "dropped": 39,
+          "conditional_dropout_rate": 0.08176100628930817,
+          "cumulative_dropout_rate": 0.124
+        },
+        {
+          "semester": 3,
+          "at_risk": 438,
+          "dropped": 68,
+          "conditional_dropout_rate": 0.1552511415525114,
+          "cumulative_dropout_rate": 0.26
+        },
+        {
+          "semester": 4,
+          "at_risk": 370,
+          "dropped": 73,
+          "conditional_dropout_rate": 0.1972972972972973,
+          "cumulative_dropout_rate": 0.406
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 19,
+        "failed": 3,
+        "pass_rate": 0.8636363636363636,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.025,
+      "seed": 44,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 23,
+          "conditional_dropout_rate": 0.046,
+          "cumulative_dropout_rate": 0.046
+        },
+        {
+          "semester": 2,
+          "at_risk": 477,
+          "dropped": 51,
+          "conditional_dropout_rate": 0.1069182389937107,
+          "cumulative_dropout_rate": 0.148
+        },
+        {
+          "semester": 3,
+          "at_risk": 426,
+          "dropped": 58,
+          "conditional_dropout_rate": 0.13615023474178403,
+          "cumulative_dropout_rate": 0.264
+        },
+        {
+          "semester": 4,
+          "at_risk": 368,
+          "dropped": 72,
+          "conditional_dropout_rate": 0.1956521739130435,
+          "cumulative_dropout_rate": 0.408
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 19,
+        "failed": 3,
+        "pass_rate": 0.8636363636363636,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.025,
+      "seed": 45,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 24,
+          "conditional_dropout_rate": 0.048,
+          "cumulative_dropout_rate": 0.048
+        },
+        {
+          "semester": 2,
+          "at_risk": 476,
+          "dropped": 56,
+          "conditional_dropout_rate": 0.11764705882352941,
+          "cumulative_dropout_rate": 0.16
+        },
+        {
+          "semester": 3,
+          "at_risk": 420,
+          "dropped": 70,
+          "conditional_dropout_rate": 0.16666666666666666,
+          "cumulative_dropout_rate": 0.3
+        },
+        {
+          "semester": 4,
+          "at_risk": 350,
+          "dropped": 69,
+          "conditional_dropout_rate": 0.19714285714285715,
+          "cumulative_dropout_rate": 0.438
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 18,
+        "failed": 4,
+        "pass_rate": 0.8181818181818182,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.025,
+      "seed": 46,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 21,
+          "conditional_dropout_rate": 0.042,
+          "cumulative_dropout_rate": 0.042
+        },
+        {
+          "semester": 2,
+          "at_risk": 479,
+          "dropped": 47,
+          "conditional_dropout_rate": 0.09812108559498957,
+          "cumulative_dropout_rate": 0.136
+        },
+        {
+          "semester": 3,
+          "at_risk": 432,
+          "dropped": 84,
+          "conditional_dropout_rate": 0.19444444444444445,
+          "cumulative_dropout_rate": 0.304
+        },
+        {
+          "semester": 4,
+          "at_risk": 348,
+          "dropped": 74,
+          "conditional_dropout_rate": 0.21264367816091953,
+          "cumulative_dropout_rate": 0.452
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.05,
+      "seed": 42,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 28,
+          "conditional_dropout_rate": 0.056,
+          "cumulative_dropout_rate": 0.056
+        },
+        {
+          "semester": 2,
+          "at_risk": 472,
+          "dropped": 91,
+          "conditional_dropout_rate": 0.19279661016949154,
+          "cumulative_dropout_rate": 0.238
+        },
+        {
+          "semester": 3,
+          "at_risk": 381,
+          "dropped": 93,
+          "conditional_dropout_rate": 0.2440944881889764,
+          "cumulative_dropout_rate": 0.424
+        },
+        {
+          "semester": 4,
+          "at_risk": 288,
+          "dropped": 70,
+          "conditional_dropout_rate": 0.24305555555555555,
+          "cumulative_dropout_rate": 0.564
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 16,
+        "failed": 6,
+        "pass_rate": 0.7272727272727273,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.05,
+      "seed": 43,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 33,
+          "conditional_dropout_rate": 0.066,
+          "cumulative_dropout_rate": 0.066
+        },
+        {
+          "semester": 2,
+          "at_risk": 467,
+          "dropped": 86,
+          "conditional_dropout_rate": 0.1841541755888651,
+          "cumulative_dropout_rate": 0.238
+        },
+        {
+          "semester": 3,
+          "at_risk": 381,
+          "dropped": 100,
+          "conditional_dropout_rate": 0.26246719160104987,
+          "cumulative_dropout_rate": 0.438
+        },
+        {
+          "semester": 4,
+          "at_risk": 281,
+          "dropped": 76,
+          "conditional_dropout_rate": 0.2704626334519573,
+          "cumulative_dropout_rate": 0.59
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.05,
+      "seed": 44,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 51,
+          "conditional_dropout_rate": 0.102,
+          "cumulative_dropout_rate": 0.102
+        },
+        {
+          "semester": 2,
+          "at_risk": 449,
+          "dropped": 70,
+          "conditional_dropout_rate": 0.155902004454343,
+          "cumulative_dropout_rate": 0.242
+        },
+        {
+          "semester": 3,
+          "at_risk": 379,
+          "dropped": 84,
+          "conditional_dropout_rate": 0.22163588390501318,
+          "cumulative_dropout_rate": 0.41
+        },
+        {
+          "semester": 4,
+          "at_risk": 295,
+          "dropped": 70,
+          "conditional_dropout_rate": 0.23728813559322035,
+          "cumulative_dropout_rate": 0.55
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 16,
+        "failed": 6,
+        "pass_rate": 0.7272727272727273,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.05,
+      "seed": 45,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 45,
+          "conditional_dropout_rate": 0.09,
+          "cumulative_dropout_rate": 0.09
+        },
+        {
+          "semester": 2,
+          "at_risk": 455,
+          "dropped": 101,
+          "conditional_dropout_rate": 0.22197802197802197,
+          "cumulative_dropout_rate": 0.292
+        },
+        {
+          "semester": 3,
+          "at_risk": 354,
+          "dropped": 90,
+          "conditional_dropout_rate": 0.2542372881355932,
+          "cumulative_dropout_rate": 0.472
+        },
+        {
+          "semester": 4,
+          "at_risk": 264,
+          "dropped": 76,
+          "conditional_dropout_rate": 0.2878787878787879,
+          "cumulative_dropout_rate": 0.624
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 16,
+        "failed": 6,
+        "pass_rate": 0.7272727272727273,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.05,
+      "seed": 46,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 43,
+          "conditional_dropout_rate": 0.086,
+          "cumulative_dropout_rate": 0.086
+        },
+        {
+          "semester": 2,
+          "at_risk": 457,
+          "dropped": 99,
+          "conditional_dropout_rate": 0.21663019693654267,
+          "cumulative_dropout_rate": 0.284
+        },
+        {
+          "semester": 3,
+          "at_risk": 358,
+          "dropped": 85,
+          "conditional_dropout_rate": 0.23743016759776536,
+          "cumulative_dropout_rate": 0.454
+        },
+        {
+          "semester": 4,
+          "at_risk": 273,
+          "dropped": 87,
+          "conditional_dropout_rate": 0.31868131868131866,
+          "cumulative_dropout_rate": 0.628
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.075,
+      "seed": 42,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 44,
+          "conditional_dropout_rate": 0.088,
+          "cumulative_dropout_rate": 0.088
+        },
+        {
+          "semester": 2,
+          "at_risk": 456,
+          "dropped": 100,
+          "conditional_dropout_rate": 0.21929824561403508,
+          "cumulative_dropout_rate": 0.288
+        },
+        {
+          "semester": 3,
+          "at_risk": 356,
+          "dropped": 110,
+          "conditional_dropout_rate": 0.3089887640449438,
+          "cumulative_dropout_rate": 0.508
+        },
+        {
+          "semester": 4,
+          "at_risk": 246,
+          "dropped": 80,
+          "conditional_dropout_rate": 0.3252032520325203,
+          "cumulative_dropout_rate": 0.668
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 16,
+        "failed": 6,
+        "pass_rate": 0.7272727272727273,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.075,
+      "seed": 43,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 51,
+          "conditional_dropout_rate": 0.102,
+          "cumulative_dropout_rate": 0.102
+        },
+        {
+          "semester": 2,
+          "at_risk": 449,
+          "dropped": 96,
+          "conditional_dropout_rate": 0.21380846325167038,
+          "cumulative_dropout_rate": 0.294
+        },
+        {
+          "semester": 3,
+          "at_risk": 353,
+          "dropped": 112,
+          "conditional_dropout_rate": 0.31728045325779036,
+          "cumulative_dropout_rate": 0.518
+        },
+        {
+          "semester": 4,
+          "at_risk": 241,
+          "dropped": 82,
+          "conditional_dropout_rate": 0.34024896265560167,
+          "cumulative_dropout_rate": 0.682
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.075,
+      "seed": 44,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 48,
+          "conditional_dropout_rate": 0.096,
+          "cumulative_dropout_rate": 0.096
+        },
+        {
+          "semester": 2,
+          "at_risk": 452,
+          "dropped": 107,
+          "conditional_dropout_rate": 0.23672566371681417,
+          "cumulative_dropout_rate": 0.31
+        },
+        {
+          "semester": 3,
+          "at_risk": 345,
+          "dropped": 105,
+          "conditional_dropout_rate": 0.30434782608695654,
+          "cumulative_dropout_rate": 0.52
+        },
+        {
+          "semester": 4,
+          "at_risk": 240,
+          "dropped": 89,
+          "conditional_dropout_rate": 0.37083333333333335,
+          "cumulative_dropout_rate": 0.698
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.075,
+      "seed": 45,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 65,
+          "conditional_dropout_rate": 0.13,
+          "cumulative_dropout_rate": 0.13
+        },
+        {
+          "semester": 2,
+          "at_risk": 435,
+          "dropped": 108,
+          "conditional_dropout_rate": 0.2482758620689655,
+          "cumulative_dropout_rate": 0.346
+        },
+        {
+          "semester": 3,
+          "at_risk": 327,
+          "dropped": 107,
+          "conditional_dropout_rate": 0.327217125382263,
+          "cumulative_dropout_rate": 0.56
+        },
+        {
+          "semester": 4,
+          "at_risk": 220,
+          "dropped": 78,
+          "conditional_dropout_rate": 0.35454545454545455,
+          "cumulative_dropout_rate": 0.716
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.075,
+      "seed": 46,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 46,
+          "conditional_dropout_rate": 0.092,
+          "cumulative_dropout_rate": 0.092
+        },
+        {
+          "semester": 2,
+          "at_risk": 454,
+          "dropped": 118,
+          "conditional_dropout_rate": 0.2599118942731278,
+          "cumulative_dropout_rate": 0.328
+        },
+        {
+          "semester": 3,
+          "at_risk": 336,
+          "dropped": 107,
+          "conditional_dropout_rate": 0.31845238095238093,
+          "cumulative_dropout_rate": 0.542
+        },
+        {
+          "semester": 4,
+          "at_risk": 229,
+          "dropped": 70,
+          "conditional_dropout_rate": 0.3056768558951965,
+          "cumulative_dropout_rate": 0.682
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 16,
+        "failed": 6,
+        "pass_rate": 0.7272727272727273,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.1,
+      "seed": 42,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 56,
+          "conditional_dropout_rate": 0.112,
+          "cumulative_dropout_rate": 0.112
+        },
+        {
+          "semester": 2,
+          "at_risk": 444,
+          "dropped": 131,
+          "conditional_dropout_rate": 0.29504504504504503,
+          "cumulative_dropout_rate": 0.374
+        },
+        {
+          "semester": 3,
+          "at_risk": 313,
+          "dropped": 97,
+          "conditional_dropout_rate": 0.30990415335463256,
+          "cumulative_dropout_rate": 0.568
+        },
+        {
+          "semester": 4,
+          "at_risk": 216,
+          "dropped": 93,
+          "conditional_dropout_rate": 0.4305555555555556,
+          "cumulative_dropout_rate": 0.754
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.1,
+      "seed": 43,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 68,
+          "conditional_dropout_rate": 0.136,
+          "cumulative_dropout_rate": 0.136
+        },
+        {
+          "semester": 2,
+          "at_risk": 432,
+          "dropped": 114,
+          "conditional_dropout_rate": 0.2638888888888889,
+          "cumulative_dropout_rate": 0.364
+        },
+        {
+          "semester": 3,
+          "at_risk": 318,
+          "dropped": 104,
+          "conditional_dropout_rate": 0.3270440251572327,
+          "cumulative_dropout_rate": 0.572
+        },
+        {
+          "semester": 4,
+          "at_risk": 214,
+          "dropped": 75,
+          "conditional_dropout_rate": 0.35046728971962615,
+          "cumulative_dropout_rate": 0.722
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.1,
+      "seed": 44,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 64,
+          "conditional_dropout_rate": 0.128,
+          "cumulative_dropout_rate": 0.128
+        },
+        {
+          "semester": 2,
+          "at_risk": 436,
+          "dropped": 117,
+          "conditional_dropout_rate": 0.268348623853211,
+          "cumulative_dropout_rate": 0.362
+        },
+        {
+          "semester": 3,
+          "at_risk": 319,
+          "dropped": 103,
+          "conditional_dropout_rate": 0.322884012539185,
+          "cumulative_dropout_rate": 0.568
+        },
+        {
+          "semester": 4,
+          "at_risk": 216,
+          "dropped": 79,
+          "conditional_dropout_rate": 0.36574074074074076,
+          "cumulative_dropout_rate": 0.726
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 16,
+        "failed": 6,
+        "pass_rate": 0.7272727272727273,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.1,
+      "seed": 45,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 76,
+          "conditional_dropout_rate": 0.152,
+          "cumulative_dropout_rate": 0.152
+        },
+        {
+          "semester": 2,
+          "at_risk": 424,
+          "dropped": 122,
+          "conditional_dropout_rate": 0.28773584905660377,
+          "cumulative_dropout_rate": 0.396
+        },
+        {
+          "semester": 3,
+          "at_risk": 302,
+          "dropped": 122,
+          "conditional_dropout_rate": 0.40397350993377484,
+          "cumulative_dropout_rate": 0.64
+        },
+        {
+          "semester": 4,
+          "at_risk": 180,
+          "dropped": 70,
+          "conditional_dropout_rate": 0.3888888888888889,
+          "cumulative_dropout_rate": 0.78
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.1,
+      "seed": 46,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 68,
+          "conditional_dropout_rate": 0.136,
+          "cumulative_dropout_rate": 0.136
+        },
+        {
+          "semester": 2,
+          "at_risk": 432,
+          "dropped": 122,
+          "conditional_dropout_rate": 0.2824074074074074,
+          "cumulative_dropout_rate": 0.38
+        },
+        {
+          "semester": 3,
+          "at_risk": 310,
+          "dropped": 117,
+          "conditional_dropout_rate": 0.3774193548387097,
+          "cumulative_dropout_rate": 0.614
+        },
+        {
+          "semester": 4,
+          "at_risk": 193,
+          "dropped": 87,
+          "conditional_dropout_rate": 0.45077720207253885,
+          "cumulative_dropout_rate": 0.788
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 15,
+        "failed": 7,
+        "pass_rate": 0.6818181818181818,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.2,
+      "seed": 42,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 97,
+          "conditional_dropout_rate": 0.194,
+          "cumulative_dropout_rate": 0.194
+        },
+        {
+          "semester": 2,
+          "at_risk": 403,
+          "dropped": 146,
+          "conditional_dropout_rate": 0.36228287841191065,
+          "cumulative_dropout_rate": 0.486
+        },
+        {
+          "semester": 3,
+          "at_risk": 257,
+          "dropped": 113,
+          "conditional_dropout_rate": 0.4396887159533074,
+          "cumulative_dropout_rate": 0.712
+        },
+        {
+          "semester": 4,
+          "at_risk": 144,
+          "dropped": 61,
+          "conditional_dropout_rate": 0.4236111111111111,
+          "cumulative_dropout_rate": 0.834
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.2,
+      "seed": 43,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 114,
+          "conditional_dropout_rate": 0.228,
+          "cumulative_dropout_rate": 0.228
+        },
+        {
+          "semester": 2,
+          "at_risk": 386,
+          "dropped": 137,
+          "conditional_dropout_rate": 0.3549222797927461,
+          "cumulative_dropout_rate": 0.502
+        },
+        {
+          "semester": 3,
+          "at_risk": 249,
+          "dropped": 99,
+          "conditional_dropout_rate": 0.39759036144578314,
+          "cumulative_dropout_rate": 0.7
+        },
+        {
+          "semester": 4,
+          "at_risk": 150,
+          "dropped": 58,
+          "conditional_dropout_rate": 0.38666666666666666,
+          "cumulative_dropout_rate": 0.816
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 16,
+        "failed": 6,
+        "pass_rate": 0.7272727272727273,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.2,
+      "seed": 44,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 110,
+          "conditional_dropout_rate": 0.22,
+          "cumulative_dropout_rate": 0.22
+        },
+        {
+          "semester": 2,
+          "at_risk": 390,
+          "dropped": 140,
+          "conditional_dropout_rate": 0.358974358974359,
+          "cumulative_dropout_rate": 0.5
+        },
+        {
+          "semester": 3,
+          "at_risk": 250,
+          "dropped": 92,
+          "conditional_dropout_rate": 0.368,
+          "cumulative_dropout_rate": 0.684
+        },
+        {
+          "semester": 4,
+          "at_risk": 158,
+          "dropped": 58,
+          "conditional_dropout_rate": 0.3670886075949367,
+          "cumulative_dropout_rate": 0.8
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.2,
+      "seed": 45,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 128,
+          "conditional_dropout_rate": 0.256,
+          "cumulative_dropout_rate": 0.256
+        },
+        {
+          "semester": 2,
+          "at_risk": 372,
+          "dropped": 137,
+          "conditional_dropout_rate": 0.3682795698924731,
+          "cumulative_dropout_rate": 0.53
+        },
+        {
+          "semester": 3,
+          "at_risk": 235,
+          "dropped": 99,
+          "conditional_dropout_rate": 0.42127659574468085,
+          "cumulative_dropout_rate": 0.728
+        },
+        {
+          "semester": 4,
+          "at_risk": 136,
+          "dropped": 78,
+          "conditional_dropout_rate": 0.5735294117647058,
+          "cumulative_dropout_rate": 0.884
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.2,
+      "seed": 46,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 125,
+          "conditional_dropout_rate": 0.25,
+          "cumulative_dropout_rate": 0.25
+        },
+        {
+          "semester": 2,
+          "at_risk": 375,
+          "dropped": 138,
+          "conditional_dropout_rate": 0.368,
+          "cumulative_dropout_rate": 0.526
+        },
+        {
+          "semester": 3,
+          "at_risk": 237,
+          "dropped": 98,
+          "conditional_dropout_rate": 0.41350210970464135,
+          "cumulative_dropout_rate": 0.722
+        },
+        {
+          "semester": 4,
+          "at_risk": 139,
+          "dropped": 69,
+          "conditional_dropout_rate": 0.49640287769784175,
+          "cumulative_dropout_rate": 0.86
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 16,
+        "failed": 6,
+        "pass_rate": 0.7272727272727273,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.3,
+      "seed": 42,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 130,
+          "conditional_dropout_rate": 0.26,
+          "cumulative_dropout_rate": 0.26
+        },
+        {
+          "semester": 2,
+          "at_risk": 370,
+          "dropped": 139,
+          "conditional_dropout_rate": 0.37567567567567567,
+          "cumulative_dropout_rate": 0.538
+        },
+        {
+          "semester": 3,
+          "at_risk": 231,
+          "dropped": 112,
+          "conditional_dropout_rate": 0.48484848484848486,
+          "cumulative_dropout_rate": 0.762
+        },
+        {
+          "semester": 4,
+          "at_risk": 119,
+          "dropped": 52,
+          "conditional_dropout_rate": 0.4369747899159664,
+          "cumulative_dropout_rate": 0.866
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.3,
+      "seed": 43,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 148,
+          "conditional_dropout_rate": 0.296,
+          "cumulative_dropout_rate": 0.296
+        },
+        {
+          "semester": 2,
+          "at_risk": 352,
+          "dropped": 139,
+          "conditional_dropout_rate": 0.39488636363636365,
+          "cumulative_dropout_rate": 0.574
+        },
+        {
+          "semester": 3,
+          "at_risk": 213,
+          "dropped": 84,
+          "conditional_dropout_rate": 0.39436619718309857,
+          "cumulative_dropout_rate": 0.742
+        },
+        {
+          "semester": 4,
+          "at_risk": 129,
+          "dropped": 49,
+          "conditional_dropout_rate": 0.3798449612403101,
+          "cumulative_dropout_rate": 0.84
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.3,
+      "seed": 44,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 134,
+          "conditional_dropout_rate": 0.268,
+          "cumulative_dropout_rate": 0.268
+        },
+        {
+          "semester": 2,
+          "at_risk": 366,
+          "dropped": 147,
+          "conditional_dropout_rate": 0.4016393442622951,
+          "cumulative_dropout_rate": 0.562
+        },
+        {
+          "semester": 3,
+          "at_risk": 219,
+          "dropped": 94,
+          "conditional_dropout_rate": 0.4292237442922374,
+          "cumulative_dropout_rate": 0.75
+        },
+        {
+          "semester": 4,
+          "at_risk": 125,
+          "dropped": 44,
+          "conditional_dropout_rate": 0.352,
+          "cumulative_dropout_rate": 0.838
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 16,
+        "failed": 6,
+        "pass_rate": 0.7272727272727273,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.3,
+      "seed": 45,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 164,
+          "conditional_dropout_rate": 0.328,
+          "cumulative_dropout_rate": 0.328
+        },
+        {
+          "semester": 2,
+          "at_risk": 336,
+          "dropped": 138,
+          "conditional_dropout_rate": 0.4107142857142857,
+          "cumulative_dropout_rate": 0.604
+        },
+        {
+          "semester": 3,
+          "at_risk": 198,
+          "dropped": 99,
+          "conditional_dropout_rate": 0.5,
+          "cumulative_dropout_rate": 0.802
+        },
+        {
+          "semester": 4,
+          "at_risk": 99,
+          "dropped": 47,
+          "conditional_dropout_rate": 0.47474747474747475,
+          "cumulative_dropout_rate": 0.896
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.3,
+      "seed": 46,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 152,
+          "conditional_dropout_rate": 0.304,
+          "cumulative_dropout_rate": 0.304
+        },
+        {
+          "semester": 2,
+          "at_risk": 348,
+          "dropped": 162,
+          "conditional_dropout_rate": 0.46551724137931033,
+          "cumulative_dropout_rate": 0.628
+        },
+        {
+          "semester": 3,
+          "at_risk": 186,
+          "dropped": 99,
+          "conditional_dropout_rate": 0.532258064516129,
+          "cumulative_dropout_rate": 0.826
+        },
+        {
+          "semester": 4,
+          "at_risk": 87,
+          "dropped": 40,
+          "conditional_dropout_rate": 0.45977011494252873,
+          "cumulative_dropout_rate": 0.906
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 16,
+        "failed": 6,
+        "pass_rate": 0.7272727272727273,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.4,
+      "seed": 42,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 147,
+          "conditional_dropout_rate": 0.294,
+          "cumulative_dropout_rate": 0.294
+        },
+        {
+          "semester": 2,
+          "at_risk": 353,
+          "dropped": 137,
+          "conditional_dropout_rate": 0.3881019830028329,
+          "cumulative_dropout_rate": 0.568
+        },
+        {
+          "semester": 3,
+          "at_risk": 216,
+          "dropped": 96,
+          "conditional_dropout_rate": 0.4444444444444444,
+          "cumulative_dropout_rate": 0.76
+        },
+        {
+          "semester": 4,
+          "at_risk": 120,
+          "dropped": 58,
+          "conditional_dropout_rate": 0.48333333333333334,
+          "cumulative_dropout_rate": 0.876
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.4,
+      "seed": 43,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 154,
+          "conditional_dropout_rate": 0.308,
+          "cumulative_dropout_rate": 0.308
+        },
+        {
+          "semester": 2,
+          "at_risk": 346,
+          "dropped": 137,
+          "conditional_dropout_rate": 0.3959537572254335,
+          "cumulative_dropout_rate": 0.582
+        },
+        {
+          "semester": 3,
+          "at_risk": 209,
+          "dropped": 98,
+          "conditional_dropout_rate": 0.4688995215311005,
+          "cumulative_dropout_rate": 0.778
+        },
+        {
+          "semester": 4,
+          "at_risk": 111,
+          "dropped": 43,
+          "conditional_dropout_rate": 0.38738738738738737,
+          "cumulative_dropout_rate": 0.864
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 16,
+        "failed": 6,
+        "pass_rate": 0.7272727272727273,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.4,
+      "seed": 44,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 161,
+          "conditional_dropout_rate": 0.322,
+          "cumulative_dropout_rate": 0.322
+        },
+        {
+          "semester": 2,
+          "at_risk": 339,
+          "dropped": 143,
+          "conditional_dropout_rate": 0.4218289085545723,
+          "cumulative_dropout_rate": 0.608
+        },
+        {
+          "semester": 3,
+          "at_risk": 196,
+          "dropped": 76,
+          "conditional_dropout_rate": 0.3877551020408163,
+          "cumulative_dropout_rate": 0.76
+        },
+        {
+          "semester": 4,
+          "at_risk": 120,
+          "dropped": 46,
+          "conditional_dropout_rate": 0.38333333333333336,
+          "cumulative_dropout_rate": 0.852
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 16,
+        "failed": 6,
+        "pass_rate": 0.7272727272727273,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.4,
+      "seed": 45,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 161,
+          "conditional_dropout_rate": 0.322,
+          "cumulative_dropout_rate": 0.322
+        },
+        {
+          "semester": 2,
+          "at_risk": 339,
+          "dropped": 164,
+          "conditional_dropout_rate": 0.4837758112094395,
+          "cumulative_dropout_rate": 0.65
+        },
+        {
+          "semester": 3,
+          "at_risk": 175,
+          "dropped": 81,
+          "conditional_dropout_rate": 0.46285714285714286,
+          "cumulative_dropout_rate": 0.812
+        },
+        {
+          "semester": 4,
+          "at_risk": 94,
+          "dropped": 47,
+          "conditional_dropout_rate": 0.5,
+          "cumulative_dropout_rate": 0.906
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.4,
+      "seed": 46,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 182,
+          "conditional_dropout_rate": 0.364,
+          "cumulative_dropout_rate": 0.364
+        },
+        {
+          "semester": 2,
+          "at_risk": 318,
+          "dropped": 152,
+          "conditional_dropout_rate": 0.4779874213836478,
+          "cumulative_dropout_rate": 0.668
+        },
+        {
+          "semester": 3,
+          "at_risk": 166,
+          "dropped": 79,
+          "conditional_dropout_rate": 0.4759036144578313,
+          "cumulative_dropout_rate": 0.826
+        },
+        {
+          "semester": 4,
+          "at_risk": 87,
+          "dropped": 39,
+          "conditional_dropout_rate": 0.4482758620689655,
+          "cumulative_dropout_rate": 0.904
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 16,
+        "failed": 6,
+        "pass_rate": 0.7272727272727273,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.46,
+      "seed": 42,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 162,
+          "conditional_dropout_rate": 0.324,
+          "cumulative_dropout_rate": 0.324
+        },
+        {
+          "semester": 2,
+          "at_risk": 338,
+          "dropped": 146,
+          "conditional_dropout_rate": 0.4319526627218935,
+          "cumulative_dropout_rate": 0.616
+        },
+        {
+          "semester": 3,
+          "at_risk": 192,
+          "dropped": 89,
+          "conditional_dropout_rate": 0.4635416666666667,
+          "cumulative_dropout_rate": 0.794
+        },
+        {
+          "semester": 4,
+          "at_risk": 103,
+          "dropped": 44,
+          "conditional_dropout_rate": 0.42718446601941745,
+          "cumulative_dropout_rate": 0.882
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.46,
+      "seed": 43,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 174,
+          "conditional_dropout_rate": 0.348,
+          "cumulative_dropout_rate": 0.348
+        },
+        {
+          "semester": 2,
+          "at_risk": 326,
+          "dropped": 130,
+          "conditional_dropout_rate": 0.3987730061349693,
+          "cumulative_dropout_rate": 0.608
+        },
+        {
+          "semester": 3,
+          "at_risk": 196,
+          "dropped": 87,
+          "conditional_dropout_rate": 0.44387755102040816,
+          "cumulative_dropout_rate": 0.782
+        },
+        {
+          "semester": 4,
+          "at_risk": 109,
+          "dropped": 44,
+          "conditional_dropout_rate": 0.4036697247706422,
+          "cumulative_dropout_rate": 0.87
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.46,
+      "seed": 44,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 168,
+          "conditional_dropout_rate": 0.336,
+          "cumulative_dropout_rate": 0.336
+        },
+        {
+          "semester": 2,
+          "at_risk": 332,
+          "dropped": 140,
+          "conditional_dropout_rate": 0.42168674698795183,
+          "cumulative_dropout_rate": 0.616
+        },
+        {
+          "semester": 3,
+          "at_risk": 192,
+          "dropped": 78,
+          "conditional_dropout_rate": 0.40625,
+          "cumulative_dropout_rate": 0.772
+        },
+        {
+          "semester": 4,
+          "at_risk": 114,
+          "dropped": 50,
+          "conditional_dropout_rate": 0.43859649122807015,
+          "cumulative_dropout_rate": 0.872
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.46,
+      "seed": 45,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 193,
+          "conditional_dropout_rate": 0.386,
+          "cumulative_dropout_rate": 0.386
+        },
+        {
+          "semester": 2,
+          "at_risk": 307,
+          "dropped": 142,
+          "conditional_dropout_rate": 0.46254071661237783,
+          "cumulative_dropout_rate": 0.67
+        },
+        {
+          "semester": 3,
+          "at_risk": 165,
+          "dropped": 79,
+          "conditional_dropout_rate": 0.47878787878787876,
+          "cumulative_dropout_rate": 0.828
+        },
+        {
+          "semester": 4,
+          "at_risk": 86,
+          "dropped": 38,
+          "conditional_dropout_rate": 0.4418604651162791,
+          "cumulative_dropout_rate": 0.904
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 16,
+        "failed": 6,
+        "pass_rate": 0.7272727272727273,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.46,
+      "seed": 46,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 193,
+          "conditional_dropout_rate": 0.386,
+          "cumulative_dropout_rate": 0.386
+        },
+        {
+          "semester": 2,
+          "at_risk": 307,
+          "dropped": 139,
+          "conditional_dropout_rate": 0.4527687296416938,
+          "cumulative_dropout_rate": 0.664
+        },
+        {
+          "semester": 3,
+          "at_risk": 168,
+          "dropped": 87,
+          "conditional_dropout_rate": 0.5178571428571429,
+          "cumulative_dropout_rate": 0.838
+        },
+        {
+          "semester": 4,
+          "at_risk": 81,
+          "dropped": 32,
+          "conditional_dropout_rate": 0.3950617283950617,
+          "cumulative_dropout_rate": 0.902
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 16,
+        "failed": 6,
+        "pass_rate": 0.7272727272727273,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.5,
+      "seed": 42,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 175,
+          "conditional_dropout_rate": 0.35,
+          "cumulative_dropout_rate": 0.35
+        },
+        {
+          "semester": 2,
+          "at_risk": 325,
+          "dropped": 136,
+          "conditional_dropout_rate": 0.41846153846153844,
+          "cumulative_dropout_rate": 0.622
+        },
+        {
+          "semester": 3,
+          "at_risk": 189,
+          "dropped": 95,
+          "conditional_dropout_rate": 0.5026455026455027,
+          "cumulative_dropout_rate": 0.812
+        },
+        {
+          "semester": 4,
+          "at_risk": 94,
+          "dropped": 42,
+          "conditional_dropout_rate": 0.44680851063829785,
+          "cumulative_dropout_rate": 0.896
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.5,
+      "seed": 43,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 172,
+          "conditional_dropout_rate": 0.344,
+          "cumulative_dropout_rate": 0.344
+        },
+        {
+          "semester": 2,
+          "at_risk": 328,
+          "dropped": 133,
+          "conditional_dropout_rate": 0.4054878048780488,
+          "cumulative_dropout_rate": 0.61
+        },
+        {
+          "semester": 3,
+          "at_risk": 195,
+          "dropped": 84,
+          "conditional_dropout_rate": 0.4307692307692308,
+          "cumulative_dropout_rate": 0.778
+        },
+        {
+          "semester": 4,
+          "at_risk": 111,
+          "dropped": 47,
+          "conditional_dropout_rate": 0.42342342342342343,
+          "cumulative_dropout_rate": 0.872
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.5,
+      "seed": 44,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 174,
+          "conditional_dropout_rate": 0.348,
+          "cumulative_dropout_rate": 0.348
+        },
+        {
+          "semester": 2,
+          "at_risk": 326,
+          "dropped": 138,
+          "conditional_dropout_rate": 0.4233128834355828,
+          "cumulative_dropout_rate": 0.624
+        },
+        {
+          "semester": 3,
+          "at_risk": 188,
+          "dropped": 85,
+          "conditional_dropout_rate": 0.4521276595744681,
+          "cumulative_dropout_rate": 0.794
+        },
+        {
+          "semester": 4,
+          "at_risk": 103,
+          "dropped": 39,
+          "conditional_dropout_rate": 0.3786407766990291,
+          "cumulative_dropout_rate": 0.872
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.5,
+      "seed": 45,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 206,
+          "conditional_dropout_rate": 0.412,
+          "cumulative_dropout_rate": 0.412
+        },
+        {
+          "semester": 2,
+          "at_risk": 294,
+          "dropped": 133,
+          "conditional_dropout_rate": 0.4523809523809524,
+          "cumulative_dropout_rate": 0.678
+        },
+        {
+          "semester": 3,
+          "at_risk": 161,
+          "dropped": 79,
+          "conditional_dropout_rate": 0.4906832298136646,
+          "cumulative_dropout_rate": 0.836
+        },
+        {
+          "semester": 4,
+          "at_risk": 82,
+          "dropped": 42,
+          "conditional_dropout_rate": 0.5121951219512195,
+          "cumulative_dropout_rate": 0.92
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.5,
+      "seed": 46,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 192,
+          "conditional_dropout_rate": 0.384,
+          "cumulative_dropout_rate": 0.384
+        },
+        {
+          "semester": 2,
+          "at_risk": 308,
+          "dropped": 148,
+          "conditional_dropout_rate": 0.4805194805194805,
+          "cumulative_dropout_rate": 0.68
+        },
+        {
+          "semester": 3,
+          "at_risk": 160,
+          "dropped": 88,
+          "conditional_dropout_rate": 0.55,
+          "cumulative_dropout_rate": 0.856
+        },
+        {
+          "semester": 4,
+          "at_risk": 72,
+          "dropped": 29,
+          "conditional_dropout_rate": 0.4027777777777778,
+          "cumulative_dropout_rate": 0.914
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 15,
+        "failed": 7,
+        "pass_rate": 0.6818181818181818,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.6,
+      "seed": 42,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 173,
+          "conditional_dropout_rate": 0.346,
+          "cumulative_dropout_rate": 0.346
+        },
+        {
+          "semester": 2,
+          "at_risk": 327,
+          "dropped": 153,
+          "conditional_dropout_rate": 0.46788990825688076,
+          "cumulative_dropout_rate": 0.652
+        },
+        {
+          "semester": 3,
+          "at_risk": 174,
+          "dropped": 82,
+          "conditional_dropout_rate": 0.47126436781609193,
+          "cumulative_dropout_rate": 0.816
+        },
+        {
+          "semester": 4,
+          "at_risk": 92,
+          "dropped": 38,
+          "conditional_dropout_rate": 0.41304347826086957,
+          "cumulative_dropout_rate": 0.892
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 16,
+        "failed": 6,
+        "pass_rate": 0.7272727272727273,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.6,
+      "seed": 43,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 178,
+          "conditional_dropout_rate": 0.356,
+          "cumulative_dropout_rate": 0.356
+        },
+        {
+          "semester": 2,
+          "at_risk": 322,
+          "dropped": 131,
+          "conditional_dropout_rate": 0.40683229813664595,
+          "cumulative_dropout_rate": 0.618
+        },
+        {
+          "semester": 3,
+          "at_risk": 191,
+          "dropped": 81,
+          "conditional_dropout_rate": 0.42408376963350786,
+          "cumulative_dropout_rate": 0.78
+        },
+        {
+          "semester": 4,
+          "at_risk": 110,
+          "dropped": 39,
+          "conditional_dropout_rate": 0.35454545454545455,
+          "cumulative_dropout_rate": 0.858
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 16,
+        "failed": 6,
+        "pass_rate": 0.7272727272727273,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.6,
+      "seed": 44,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 187,
+          "conditional_dropout_rate": 0.374,
+          "cumulative_dropout_rate": 0.374
+        },
+        {
+          "semester": 2,
+          "at_risk": 313,
+          "dropped": 126,
+          "conditional_dropout_rate": 0.402555910543131,
+          "cumulative_dropout_rate": 0.626
+        },
+        {
+          "semester": 3,
+          "at_risk": 187,
+          "dropped": 78,
+          "conditional_dropout_rate": 0.41711229946524064,
+          "cumulative_dropout_rate": 0.782
+        },
+        {
+          "semester": 4,
+          "at_risk": 109,
+          "dropped": 38,
+          "conditional_dropout_rate": 0.3486238532110092,
+          "cumulative_dropout_rate": 0.858
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.6,
+      "seed": 45,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 208,
+          "conditional_dropout_rate": 0.416,
+          "cumulative_dropout_rate": 0.416
+        },
+        {
+          "semester": 2,
+          "at_risk": 292,
+          "dropped": 139,
+          "conditional_dropout_rate": 0.476027397260274,
+          "cumulative_dropout_rate": 0.694
+        },
+        {
+          "semester": 3,
+          "at_risk": 153,
+          "dropped": 80,
+          "conditional_dropout_rate": 0.5228758169934641,
+          "cumulative_dropout_rate": 0.854
+        },
+        {
+          "semester": 4,
+          "at_risk": 73,
+          "dropped": 30,
+          "conditional_dropout_rate": 0.410958904109589,
+          "cumulative_dropout_rate": 0.914
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 16,
+        "failed": 6,
+        "pass_rate": 0.7272727272727273,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.6,
+      "seed": 46,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 203,
+          "conditional_dropout_rate": 0.406,
+          "cumulative_dropout_rate": 0.406
+        },
+        {
+          "semester": 2,
+          "at_risk": 297,
+          "dropped": 157,
+          "conditional_dropout_rate": 0.5286195286195287,
+          "cumulative_dropout_rate": 0.72
+        },
+        {
+          "semester": 3,
+          "at_risk": 140,
+          "dropped": 76,
+          "conditional_dropout_rate": 0.5428571428571428,
+          "cumulative_dropout_rate": 0.872
+        },
+        {
+          "semester": 4,
+          "at_risk": 64,
+          "dropped": 21,
+          "conditional_dropout_rate": 0.328125,
+          "cumulative_dropout_rate": 0.914
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 16,
+        "failed": 6,
+        "pass_rate": 0.7272727272727273,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.7,
+      "seed": 42,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 194,
+          "conditional_dropout_rate": 0.388,
+          "cumulative_dropout_rate": 0.388
+        },
+        {
+          "semester": 2,
+          "at_risk": 306,
+          "dropped": 144,
+          "conditional_dropout_rate": 0.47058823529411764,
+          "cumulative_dropout_rate": 0.676
+        },
+        {
+          "semester": 3,
+          "at_risk": 162,
+          "dropped": 77,
+          "conditional_dropout_rate": 0.47530864197530864,
+          "cumulative_dropout_rate": 0.83
+        },
+        {
+          "semester": 4,
+          "at_risk": 85,
+          "dropped": 38,
+          "conditional_dropout_rate": 0.4470588235294118,
+          "cumulative_dropout_rate": 0.906
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 16,
+        "failed": 6,
+        "pass_rate": 0.7272727272727273,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.7,
+      "seed": 43,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 189,
+          "conditional_dropout_rate": 0.378,
+          "cumulative_dropout_rate": 0.378
+        },
+        {
+          "semester": 2,
+          "at_risk": 311,
+          "dropped": 140,
+          "conditional_dropout_rate": 0.45016077170418006,
+          "cumulative_dropout_rate": 0.658
+        },
+        {
+          "semester": 3,
+          "at_risk": 171,
+          "dropped": 77,
+          "conditional_dropout_rate": 0.4502923976608187,
+          "cumulative_dropout_rate": 0.812
+        },
+        {
+          "semester": 4,
+          "at_risk": 94,
+          "dropped": 28,
+          "conditional_dropout_rate": 0.2978723404255319,
+          "cumulative_dropout_rate": 0.868
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 16,
+        "failed": 6,
+        "pass_rate": 0.7272727272727273,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.7,
+      "seed": 44,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 190,
+          "conditional_dropout_rate": 0.38,
+          "cumulative_dropout_rate": 0.38
+        },
+        {
+          "semester": 2,
+          "at_risk": 310,
+          "dropped": 133,
+          "conditional_dropout_rate": 0.4290322580645161,
+          "cumulative_dropout_rate": 0.646
+        },
+        {
+          "semester": 3,
+          "at_risk": 177,
+          "dropped": 87,
+          "conditional_dropout_rate": 0.4915254237288136,
+          "cumulative_dropout_rate": 0.82
+        },
+        {
+          "semester": 4,
+          "at_risk": 90,
+          "dropped": 31,
+          "conditional_dropout_rate": 0.34444444444444444,
+          "cumulative_dropout_rate": 0.882
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.7,
+      "seed": 45,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 220,
+          "conditional_dropout_rate": 0.44,
+          "cumulative_dropout_rate": 0.44
+        },
+        {
+          "semester": 2,
+          "at_risk": 280,
+          "dropped": 142,
+          "conditional_dropout_rate": 0.5071428571428571,
+          "cumulative_dropout_rate": 0.724
+        },
+        {
+          "semester": 3,
+          "at_risk": 138,
+          "dropped": 72,
+          "conditional_dropout_rate": 0.5217391304347826,
+          "cumulative_dropout_rate": 0.868
+        },
+        {
+          "semester": 4,
+          "at_risk": 66,
+          "dropped": 24,
+          "conditional_dropout_rate": 0.36363636363636365,
+          "cumulative_dropout_rate": 0.916
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.7,
+      "seed": 46,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 218,
+          "conditional_dropout_rate": 0.436,
+          "cumulative_dropout_rate": 0.436
+        },
+        {
+          "semester": 2,
+          "at_risk": 282,
+          "dropped": 133,
+          "conditional_dropout_rate": 0.4716312056737589,
+          "cumulative_dropout_rate": 0.702
+        },
+        {
+          "semester": 3,
+          "at_risk": 149,
+          "dropped": 68,
+          "conditional_dropout_rate": 0.4563758389261745,
+          "cumulative_dropout_rate": 0.838
+        },
+        {
+          "semester": 4,
+          "at_risk": 81,
+          "dropped": 43,
+          "conditional_dropout_rate": 0.5308641975308642,
+          "cumulative_dropout_rate": 0.924
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 15,
+        "failed": 7,
+        "pass_rate": 0.6818181818181818,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.8,
+      "seed": 42,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 206,
+          "conditional_dropout_rate": 0.412,
+          "cumulative_dropout_rate": 0.412
+        },
+        {
+          "semester": 2,
+          "at_risk": 294,
+          "dropped": 132,
+          "conditional_dropout_rate": 0.4489795918367347,
+          "cumulative_dropout_rate": 0.676
+        },
+        {
+          "semester": 3,
+          "at_risk": 162,
+          "dropped": 81,
+          "conditional_dropout_rate": 0.5,
+          "cumulative_dropout_rate": 0.838
+        },
+        {
+          "semester": 4,
+          "at_risk": 81,
+          "dropped": 33,
+          "conditional_dropout_rate": 0.4074074074074074,
+          "cumulative_dropout_rate": 0.904
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.8,
+      "seed": 43,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 200,
+          "conditional_dropout_rate": 0.4,
+          "cumulative_dropout_rate": 0.4
+        },
+        {
+          "semester": 2,
+          "at_risk": 300,
+          "dropped": 131,
+          "conditional_dropout_rate": 0.43666666666666665,
+          "cumulative_dropout_rate": 0.662
+        },
+        {
+          "semester": 3,
+          "at_risk": 169,
+          "dropped": 78,
+          "conditional_dropout_rate": 0.46153846153846156,
+          "cumulative_dropout_rate": 0.818
+        },
+        {
+          "semester": 4,
+          "at_risk": 91,
+          "dropped": 27,
+          "conditional_dropout_rate": 0.2967032967032967,
+          "cumulative_dropout_rate": 0.872
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 18,
+        "failed": 4,
+        "pass_rate": 0.8181818181818182,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.8,
+      "seed": 44,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 199,
+          "conditional_dropout_rate": 0.398,
+          "cumulative_dropout_rate": 0.398
+        },
+        {
+          "semester": 2,
+          "at_risk": 301,
+          "dropped": 135,
+          "conditional_dropout_rate": 0.4485049833887043,
+          "cumulative_dropout_rate": 0.668
+        },
+        {
+          "semester": 3,
+          "at_risk": 166,
+          "dropped": 74,
+          "conditional_dropout_rate": 0.4457831325301205,
+          "cumulative_dropout_rate": 0.816
+        },
+        {
+          "semester": 4,
+          "at_risk": 92,
+          "dropped": 27,
+          "conditional_dropout_rate": 0.29347826086956524,
+          "cumulative_dropout_rate": 0.87
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.8,
+      "seed": 45,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 224,
+          "conditional_dropout_rate": 0.448,
+          "cumulative_dropout_rate": 0.448
+        },
+        {
+          "semester": 2,
+          "at_risk": 276,
+          "dropped": 129,
+          "conditional_dropout_rate": 0.4673913043478261,
+          "cumulative_dropout_rate": 0.706
+        },
+        {
+          "semester": 3,
+          "at_risk": 147,
+          "dropped": 69,
+          "conditional_dropout_rate": 0.46938775510204084,
+          "cumulative_dropout_rate": 0.844
+        },
+        {
+          "semester": 4,
+          "at_risk": 78,
+          "dropped": 39,
+          "conditional_dropout_rate": 0.5,
+          "cumulative_dropout_rate": 0.922
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 16,
+        "failed": 6,
+        "pass_rate": 0.7272727272727273,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.8,
+      "seed": 46,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 226,
+          "conditional_dropout_rate": 0.452,
+          "cumulative_dropout_rate": 0.452
+        },
+        {
+          "semester": 2,
+          "at_risk": 274,
+          "dropped": 156,
+          "conditional_dropout_rate": 0.5693430656934306,
+          "cumulative_dropout_rate": 0.764
+        },
+        {
+          "semester": 3,
+          "at_risk": 118,
+          "dropped": 63,
+          "conditional_dropout_rate": 0.5338983050847458,
+          "cumulative_dropout_rate": 0.89
+        },
+        {
+          "semester": 4,
+          "at_risk": 55,
+          "dropped": 14,
+          "conditional_dropout_rate": 0.2545454545454545,
+          "cumulative_dropout_rate": 0.918
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 16,
+        "failed": 6,
+        "pass_rate": 0.7272727272727273,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.9,
+      "seed": 42,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 198,
+          "conditional_dropout_rate": 0.396,
+          "cumulative_dropout_rate": 0.396
+        },
+        {
+          "semester": 2,
+          "at_risk": 302,
+          "dropped": 144,
+          "conditional_dropout_rate": 0.4768211920529801,
+          "cumulative_dropout_rate": 0.684
+        },
+        {
+          "semester": 3,
+          "at_risk": 158,
+          "dropped": 73,
+          "conditional_dropout_rate": 0.4620253164556962,
+          "cumulative_dropout_rate": 0.83
+        },
+        {
+          "semester": 4,
+          "at_risk": 85,
+          "dropped": 35,
+          "conditional_dropout_rate": 0.4117647058823529,
+          "cumulative_dropout_rate": 0.9
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 16,
+        "failed": 6,
+        "pass_rate": 0.7272727272727273,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.9,
+      "seed": 43,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 215,
+          "conditional_dropout_rate": 0.43,
+          "cumulative_dropout_rate": 0.43
+        },
+        {
+          "semester": 2,
+          "at_risk": 285,
+          "dropped": 127,
+          "conditional_dropout_rate": 0.4456140350877193,
+          "cumulative_dropout_rate": 0.684
+        },
+        {
+          "semester": 3,
+          "at_risk": 158,
+          "dropped": 73,
+          "conditional_dropout_rate": 0.4620253164556962,
+          "cumulative_dropout_rate": 0.83
+        },
+        {
+          "semester": 4,
+          "at_risk": 85,
+          "dropped": 36,
+          "conditional_dropout_rate": 0.4235294117647059,
+          "cumulative_dropout_rate": 0.902
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 16,
+        "failed": 6,
+        "pass_rate": 0.7272727272727273,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.9,
+      "seed": 44,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 201,
+          "conditional_dropout_rate": 0.402,
+          "cumulative_dropout_rate": 0.402
+        },
+        {
+          "semester": 2,
+          "at_risk": 299,
+          "dropped": 133,
+          "conditional_dropout_rate": 0.44481605351170567,
+          "cumulative_dropout_rate": 0.668
+        },
+        {
+          "semester": 3,
+          "at_risk": 166,
+          "dropped": 67,
+          "conditional_dropout_rate": 0.4036144578313253,
+          "cumulative_dropout_rate": 0.802
+        },
+        {
+          "semester": 4,
+          "at_risk": 99,
+          "dropped": 34,
+          "conditional_dropout_rate": 0.3434343434343434,
+          "cumulative_dropout_rate": 0.87
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.9,
+      "seed": 45,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 231,
+          "conditional_dropout_rate": 0.462,
+          "cumulative_dropout_rate": 0.462
+        },
+        {
+          "semester": 2,
+          "at_risk": 269,
+          "dropped": 126,
+          "conditional_dropout_rate": 0.4684014869888476,
+          "cumulative_dropout_rate": 0.714
+        },
+        {
+          "semester": 3,
+          "at_risk": 143,
+          "dropped": 77,
+          "conditional_dropout_rate": 0.5384615384615384,
+          "cumulative_dropout_rate": 0.868
+        },
+        {
+          "semester": 4,
+          "at_risk": 66,
+          "dropped": 32,
+          "conditional_dropout_rate": 0.48484848484848486,
+          "cumulative_dropout_rate": 0.932
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 18,
+        "failed": 4,
+        "pass_rate": 0.8181818181818182,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.9,
+      "seed": 46,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 240,
+          "conditional_dropout_rate": 0.48,
+          "cumulative_dropout_rate": 0.48
+        },
+        {
+          "semester": 2,
+          "at_risk": 260,
+          "dropped": 137,
+          "conditional_dropout_rate": 0.5269230769230769,
+          "cumulative_dropout_rate": 0.754
+        },
+        {
+          "semester": 3,
+          "at_risk": 123,
+          "dropped": 65,
+          "conditional_dropout_rate": 0.5284552845528455,
+          "cumulative_dropout_rate": 0.884
+        },
+        {
+          "semester": 4,
+          "at_risk": 58,
+          "dropped": 23,
+          "conditional_dropout_rate": 0.39655172413793105,
+          "cumulative_dropout_rate": 0.93
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 15,
+        "failed": 7,
+        "pass_rate": 0.6818181818181818,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.95,
+      "seed": 42,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 205,
+          "conditional_dropout_rate": 0.41,
+          "cumulative_dropout_rate": 0.41
+        },
+        {
+          "semester": 2,
+          "at_risk": 295,
+          "dropped": 145,
+          "conditional_dropout_rate": 0.4915254237288136,
+          "cumulative_dropout_rate": 0.7
+        },
+        {
+          "semester": 3,
+          "at_risk": 150,
+          "dropped": 75,
+          "conditional_dropout_rate": 0.5,
+          "cumulative_dropout_rate": 0.85
+        },
+        {
+          "semester": 4,
+          "at_risk": 75,
+          "dropped": 25,
+          "conditional_dropout_rate": 0.3333333333333333,
+          "cumulative_dropout_rate": 0.9
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 16,
+        "failed": 6,
+        "pass_rate": 0.7272727272727273,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.95,
+      "seed": 43,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 206,
+          "conditional_dropout_rate": 0.412,
+          "cumulative_dropout_rate": 0.412
+        },
+        {
+          "semester": 2,
+          "at_risk": 294,
+          "dropped": 134,
+          "conditional_dropout_rate": 0.4557823129251701,
+          "cumulative_dropout_rate": 0.68
+        },
+        {
+          "semester": 3,
+          "at_risk": 160,
+          "dropped": 69,
+          "conditional_dropout_rate": 0.43125,
+          "cumulative_dropout_rate": 0.818
+        },
+        {
+          "semester": 4,
+          "at_risk": 91,
+          "dropped": 35,
+          "conditional_dropout_rate": 0.38461538461538464,
+          "cumulative_dropout_rate": 0.888
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 16,
+        "failed": 6,
+        "pass_rate": 0.7272727272727273,
+        "overall_quality": "C (Acceptable)"
+      }
+    },
+    {
+      "base_rate": 0.95,
+      "seed": 44,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 203,
+          "conditional_dropout_rate": 0.406,
+          "cumulative_dropout_rate": 0.406
+        },
+        {
+          "semester": 2,
+          "at_risk": 297,
+          "dropped": 134,
+          "conditional_dropout_rate": 0.4511784511784512,
+          "cumulative_dropout_rate": 0.674
+        },
+        {
+          "semester": 3,
+          "at_risk": 163,
+          "dropped": 74,
+          "conditional_dropout_rate": 0.4539877300613497,
+          "cumulative_dropout_rate": 0.822
+        },
+        {
+          "semester": 4,
+          "at_risk": 89,
+          "dropped": 32,
+          "conditional_dropout_rate": 0.3595505617977528,
+          "cumulative_dropout_rate": 0.886
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 18,
+        "failed": 4,
+        "pass_rate": 0.8181818181818182,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.95,
+      "seed": 45,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 242,
+          "conditional_dropout_rate": 0.484,
+          "cumulative_dropout_rate": 0.484
+        },
+        {
+          "semester": 2,
+          "at_risk": 258,
+          "dropped": 127,
+          "conditional_dropout_rate": 0.49224806201550386,
+          "cumulative_dropout_rate": 0.738
+        },
+        {
+          "semester": 3,
+          "at_risk": 131,
+          "dropped": 64,
+          "conditional_dropout_rate": 0.48854961832061067,
+          "cumulative_dropout_rate": 0.866
+        },
+        {
+          "semester": 4,
+          "at_risk": 67,
+          "dropped": 32,
+          "conditional_dropout_rate": 0.47761194029850745,
+          "cumulative_dropout_rate": 0.93
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 17,
+        "failed": 5,
+        "pass_rate": 0.7727272727272727,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "base_rate": 0.95,
+      "seed": 46,
+      "semesters": [
+        {
+          "semester": 1,
+          "at_risk": 500,
+          "dropped": 229,
+          "conditional_dropout_rate": 0.458,
+          "cumulative_dropout_rate": 0.458
+        },
+        {
+          "semester": 2,
+          "at_risk": 271,
+          "dropped": 153,
+          "conditional_dropout_rate": 0.5645756457564576,
+          "cumulative_dropout_rate": 0.764
+        },
+        {
+          "semester": 3,
+          "at_risk": 118,
+          "dropped": 68,
+          "conditional_dropout_rate": 0.576271186440678,
+          "cumulative_dropout_rate": 0.9
+        },
+        {
+          "semester": 4,
+          "at_risk": 50,
+          "dropped": 20,
+          "conditional_dropout_rate": 0.4,
+          "cumulative_dropout_rate": 0.94
+        }
+      ],
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 15,
+        "failed": 7,
+        "pass_rate": 0.6818181818181818,
+        "overall_quality": "C (Acceptable)"
+      }
+    }
+  ]
+}

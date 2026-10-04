@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from synthed.agents.factory import StudentFactory
 from synthed.simulation.engine import SimulationEngine
 from synthed.simulation.environment import ODLEnvironment
@@ -19,6 +21,26 @@ def _make_engine_and_students(n: int = 20, seed: int = 42):
 
 class TestMultiSemesterRunner:
     """Multi-semester simulation tests."""
+
+    @pytest.mark.parametrize("seed", [42, 7, 123])
+    def test_four_semester_prefix_matches_separate_two_semester_run(self, seed):
+        """Measurement prefixes and real shorter runs use identical trajectories."""
+        engine, students = _make_engine_and_students(n=30, seed=seed)
+        short = MultiSemesterRunner(engine, n_semesters=2).run(students)
+        engine, students = _make_engine_and_students(n=30, seed=seed)
+        long = MultiSemesterRunner(engine, n_semesters=4).run(students)
+        for earlier, later in zip(short.semester_results, long.semester_results):
+            short_outcomes = [(s.has_dropped_out, s.dropout_week, s.perceived_mastery)
+                              for s in earlier.states.values()]
+            long_outcomes = [(s.has_dropped_out, s.dropout_week, s.perceived_mastery)
+                             for s in later.states.values()]
+            assert short_outcomes == long_outcomes
+        assert all(s.gpa_count == s.perceived_mastery_count for s in long.final_states.values())
+        for sid, history in long.engagement_histories.items():
+            expected = [value for semester in long.semester_results
+                        if sid in semester.states
+                        for value in semester.states[sid].weekly_engagement_history]
+            assert history == expected
 
     def test_single_semester_identical_to_engine(self):
         """n_semesters=1 via direct engine.run() should be the only path;
@@ -235,6 +257,60 @@ class TestBuildInterimReport:
 
 class TestPriorGPABlend:
     """Tests for prior_gpa blending during carry-over."""
+
+    @pytest.mark.parametrize("engagement,recovery,cap,expected", [
+        (0.10, 0.05, 0.80, 0.15), (0.10, 0.60, 0.80, 0.70),
+        (0.75, 0.10, 0.80, 0.80),
+    ])
+    def test_recovered_engagement_reaches_engine_state(self, monkeypatch, engagement, recovery, cap, expected):
+        """Persona recomputation must not overwrite configured break recovery."""
+        from synthed.simulation.social_network import SocialNetwork
+        from synthed.simulation.state import SimulationState
+
+        engine, students = _make_engine_and_students(n=1)
+        state = SimulationState(student_id=students[0].id, current_engagement=engagement)
+        continuing, overrides, network = MultiSemesterRunner._apply_carry_over(
+            students, {state.student_id: state}, SocialNetwork(),
+            SemesterCarryOverConfig(engagement_recovery=recovery, engagement_recovery_cap=cap),
+        )
+        observed = []
+        original_step = engine._simulate_student_week
+
+        def capture_start(student, current, week, context):
+            """Observe initial state before executing the normal first week."""
+            observed.append(current.current_engagement)
+            return original_step(student, current, week, context)
+
+        monkeypatch.setattr(engine, "_simulate_student_week", capture_start)
+        engine.run(
+            continuing, weeks=1, initial_state_overrides=overrides, initial_network=network,
+        )
+        assert observed[0] == pytest.approx(expected)
+        assert state.current_engagement == engagement
+
+
+    def test_both_grade_tracks_accumulate_across_semesters(self):
+        """A new grade extends both transcript and raw mastery from prior terms."""
+        import pytest
+        from synthed.simulation.state import SimulationState
+        from synthed.simulation.semester import _build_state_overrides
+
+        engine = SimulationEngine(environment=ODLEnvironment(), seed=42)
+        previous = SimulationState(student_id="student", current_engagement=0.5)
+        engine._record_graded_item(previous, 0.2)
+        engine._record_graded_item(previous, 0.4)
+        following = SimulationState(
+            student_id="student",
+            **_build_state_overrides(previous, SemesterCarryOverConfig()),
+        )
+        engine._record_graded_item(following, 0.9)
+        assert following.perceived_mastery_count == following.gpa_count == 3
+        assert following.perceived_mastery == pytest.approx((0.2 + 0.4 + 0.9) / 3)
+        floor = engine.grading_config.grade_floor
+        assert following.cumulative_gpa == pytest.approx(
+            (floor + (1 - floor) * following.perceived_mastery) * engine.cfg._GPA_SCALE
+        )
+        assert previous.perceived_mastery_count == previous.gpa_count == 2
 
     def test_prior_gpa_blend_updates_persona(self):
         """Earned GPA blends into prior_gpa with default alpha=0.6."""
