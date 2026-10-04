@@ -305,13 +305,15 @@ Seed variation also affects observed results; targeting is not a guarantee.
 
 | Duration | Default cumulative dropout, no targeting | Mean dropout with a 30–45% target |
 |----------|------------------------------------------|----------------------------------|
-| 1 semester (14 weeks) | 39.60% | 36.24% |
-| 2 semesters (28 weeks) | 73.48% | 37.20% |
-| 4 semesters (56 weeks) | 96.04% | 38.72% |
+| 1 semester (14 weeks) | 38.72% | 35.88% |
+| 2 semesters (28 weeks) | 71.84% | 36.92% |
+| 4 semesters (56 weeks) | 95.28% | 36.56% |
 
 Both columns use N=500. Default means use seeds 42–46; targeting checks use
 held-out seeds 47–51. These are simulation measurements, not real-world retention
-benchmarks. See [measurement evidence and limitations](DROPOUT_TARGETING.md).
+benchmarks. Fourteen of the 15 targeting runs met the range; one one-semester
+run gave 29.8% and was correctly flagged as outside the target. See
+[measurement evidence and limitations](DROPOUT_TARGETING.md).
 
 `dropout_targeting` reports the measured mean range (`observed_dropout_range`),
 `mapping_status`, `clamped`, `reference_configuration_match`, actual dropout and

@@ -42,6 +42,13 @@ identifies the base checkout; the hashes identify the Python files used while th
 fixes were uncommitted. Each four-semester run supplies its earlier prefixes;
 regression tests compare those prefixes with standalone shorter runs.
 
+These curves were re-measured after restricting exhaustion workload to enrolled
+courses. The generating hash for `calibration.py` records the preceding lookup
+table: this untargeted sweep does not consume it. The 60 current lookup values
+are then derived from the saved counts; the holdout artifact fingerprints that
+updated table. Historical pre-fix measurements remain in Git and the
+[workload comparison](LONG_HORIZON_DIAGNOSIS.md#enrolled-assignment-workload-correction).
+
 Validation is run on each completed four-semester cohort, using complete observed
 histories and the explicit 56-week horizon. Histories are not padded after dropout
 or passed back into theory state. Measurements fail on execution errors rather
@@ -62,11 +69,14 @@ Validation remains enabled; only exports are suppressed.
 
 | Semesters | Estimated base rate | Mean dropout | Seed SD (percentage points) | Observed seed range |
 |-----------|---------------------|--------------|----------------------------|---------------------|
-| 1 | 0.403750 | 36.24% | 2.97 | 32.2–39.2% |
-| 2 | 0.072037 | 37.20% | 3.43 | 32.0–41.6% |
-| 4 | 0.010794 | 38.72% | 2.62 | 36.4–42.8% |
+| 1 | 0.398993 | 35.88% | 3.52 | 29.8–38.4% |
+| 2 | 0.073645 | 36.92% | 3.37 | 31.2–39.8% |
+| 4 | 0.012006 | 36.56% | 1.87 | 34.2–38.6% |
 
-All 15 runs met the requested range. This checks one target and default
+Fourteen of 15 runs met the requested range. The one-semester seed-51 run
+produced 29.8%, below the 30% lower bound; its report correctly records
+`target_achieved=false`. All three horizon means are inside the range. The
+holdout was not used to retune the lookup table. This checks one target and default
 configuration, not arbitrary horizons, populations or targets. Students interact,
 so seed-level variability is reported instead of treating all student outcomes as
 independent Bernoulli observations. Re-measure after model or RNG changes.
@@ -82,21 +92,21 @@ At default base rate 0.46, seeds 42–46 give:
 
 | Semester | Mean cumulative dropout | Cumulative seed SD (percentage points) | Conditional dropout, pooled risk sets |
 |----------|-------------------------|---------------------------------------|--------------------------------------|
-| 1 | 39.60% | 2.03 | 39.60% |
-| 2 | 73.48% | 1.86 | 56.09% |
-| 3 | 89.76% | 2.22 | 61.39% |
-| 4 | 96.04% | 1.98 | 61.33% |
+| 1 | 38.72% | 3.94 | 38.72% |
+| 2 | 71.84% | 3.21 | 54.05% |
+| 3 | 88.32% | 2.97 | 58.52% |
+| 4 | 95.28% | 1.19 | 59.59% |
 
 These high default rates remain a modeling limitation, not an externally validated
 retention curve. The changes repair known implementation problems: UUID-dependent
-peer sampling, overwritten break engagement recovery, and lost raw mastery
-accumulators. They do not impose a decreasing hazard or retune theory coefficients
+peer sampling, overwritten break engagement recovery, lost raw mastery
+accumulators, and exhaustion load from unenrolled courses. They do not impose a decreasing hazard or retune theory coefficients
 to obtain an attractive curve. Real institutional cohort data and a justified
 calibration objective are needed before making such claims.
 
-The [long-horizon diagnosis](LONG_HORIZON_DIAGNOSIS.md) traces these dynamics,
-compares eight controlled scenarios across five seeds, and specifies the next
-mechanism audit and empirical calibration steps.
+The [long-horizon diagnosis](LONG_HORIZON_DIAGNOSIS.md) retains the eight-scenario
+pre-fix analysis, records the workload correction's before/after comparison, and
+specifies the next mechanism audit and empirical calibration steps.
 
 ## What an A/B validation grade means
 

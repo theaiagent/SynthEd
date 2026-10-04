@@ -1,9 +1,15 @@
 # Long-horizon dropout: diagnosis and calibration plan
 
+The eight-scenario diagnosis below records the model at commit `511a4d7`, before
+the enrolled-assignment workload fix. Its artifact is retained as historical
+evidence. Current default and targeting measurements are in
+[Dropout Targeting](DROPOUT_TARGETING.md); the workload correction is described
+at the end of this report.
+
 ## Scope and reproduction
 
-This is a diagnosis of the current model, not an empirical retention benchmark.
-The production coefficients are unchanged. Measurements use the default base
+This is a diagnosis of that model revision, not an empirical retention benchmark.
+The diagnostic interventions did not change production coefficients. Measurements use the default base
 rate 0.46, 500 students, four 14-week semesters, and seeds 42–46, matching the
 design in [Dropout Targeting](DROPOUT_TARGETING.md). These are exploratory seeds
 already used for the targeting curves, not an independent confirmation sample.
@@ -159,3 +165,57 @@ these counts are diagnostic information, not external validity scores.
 the model inspectable and avoids an unsupported coefficient change. It does not
 yet provide empirically justified defaults, and matching several trajectories
 will require more reference data and simulation work than fitting one total.
+
+## Enrolled-assignment workload correction
+
+The mechanism audit found a concrete scope error: `ODLEnvironment` lists due
+assignments for every course, but Gonzalez exhaustion treated the entire list as
+each student's workload. The correction intersects those due course IDs with
+`SimulationState.courses_active`. An empty enrollment adds no assignment load;
+the other stressors and recovery still apply. No coefficients or missed-streak
+rules were changed.
+
+Tests first reproduced the fault. They now verify that an unenrolled course's
+assignment schedule cannot change a learner's full simulation, including state,
+records, peer network and RNG state, across seeds 42, 7 and 123. Unit checks also
+cover empty enrollment, enrolled load and institutional scaling.
+
+The same measurement script was run before and after the fix, using N=500,
+seeds 42–46 and separate 1/2/4-semester runs without targeting. Both
+[before](measurements/assignment-scope-before.json) and
+[after](measurements/assignment-scope-after.json) artifacts include full validation,
+generating-source hashes and aggregate statistics. The script can be copied into
+the pre-fix checkout at `511a4d7` to reproduce the former; the hashes identify
+the exact code used, including the script that was then uncommitted.
+
+```bash
+python -m scripts.measure_assignment_scope --output output/assignment-scope.json
+```
+
+| Semesters | Mean dropout before → after | Mean GPA before → after | Mean engagement–GPA r before → after |
+|-----------|-----------------------------|-------------------------|--------------------------------------|
+| 1 | 39.60% → 38.72% | 2.8580 → 2.8591 | 0.5305 → 0.5385 |
+| 2 | 73.48% → 71.84% | 2.8493 → 2.8501 | 0.4715 → 0.4829 |
+| 4 | 96.04% → 95.28% | 2.8463 → 2.8470 | 0.3918 → 0.4122 |
+
+Each cell averages five seed-level results. GPA includes students with graded
+items, as defined by `summary_statistics`. Correlations are descriptive means of
+the validator's per-seed reported coefficients, not pooled estimates or tests.
+The same seeds match initial conditions; feedback can change subsequent random
+draws and cohort composition. These results do not imply that every individual
+or seed must improve. All 30 runs retain the 22 default validation checks.
+
+Validation pass counts are unchanged in the one-term runs. The two-term seed-46
+run gains the network-degree check; at four terms, seed 43 loses that check
+because degree becomes constant, while seed 46 gains the conscientiousness and
+network-degree checks. Undefined coefficients remain explicit `null` values.
+Mean correlation signs are preserved wherever estimable in these five-seed
+comparisons, but magnitudes change and the already-negative four-term CoI
+correlation persists. This is not evidence that every correlation improves or
+that five seeds establish equivalence.
+
+**Trade-off:** the correction restores student-specific workload without tuning
+the model to a preferred dropout rate. It changes seeded trajectories and thus
+requires refreshed targeting curves and independent-seed checks. Four-term
+dropout remains high: this scope fix does not resolve the broader dynamics or
+establish external validity. The missed-assignment penalty audit remains next.

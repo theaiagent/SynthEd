@@ -39,7 +39,7 @@ class GonzalezExhaustion:
 
     Accumulation sources
     --------------------
-    * Active assignments in the current week
+    * Assignments due this week in the student's active courses
     * Environmental stressors (employment, family, financial stress)
     * Low self-regulation
 
@@ -71,12 +71,21 @@ class GonzalezExhaustion:
         records: list[InteractionRecord],
         inst: InstitutionalConfig | None = None,
     ) -> None:
-        """Advance exhaustion for one student-week."""
+        """Advance exhaustion using only assignment load from enrolled courses.
+
+        The shared weekly context lists due course IDs across the environment;
+        ``state.courses_active`` determines which of those belong to this learner.
+        No active courses means no assignment load, while other stressors and
+        recovery still apply.
+        """
         ex = state.exhaustion
         accumulation = 0.0
 
-        # 1. Assignment load this week
-        active_assignments = len(context.get("active_assignments", []))
+        # 1. Enrolled assignment load this week (context is environment-wide).
+        active_assignments = sum(
+            course_id in state.courses_active
+            for course_id in context.get("active_assignments", [])
+        )
         effective_alw = scale_by(
             self._ASSIGNMENT_LOAD_WEIGHT,
             1.0 - (inst.curriculum_flexibility if inst else 0.5),
