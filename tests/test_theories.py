@@ -123,14 +123,16 @@ class TestBaulke:
 
 class TestKember:
     def test_missed_assignments_lower_cost_benefit(self):
+        """A current missed assignment in an established streak lowers perceived value."""
         kember = KemberCostBenefit()
         student = StudentPersona()
         state = _make_state(
             missed_assignments_streak=3,
             perceived_cost_benefit=0.6,
+            memory=[{"week": 1, "event_type": "missed_assignment"}],
         )
         records = []  # no academic submissions
-        kember.recalculate(student, state, {}, records, avg_td=0.5)
+        kember.recalculate(student, state, {}, records, avg_td=0.5, week=1)
         assert state.perceived_cost_benefit < 0.6
 
 
@@ -233,6 +235,7 @@ class TestKemberGPAFeedback:
         assert state.perceived_cost_benefit < 0.50
 
     def test_no_gpa_items_no_gpa_effect(self):
+        """Without graded items, a fresh miss lowers value without a mastery effect."""
         kember = KemberCostBenefit()
         student = StudentPersona()
         state = _make_state(
@@ -240,9 +243,10 @@ class TestKemberGPAFeedback:
             missed_assignments_streak=3,
             gpa_count=0,
             cumulative_gpa=0.0,
+            memory=[{"week": 1, "event_type": "missed_assignment"}],
         )
-        # With no GPA items, only missed streak should affect cost-benefit
-        kember.recalculate(student, state, {}, [], avg_td=0.5)
+        # With no GPA items, only the current missed event affects cost-benefit.
+        kember.recalculate(student, state, {}, [], avg_td=0.5, week=1)
         # Should still decrease (missed streak), but NOT from GPA
         assert state.perceived_cost_benefit < 0.50
 

@@ -1,5 +1,5 @@
 {
-  "git_revision": "511a4d7c5f7ebef1834f441c6f4d408deae8a05f",
+  "git_revision": "7ebc22c7a8f2add702bd2da35794568c2d863e45",
   "source_sha256": {
     "scripts/measure_dropout_horizons.py": "36e0bfbb5b86ae34c1dc9ab1138d1be340d7c3c3599892ef07076e871b9337bf",
     "synthed/__init__.py": "cda35960f44ff96bac62366b3383a94cae51c05a7f5389c2f777a164826f69bd",
@@ -21,7 +21,7 @@
     "synthed/benchmarks/__init__.py": "b437477ec82a242135541fd26d7785776a391344c7f7d9491f80d08cbd965809",
     "synthed/benchmarks/generator.py": "21f2e6be7a3ab8cc8e37d4eaa5e72b9349424bb7538ffefec1ae4ddc071bca1a",
     "synthed/benchmarks/profiles.py": "5d4bfe4191f8e7a3fa96578edd3c6fee8c7ff75ad60e2c32e4887a30591b7780",
-    "synthed/calibration.py": "096f9a91331ed7f5a1e13406d5a9152875c0d32b21ce415a1e6bfd6ea4ca3d33",
+    "synthed/calibration.py": "9303886aa6416ccb02d5268ff34a5928aff1cda13b988b1c9ec5dbe2186f2e58",
     "synthed/dashboard/__init__.py": "5779b678a698c2dcabaf79752e24615709d05e8fa59e118b496dae893c667fa2",
     "synthed/dashboard/__main__.py": "e7ad56b53c107c6277b2d17fbbe4303467c9034b35e1dc2cf0c5be7b64f8dde2",
     "synthed/dashboard/app.py": "34ecd8ce688ea06503d3253446ff57c30c0fbdf10c9e9f38edb7af0253847464",
@@ -61,7 +61,7 @@
     "synthed/simulation/theories/bean_metzner.py": "1cb65ea7544968f8310e85f2f77550179914478cfe95f6305ed0cf923cee6335",
     "synthed/simulation/theories/epstein_axtell.py": "c424a33d9ab142431022676c736e2aca39e180df121d8ea458c9b5e19e1eeb07",
     "synthed/simulation/theories/garrison_coi.py": "2ca303a4c419ad13387087097914bac6658ffb7f8bb21753de75b40d77c7a98f",
-    "synthed/simulation/theories/kember.py": "a44a94a73469260f5badd353b35bdac395ff9d9329c8f0cb9e489d3cd0c6b924",
+    "synthed/simulation/theories/kember.py": "4682f48534e17bf70eb11f426a1923bb65ffa078e85fb29fd0c34147a1535929",
     "synthed/simulation/theories/moore_td.py": "666b352f752325c077510dd3f6f5387095c964995e22e428115a4c8db32f2bdd",
     "synthed/simulation/theories/positive_events.py": "981885d0ca06896a7171948a222e4653b250d2bc015c5b22bce8560a9a84c8ee",
     "synthed/simulation/theories/protocol.py": "c529d47798e0ff9fdaf1da18ec16948c7d597958900ce0443dcb03b628e05f0b",
@@ -85,7 +85,7 @@
     "uuid-utils": "0.17.1"
   },
   "curve_evidence": "dropout-horizons.json",
-  "curve_sha256": "90131cd266d455f64e231007ef60902846cb7228f275a3736a97a40508fa49b7",
+  "curve_sha256": "002781cb012e4a9b2e6c97cbe7780b9e48ebc680f96b8f69a0b5f9dac824b732",
   "config": {
     "persona_config": {
       "age_range": [
@@ -411,53 +411,18 @@
           0.3,
           0.45
         ],
-        "estimated_base_rate": 0.39899328859060407,
+        "estimated_base_rate": 0.5616666666666668,
         "confidence": "high",
         "n_semesters": 1,
         "source_data_points": 15,
         "observed_dropout_range": [
-          0.036,
-          0.4952
+          0.0312,
+          0.434
         ],
         "clamped": false,
         "mapping_status": "interpolated",
         "candidate_base_rates": [
-          0.39899328859060407
-        ],
-        "reference_configuration_match": true,
-        "reference_population_size": 500,
-        "population_size_match": true,
-        "actual_dropout_rate": 0.368,
-        "target_achieved": true
-      },
-      "validation_summary": {
-        "total_tests": 22,
-        "passed": 19,
-        "failed": 3,
-        "pass_rate": 0.8636363636363636,
-        "overall_quality": "B (Good)"
-      }
-    },
-    {
-      "n_semesters": 1,
-      "seed": 48,
-      "dropout_targeting": {
-        "target_range": [
-          0.3,
-          0.45
-        ],
-        "estimated_base_rate": 0.39899328859060407,
-        "confidence": "high",
-        "n_semesters": 1,
-        "source_data_points": 15,
-        "observed_dropout_range": [
-          0.036,
-          0.4952
-        ],
-        "clamped": false,
-        "mapping_status": "interpolated",
-        "candidate_base_rates": [
-          0.39899328859060407
+          0.5616666666666668
         ],
         "reference_configuration_match": true,
         "reference_population_size": 500,
@@ -475,204 +440,29 @@
     },
     {
       "n_semesters": 1,
-      "seed": 49,
-      "dropout_targeting": {
-        "target_range": [
-          0.3,
-          0.45
-        ],
-        "estimated_base_rate": 0.39899328859060407,
-        "confidence": "high",
-        "n_semesters": 1,
-        "source_data_points": 15,
-        "observed_dropout_range": [
-          0.036,
-          0.4952
-        ],
-        "clamped": false,
-        "mapping_status": "interpolated",
-        "candidate_base_rates": [
-          0.39899328859060407
-        ],
-        "reference_configuration_match": true,
-        "reference_population_size": 500,
-        "population_size_match": true,
-        "actual_dropout_rate": 0.384,
-        "target_achieved": true
-      },
-      "validation_summary": {
-        "total_tests": 22,
-        "passed": 19,
-        "failed": 3,
-        "pass_rate": 0.8636363636363636,
-        "overall_quality": "B (Good)"
-      }
-    },
-    {
-      "n_semesters": 1,
-      "seed": 50,
-      "dropout_targeting": {
-        "target_range": [
-          0.3,
-          0.45
-        ],
-        "estimated_base_rate": 0.39899328859060407,
-        "confidence": "high",
-        "n_semesters": 1,
-        "source_data_points": 15,
-        "observed_dropout_range": [
-          0.036,
-          0.4952
-        ],
-        "clamped": false,
-        "mapping_status": "interpolated",
-        "candidate_base_rates": [
-          0.39899328859060407
-        ],
-        "reference_configuration_match": true,
-        "reference_population_size": 500,
-        "population_size_match": true,
-        "actual_dropout_rate": 0.382,
-        "target_achieved": true
-      },
-      "validation_summary": {
-        "total_tests": 22,
-        "passed": 19,
-        "failed": 3,
-        "pass_rate": 0.8636363636363636,
-        "overall_quality": "B (Good)"
-      }
-    },
-    {
-      "n_semesters": 1,
-      "seed": 51,
-      "dropout_targeting": {
-        "target_range": [
-          0.3,
-          0.45
-        ],
-        "estimated_base_rate": 0.39899328859060407,
-        "confidence": "high",
-        "n_semesters": 1,
-        "source_data_points": 15,
-        "observed_dropout_range": [
-          0.036,
-          0.4952
-        ],
-        "clamped": false,
-        "mapping_status": "interpolated",
-        "candidate_base_rates": [
-          0.39899328859060407
-        ],
-        "reference_configuration_match": true,
-        "reference_population_size": 500,
-        "population_size_match": true,
-        "actual_dropout_rate": 0.298,
-        "target_achieved": false
-      },
-      "validation_summary": {
-        "total_tests": 22,
-        "passed": 18,
-        "failed": 4,
-        "pass_rate": 0.8181818181818182,
-        "overall_quality": "B (Good)"
-      }
-    },
-    {
-      "n_semesters": 2,
-      "seed": 47,
-      "dropout_targeting": {
-        "target_range": [
-          0.3,
-          0.45
-        ],
-        "estimated_base_rate": 0.07364457831325301,
-        "confidence": "high",
-        "n_semesters": 2,
-        "source_data_points": 15,
-        "observed_dropout_range": [
-          0.1408,
-          0.8016
-        ],
-        "clamped": false,
-        "mapping_status": "interpolated",
-        "candidate_base_rates": [
-          0.07364457831325301
-        ],
-        "reference_configuration_match": true,
-        "reference_population_size": 500,
-        "population_size_match": true,
-        "actual_dropout_rate": 0.382,
-        "target_achieved": true
-      },
-      "validation_summary": {
-        "total_tests": 22,
-        "passed": 19,
-        "failed": 3,
-        "pass_rate": 0.8636363636363636,
-        "overall_quality": "B (Good)"
-      }
-    },
-    {
-      "n_semesters": 2,
       "seed": 48,
       "dropout_targeting": {
         "target_range": [
           0.3,
           0.45
         ],
-        "estimated_base_rate": 0.07364457831325301,
+        "estimated_base_rate": 0.5616666666666668,
         "confidence": "high",
-        "n_semesters": 2,
+        "n_semesters": 1,
         "source_data_points": 15,
         "observed_dropout_range": [
-          0.1408,
-          0.8016
+          0.0312,
+          0.434
         ],
         "clamped": false,
         "mapping_status": "interpolated",
         "candidate_base_rates": [
-          0.07364457831325301
+          0.5616666666666668
         ],
         "reference_configuration_match": true,
         "reference_population_size": 500,
         "population_size_match": true,
-        "actual_dropout_rate": 0.368,
-        "target_achieved": true
-      },
-      "validation_summary": {
-        "total_tests": 22,
-        "passed": 20,
-        "failed": 2,
-        "pass_rate": 0.9090909090909091,
-        "overall_quality": "A (Excellent)"
-      }
-    },
-    {
-      "n_semesters": 2,
-      "seed": 49,
-      "dropout_targeting": {
-        "target_range": [
-          0.3,
-          0.45
-        ],
-        "estimated_base_rate": 0.07364457831325301,
-        "confidence": "high",
-        "n_semesters": 2,
-        "source_data_points": 15,
-        "observed_dropout_range": [
-          0.1408,
-          0.8016
-        ],
-        "clamped": false,
-        "mapping_status": "interpolated",
-        "candidate_base_rates": [
-          0.07364457831325301
-        ],
-        "reference_configuration_match": true,
-        "reference_population_size": 500,
-        "population_size_match": true,
-        "actual_dropout_rate": 0.386,
+        "actual_dropout_rate": 0.39,
         "target_achieved": true
       },
       "validation_summary": {
@@ -684,60 +474,95 @@
       }
     },
     {
-      "n_semesters": 2,
+      "n_semesters": 1,
+      "seed": 49,
+      "dropout_targeting": {
+        "target_range": [
+          0.3,
+          0.45
+        ],
+        "estimated_base_rate": 0.5616666666666668,
+        "confidence": "high",
+        "n_semesters": 1,
+        "source_data_points": 15,
+        "observed_dropout_range": [
+          0.0312,
+          0.434
+        ],
+        "clamped": false,
+        "mapping_status": "interpolated",
+        "candidate_base_rates": [
+          0.5616666666666668
+        ],
+        "reference_configuration_match": true,
+        "reference_population_size": 500,
+        "population_size_match": true,
+        "actual_dropout_rate": 0.402,
+        "target_achieved": true
+      },
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 19,
+        "failed": 3,
+        "pass_rate": 0.8636363636363636,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "n_semesters": 1,
       "seed": 50,
       "dropout_targeting": {
         "target_range": [
           0.3,
           0.45
         ],
-        "estimated_base_rate": 0.07364457831325301,
+        "estimated_base_rate": 0.5616666666666668,
         "confidence": "high",
-        "n_semesters": 2,
+        "n_semesters": 1,
         "source_data_points": 15,
         "observed_dropout_range": [
-          0.1408,
-          0.8016
+          0.0312,
+          0.434
         ],
         "clamped": false,
         "mapping_status": "interpolated",
         "candidate_base_rates": [
-          0.07364457831325301
+          0.5616666666666668
         ],
         "reference_configuration_match": true,
         "reference_population_size": 500,
         "population_size_match": true,
-        "actual_dropout_rate": 0.398,
+        "actual_dropout_rate": 0.378,
         "target_achieved": true
       },
       "validation_summary": {
         "total_tests": 22,
-        "passed": 18,
-        "failed": 4,
-        "pass_rate": 0.8181818181818182,
+        "passed": 19,
+        "failed": 3,
+        "pass_rate": 0.8636363636363636,
         "overall_quality": "B (Good)"
       }
     },
     {
-      "n_semesters": 2,
+      "n_semesters": 1,
       "seed": 51,
       "dropout_targeting": {
         "target_range": [
           0.3,
           0.45
         ],
-        "estimated_base_rate": 0.07364457831325301,
+        "estimated_base_rate": 0.5616666666666668,
         "confidence": "high",
-        "n_semesters": 2,
+        "n_semesters": 1,
         "source_data_points": 15,
         "observed_dropout_range": [
-          0.1408,
-          0.8016
+          0.0312,
+          0.434
         ],
         "clamped": false,
         "mapping_status": "interpolated",
         "candidate_base_rates": [
-          0.07364457831325301
+          0.5616666666666668
         ],
         "reference_configuration_match": true,
         "reference_population_size": 500,
@@ -747,6 +572,181 @@
       },
       "validation_summary": {
         "total_tests": 22,
+        "passed": 19,
+        "failed": 3,
+        "pass_rate": 0.8636363636363636,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "n_semesters": 2,
+      "seed": 47,
+      "dropout_targeting": {
+        "target_range": [
+          0.3,
+          0.45
+        ],
+        "estimated_base_rate": 0.0999193548387097,
+        "confidence": "high",
+        "n_semesters": 2,
+        "source_data_points": 15,
+        "observed_dropout_range": [
+          0.1104,
+          0.7112
+        ],
+        "clamped": false,
+        "mapping_status": "interpolated",
+        "candidate_base_rates": [
+          0.0999193548387097
+        ],
+        "reference_configuration_match": true,
+        "reference_population_size": 500,
+        "population_size_match": true,
+        "actual_dropout_rate": 0.362,
+        "target_achieved": true
+      },
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 20,
+        "failed": 2,
+        "pass_rate": 0.9090909090909091,
+        "overall_quality": "A (Excellent)"
+      }
+    },
+    {
+      "n_semesters": 2,
+      "seed": 48,
+      "dropout_targeting": {
+        "target_range": [
+          0.3,
+          0.45
+        ],
+        "estimated_base_rate": 0.0999193548387097,
+        "confidence": "high",
+        "n_semesters": 2,
+        "source_data_points": 15,
+        "observed_dropout_range": [
+          0.1104,
+          0.7112
+        ],
+        "clamped": false,
+        "mapping_status": "interpolated",
+        "candidate_base_rates": [
+          0.0999193548387097
+        ],
+        "reference_configuration_match": true,
+        "reference_population_size": 500,
+        "population_size_match": true,
+        "actual_dropout_rate": 0.362,
+        "target_achieved": true
+      },
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 20,
+        "failed": 2,
+        "pass_rate": 0.9090909090909091,
+        "overall_quality": "A (Excellent)"
+      }
+    },
+    {
+      "n_semesters": 2,
+      "seed": 49,
+      "dropout_targeting": {
+        "target_range": [
+          0.3,
+          0.45
+        ],
+        "estimated_base_rate": 0.0999193548387097,
+        "confidence": "high",
+        "n_semesters": 2,
+        "source_data_points": 15,
+        "observed_dropout_range": [
+          0.1104,
+          0.7112
+        ],
+        "clamped": false,
+        "mapping_status": "interpolated",
+        "candidate_base_rates": [
+          0.0999193548387097
+        ],
+        "reference_configuration_match": true,
+        "reference_population_size": 500,
+        "population_size_match": true,
+        "actual_dropout_rate": 0.394,
+        "target_achieved": true
+      },
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 20,
+        "failed": 2,
+        "pass_rate": 0.9090909090909091,
+        "overall_quality": "A (Excellent)"
+      }
+    },
+    {
+      "n_semesters": 2,
+      "seed": 50,
+      "dropout_targeting": {
+        "target_range": [
+          0.3,
+          0.45
+        ],
+        "estimated_base_rate": 0.0999193548387097,
+        "confidence": "high",
+        "n_semesters": 2,
+        "source_data_points": 15,
+        "observed_dropout_range": [
+          0.1104,
+          0.7112
+        ],
+        "clamped": false,
+        "mapping_status": "interpolated",
+        "candidate_base_rates": [
+          0.0999193548387097
+        ],
+        "reference_configuration_match": true,
+        "reference_population_size": 500,
+        "population_size_match": true,
+        "actual_dropout_rate": 0.378,
+        "target_achieved": true
+      },
+      "validation_summary": {
+        "total_tests": 22,
+        "passed": 19,
+        "failed": 3,
+        "pass_rate": 0.8636363636363636,
+        "overall_quality": "B (Good)"
+      }
+    },
+    {
+      "n_semesters": 2,
+      "seed": 51,
+      "dropout_targeting": {
+        "target_range": [
+          0.3,
+          0.45
+        ],
+        "estimated_base_rate": 0.0999193548387097,
+        "confidence": "high",
+        "n_semesters": 2,
+        "source_data_points": 15,
+        "observed_dropout_range": [
+          0.1104,
+          0.7112
+        ],
+        "clamped": false,
+        "mapping_status": "interpolated",
+        "candidate_base_rates": [
+          0.0999193548387097
+        ],
+        "reference_configuration_match": true,
+        "reference_population_size": 500,
+        "population_size_match": true,
+        "actual_dropout_rate": 0.344,
+        "target_achieved": true
+      },
+      "validation_summary": {
+        "total_tests": 22,
         "passed": 20,
         "failed": 2,
         "pass_rate": 0.9090909090909091,
@@ -761,23 +761,23 @@
           0.3,
           0.45
         ],
-        "estimated_base_rate": 0.012006172839506175,
+        "estimated_base_rate": 0.01859195402298851,
         "confidence": "high",
         "n_semesters": 4,
         "source_data_points": 15,
         "observed_dropout_range": [
-          0.362,
-          0.9704
+          0.3152,
+          0.9088
         ],
         "clamped": false,
         "mapping_status": "interpolated",
         "candidate_base_rates": [
-          0.012006172839506175
+          0.01859195402298851
         ],
         "reference_configuration_match": true,
         "reference_population_size": 500,
         "population_size_match": true,
-        "actual_dropout_rate": 0.374,
+        "actual_dropout_rate": 0.382,
         "target_achieved": true
       },
       "validation_summary": {
@@ -796,23 +796,23 @@
           0.3,
           0.45
         ],
-        "estimated_base_rate": 0.012006172839506175,
+        "estimated_base_rate": 0.01859195402298851,
         "confidence": "high",
         "n_semesters": 4,
         "source_data_points": 15,
         "observed_dropout_range": [
-          0.362,
-          0.9704
+          0.3152,
+          0.9088
         ],
         "clamped": false,
         "mapping_status": "interpolated",
         "candidate_base_rates": [
-          0.012006172839506175
+          0.01859195402298851
         ],
         "reference_configuration_match": true,
         "reference_population_size": 500,
         "population_size_match": true,
-        "actual_dropout_rate": 0.35,
+        "actual_dropout_rate": 0.37,
         "target_achieved": true
       },
       "validation_summary": {
@@ -831,23 +831,23 @@
           0.3,
           0.45
         ],
-        "estimated_base_rate": 0.012006172839506175,
+        "estimated_base_rate": 0.01859195402298851,
         "confidence": "high",
         "n_semesters": 4,
         "source_data_points": 15,
         "observed_dropout_range": [
-          0.362,
-          0.9704
+          0.3152,
+          0.9088
         ],
         "clamped": false,
         "mapping_status": "interpolated",
         "candidate_base_rates": [
-          0.012006172839506175
+          0.01859195402298851
         ],
         "reference_configuration_match": true,
         "reference_population_size": 500,
         "population_size_match": true,
-        "actual_dropout_rate": 0.386,
+        "actual_dropout_rate": 0.332,
         "target_achieved": true
       },
       "validation_summary": {
@@ -866,23 +866,23 @@
           0.3,
           0.45
         ],
-        "estimated_base_rate": 0.012006172839506175,
+        "estimated_base_rate": 0.01859195402298851,
         "confidence": "high",
         "n_semesters": 4,
         "source_data_points": 15,
         "observed_dropout_range": [
-          0.362,
-          0.9704
+          0.3152,
+          0.9088
         ],
         "clamped": false,
         "mapping_status": "interpolated",
         "candidate_base_rates": [
-          0.012006172839506175
+          0.01859195402298851
         ],
         "reference_configuration_match": true,
         "reference_population_size": 500,
         "population_size_match": true,
-        "actual_dropout_rate": 0.376,
+        "actual_dropout_rate": 0.36,
         "target_achieved": true
       },
       "validation_summary": {
@@ -901,30 +901,30 @@
           0.3,
           0.45
         ],
-        "estimated_base_rate": 0.012006172839506175,
+        "estimated_base_rate": 0.01859195402298851,
         "confidence": "high",
         "n_semesters": 4,
         "source_data_points": 15,
         "observed_dropout_range": [
-          0.362,
-          0.9704
+          0.3152,
+          0.9088
         ],
         "clamped": false,
         "mapping_status": "interpolated",
         "candidate_base_rates": [
-          0.012006172839506175
+          0.01859195402298851
         ],
         "reference_configuration_match": true,
         "reference_population_size": 500,
         "population_size_match": true,
-        "actual_dropout_rate": 0.342,
+        "actual_dropout_rate": 0.304,
         "target_achieved": true
       },
       "validation_summary": {
         "total_tests": 22,
-        "passed": 18,
-        "failed": 4,
-        "pass_rate": 0.8181818181818182,
+        "passed": 19,
+        "failed": 3,
+        "pass_rate": 0.8636363636363636,
         "overall_quality": "B (Good)"
       }
     }

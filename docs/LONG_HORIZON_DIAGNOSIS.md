@@ -218,4 +218,69 @@ that five seeds establish equivalence.
 the model to a preferred dropout rate. It changes seeded trajectories and thus
 requires refreshed targeting curves and independent-seed checks. Four-term
 dropout remains high: this scope fix does not resolve the broader dynamics or
-establish external validity. The missed-assignment penalty audit remains next.
+establish external validity. The subsequent missed-assignment audit led to the
+Kember correction below.
+
+## Kember missed-assignment event correction
+
+Kember previously deducted its missed-assignment cost every eligible week while
+the streak remained at least two, including weeks with no new miss. The correction
+requires a `missed_assignment` event matching the current semester-local week in
+the learner's memory. The engine records these events before theory dispatch and
+clears them at semester transitions. Without a known matching week, no new charge
+is applied.
+
+This is an implementation contract: the existing 0.03 charge occurs once per
+eligible weekly step, not once per missed course. The streak threshold of two
+and positive graded-item precedence are unchanged. Past cost-benefit reductions,
+opportunity cost and ongoing engagement feedback still apply. No coefficient,
+SDT mechanism or inline engine missed-streak penalty was changed. Tests cover
+stale and future events, missing time, multiple misses, graded-item precedence,
+and real engine assignment events across three seeds.
+
+The [pre-correction baseline](measurements/assignment-scope-after.json) and
+[corrected results](measurements/kember-event-scope.json) use N=500, seeds 42–46
+and separate 1/2/4-semester runs without targeting. The corrected artifact contains
+all 15 expected runs, full validation and source hashes. Reproduce it with the
+existing outcome-comparison script:
+
+```bash
+python -m scripts.measure_assignment_scope --output output/kember-event-scope.json
+```
+
+Both artifacts fingerprint the lookup table present before their respective
+untargeted sweeps; neither consumes that table. The measurement script's byte
+hash differs because of LF/CRLF checkout line endings; its code is unchanged.
+The production model difference is the Kember event gate. The newly generated
+targeting holdout fingerprints the updated lookup table and its curve evidence.
+
+| Semesters | Mean dropout before → after | Mean GPA before → after | Mean engagement–GPA r before → after |
+|-----------|-----------------------------|-------------------------|--------------------------------------|
+| 1 | 38.72% → 35.60% | 2.8591 → 2.8577 | 0.5385 → 0.5481 |
+| 2 | 71.84% → 63.48% | 2.8501 → 2.8475 | 0.4829 → 0.4873 |
+| 4 | 95.28% → 88.60% | 2.8470 → 2.8422 | 0.4122 → 0.3961 |
+
+These are means of five seed-level results, using the same GPA and correlation
+definitions as the workload comparison. Paired four-term dropout changes range
+from −8.6 to −5.2 percentage points, averaging −6.68 points. Matching seeds does
+not hold later random draws or cohort composition fixed. No equivalence margin
+was specified, so the small GPA differences do not establish equivalence.
+
+All 30 before/after runs retain 22 validation checks. One-term pass counts are
+unchanged. At two terms, seed 43 loses the network-degree check; at four terms,
+seeds 42 and 43 gain it. Other check outcomes are unchanged. Mean Pearson
+correlation signs are preserved where estimable, but magnitudes change; the
+four-term engagement–GPA correlation decreases and the negative CoI correlation
+persists. Undefined coefficients remain explicit `null` values. These findings
+do not imply that all correlations improve or that every validation check passes.
+
+All 60 targeting lookup points were regenerated from 75 complete four-term runs.
+With the updated curves, all 15 independent-seed runs (47–51, horizons 1/2/4)
+met the 30–45% target; the holdout did not retune the curves. Full means, seed
+variation and limits are in [dropout targeting](DROPOUT_TARGETING.md).
+
+**Trade-off:** the correction removes repeated charges for an old event and
+materially reduces simulated dropout, while changing seeded trajectories and
+some GPA/correlation results. Four-term default dropout remains 88.60%; this
+does not establish a realistic retention trajectory. The remaining mechanism
+contracts and empirical calibration still require investigation.

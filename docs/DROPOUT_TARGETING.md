@@ -43,11 +43,14 @@ fixes were uncommitted. Each four-semester run supplies its earlier prefixes;
 regression tests compare those prefixes with standalone shorter runs.
 
 These curves were re-measured after restricting exhaustion workload to enrolled
-courses. The generating hash for `calibration.py` records the preceding lookup
+courses and limiting Kember's missed-assignment charge to weeks with a new miss.
+The generating hash for `calibration.py` records the preceding lookup
 table: this untargeted sweep does not consume it. The 60 current lookup values
 are then derived from the saved counts; the holdout artifact fingerprints that
 updated table. Historical pre-fix measurements remain in Git and the
-[workload comparison](LONG_HORIZON_DIAGNOSIS.md#enrolled-assignment-workload-correction).
+[workload](LONG_HORIZON_DIAGNOSIS.md#enrolled-assignment-workload-correction) and
+[Kember event](LONG_HORIZON_DIAGNOSIS.md#kember-missed-assignment-event-correction)
+comparisons.
 
 Validation is run on each completed four-semester cohort, using complete observed
 histories and the explicit 56-week horizon. Histories are not padded after dropout
@@ -69,13 +72,11 @@ Validation remains enabled; only exports are suppressed.
 
 | Semesters | Estimated base rate | Mean dropout | Seed SD (percentage points) | Observed seed range |
 |-----------|---------------------|--------------|----------------------------|---------------------|
-| 1 | 0.398993 | 35.88% | 3.52 | 29.8–38.4% |
-| 2 | 0.073645 | 36.92% | 3.37 | 31.2–39.8% |
-| 4 | 0.012006 | 36.56% | 1.87 | 34.2–38.6% |
+| 1 | 0.561667 | 36.88% | 3.50 | 31.2–40.2% |
+| 2 | 0.099919 | 36.80% | 1.89 | 34.4–39.4% |
+| 4 | 0.018592 | 34.96% | 3.15 | 30.4–38.2% |
 
-Fourteen of 15 runs met the requested range. The one-semester seed-51 run
-produced 29.8%, below the 30% lower bound; its report correctly records
-`target_achieved=false`. All three horizon means are inside the range. The
+All 15 runs met the requested range, and all three horizon means are inside it. The
 holdout was not used to retune the lookup table. This checks one target and default
 configuration, not arbitrary horizons, populations or targets. Students interact,
 so seed-level variability is reported instead of treating all student outcomes as
@@ -92,21 +93,25 @@ At default base rate 0.46, seeds 42–46 give:
 
 | Semester | Mean cumulative dropout | Cumulative seed SD (percentage points) | Conditional dropout, pooled risk sets |
 |----------|-------------------------|---------------------------------------|--------------------------------------|
-| 1 | 38.72% | 3.94 | 38.72% |
-| 2 | 71.84% | 3.21 | 54.05% |
-| 3 | 88.32% | 2.97 | 58.52% |
-| 4 | 95.28% | 1.19 | 59.59% |
+| 1 | 35.60% | 2.87 | 35.60% |
+| 2 | 63.48% | 2.97 | 43.29% |
+| 3 | 80.28% | 2.89 | 46.00% |
+| 4 | 88.60% | 1.62 | 42.19% |
 
 These high default rates remain a modeling limitation, not an externally validated
 retention curve. The changes repair known implementation problems: UUID-dependent
 peer sampling, overwritten break engagement recovery, lost raw mastery
-accumulators, and exhaustion load from unenrolled courses. They do not impose a decreasing hazard or retune theory coefficients
+accumulators, exhaustion load from unenrolled courses, and repeated Kember
+missed-event charges in weeks without a new miss. The last correction preserves
+the existing streak threshold, graded-item precedence and ongoing cost-benefit
+feedback. These fixes do not impose a decreasing hazard or retune theory coefficients
 to obtain an attractive curve. Real institutional cohort data and a justified
 calibration objective are needed before making such claims.
 
 The [long-horizon diagnosis](LONG_HORIZON_DIAGNOSIS.md) retains the eight-scenario
-pre-fix analysis, records the workload correction's before/after comparison, and
-specifies the next mechanism audit and empirical calibration steps.
+pre-fix analysis, records the workload and Kember corrections' before/after
+comparisons, and specifies the remaining mechanism audit and empirical
+calibration steps.
 
 ## What an A/B validation grade means
 
