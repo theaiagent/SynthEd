@@ -8,6 +8,7 @@ All notable changes to SynthEd are documented here.
 - **Long-horizon diagnostics:** add a reproducible engagement observer, bounded mechanism ablations, complete validation evidence across five seeds, and a staged plan for trajectory calibration. Production model coefficients are unchanged.
 
 ### Fixed
+- **Enrolled assignment workload:** count only due assignments in each student's active courses when updating exhaustion. Add enrollment-isolation regressions, before/after GPA and correlation measurements, and refreshed dropout-targeting curves with independent-seed checks.
 - **Dropout targeting across semesters:** replace the one-semester fallback with measured curves for 1–4 semesters, including the valid low-base-rate region. Interpolation follows adjacent parameter measurements and reports ambiguous or clamped estimates, configuration mismatches, and actual target attainment. Reproducible measurements and independent-seed checks accompany the curves.
 - **Multi-semester state continuity:** apply configured engagement recovery after persona initialization and retain raw mastery accumulators alongside transcript GPA. Report semester-specific and cumulative dropout separately.
 - **Seeded peer sampling:** preserve participant encounter order when deduplicating activity groups, preventing UUID labels and hash order from changing simulation trajectories.

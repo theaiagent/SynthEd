@@ -210,7 +210,7 @@ SynthEd/
 │   ├── doc_facts.py             # Documentation consistency checker
 │   ├── pipeline_config.py       # PipelineConfig frozen dataclass (16 params)
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                       # 942 pytest tests across 50 files
+├── tests/                       # 951 pytest tests across 50 files
 ├── docs/
 │   ├── GUIDE.md                 # User guide
 │   └── THEORY.md                # This file
@@ -239,7 +239,7 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 
 ## 🧪 Test Suite
 
-942 pytest tests across 50 files:
+951 pytest tests across 50 files:
 
 <!-- BEGIN:test_inventory -->
 | Test File | Tests | Coverage |
@@ -257,7 +257,7 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 | `test_dashboard_nav.py` | 3 | the two-tab mode-split skeleton (PR A). |
 | `test_dashboard_theme.py` | 7 | dashboard theme & layout fixes (v1.7.0). |
 | `test_dual_track_gpa.py` | 12 | dual-track GPA: transcript GPA vs perceived mastery |
-| `test_engine.py` | 14 | the SimulationEngine |
+| `test_engine.py` | 17 | the SimulationEngine |
 | `test_engine_config.py` | 19 | EngineConfig frozen dataclass |
 | `test_engine_grading.py` | 14 | GradingConfig |
 | `test_environment.py` | 7 | ODLEnvironment |
@@ -287,7 +287,7 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 | `test_sensitivity.py` | 2 | sensitivity analysis module |
 | `test_sobol.py` | 48 | Sobol sensitivity analysis |
 | `test_social_network.py` | 11 | SocialNetwork |
-| `test_theories.py` | 29 | individual theory modules |
+| `test_theories.py` | 35 | individual theory modules |
 | `test_theory_protocol.py` | 32 | TheoryModule Protocol, TheoryContext, and auto-discovery |
 | `test_trait_calibration.py` | 39 | OULAD target extraction and trait-based calibration |
 | `test_unavoidable_withdrawal.py` | 9 | the UnavoidableWithdrawal theory module |

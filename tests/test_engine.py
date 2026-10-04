@@ -9,6 +9,31 @@ from synthed.simulation.social_network import SocialNetwork
 
 
 class TestSimulationEngine:
+    @pytest.mark.parametrize("seed", [42, 7, 123])
+    def test_unenrolled_assignment_schedule_preserves_run(self, seed):
+        """An unrelated course's assignment dates cannot change enrolled learners."""
+        from copy import deepcopy
+        from dataclasses import replace
+        from synthed.simulation.environment import Course
+
+        students = [replace(s, enrolled_courses=1)
+                    for s in StudentFactory(seed=seed).generate_population(n=50)]
+        before = deepcopy(students)
+        enrolled = Course(id="ENROLLED", name="Enrolled")
+        other = Course(id="OTHER", name="Other", assignment_weeks=[])
+        first = SimulationEngine(ODLEnvironment(courses=[enrolled, other]), seed=seed)
+        second = SimulationEngine(ODLEnvironment(courses=[enrolled, replace(
+            other, assignment_weeks=list(range(1, 15)))]), seed=seed)
+
+        records1, states1, network1 = first.run(students)
+        records2, states2, network2 = second.run(students)
+
+        assert states1 == states2
+        assert records1 == records2
+        assert network1._adjacency == network2._adjacency
+        assert first.rng.bit_generator.state == second.rng.bit_generator.state
+        assert students == before
+
     def _run_sim(self, n=10, seed=42, weeks=None):
         env = ODLEnvironment()
         factory = StudentFactory(seed=seed)
