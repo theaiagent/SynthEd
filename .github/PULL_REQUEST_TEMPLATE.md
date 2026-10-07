@@ -19,10 +19,15 @@
 - [ ] All existing tests pass (`python -m pytest tests/ -q`)
 - [ ] Lint passes (`ruff check synthed/ tests/ --select E,F,W --ignore E501`)
 - [ ] New tests added for new functionality
-- [ ] Tested with N >= 200 students (if simulation changes)
+- [ ] Multi-seed comparisons completed and reported (if simulation changes)
+- [ ] Documentation consistency passes (`python -m synthed.doc_facts`)
 
 ## Checklist
 - [ ] Code follows [CONTRIBUTING.md](../CONTRIBUTING.md) standards
 - [ ] No hardcoded secrets or API keys
 - [ ] Documentation updated (if applicable)
+- [ ] `CHANGELOG.md` updated under `[Unreleased]`
+- [ ] Independent Python and security reviews completed
+- [ ] Statistical consistency review completed (if calibration/validation parameters change)
+- [ ] CodeRabbit feedback reviewed and maintainer merge approval obtained
 - [ ] Commit messages follow `type: description` convention

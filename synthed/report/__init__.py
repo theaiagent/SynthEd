@@ -1,6 +1,8 @@
 """SynthEd report generation module.
 
-Requires optional dependencies: pip install synthedu[report]
+Install optional report dependencies with ``pip install jinja2 plotly playwright``
+and the browser with ``python -m playwright install chromium``. The package does
+not currently define a ``report`` extra.
 """
 from __future__ import annotations
 

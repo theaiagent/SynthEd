@@ -9,6 +9,7 @@ Practical guide for generating synthetic ODL data, calibrating against instituti
 - [Interactive Dashboard](#-interactive-dashboard)
 - [Python API](#-python-api)
 - [Population Configuration](#-population-configuration)
+- [Institutional Configuration](#-institutional-configuration)
 - [Grading Configuration](#-grading-configuration)
 - [Dropout Targeting](#-dropout-targeting)
 - [Multi-Semester Simulation](#-multi-semester-simulation)
@@ -25,6 +26,16 @@ Practical guide for generating synthetic ODL data, calibrating against instituti
 
 ## 📦 Installation
 
+For the published package and Python API:
+
+```bash
+pip install synthedu
+# Optional extras:
+pip install "synthedu[llm,dashboard]"
+```
+
+For the repository scripts and development version:
+
 ```bash
 git clone https://github.com/theaiagent/SynthEd.git
 cd SynthEd
@@ -34,7 +45,7 @@ pip install -e ".[dev]"
 python -c "import synthed; print('OK')"
 ```
 
-**Requirements:** Python 3.10+, numpy, scipy, SALib, optuna.
+**Requirements:** Python 3.10+. Core dependencies (numpy, scipy, uuid-utils, SALib and optuna) are installed automatically within the bounds in `pyproject.toml`. The examples using `run_pipeline.py`, `run_calibration.py` or `scripts/` require the source checkout. `main` may contain unreleased changes beyond the installed PyPI release.
 
 ---
 
@@ -63,15 +74,20 @@ python run_pipeline.py --verbose
 ### With LLM Enrichment (Optional)
 
 ```bash
+pip install -e ".[llm]"
 export OPENAI_API_KEY="your-key-here"
 python run_pipeline.py --n 100 --llm --model gpt-4o-mini
 
 # Local Ollama provider
-python run_pipeline.py --n 100 --llm --base-url http://localhost:11434/v1
+export OPENAI_API_KEY="not-needed"
+python run_pipeline.py --n 100 --llm --base-url http://localhost:11434/v1 --model "<installed-model-name>"
 
-# Cost threshold ($2 max)
+# Prompt when the estimated cost exceeds $2 (not a spending cap)
+export OPENAI_API_KEY="your-key-here"
 python run_pipeline.py --n 500 --llm --cost-threshold 2.0
 ```
+
+The environment-variable examples use a POSIX shell. In PowerShell, use `$env:OPENAI_API_KEY = "your-key-here"`. Replace the Ollama model placeholder with a model available on your server.
 
 ---
 
@@ -94,14 +110,14 @@ Opens at `http://127.0.0.1:8080` by default. Environment variables:
 
 **Features:**
 - **Research**: Persona, Institutional, Grading parameters via accordion panels
-- **Calibrate** *(skeleton)*: placeholder tab for upcoming OULAD-indexed calibration tooling — reference overlays, validation scorecard, Pareto viewer, HV convergence, and cross-seed distance comparison (42 vs 2024)
+- **Calibrate**: validation scorecard for the latest simulation, with per-check results and interpretation notes. An interactive optimizer, reference overlays, Pareto viewer, hypervolume convergence and cross-seed comparison remain planned
 - **Engine Constants**: 70 advanced parameters in a slide-out panel
 - **Presets**: Default, High Risk, Low Dropout — one-click configuration
 - **Distributions**: 7 probability distributions with slider + numeric stepper, reactive sum validation (must equal 1.0)
 - **Run Simulation**: Produces 4 summary cards (Dropout Rate, Engagement, GPA, Validation) and 4 Plotly charts
 - **Export/Import**: Save and load configurations as JSON
 
-**Security:** Output directory sandboxed, JSON import capped at 512KB, student count capped at 10,000, generic error messages to UI.
+**Security:** User-specified output paths are restricted to the working directory, JSON imports are capped at 512 KiB and student count at 10,000. An empty output field uses an operating-system temporary directory; the dashboard does not automatically remove it. Unexpected errors use a generic UI message. The dashboard has no built-in authentication and defaults to a local bind address.
 
 ---
 
@@ -109,9 +125,10 @@ Opens at `http://127.0.0.1:8080` by default. Environment variables:
 
 ```python
 from synthed.pipeline import SynthEdPipeline
+from synthed.pipeline_config import PipelineConfig
 
 # Single semester
-pipeline = SynthEdPipeline(output_dir="./output", seed=42)
+pipeline = SynthEdPipeline(config=PipelineConfig(output_dir="./output", seed=42))
 report = pipeline.run(n_students=300)
 
 print(f"Dropout: {report['simulation_summary']['dropout_rate']:.1%}")
@@ -121,11 +138,11 @@ print(f"Quality: {report['validation']['summary']['overall_quality']}")
 
 ```python
 # Target a specific dropout range
-pipeline = SynthEdPipeline(
+pipeline = SynthEdPipeline(config=PipelineConfig(
     output_dir="./targeted",
     seed=42,
-    target_dropout_range=(0.40, 0.55),  # system auto-calibrates
-)
+    target_dropout_range=(0.40, 0.55),  # estimate from measured targeting curves
+))
 report = pipeline.run(n_students=300)
 ```
 
@@ -153,6 +170,26 @@ with open("config.json", "w") as f:
 
 Legacy keyword arguments still work but emit a `DeprecationWarning`. Migrate by wrapping kwargs in `PipelineConfig(...)`.
 
+Reload JSON with the following normalization. JSON converts integer week keys to strings, and `PipelineConfig.from_dict()` currently leaves the environment event keys as strings unless you restore them. Custom carry-over objects also need explicit reconstruction:
+
+```python
+import json
+from synthed.pipeline_config import PipelineConfig
+from synthed.simulation.semester import SemesterCarryOverConfig
+
+with open("config.json", encoding="utf-8") as f:
+    data = json.load(f)
+environment = data.get("environment", {})
+for name in ("scheduled_events", "positive_events"):
+    if name in environment:
+        environment[name] = {int(week): event for week, event in environment[name].items()}
+if isinstance(data.get("carry_over_config"), dict):
+    data["carry_over_config"] = SemesterCarryOverConfig(**data["carry_over_config"])
+config = PipelineConfig.from_dict(data)
+```
+
+Without week-key normalization, scheduled events can silently disappear from lookups during a run. This serialization format differs from the CLI's `--config` profile format described under [Customization](#custom-institution-profile-json).
+
 ### Theory Protocol (Developer)
 
 Theory modules implement a phase-based protocol for engine dispatch:
@@ -162,7 +199,7 @@ Theory modules implement a phase-based protocol for engine dispatch:
 - `on_post_peer_step(ctx)` — Phase 2 per-student post-peer (Epstein peer influence, Baulke)
 - `contribute_engagement_delta(ctx) -> float` — Engagement phase: each theory returns a per-step engagement adjustment that the engine sums into the weekly engagement update
 
-Phase-method theories (implementing `on_individual_step`/`on_network_step`/`on_post_peer_step`) are auto-discovered from `synthed/simulation/theories/` — no engine changes needed. Engagement-composition theories (which only implement `contribute_engagement_delta`) are currently registered manually in `engine.py` (see the in-code TODO). Execution order is controlled by two class attributes: `_PHASE_ORDER` orders phase-method discovery, and `_ENGAGEMENT_ORDER` orders the engagement-phase dispatch (lower values run first).
+Public phase-method classes (implementing `on_individual_step`/`on_network_step`/`on_post_peer_step`) are auto-discovered from `synthed/simulation/theories/` and instantiated with no arguments. Classes requiring constructor dependencies need additional wiring. Engagement-only classes are instantiated and added to the engagement dispatch list manually in `engine.py`. `_PHASE_ORDER` orders phase-method discovery (ties use module and class names), and `_ENGAGEMENT_ORDER` orders engagement dispatch; lower values run first.
 
 ---
 
@@ -184,7 +221,7 @@ config = PersonaConfig(
     disability_rate=0.10,           # fraction with disability (0-1)
 )
 
-pipeline = SynthEdPipeline(persona_config=config, seed=42)
+pipeline = SynthEdPipeline(config=PipelineConfig(persona_config=config, seed=42))
 report = pipeline.run(n_students=300)
 ```
 
@@ -213,11 +250,11 @@ ic = InstitutionalConfig(
     technology_quality=0.9,             # LMS usability
     curriculum_flexibility=0.6,         # Course adaptability
 )
-pipeline = SynthEdPipeline(institutional_config=ic, seed=42)
+pipeline = SynthEdPipeline(config=PipelineConfig(institutional_config=ic, seed=42))
 report = pipeline.run(n_students=300)
 ```
 
-All values range 0-1 (default 0.5 = neutral). Values above 0.5 improve student outcomes; below 0.5 degrade them.
+All values range 0-1 (default 0.5 = neutral). Higher values strengthen the associated modeled support or reduce penalties. Aggregate dropout, GPA and engagement also depend on the other settings and stochastic trajectories; monotonic improvement in every run is not guaranteed.
 
 `support_services_quality` directly modulates Baulke dropout phase thresholds: higher values make it harder for students to advance toward dropout and easier to recover. At 0.5, all thresholds match the default class constants exactly.
 
@@ -242,11 +279,12 @@ config = GradingConfig(
     midterm_weight=0.0, final_weight=1.0,
     midterm_components={},
     pass_threshold=0.85,
+    distinction_threshold=0.90,  # illustrative policy; must exceed pass_threshold
 )
 
 # Use in pipeline
 from synthed.pipeline import SynthEdPipeline
-pipeline = SynthEdPipeline(grading_config=config)
+pipeline = SynthEdPipeline(config=PipelineConfig(grading_config=config))
 ```
 
 | Parameter | Default | Description |
@@ -269,10 +307,10 @@ pipeline = SynthEdPipeline(grading_config=config)
 
 ```python
 # Relative grading (curve-based)
-pipeline = SynthEdPipeline(
+pipeline = SynthEdPipeline(config=PipelineConfig(
     grading_config=GradingConfig(grading_method="relative"),
     output_dir="./output", seed=42,
-)
+))
 ```
 
 Relative mode applies t-score standardization across the cohort. Students are classified by their standing relative to peers rather than fixed thresholds. Falls back to absolute grading for cohorts smaller than 2 or with zero or near-zero variance (std < 1e-9).
@@ -303,17 +341,17 @@ settings makes the default curve a transfer estimate, flagged in the report.
 sizes are flagged with low coverage confidence because peer interactions can change.
 Seed variation also affects observed results; targeting is not a guarantee.
 
-| Duration | Default cumulative dropout, no targeting | Mean dropout with a 30–45% target |
+| Duration | Archived cumulative dropout, no targeting | Archived mean dropout with a 30–45% target |
 |----------|------------------------------------------|----------------------------------|
 | 1 semester (14 weeks) | 35.60% | 36.88% |
 | 2 semesters (28 weeks) | 63.48% | 36.80% |
 | 4 semesters (56 weeks) | 88.60% | 34.96% |
 
-Both columns use N=500. Default means use seeds 42–46; targeting checks use
+Both columns use N=500. Archived default means use seeds 42–46; targeting checks use
 held-out seeds 47–51. These are simulation measurements, not real-world retention
 benchmarks. All 15 targeting runs met the range in this check; this does not
 guarantee attainment with other seeds or settings. See
-[measurement evidence and limitations](DROPOUT_TARGETING.md).
+[measurement evidence and limitations](DROPOUT_TARGETING.md), including the recorded Kember source-hash mismatch with the current checkout. These are archived results, not a fresh measurement of current `main`.
 
 `dropout_targeting` reports the measured mean range (`observed_dropout_range`),
 `mapping_status`, `clamped`, `reference_configuration_match`, actual dropout and
@@ -335,27 +373,29 @@ With targeting enabled, the dropout check uses the requested range as its refere
 ## 🔄 Multi-Semester Simulation
 
 ```python
-pipeline = SynthEdPipeline(
+pipeline = SynthEdPipeline(config=PipelineConfig(
     output_dir="./multi",
     seed=42,
     n_semesters=4,
-)
+))
 report = pipeline.run(n_students=300)
 ```
 
-**What carries over between semesters:**
+**What carries over between semesters:** only surviving students enter the next semester. Dropped-out students are not re-enrolled. These are the defaults in `SemesterCarryOverConfig`:
 
 | Carries Over | Resets |
 |-------------|--------|
 | Academic integration | Theory-facing weekly engagement history |
 | Social integration (70% retained) | Memory/event log |
-| Engagement (with +0.05 recovery) | Missed assignments streak |
-| Dropout phase (regressed by 1) | Dropout status |
-| Cost-benefit (with +0.03 recovery) | Network links (decayed) |
-| Prior GPA (60/40 blend with earned GPA) | |
+| Engagement (+0.05, capped at 0.80) | Missed assignments streak |
+| Dropout phase (regressed by 1, minimum 0) | |
+| Cost-benefit (+0.03, clipped to [0.01, 0.95]) | |
+| Prior GPA (60% earned transcript GPA + 40% prior GPA) | |
+| Network links (strength decays by 30%; weak links can disappear) | |
 | Transcript GPA and raw mastery accumulators | |
 | Coping factor (70% retained) | |
 | Exhaustion (reduced 60%) | |
+| CoI social/cognitive/teaching presence (60%/70%/80% retained) | |
 
 Validation concatenates observed engagement histories across terms separately and
 uses the full simulation horizon for global dropout weeks. Theory state continues
@@ -388,11 +428,13 @@ md = gen.generate_report(output_dir="./benchmarks")  # writes benchmark_report.m
 |---------|----------|-----------------|
 | `default` | Large-scale, diverse student population | 20-45% |
 
+The two entry points differ: `SynthEdPipeline.from_profile()` uses the profile's institutional/grading configurations and enables targeting to its expected range. `BenchmarkGenerator` (including CLI `--benchmark`) runs without targeting and currently omits those two profile configurations, using pipeline defaults instead. Use the full configuration API when those settings must be honored.
+
 ---
 
 ## 🔬 Calibration Pipeline
 
-SynthEd's **standard calibration** (`run_calibration.py`) runs two stages: Sobol global sensitivity analysis followed by NSGA-II multi-objective optimization. The script does *not* chain through `TraitCalibrator` or `validate_against_oulad` — those are standalone single-objective utilities you can invoke independently when their narrower scope fits the task. The statistical power analysis and parameter choices are documented in [`CALIBRATION_METHODOLOGY.md`](CALIBRATION_METHODOLOGY.md).
+SynthEd's **standard calibration** (`run_calibration.py`) runs two stages: Sobol global sensitivity analysis followed by NSGA-II multi-objective optimization. The script does *not* chain through `TraitCalibrator` or `validate_against_oulad` — those are standalone utilities you can invoke independently when their narrower scope fits the task. Sampling uncertainty, budget choices and their evidential limits are documented in [`CALIBRATION_METHODOLOGY.md`](CALIBRATION_METHODOLOGY.md).
 
 ### Standard Pipeline
 
@@ -406,8 +448,9 @@ from synthed.analysis.sobol_sensitivity import SobolAnalyzer
 analyzer = SobolAnalyzer(n_students=500, seed=42)
 results = analyzer.run(n_samples=512)
 
-rankings = analyzer.rank(results[0], top_n=20)
-for r in rankings:
+dropout_result = next(r for r in results if r.metric == "dropout_rate")
+rankings = analyzer.rank(dropout_result)  # Keep all candidates for later filtering.
+for r in rankings[:20]:
     print(f"{r.rank:2d}. {r.parameter:<40s} ST={r.st:.4f}")
 ```
 
@@ -418,17 +461,30 @@ Explores the Pareto front for the dropout and GPA objectives jointly, rather tha
 ```python
 from synthed.analysis.nsga2_calibrator import NSGAIICalibrator
 
-calibrator = NSGAIICalibrator(n_students=500, seed=42, n_workers=4)
-result = calibrator.run("default", n_trials=62_000)
+calibrator = NSGAIICalibrator(n_students=500, seed=42, n_workers=1)
+gpa_parameters = frozenset({
+    "grading.grade_floor",
+    "grading.pass_threshold",
+    "engine._ASSIGN_GPA_WEIGHT",
+    "engine._EXAM_GPA_WEIGHT",
+})
+result = calibrator.run(
+    "default", pop_size=200, n_trials=62_000, sobol_rankings=rankings,
+    sobol_top_n=20, force_include=gpa_parameters,
+)
 print(f"Pareto front: {len(result.pareto_front)} solutions")
 print(f"Knee-point dropout error: {result.knee_point.dropout_error:.4f}")
 ```
 
-The full production invocation (both seeds, re-evaluation, and held-out validation) is wired up in `run_calibration.py`. Reproduce a release run with:
+This example reuses the full `rankings` from the Sobol example. Like the CLI, selection excludes fixed `config.*` and `inst.*` candidates and includes four GPA-related parameters within the 20-parameter budget. Truncating the rankings before filtering can leave fewer than 20 parameters. This API example runs one optimizer seed; the CLI also performs Pareto re-evaluation and final validation. For a parallel API run, place the entire analysis entry point under `if __name__ == "__main__":` before increasing `n_workers`; this is required for process spawning on Windows. The CLI already supplies this guard.
+
+The standard invocation (two optimizer seeds, Pareto re-evaluation and ten-seed validation) is wired up in `run_calibration.py`. Some validation seeds overlap optimization/re-evaluation seeds, so this is not a fully held-out evaluation. Run the configured workflow with:
 
 ```bash
 python run_calibration.py --workers 8
 ```
+
+This is a substantial computation: 512 Sobol base samples across 68 parameters, followed by 62,000 trials per optimizer seed. `--quick` reduces the Sobol/optimization budget but still runs validation; runtime depends on hardware. Running it from current `main` does not reproduce an older release unless the model revision, dependencies and inputs also match.
 
 ### Optional Helpers
 
@@ -452,9 +508,11 @@ print(f"Dropout: {result.target_dropout:.1%} -> {result.achieved_dropout:.1%}")
 print(f"GPA: {result.target_gpa:.3f} -> {result.achieved_gpa:.3f}")
 ```
 
-#### validate_against_oulad — held-out validation
+#### validate_against_oulad — reference comparison
 
-Run a calibrated parameter dict against a held-out OULAD slice and receive a pass/fail grade per validation test.
+Compare a calibrated parameter dict with OULAD reference metrics and receive a pass/fail grade per check. The helper defaults to a validation-module subset, but it does not verify how the supplied parameters were fitted. The preceding all-module `extract_targets("oulad/")` example is not a held-out design.
+
+**Split limitation:** `extract_targets(modules=...)` filters enrollment rows by module, then filters assessment and VLE records only by student ID. A student enrolled in both module sets can therefore contribute records across the intended split. Before claiming held-out validation, prepare separate calibration and validation directories: restrict `studentInfo` and `studentVle` by module/presentation and restrict `studentAssessment` through its assessment IDs joined to `assessments`. Use `CALIBRATION_MODULES` and `VALIDATION_MODULES` from `synthed.analysis.oulad_validator` consistently. If the claim is about unseen students, also enforce disjoint student IDs; a module split alone does not ensure this. The following example performs a reference comparison on the supplied directory and does not establish independence.
 
 ```python
 from synthed.analysis.oulad_validator import validate_against_oulad
@@ -524,17 +582,19 @@ result = calibrator.run(n_trials=100)
 python run_pipeline.py --n 300 --oulad
 ```
 
-Produces 7 CSV files in `output/oulad/` matching exact OULAD column names:
+Produces 7 CSV files in `output/oulad/` with OULAD column names and ordering:
 
 | File | Rows |
 |------|------|
 | `courses.csv` | 1 per course |
-| `assessments.csv` | ~6 per course |
+| `assessments.csv` | One per scheduled assignment, plus final and a distinct midterm |
 | `vle.csv` | ~5-6 per course |
 | `studentInfo.csv` | 1 per student x course |
 | `studentRegistration.csv` | 1 per student x course |
 | `studentAssessment.csv` | Variable |
 | `studentVle.csv` | Variable |
+
+This is schema compatibility. Region/IMD categories and click counts use mappings or heuristics, so exported values are not empirically equivalent to OULAD. The exporter currently builds one presentation and assessment catalog from the environment. Multi-semester runs are not split into separate OULAD presentations; use a single-semester run when those semantics are required.
 
 ### Module Filter for Split Analysis
 
@@ -555,9 +615,9 @@ export OPENAI_API_KEY="your-key"
 python run_pipeline.py --n 100 --llm
 ```
 
-- **Persona-grounded:** Backstories are generated *from* real persona attributes via `to_prompt_description()`, not randomly. A student with `financial_stress=0.8` and `employment_intensity=0.7` gets a backstory reflecting financial hardship and work-life balance.
+- **Persona-grounded:** Prompts are built from the generated persona attributes via `to_prompt_description()`. The LLM is asked to reflect those attributes. The standalone validator offers keyword and non-empty checks when callers supply `backstory`; the current pipeline does not forward that field, so its report does not check generated backstories.
 - **Providers:** OpenAI, Ollama (`--base-url`), any OpenAI-compatible API
-- **Cost control:** `--cost-threshold 2.0` prompts for confirmation
+- **Cost control:** `--cost-threshold 2.0` prompts if the pre-run estimate exceeds $2. Without a confirmation callback, library mode skips enrichment above the estimate threshold. This is not a hard spending cap; built-in pricing and token estimates may differ from the provider's actual billing, especially for custom models
 - **Cache:** 7-day TTL, 10K-entry LRU eviction
 - **Current scope:** Backstories do not feed back into simulation mechanics. Dropout, engagement, and GPA are computed from persona attributes and theory modules. Future LLM-augmented mode will use backstories as agent context for generating forum posts and assignment text.
 
@@ -571,13 +631,38 @@ python run_pipeline.py --n 100 --llm
 | `interactions.csv` | Timestamped LMS events | student_id, week, interaction_type, quality_score |
 | `outcomes.csv` | Final results | student_id, has_dropped_out, final_gpa, final_engagement |
 | `weekly_engagement.csv` | Time series | student_id, week-by-week scores |
-| `pipeline_report.json` | Full metadata + validation | |
+| `pipeline_report.json` | Configuration summary, simulation metrics and executed validation results | |
+
+For multi-semester runs, validation uses concatenated observed engagement histories across terms. The standard `weekly_engagement.csv` and `engagement_trend` in `outcomes.csv` instead use each student's last simulated semester history; `week_1` is local to that history. The internal validation field `mean_engagement` is not an `outcomes.csv` column. Interactions and dropout weeks use the global simulation timeline. The returned report also contains `report_path` and, when applicable, `llm_costs`, which are added after the JSON file is written.
+
+**Validation input limits:** The current pipeline (including dashboard runs) omits `backstory` from student validation dictionaries and `outcome` from outcome dictionaries. Consequently, its backstory checks do not run. If `reference_stats.pass_rate` or `reference_stats.distinction_rate` is configured, the corresponding check incorrectly computes 0% from missing labels; do not interpret that result as the cohort's observed rate. Use the standalone `SyntheticDataValidator` with populated `backstory` and `outcome` fields for these optional checks. See [Validation Suite](THEORY.md#-validation-suite) for their scope and grading criteria.
+
+### Optional HTML/PDF Reports
+
+`ReportGenerator` is separate from the default pipeline export. Install its dependencies explicitly; a `report` package extra is not currently defined:
+
+```bash
+pip install jinja2 plotly playwright
+python -m playwright install chromium
+```
+
+```python
+from synthed.report import ReportGenerator
+
+document = ReportGenerator(report, lang="en")  # report returned by pipeline.run()
+document.save_html("output/report.html")
+document.save_pdf("output/report.pdf")
+```
+
+Chromium is used for chart images as well as PDF rendering. The `detailed` option is reserved for future use.
 
 ---
 
 ## 🔧 Customization
 
 ### Custom Institution Profile (JSON)
+
+Save this CLI profile as `institution.json`, then run `python run_pipeline.py --config institution.json`:
 
 ```json
 {
@@ -589,9 +674,12 @@ python run_pipeline.py --n 100 --llm
   "reference_statistics": {
     "age_mean": 32.0,
     "dropout_rate": 0.312
-  }
+  },
+  "simulation": {"n_students": 300, "seed": 42, "use_llm": false}
 }
 ```
+
+`--config` reads `persona_config`, `reference_statistics` and selected `simulation` fields (`n_students`, `seed`, `use_llm`, `llm_model`). Simulation values in the file override the corresponding CLI arguments. It does not load a full `PipelineConfig.to_dict()` export; use the Python API for institutional, grading, engine, carry-over or multi-semester configuration. The dashboard's own JSON import/export format is also separate.
 
 ### Override Engine Constants
 
@@ -620,7 +708,9 @@ from synthed.simulation.engine_config import EngineConfig
 from dataclasses import replace
 
 custom_cfg = replace(EngineConfig(), _TINTO_DECAY_BASE=0.08, _DECAY_DAMPING_FACTOR=0.7)
-pipeline = SynthEdPipeline(engine_config=custom_cfg, output_dir="./output", seed=42)
+pipeline = SynthEdPipeline(config=PipelineConfig(
+    engine_config=custom_cfg, output_dir="./output", seed=42,
+))
 ```
 
 ### Parameter Naming Convention
@@ -654,7 +744,7 @@ pipeline = SynthEdPipeline(engine_config=custom_cfg, output_dir="./output", seed
 | `{name} must be between {lo} and {hi}` | [Range violation](#personaconfig-range-violation) |
 | `{name} must sum to 1.0` | [Distribution sum](#distribution-does-not-sum-to-1) |
 | `ModuleNotFoundError: No module named 'synthed'` | [Missing package](#missing-package) |
-| `SyntaxError` on `X \| None` | [Python version](#python-version-mismatch) |
+| Import/type errors on an older Python | [Python version](#python-version-mismatch) |
 | Validation grade D or F | [Low validation grade](#low-validation-grade) |
 | Dropout rate too low/high | [Dropout mismatch](#dropout-rate-outside-expectations) |
 | `Unknown PersonaConfig field` | [Sobol typo](#unknown-parameter-in-sobol) |
@@ -696,10 +786,10 @@ ModuleNotFoundError: No module named 'synthed'
 
 **Error:**
 ```
-SyntaxError: unsupported operand type(s) for |: 'type' and 'NoneType'
+TypeError: unsupported operand type(s) for |: 'type' and 'NoneType'
 ```
 
-**Context:** SynthEd requires Python 3.10+ for `X | None` union syntax.
+**Context:** SynthEd requires Python 3.10+. Older interpreters or incompatible dependencies may fail during import or annotation evaluation; the exact exception depends on the code path.
 
 **Action:**
 1. `python --version` -- must be 3.10+
@@ -796,11 +886,11 @@ ValueError: Unknown PersonaConfig field: 'emplyment_rate' in config.emplyment_ra
 
 #### auto_bounds returns empty
 
-**Symptom:** `len(auto_bounds(margin=0.01))` returns 0.
+**Symptom:** A custom `auto_bounds(...)` selection is empty or omits a parameter.
 
-**Context:** Very small margin collapses bounds to `lower >= upper` after clipping.
+**Context:** Exclusion filters or clipping can remove candidate parameters. A small positive margin does not by itself imply an empty result.
 
-**Action:** Use larger margin: `auto_bounds(margin=0.5)` (default)
+**Action:** Inspect `exclude`, the inclusion flags and the returned bounds. Start with `auto_bounds()` (default margin 0.5) and narrow the space deliberately.
 
 ---
 
@@ -818,7 +908,7 @@ openai.AuthenticationError: No API key provided.
 export OPENAI_API_KEY="sk-..."
 # For Ollama (any non-empty string works):
 export OPENAI_API_KEY="not-needed"
-python run_pipeline.py --llm --base-url http://localhost:11434/v1
+python run_pipeline.py --llm --base-url http://localhost:11434/v1 --model "<installed-model-name>"
 ```
 
 #### LLM cost threshold
@@ -830,7 +920,7 @@ LLM enrichment blocked: cost $1.25 exceeds threshold $1.00
 
 **Action:**
 1. CLI: `--cost-threshold 5.0`
-2. Python: `SynthEdPipeline(cost_threshold=5.0, confirm_callback=lambda _: True)`
+2. Python: `SynthEdPipeline(config=PipelineConfig(use_llm=True, cost_threshold=5.0), confirm_callback=your_confirmation_function)` — the callback receives the warning text and must return `True` to proceed
 3. Use cheaper model: `--model gpt-4o-mini`
 
 #### Ollama base_url validation
@@ -878,11 +968,11 @@ Harmless. Suppress with: `git config core.autocrlf true`
 ConstantInputWarning: An input array is constant
 ```
 
-Appears with small populations where all students share a trait value. Use N >= 200 for sufficient variance.
+Appears when a correlation input is constant, which can occur in small populations or when a configured process saturates at a bound. Inspect the affected arrays and repeat across seeds; increasing N alone does not guarantee variance. An undefined correlation is not evidence that the relationship passed validation.
 
 #### Student IDs differ between runs
 
-UUIDv7 embeds wall-clock time. Same seed at different times produces different IDs. Use `display_id` (S-0001) for stable identifiers. Simulation state is deterministic.
+UUIDv7 embeds wall-clock time. The same seed at different times produces different IDs. Use `display_id` (S-0001) to match participants by generation order. With the same source revision, dependencies, configuration, seed and participant order, simulation trajectories are reproducible after normalizing identifier labels. LLM text, UUIDs and timing metadata are outside that guarantee.
 
 #### Calibration data staleness
 
@@ -898,7 +988,7 @@ Re-measure after changing model or RNG-consuming code; use
 
 > **SynthEd is under active development and is for research and simulation purposes only.**
 
-SynthEd generates **entirely fictional synthetic data**. No real individuals are represented, modeled, or identifiable in any output. The generated personas, interaction logs, and behavioral trajectories are computational artifacts produced by agent-based simulation grounded in published educational theories.
+The default generator creates **fictional synthetic personas** and simulated interactions from configurable distributions and theory-informed mechanisms. It does not start from individual student records. Custom reference data, user-supplied attributes and optional LLM-generated text require separate privacy assessment; the built-in checks do not establish a formal privacy guarantee.
 
 **By using SynthEd, you acknowledge that:**
 
@@ -906,7 +996,7 @@ SynthEd generates **entirely fictional synthetic data**. No real individuals are
 - Synthetic data should **not** be presented as real student data without clear disclosure.
 - The simulation reflects theoretical models, not empirical observations of specific institutions or populations.
 - Outputs are intended for **research, development, and educational purposes** -- not for making decisions about real individuals.
-- SynthEd is **under active development** (pre-release). APIs, default parameters, and output formats may change between versions without prior notice.
+- SynthEd has published releases and is classified as **Beta / under active development**. APIs, default parameters and output formats may change between versions; pin a release or commit and dependencies for reproducible work.
 - As with any actively developed software, **bugs, inaccuracies, or incomplete features may exist**. Generated data should be independently validated before use in publications or critical research decisions.
 - If using the optional LLM enrichment feature, you are responsible for compliance with the LLM provider's terms of service and content policies.
 
@@ -914,9 +1004,9 @@ SynthEd generates **entirely fictional synthetic data**. No real individuals are
 
 SynthEd is designed to **address** ethical challenges in educational data mining, not create them:
 
-- **Privacy by design**: Synthetic agents have no mapping to real individuals, eliminating re-identification risk.
+- **Fictional generation**: Default personas are sampled without a mapping to individual records. The validator's quasi-identifier grouping check is informational; it does not test linkage to an external dataset or provide differential privacy.
 - **Bias awareness**: The simulation parameters (demographics, employment rates, dropout thresholds) reflect configurable assumptions. Users should critically evaluate whether default parameters are appropriate for their research context.
-- **Transparency**: All theoretical frameworks, formulas, and calibration decisions are documented in the source code and this documentation. The simulation is fully auditable.
+- **Transparency**: Source code, theoretical references and versioned measurement artifacts make the model inspectable. Many weights and thresholds remain modeling choices; a cited theory does not empirically identify every numeric constant.
 - **No surveillance**: SynthEd is not designed for, and should not be used for, monitoring or evaluating real students.
 
 ## 🙏 Acknowledgments

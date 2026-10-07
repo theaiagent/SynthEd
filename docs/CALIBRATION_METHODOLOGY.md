@@ -4,19 +4,19 @@
 
 ## 1. Overview
 
-SynthEd calibrates 68 tunable simulation parameters spanning 13 modules (engine, theory anchors, grading, institutional, persona) against the Open University Learning Analytics Dataset (OULAD; Kuzilek et al., 2017) using a three-stage pipeline. After Sobol screening, 20 of these are actively optimized by NSGA-II; the remainder are fixed at profile defaults. (Note: the dashboard's "Engine Constants" panel exposes all 70 fields of the `EngineConfig` dataclass; only 15 of those are in the Sobol candidate set.)
+SynthEd screens 68 tunable simulation parameters spanning 13 prefixes (engine, theory anchors, grading, institutional, persona), then optimizes 20 against the scalar OULAD reference targets stored in `synthed/benchmarks/profiles.py`. Persona/institutional float fields are fixed to profile values; non-selected engine/theory/grading fields retain implementation defaults. (Note: the dashboard's "Engine Constants" panel exposes all 70 fields of the `EngineConfig` dataclass; only 15 of those are in the Sobol candidate set.)
 
 ```
 Sobol Global Sensitivity Analysis → NSGA-II Multi-Objective Optimization → Cross-Seed Validation
 ```
 
-This document explains why each method was chosen, how parameters were selected, and the statistical power analysis supporting those choices.
+This document records the method choices, current source behavior, and limits of the versioned evidence. The NSGA-II CLI does not read OULAD CSVs, select a held-out institutional cohort, install its saved candidates into production defaults, or regenerate the dropout lookup table. Production targeting is a separate operation; see [Dropout Targeting](DROPOUT_TARGETING.md). Historical calibration summaries predate the later workload and Kember corrections. No new measurement is implied by this documentation correction.
 
 ## 2. Why Sobol Global Sensitivity Analysis?
 
 ### Purpose
 
-Before optimization, we must identify which of the 68 tunable parameters meaningfully affect simulation outputs. Optimizing all 68 simultaneously would require an intractable search budget. Sobol analysis decomposes the total output variance into contributions from individual parameters and their interactions.
+Before optimization, we must identify which of the 68 tunable parameters meaningfully affect simulation outputs. Screening limits the dimension of the subsequent search under the configured budget. Sobol analysis decomposes the total output variance into contributions from individual parameters and their interactions.
 
 ### Why Sobol over alternatives?
 
@@ -41,43 +41,26 @@ We use the Saltelli (2002) quasi-random sampling scheme with `calc_second_order=
 Total simulations = n_samples × (D + 2)
 ```
 
-where D = 68 parameters. This generates a base sample matrix and D perturbation matrices, allowing efficient computation of both S1 (first-order) and ST (total-order) indices.
+where D = 68 parameters. Two base matrices and D hybrid matrices provide the N × (D + 2) rows for S1 (first-order) and ST (total-order) estimation.
 
 **Reference:** Saltelli, A. (2002). "Making best use of model evaluations to compute sensitivity indices." *Computer Physics Communications*, 145(2), 280-297.
 
 ### Parameter: `n_samples = 512`
 
-**Justification:**
+The full CLI uses 512 base samples (35,840 simulation rows, N=500 per row).
+Quick mode uses 128 (8,960 rows, N=100); direct `SobolAnalyzer.run()` defaults
+are 128 base samples with the constructor's N=200. These are configured budgets,
+not verified detection or confidence guarantees.
 
-The confidence interval width for Sobol indices scales as:
-
-```
-SE(ST) ≈ c / √n_samples
-```
-
-where c ∈ [0.5, 1.0] is problem-dependent (Archer et al., 1997).
-
-| n_samples | CI half-width (c=0.75) | Min detectable ST | Total sims |
-|-----------|------------------------|-------------------|------------|
-| 128 | 0.130 | 0.130 | 8,960 |
-| 256 | 0.092 | 0.092 | 17,920 |
-| **512** | **0.065** | **0.065** | **35,840** |
-| 1024 | 0.046 | 0.046 | 71,680 |
-
-At n_samples=128, parameters with ST < 0.13 cannot be distinguished from zero. This means the ranking of parameters in positions 10-30 (typically ST ∈ [0.02, 0.10]) is unreliable.
-
-At n_samples=512, parameters with ST > 0.065 are reliably detected. This covers the inclusion threshold of ST > 0.05 recommended by Iooss & Lemaître (2015).
-
-Saltelli et al. (2008) recommend n_samples ≥ 500 for D > 50, and n_samples ≥ 10×D for first-order indices. Our choice of 512 satisfies the first criterion and yields N/D = 512/68 = 7.5, approaching the 10× recommendation.
-
-**References:**
-- Saltelli, A. et al. (2008). *Global Sensitivity Analysis: The Primer*. Wiley.
-- Archer, G.E.B., Saltelli, A., & Sobol, I.M. (1997). "Sensitivity measures, ANOVA-like techniques and the use of bootstrap." *Journal of Statistical Computation and Simulation*, 58(2), 99-120.
-- Iooss, B. & Lemaitre, P. (2015). "A review on global sensitivity analysis methods." In *Uncertainty Management in Simulation-Optimization of Complex Systems*, Springer.
+`SobolAnalyzer.run()` returns S1, ST and bootstrap confidence half-widths for
+dropout, mean engagement and mean GPA. A fixed sample count does not establish
+a half-width of 0.065 or reliable detection at ST=0.05. The previous table used
+an assumed c=0.75, not measured intervals. Inspect actual intervals and ranking
+stability for a new study; the CLI currently does not persist those results.
 
 ### Parameter: `sobol_top_n = 20`
 
-After Sobol analysis, the top 20 parameters by ST are selected for NSGA-II optimization. The remaining 48 are fixed at profile defaults.
+The CLI uses the dropout ST ranking. It excludes 8 `config.*` and 5 `inst.*` candidates, leaving exactly 55 eligible parameters, and selects 20 in full mode or 10 in quick mode. The Sobol screen itself uses `PersonaConfig()` and runner defaults, not the named benchmark profile.
 
 **Force-included parameters:** Because Sobol ranks parameters by dropout_rate sensitivity, GPA-affecting parameters may rank low despite being critical for the GPA objective. Four grading parameters are force-included regardless of Sobol rank:
 
@@ -90,23 +73,23 @@ These 4 force-included parameters count toward the top-20 budget (4 forced + 16 
 
 > **Note:** This force-include set is specific to the current SynthEd grading formula and OULAD calibration target. The authoritative list is maintained in `run_calibration.py::GPA_FORCE_INCLUDE`. If the engine's grading model is refactored or alternative institutional profiles with different GPA calculation strategies are introduced, this list should be reviewed for applicability.
 
-**Justification:**
-- With 68 parameters, the Pareto principle typically applies: 20-30% of parameters explain 80%+ of output variance
-- ST already includes all interaction effects — a parameter with ST = 0.005 contributes at most 0.5% of variance through any combination of interactions
-- The `config.*` (PersonaConfig) and `inst.*` (InstitutionalConfig) parameters are excluded from optimization (fixed per profile), effectively reducing the candidate pool to ~55 parameters
-- Force-include ensures NSGA-II has levers for both objectives (dropout_error and gpa_error), preventing the optimizer from being blind to GPA
+Quick mode uses four forced entries plus six ranked entries. `pass_threshold`
+affects outcome classification but does not
+make pass/distinction rates objectives. Parameter count is an operational choice.
 
-**Validation criterion:** The cumulative ST of the top 20 parameters must explain ≥ 90% of total variance. If < 70%, increase to 25-30 and raise n_trials proportionally.
-
-**Reference:** Saltelli, A. et al. (2010). "Variance based sensitivity analysis of model output." *Computer Physics Communications*, 181(2), 259-270.
+ST includes interactions involving a parameter. Summing ST values can count the
+same interaction more than once; it is not cumulative explained variance. The
+CLI implements neither the previously described 90% cumulative-ST gate nor an
+automatic dimension increase. The literature references in §8 provide background,
+not evidence that this selection captures a specified share of simulator variance.
 
 ## 3. Why NSGA-II Multi-Objective Optimization?
 
 ### Purpose
 
 Find engine constant values that simultaneously minimize:
-1. **Dropout error:** |achieved_dropout - target_dropout| where target_dropout = 0.312 (OULAD Withdrawn rate)
-2. **GPA error:** |achieved_gpa - target_gpa| where target_gpa = 3.03 (OULAD assessment score 75.80/100 × 4.0)
+1. **Dropout error:** |achieved_dropout - target_dropout| where target_dropout = 0.312 (stored profile reference)
+2. **GPA error:** |achieved_gpa - target_gpa| where target_gpa = 3.03 (stored profile reference)
 
 subject to constraints:
 - engagement ≥ 0.1 (hard floor)
@@ -117,7 +100,7 @@ subject to constraints:
 | Method | Pros | Cons | Verdict |
 |--------|------|------|---------|
 | **Grid search** | Exhaustive | Curse of dimensionality: 10^20 grid points for 20D | Infeasible |
-| **Bayesian (TPE/GP)** | Sample-efficient | Single-objective; multi-objective variants immature | Not ideal for 2-obj |
+| **Bayesian (TPE/GP)** | Surrogate-based search | Requires a different search design | Not evaluated here |
 | **NSGA-II** | Native multi-objective; constraint handling; well-studied convergence | Requires population-level evaluation budget | **Selected** |
 | **NSGA-III** | Better for 3+ objectives | Overkill for 2 objectives; similar cost | Unnecessary |
 | **MOEA/D** | Good decomposition | Less intuitive knee-point selection | No advantage |
@@ -125,7 +108,7 @@ subject to constraints:
 NSGA-II was selected because:
 1. **Native bi-objective optimization** — produces a Pareto front of non-dominated solutions
 2. **Constraint handling** via feasibility-first tournament selection
-3. **Knee-point selection** — the geometric knee of the Pareto front represents the best compromise between objectives
+3. **Knee-point selection** — the geometric knee provides the implemented compromise rule, not a statistical optimality guarantee
 4. **Well-established** in simulation calibration (Deb et al., 2002; Deb & Jain, 2014)
 
 ### Implementation
@@ -133,7 +116,8 @@ NSGA-II was selected because:
 We use Optuna's `NSGAIISampler` with ask/tell API for batch parallelism:
 
 ```python
-sampler = NSGAIISampler(seed=seed)
+sampler = NSGAIISampler(seed=seed, population_size=pop_size,
+                       constraints_func=constraints_func)
 study = optuna.create_study(
     directions=["minimize", "minimize"],  # dropout_error, gpa_error
     sampler=sampler,
@@ -142,28 +126,62 @@ study = optuna.create_study(
 
 **Reference:** Deb, K., Pratap, A., Agarwal, S., & Meyarivan, T. (2002). "A fast and elitist multiobjective genetic algorithm: NSGA-II." *IEEE Transactions on Evolutionary Computation*, 6(2), 182-197.
 
+### Measured quantities and effective overrides
+
+The shared runner obtains these values from `simulation_summary`:
+
+- Dropout is all departures divided by the original cohort, including unavoidable
+  withdrawals.
+- Mean GPA is mean `cumulative_gpa` among students with at least one graded item,
+  including students who later withdrew. Transcript GPA applies
+  `grade_floor + (1 - grade_floor) × raw_quality`, then the GPA scale. It differs
+  from raw `perceived_mastery`, which theory modules use, and from raw
+  `semester_grade`. Default grade floor is **0.45**; absolute classification
+  applies the floor to semester grade separately.
+- Mean final engagement is computed over **retained students** using their last
+  observed engagement. Despite a contrary inline constraint comment, this
+  aggregate excludes dropouts. If no GPA or engagement aggregate is available,
+  `_extract_metrics()` logs a warning and substitutes **0.0**; inspect such runs.
+
+`pass_rate` and `distinction_rate` are recorded as Optuna trial attributes, but
+are not objectives or constraints. Correlation-check results and the overall
+validation grade are also not optimization objectives or feasibility gates.
+
+Every trial runs a fresh one-semester, default 14-week pipeline with the same
+simulation seed as that optimizer run. This reduces one source of variation
+between candidates but does not hold later random draws or peer interactions
+fixed when model behavior changes.
+
+`_build_fixed_overrides()` copies float fields from the profile's persona and
+institutional configurations. `_sim_runner.py` does not forward the profile's
+`environment`, `grading_config`, or `reference_stats` wholesale: it starts with
+runner defaults and applies the sampled/fixed overrides. For example, the
+profile declares `pass_threshold=0.65`, whereas plain `GradingConfig()` uses
+**0.64**; the sampled threshold overrides that field during CLI optimization.
+The scalar objective targets still come from the profile. This is not identical
+to evaluating every setting of `SynthEdPipeline.from_profile()`.
+
+Assignment and exam quality weight groups are normalized to sum to one when an
+override affects them. Submission weights are scaled down only if their sum
+exceeds one. Consequently, saved sampled weight values are **inputs to the
+normalization**, not necessarily the final effective engine weights. Replay them
+through the same override logic. When both classification thresholds are sampled,
+the runner sorts them before constructing `GradingConfig`.
+
 ### Parameter: `n_students = 500`
 
-Each NSGA-II evaluation simulates N students for 14 weeks. The achieved dropout_rate is a binomial proportion with standard error:
+Each NSGA-II evaluation simulates N students for 14 weeks. The historical budget
+rationale used the independent-Bernoulli approximation:
 
 ```
 SE(p) = √(p(1-p)/N)
 ```
 
-**Power analysis (α=0.05, two-sided, power=0.80):**
-
-```
-Required N = (z_{α/2} + z_β)² × p(1-p) / δ²
-           = (1.96 + 0.842)² × 0.312 × 0.688 / δ²
-           = 7.849 × 0.2147 / δ²
-```
-
-| Effect size (δ) | Required N | Interpretation |
-|-----------------|------------|----------------|
-| 3 pp (0.03) | 1,872 | Fine-grained calibration |
-| 5 pp (0.05) | 674 | Moderate calibration |
-| 7 pp (0.07) | 344 | Coarse calibration |
-| 10 pp (0.10) | 169 | Rough calibration |
+The following arithmetic assumes independent observations and normal
+approximations, p=0.312, α=0.05 and power=0.80. Students in SynthEd interact, so
+these figures are **illustrative planning values**, not verified simulator SEs,
+confidence intervals or minimum detectable effects. A simulation power study or
+independent cohort/seed design is required to substantiate such claims.
 
 **Standard error at selected N values:**
 
@@ -171,152 +189,103 @@ Required N = (z_{α/2} + z_β)² × p(1-p) / δ²
 |---|----|--------------------|-------------------|
 | 100 | 4.63% | ±9.08% | 12.98 pp |
 | 200 | 3.28% | ±6.42% | 9.18 pp |
-| 300 | 2.68% | ±5.25% | 7.50 pp |
+| 300 | 2.67% | ±5.24% | 7.49 pp |
 | **500** | **2.07%** | **±4.06%** | **5.80 pp** |
 | 750 | 1.69% | ±3.32% | 4.74 pp |
-| 1000 | 1.47% | ±2.87% | 4.11 pp |
+| 1000 | 1.47% | ±2.87% | 4.10 pp |
 
-**Decision rationale:** N=500 (SE=2.07%) is the pragmatic optimum. It provides:
-- MDE of 5.8 pp — sufficient for NSGA-II to distinguish meaningfully different parameter sets
-- Signal-to-Noise Ratio (SNR) ≈ 2.4 for 5pp differences — workable with evolutionary selection pressure over 310 generations
-- Acceptable computational cost per evaluation (~0.9 seconds)
-
-Going to N=750 (SE=1.69%) would improve discriminability but increase total compute by 50% with diminishing returns for the optimizer.
+**Trade-off:** N=500 limits per-evaluation cost. Larger cohorts and more independent
+seeds can improve uncertainty assessment but cost more; these tables do not
+establish an optimal N or a runtime guarantee.
 
 **Reference:** Cochran, W.G. (1977). *Sampling Techniques*, 3rd ed. Wiley.
 
 ### Parameter: `pop_size = 200`
 
 The NSGA-II population size determines genetic diversity and Pareto front coverage.
-
-**Rule of thumb (Deb et al., 2002):**
-```
-pop_size ≥ 10 × D  (D = number of decision variables)
-```
-
-With D=20 optimized parameters: 10 × 20 = 200.
-
-For problems with constraints (we have 3), additional population diversity is needed to maintain feasible solutions. Our 200 exactly meets the 10D threshold.
-
-With only 2 objectives, larger populations are not necessary for diversity (unlike 3+ objective problems where NSGA-III with reference points would be needed).
+The full CLI uses 200 for 20 selected parameters. This is a configured search
+choice, not a proven minimum or sufficiency rule of `10 × D` for this simulator.
 
 ### Parameter: `n_trials = 62,000`
 
-Total function evaluations. At pop_size=200, this yields 310 generations.
+The full run budgets 62,000 attempted trials per optimizer seed, giving 310
+batches at population 200. Failed trials consume this budget. Quick mode uses
+500 trials and population 20 (25 batches); direct `run()` defaults are 8,000
+and 80, with no forced parameters unless supplied by the caller.
 
-**Convergence analysis:**
-
-The Evolutionary Multi-Objective Optimization (EMO) literature recommends 10D-20D generations for convergence (Deb & Jain, 2014; Ishibuchi et al., 2017):
-
-```
-Minimum generations: 10 × D = 10 × 20 = 200 → n_trials = 40,000
-Upper bound:         20 × D = 20 × 20 = 400 → n_trials = 80,000
-```
-
-**Noise Amplification Factor (NAF):**
-
-In stochastic optimization, each fitness evaluation contains Monte Carlo noise. The Noise Amplification Factor (NAF) quantifies how much additional computational budget is needed compared to a noise-free problem (Jin & Branke, 2005):
-
-```
-NAF = 1 + σ_noise² / σ_signal²
-```
-
-where:
-- σ_noise = Standard Error (SE) of a single simulation's dropout_rate = 0.0207 (at N=500, p=0.312)
-- σ_signal = standard deviation of the true objective function (dropout_error) across solutions that the optimizer must discriminate between
-
-The value of σ_signal depends on the optimization phase:
-
-| Phase | σ_signal | NAF | Interpretation |
-|-------|----------|-----|----------------|
-| Global exploration (early generations) | 0.040 | 1.27 | Solutions span the full feasible range [0.20, 0.45]; large fitness differences are easy to detect |
-| Mid-convergence | 0.03 | 1.48 | Population clusters near the optimum; moderate differences remain |
-| Near-optimum refinement (late generations) | 0.02 | 2.07 | Competing solutions differ by only 2-3 percentage points; noise dominates |
-
-**Global σ_signal derivation:** In the feasible region, dropout_error = |achieved - 0.312| ranges from 0 to 0.138 in [0.20, 0.45]. Under uniform coverage: σ = 0.138/√12 ≈ 0.040.
-
-**Budget computation using the conservative mid-convergence estimate (σ_signal = 0.03):**
-
-```
-NAF = 1 + 0.0207² / 0.03² = 1 + 0.000428 / 0.0009 = 1.48
-
-Minimum evaluations = pop_size × 10D × NAF
-                    = 200 × 200 × 1.48
-                    = 59,200
-```
-
-**Our choice of 62,000** exceeds this conservative estimate (59,200), providing additional margin. This ensures adequate budget not only for global exploration but also for the mid-convergence phase where population refinement occurs.
-
-Additionally, the **re-evaluation step** provides a second layer of noise mitigation: after NSGA-II completes, every Pareto front solution is re-evaluated at N=2,000 (SE=1.04%), eliminating noise-induced errors in knee-point selection. This two-phase strategy is well-established in noisy optimization (Jin & Branke, 2005): use a principled evaluation budget for search, then re-evaluate the final solution set with higher fidelity.
-
-At pop_size=200, 62,000 evaluations yield 310 generations — comfortably within the Deb (2002) recommended range of 10D-20D generations (200-400).
-
-**Convergence verification:** Hypervolume Indicator (HV) tracking per generation. Convergence is declared when HV improvement < 0.1% over 20 consecutive generations. If convergence is reached before generation 310, the remaining generations serve as confirmation of stability.
-
-**References:**
-- Jin, Y. & Branke, J. (2005). "Evolutionary optimization in uncertain environments — a survey." *IEEE Transactions on Evolutionary Computation*, 9(3), 303-317.
-- Ishibuchi, H., Imada, R., Setoguchi, Y., & Nojima, Y. (2017). "How to specify a reference point in hypervolume calculation." *GECCO 2017*.
+Hypervolume is recorded after batches with a nonempty best front, using reference
+point (0.25, 2.0). There is no implemented 0.1% improvement gate, 20-generation
+stability test or early stopping. Budget completion does not establish convergence.
+The previous noise-amplification calculation assumed unmeasured signal variances;
+it cannot establish 59,200 as a required budget or 62,000 as sufficient.
 
 ### Strengthening: Re-evaluation and Replication
 
-**Re-evaluation (N=2,000):** After NSGA-II completes, each Pareto front solution is re-evaluated with N=2,000 students. This reduces the SE of each solution's objectives from 2.07% (N=500) to 1.04% (N=2,000), ensuring the knee-point selection is not distorted by calibration-phase noise.
+**Re-evaluation (N=2,000):** Full mode evaluates each in-memory Pareto candidate at
+seeds (42, 123, 456), averages outputs and reselects a knee. Quick mode skips it.
+This can reduce sampling variation but cannot eliminate it. The method does not
+re-filter feasibility or recompute nondominance after averaging.
 
-**Replicated calibration:** The full NSGA-II is run with two different optimizer seeds (42 and 2024). The cross-seed knee-point distance (`compare_knee_points` in `pareto_utils.py`) is reported as an **informational** measurement — the historical "robust if < 0.1" rule was a heuristic, not a Fisher Information-derived threshold. Cross-seed parameter divergence is the expected signature of the parameter non-identifiability discussed in §7.3 (20 free parameters fit to 2 scalar objectives), not evidence of optimizer failure. The Pareto front re-evaluation reduces noise-induced selection error in knee-point identification regardless of cross-seed parameter scatter.
+`find_knee_point()` normalizes both axes and selects the point farthest from the
+line between endpoints. With one or two points it returns the first; degenerate
+endpoints also have a fallback. The selected point is not a statistical optimum
+certificate.
+
+**Replicated calibration:** The full NSGA-II uses seeds 42 and 2024. The
+`compare_knee_points < 0.1` rule is informational, not a release gate or a
+Fisher Information-derived threshold. See §7.3 for the measured distance and
+limits of the local identifiability argument.
 
 ## 4. Cross-Seed Validation
 
 ### Purpose
 
-Verify that the calibrated parameters produce stable outputs across different random seeds — i.e., the results are driven by the calibrated parameters, not by stochastic artifacts.
+Describe how the selected candidate's outputs vary across simulation seeds. This provides a stability diagnostic; the seed design below determines its inferential limits.
 
 ### Parameter: `Validation N = 1,000`
 
-```
-SE = √(0.312 × 0.688 / 1000) = 1.47%
-95% CI = ±1.96 × 0.0147 = ±2.87 pp
-```
-
-At N=1,000, a measured dropout of 31.2% has 95% CI [28.3%, 34.1%] — comfortably within the target range [20%, 45%].
-
-For SE < 2%: N ≥ p(1-p) / 0.02² = 0.2147 / 0.0004 = 537. Our N=1,000 exceeds this with margin.
+Both CLI modes evaluate the selected knee at N=1,000. The binomial SE approximation
+is 1.47 percentage points at p=0.312, with a normal half-width of 2.87 points;
+these are not verified uncertainty estimates for the interacting agent model.
+Direct `validate_solution()` defaults to N=500 and seeds (42, 123, 456).
 
 ### Parameter: `Validation seeds = 10`
 
-The inter-seed confidence interval uses a t-distribution with k-1 degrees of freedom:
+The CLI uses (42, 123, 456, 789, 2024, 1337, 7777, 9999, 31415, 27182).
+These are not fully held-out: 42/2024 overlap search and 42/123/456 overlap
+Pareto re-evaluation. It reports means and population SDs (`numpy.std`, ddof=0),
+not individual observations, confidence intervals or tolerance intervals.
+`validation.in_range` checks only mean dropout against 20–45%; it does not
+certify every seed's range, GPA fit or success of all normal validation checks.
+
+For a separate inferential design with independent, approximately normal seed
+estimates, a mean interval would use the **sample** SD s (ddof=1):
 
 ```
 CI = x̄ ± t_{α/2, k-1} × s / √k
 ```
 
+The following t factors illustrate the dependence on seed count; they are not
+intervals computed by the CLI.
+
 **t-critical values and CI properties:**
 
 | k (seeds) | df | t_{0.025, df} | CI factor (t/√k) | Relative width |
 |-----------|-----|---------------|-------------------|----------------|
-| 3 | 2 | 4.303 | 2.485 | 3.49× |
+| 3 | 2 | 4.303 | 2.484 | 3.47× |
 | 5 | 4 | 2.776 | 1.242 | 1.74× |
 | **10** | **9** | **2.262** | **0.715** | **1.00×** |
 | 15 | 14 | 2.145 | 0.554 | 0.77× |
 | 20 | 19 | 2.093 | 0.468 | 0.65× |
 | 30 | 29 | 2.045 | 0.373 | 0.52× |
 
-At k=3 (current): df=2, t=4.303 — the CI is 3.5× wider than at k=10. With observed std=0.0133:
-```
-k=3:  CI half-width = 4.303 × 0.0133 / √3 = 0.0330 (3.30 pp)
-k=10: CI half-width = 2.262 × 0.0133 / √10 = 0.0095 (0.95 pp)
-```
+The former example s=0.0133 and 95/95 tolerance-width table are not supported by
+the saved calibration summaries. Ten seeds alone do not justify a sub-1-point
+mean interval or a 9-point band containing 95% of future seed outcomes.
 
-**Tolerance interval (γ=0.95, 1-α=0.95):**
-
-| k | k_tol (Howe, 1969) | Tolerance width (2 × k_tol × s) |
-|---|-------------------|----------------------------------|
-| 3 | 9.916 | 26.4 pp |
-| 5 | 5.079 | 13.5 pp |
-| **10** | **3.379** | **8.99 pp** |
-| 15 | 2.954 | 7.86 pp |
-
-At k=10, we can claim (95% confidence) that 95% of seeds produce dropout rates within a ~9 pp band around the mean. This is the operational tolerance interval.
-
-**Decision rationale:** k=10 is the standard minimum for simulation output analysis (Law, 2015). It provides df=9 for the t-distribution (mild penalty vs. normal), a sub-1pp CI half-width on the mean, and a ~9pp tolerance interval.
+The analysis runner suppresses exports with `_calibration_mode=True` but still
+runs the normal validation suite. The wrapper returns aggregate simulation
+metrics; the CLI does not persist the full validation reports.
 
 **References:**
 - Law, A.M. (2015). *Simulation Modeling and Analysis* (5th ed.). McGraw-Hill Education.
@@ -357,112 +326,183 @@ validation_n_students = 1_000  # Students per validation run
 validation_seeds = [42, 123, 456, 789, 2024, 1337, 7777, 9999, 31415, 27182]
 
 # Compute
-workers = 1                    # CLI default (`--workers 1`); pass `--workers 8` on a 16-core host for ~50% utilization
+workers = 1                    # CLI default; actual utilization depends on workload and hardware
 ```
+
+### CLI, seeds and failure behavior
+
+Sequential Sobol evaluation propagates the first simulation exception. Parallel
+Sobol evaluation first submits all rows to a shared pool, preserving row order in
+the results. Failed or unfinished rows receive up to **two isolated retries** in
+fresh one-worker pools: at most one first-pass execution plus two retries per
+row. Each isolated wait has a **300-second** timeout. The initial collection
+budget is `min(300 × number_of_rows, 86400)` seconds. Running workers are not
+forcibly killed by `shutdown(wait=False, cancel_futures=True)`.
+
+An unrecovered row aborts the analysis. It is not dropped or replaced with zero;
+the Saltelli matrix requires every row in the original order.
+
+The analyzer's `seed` controls the simulator seed for each Sobol row, but the
+SALib sampling/bootstrap calls do not pass a seed. The CLI does not save a sample
+matrix, so `--seed` alone does not reproduce the full screening/ranking process.
+The API accepts `sample_matrix` for callers that retain one.
+
+In full mode `--seed` changes the Sobol simulation seed only; optimizer/trial
+seeds remain (42, 2024). In quick mode it also selects the optimizer/trial seed.
+`--workers` is clamped to [1, CPU count] (fallback ceiling 8). The CLI has no
+semester-count, output-directory, trial-count or saved-matrix option. Its only
+built-in profile is `default`; output files in `calibration_output/` may be
+replaced by a new invocation.
+
+Parallel NSGA-II asks for the whole batch before returning results in trial
+order; sequential mode asks/evaluates/tells one trial at a time. The same seed
+need not produce identical searches across worker modes. Trial simulation failures
+are recorded as failed trials, with no Sobol-style retry; outer failures can
+abort the profile. The CLI catches profile failures and writes `error` entries
+to the combined JSON. Inspect these entries because old per-seed success files
+can remain after a failure.
+
+Quick mode uses N=100, 128 Sobol base samples, ten selected parameters, population
+20 and 500 trials. It skips re-evaluation but retains the ten N=1,000 final runs.
 
 ### Computational Budget
 
-| Stage | Simulations | N per sim | Est. time (8 workers) |
-|-------|-------------|-----------|----------------------|
-| Sobol | 35,840 | 500 | ~65 min |
-| NSGA-II (seed 42) | 62,000 | 500 | ~210 min (measured: 12,749.9 s on the v1.7.0 run) |
-| NSGA-II (seed 2024) | 62,000 | 500 | ~200 min (measured: 11,938.4 s on the v1.7.0 run) |
-| Re-evaluation | ≤ pareto_size × 3 (typically 9–60) | 2,000 | ~1 min |
-| Validation | 10 | 1,000 | <1 min |
-| **Total** | **~160,000** | | **~8 hours** (measured on the v1.7.0 run with 8 workers) |
+Without failures/retries, full mode schedules **159,840** Sobol/search evaluations
+(35,840 + 2 × 62,000), plus three runs per original Pareto candidate across both
+searches, plus **20** final evaluation runs. With the archived front sizes of
+three and four, this would total **159,881** simulation calls. Quick mode schedules
+**9,470** (8,960 + 500 + 10). These counts have different per-stage population
+sizes; they are not runtime estimates.
 
-### Statistical Summary
+The historical seed summaries record **12,749.9 s** and **11,938.4 s** for
+`calibration_time_s`. That timer covers `cal.run()`, excluding the separate CLI
+Sobol stage, subsequent re-evaluation and final evaluation. Hardware, worker
+count and end-to-end duration are not recorded there; a current runtime promise
+cannot be derived from them.
 
-| Metric | Value | Source |
-|--------|-------|--------|
-| Sobol Confidence Interval (CI) half-width on ST | ≤ 0.065 | n_samples=512, c=0.75 |
-| NSGA-II fitness Standard Error (SE) on dropout | 2.07% | N=500, p=0.312 |
-| NSGA-II Minimum Detectable Effect (MDE) | 5.8 pp | power=0.80, α=0.05 |
-| NSGA-II generations | 310 | 62,000/200 |
-| Validation CI half-width (mean) | 0.95 percentage points (pp) | k=10, s=0.0133, t=2.262 |
-| Validation tolerance width (95/95) | 8.99 pp | k=10, k_tol=3.379 |
-| SE < 2% threshold | N ≥ 537 | p(1-p)/0.02² |
+**Trade-off:** these budgets bound search work while restricting the free
+parameters. Larger cohorts, more seeds and saved trial-level evidence increase
+cost and storage but improve uncertainty assessment and auditability. Neither
+reducing dimensions nor increasing trials guarantees validity or convergence.
 
 ## 6. Diagnostic Visualizations
 
-The following diagnostic visualizations are **recommended** to accompany calibration results. As of v1.7.0 the calibration pipeline captures the raw data needed for most of them (e.g. `hv_history` per generation in each seed's output JSON, the full Pareto front in the same file, Sobol ST indices in the Sobol output), but chart *rendering* is deferred to the next calibration release — see the Calibrate-tab placeholder in `synthed/dashboard/app.py` for the planned implementation scope. Users who need these views immediately can build them from the JSON outputs in `calibration_output/`.
+The CLI writes `nsga2_<profile>_seed<seed>.json` and a combined
+`nsga2_all_profiles.json`. Successful summaries contain the original Pareto size,
+attempted evaluation count, search duration, selected knee, parameter names,
+hypervolume history, and aggregate final evaluation statistics. The combined
+file adds the optimizer seed; failed profiles instead have `seed`, `profile`
+and `error`.
 
-### 6.1 Implementation status (v1.7.0)
+| Diagnostic | What the current CLI actually preserves |
+|------------|----------------------------------------|
+| HV trace | `hv_history`; both archived seeds contain 310 entries |
+| Sobol S1/ST, confidence intervals, sample matrix | Computed in memory; not saved by the CLI |
+| Full Pareto scatter / front overlay | Front exists in memory; JSON saves only its size and knee |
+| Seed stability boxplot | Individual evaluation observations are not saved; only means and SDs |
+| Knee parameter comparison | Can be computed from the two saved parameter dictionaries |
+| Complete validation scorecard / correlations | Evaluated inside the runner, not retained in these NSGA-II summaries |
 
-| # | Diagnostic | Data captured in v1.7.0 | Chart rendered |
-|---|------------|-------------------------|----------------|
-| 1 | HV convergence curve | ✅ `hv_history` in each `nsga2_default_seed*.json` | ❌ Planned (Phase 2) |
-| 2 | Sobol ST bar chart with CI | ✅ Sobol output JSON (ST indices + bootstrap CI) | ❌ Planned (Phase 2) |
-| 3 | Cumulative variance plot | ✅ Derivable from Sobol ST indices | ❌ Planned (Phase 2) |
-| 4 | Pareto front scatter with knee | ✅ `pareto_front` + knee-point in seed JSON | ❌ Planned (Phase 2 — Calibrate tab) |
-| 5 | Seed stability boxplot | ✅ 10-seed validation output | ❌ Planned (Phase 2) |
-| 6 | Cohen's d effect sizes | ⚠️ Computable from validation output + OULAD reference | ❌ Planned (Phase 2) |
-| 7 | Replicated calibration overlay | ✅ Both seed JSON files | ❌ Planned (Phase 2) |
-
-### 6.2 Recommended diagnostics
-
-1. **Hypervolume Indicator (HV) convergence curve** — HV vs. generation number for both NSGA-II seeds. Demonstrates convergence rather than budget exhaustion.
-
-2. **Sobol ST bar chart with CI** — Top 20 parameters ranked by ST, with bootstrap confidence intervals. Justifies the top-N cutoff.
-
-3. **Cumulative variance plot** — Cumulative sum of ST for all 68 parameters. Shows the "elbow" at rank 20.
-
-4. **Pareto front scatter** — 2D plot (dropout_error vs. gpa_error) with knee-point highlighted. Shows the trade-off surface.
-
-5. **Seed stability boxplot** — Boxplot of dropout_rate and GPA across 10 validation seeds. Demonstrates inter-seed robustness.
-
-6. **Cohen's d effect sizes** — Effect size between SynthEd outputs and OULAD reference statistics for each validation metric.
-
-7. **Replicated calibration comparison** — Overlay Pareto fronts from seed=42 and seed=2024. Agreement at the *output* level (dropout, GPA) confirms search reproducibility; cross-seed *parameter* divergence is informational only and reflects the structural non-identifiability discussed in §7.3.
+An ST ranking plot requires retained Sobol results; a cumulative sum of ST must
+not be labeled explained variance. The existing summary files cannot reconstruct
+full fronts, per-seed boxplots, trial failures, or effect-size uncertainty. Future
+runs need explicit persistence for those diagnostics. Do not regenerate historical
+evidence solely because the documentation changed.
 
 ## 7. Limitations & Identifiability
 
-### 7.1 Scope of the credibility claim in v1.7.0
+### 7.1 Historical evidence and provenance
 
-The calibration pipeline described in §2-§5 demonstrates that SynthEd can match the **marginal** OULAD targets `dropout_rate` and `gpa_mean` to within the simulator's Monte Carlo noise floor across multiple seeds. This is necessary but not sufficient evidence of *deep* distributional fidelity. v1.7.0 therefore positions the calibration as a **method release** — the pipeline is reproducible and auditable — rather than as evidence that the calibrated parameter values are themselves estimates of underlying constants.
+The tracked `calibration_output/nsga2_default_seed42.json` and
+`nsga2_default_seed2024.json` were last updated in commit **73ec261**. Each reports
+62,000 evaluations, 20 parameters and 310 HV entries; the combined file agrees
+with the individual summaries. These are historical candidate evaluations:
 
-Future versions will incrementally tighten the validation: multi-objective calibration to reduce the parameter null space, holdout-presentation generalization tests, predictive-utility (TSTR) experiments, and mechanism-ablation studies.
+| Optimizer seed | Pareto size | Knee dropout / GPA | Final dropout mean / SD | Final GPA mean / SD |
+|----------------|------------:|--------------------|-------------------------|---------------------|
+| 42 | 3 | 0.2985 / 3.0263 | 0.2988 / 0.0196 | 3.0236 / 0.0028 |
+| 2024 | 4 | 0.3292 / 3.0215 | 0.3224 / 0.0145 | 3.0204 / 0.0044 |
 
-### 7.2 Monte Carlo noise floor of the simulator
+Against the stored reference targets, the final dropout means differ by **−1.32**
+and **+1.04 percentage points**, and GPA by **−0.0064** and **−0.0096**. Passing the
+20–45% mean-dropout range is a much weaker claim than matching both targets or
+whole distributions.
 
-Cross-seed validation at n=1,000 students with 10 seeds (§4) yields the following empirical standard deviations on the calibrated profile:
+These summaries lack generating-source hashes, dependencies, resolved configs,
+per-trial results and individual final evaluation seeds/outcomes. Their values
+cannot establish a current production result or verify the full historical run
+design on their own. The later targeting and mechanism measurements have more
+explicit manifests, but evaluate different configurations and questions.
 
-- **Dropout rate**: σ ≈ 0.015–0.020 (1.5–2.0 percentage points)
-- **GPA mean (4-point scale)**: σ ≈ 0.003–0.005
+### 7.2 Historical support-services effect report
 
-Any objective difference smaller than ~1 pp dropout (≈0.5 σ) or ~0.005 GPA is **below the noise floor** of the simulator at the validation sample size. NSGA-II cannot distinguish solutions whose objective values fall inside this band, and reported fit improvements within this band should not be interpreted as meaningful.
+Issue #86's 50-seed (41–90), N=200 support-services study is quoted in
+`tests/test_baulke_institutional.py`: dropout at SSQ=0.5 minus SSQ=0.8 had mean
+**0.0482**, SD **0.0325**, p10 **0.0140**; dropout at SSQ=0.2 minus SSQ=0.5 had mean
+**0.0687**, SD **0.0308**, p10 **0.0295**. The second contrast describes the effect
+of **lowering** support from 0.5 to 0.2, not increasing it from 0.2 to 0.5.
 
-**SSQ effect-size measurement (Issue #86).** A 50-seed empirical study (seeds 41–90, n=200 students per run) measured the paired per-seed dropout rate difference when varying `support_services_quality`:
-
-| Direction | Mean effect | Std | p10 | Interpretation |
-|-----------|-------------|-----|-----|----------------|
-| SSQ=0.5 → 0.8 (high support) | 0.0482 | 0.0325 | 0.0140 | ~4.8 pp dropout reduction |
-| SSQ=0.2 → 0.5 (low support) | 0.0687 | 0.0308 | 0.0295 | ~6.9 pp dropout increase |
-
-Both directional effects exceed the noise floor (p10 ≥ 0.012), confirming that `support_services_quality` has a robust, detectable effect on simulator outputs. The asymmetry (low SSQ has a stronger effect than high SSQ) reflects the inverted threshold modulation in the Baulke model. Integration test thresholds are set to `eps=0.008` based on these measurements (p10 ≥ 0.012 → >90% power).
+These are historical figures preserved in test documentation, without a tracked
+raw measurement manifest in `docs/measurements/` or `calibration_output/`. The
+integration assertions use a **0.008** margin on ten-seed means. A reported
+empirical tenth percentile is not a power calculation for that test, and these
+figures do not establish current effects after subsequent model changes.
 
 ### 7.3 Parameter identifiability
 
-The calibration optimizes 20 free parameters (Sobol-screened from 68 — see §2 *Parameter: `sobol_top_n = 20`*) against 2 scalar objectives. The local Jacobian of the forward map (parameters → objectives) has rank at most 2 (assuming the two objectives, `dropout_error` and `gpa_error`, are locally linearly independent — if they happen to be locally collinear along the optimum manifold, the effective rank could fall to 1 and the null space could grow to 19-D), so there are **at least 18 effectively unconstrained directions** in parameter space at any solution: many distinct parameter vectors produce statistically indistinguishable outputs on (dropout, GPA). Cross-seed comparison of knee-point parameter vectors at distance metric `compare_knee_points` consistently shows differences on the order of 0.3–0.4 (normalized RMS) even when both seeds achieve sub-percentage-point agreement on the calibration targets — observed empirically in the v1.7.0 outputs `calibration_output/nsga2_default_seed42.json` and `nsga2_default_seed2024.json`, reproducible by running `compare_knee_points` from `synthed/analysis/pareto_utils.py` on those files.
+Twenty selected parameters are fitted to two scalar objectives. Where a smooth
+local approximation is appropriate, the objective Jacobian has rank at most two
+and hence at least **18 local first-order null directions**. This dimension count
+does not prove a global equivalence manifold, quantify practical identifiability,
+or account for nonsmooth simulation rules and active constraints.
 
-This is the expected statistical signature of a **non-identifiable model under marginal-only calibration** (cf. Brun et al. 2001; Gutenkunst et al. 2007 on "sloppy models"). It is not a defect of the optimizer; it is a structural property of fitting a high-dimensional simulator to a low-dimensional target. The `compare_knee_points < 0.1` threshold previously used in `run_calibration.py` is **informational only** as of v1.7.0, not a release gate, because the threshold itself is not derived from a Fisher Information analysis of the simulator.
+Using the archived rounded dictionaries, `compare_knee_points()` returns
+**0.378359**. It divides each difference by the larger absolute value in the pair,
+then takes the RMS; it does not normalize by Sobol parameter bounds. Individual
+normalized differences are **0.005967** for `grade_floor`, **0.045685** for
+`pass_threshold`, **0.133947** for `_EXAM_GPA_WEIGHT`, and **0.424371** for
+`_ASSIGN_GPA_WEIGHT`.
 
-### 7.4 Practical implications for users of v1.7.0
+The CLI's **0.1** comparison threshold is informational. Agreement of two
+optimizer runs, even for the grading fields, does not identify a physical or
+institutional constant. Disagreement also does not by itself diagnose optimizer
+failure. Effective normalized engine weights require the replay logic in §3.
 
-- **Output level (synthetic cohorts)**: safe to use. Whichever knee-point parameter vector is shipped, dropout and GPA distributions match the OULAD reference within the noise floor in §7.2.
-- **Parameter level (calibrated constants)**: the values reported in `calibration_output/nsga2_default_seed*.json` are **one valid solution among many**. The non-grading parameters (e.g. `_DECISION_RISK_MULTIPLIER`, `_MISSED_STREAK_PENALTY`, `_TINTO_DECAY_BASE`) should not be interpreted, plotted, or compared as physical constants until the multi-objective calibration described in §7.5 is in place. Of the four force-included grading parameters, only the two grading-formula parameters (`grade_floor`, `pass_threshold`) converge tightly across seeds (normalized cross-seed difference < 0.05) and are safe to interpret in v1.7.0; the GPA-weight parameters show partial convergence — `_EXAM_GPA_WEIGHT` (normalized difference ~0.13) is moderate, and `_ASSIGN_GPA_WEIGHT` (normalized difference ~0.42) is in the same poorly-identified regime as the unconstrained non-grading parameters and should be interpreted with caution.
+### 7.4 Practical interpretation
 
-### 7.5 Planned identifiability improvements
+Use the saved parameters as candidate simulation settings with a limited measured
+scope. Marginal fit does not establish correlation fidelity, privacy, predictive
+utility, institutional transportability, or multi-semester retention validity.
+The production defaults are not automatically replaced by either saved knee.
 
-The next major calibration release will introduce three structural fixes addressing the limitations described in §7.3:
+The normal validator's A/B/C/D/F grade is an unweighted fraction of executed
+checks. Several correlation checks require only the expected sign, with p-values
+reported but not used as pass gates; their reference magnitudes are not matching
+tolerances. Passing them does not show that correlations are preserved across
+code revisions. Read the individual checks and population/horizon definitions in
+[Dropout Targeting](DROPOUT_TARGETING.md#what-an-ab-validation-grade-means).
 
-1. **Promote `pass_rate` and `distinction_rate` to NSGA-II objectives** — these metrics are already computed in `user_attrs` at no additional simulation cost. The two candidates address different mechanisms: `pass_rate` is partly exit-driven (overlapping with `dropout_rate`) while `distinction_rate` is purely grading-driven (independent of the dropout mechanism). The naive identifiability gain ("≥18 → ≥16 unconstrained directions") is an upper bound; the true gain depends on the empirical orthogonality of the four-objective set, which will be quantified in the Phase 2 work via the empirical objective correlation matrix on the existing Sobol sample and a collinearity-index analysis (Brun et al. 2001) on the objective Jacobian before the new objectives are committed.
-2. **Add `withdrawal_week_distribution` KS-test as a fourth objective** — replaces a marginal scalar constraint with a distributional one, tightening identifiability.
-3. **Run NSGA-II across 5 seeds** (not 2) and report parameters as **posterior bands** (median + 5–95 percentile per parameter) rather than point estimates.
+### 7.5 Possible future work (not implemented)
 
-These changes are expected to reduce cross-seed knee-point distance below 0.20 on the revised metric, with the new threshold derived from a Fisher Information / noise-floor analysis.
+Additional objectives could include pass rate, distinction rate and withdrawal
+timing, subject to suitable empirical references. Adding two outcome rates to the
+current two objectives gives four; adding a timing statistic gives **five**.
+Their dependence and information content must be assessed rather than assuming
+each removes one unidentified direction.
+
+More optimizer seeds can describe search variability. Their quantiles would be
+**empirical optimizer-result bands**, not Bayesian posterior intervals. A new
+cross-seed distance threshold, convergence criterion, statistical-power claim or
+institutional acceptance margin needs a justified design and evidence. None is
+established by the current summaries.
 
 ## 8. References
+
+The original bibliography is retained as methodological background and historical
+context. It is not evidence for the removed numerical power/convergence guarantees.
+Current implementation claims above are checked against `run_calibration.py`,
+`synthed/analysis/{sobol_sensitivity,nsga2_calibrator,_sim_runner,pareto_utils}.py`,
+`synthed/simulation/statistics.py`, and `synthed/validation/validator.py`.
 
 - Archer, G.E.B., Saltelli, A., & Sobol, I.M. (1997). Sensitivity measures, ANOVA-like techniques and the use of bootstrap. *JSCS*, 58(2), 99-120.
 - Brun, R., Reichert, P., & Künsch, H.R. (2001). Practical identifiability analysis of large environmental simulation models. *Water Resources Research*, 37(4), 1015-1030.

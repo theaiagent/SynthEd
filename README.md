@@ -9,24 +9,26 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19334118.svg)](https://doi.org/10.5281/zenodo.19334118)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Agent-based simulation environment for Open & Distance Learning (ODL) research.** SynthEd generates behaviorally grounded and temporally coherent learning trajectories by combining persona-driven agent modeling with 10 established theoretical frameworks. Built for researchers in learning analytics, educational data mining, and dropout prediction.
+**Agent-based simulation environment for Open & Distance Learning (ODL) research.** SynthEd generates learning trajectories by combining persona-driven agent modeling with 10 theoretical anchors. Built for researchers in learning analytics, educational data mining, and dropout prediction.
 
 ```bash
-pip install -e ".[dev]"
-python run_pipeline.py --n 200      # or: pip install synthedu
+pip install synthedu
+python -c "from synthed.pipeline import SynthEdPipeline; SynthEdPipeline().run(n_students=200)"
 ```
 
-> **From statistical similarity to behavioral fidelity.** Traditional synthetic data methods optimize for distributional match. SynthEd optimizes for *behavioral coherence* -- each data point emerges from a simulated student's evolving motivations, decisions, and life context.
+The repository scripts and development setup are shown in [Quick Start](#quick-start). The `main` branch can contain changes beyond the latest published package; see [Unreleased](CHANGELOG.md#unreleased) before reproducing results across versions.
+
+SynthEd models each student's evolving motivations, decisions, and life context. Calibration fits selected aggregate outcomes; passing validation checks does not establish that every simulated trajectory matches a real learner.
 
 ---
 
 ## Why SynthEd?
 
-| Challenge | Traditional Approach | SynthEd Approach |
-|-----------|---------------------|-----------------|
-| **Privacy regulations** (GDPR/KVKK) | Anonymization (re-identification risk) | Agents are fictional -- no real individuals |
-| **Class imbalance** in dropout data | Oversampling (SMOTE) -- loses context | Parameter-level control of dropout rates |
-| **Temporal incoherence** | GAN/VAE post-hoc smoothing | Persona + memory produces coherent trajectories |
+| Research need | SynthEd support |
+|---------------|-----------------|
+| **Access to learner data** | Generate fictional agents from configurable population distributions |
+| **Dropout scenarios** | Adjust model parameters or estimate a base rate from measured targeting curves |
+| **Longitudinal data** | Generate weekly interactions from evolving persona, memory and network state |
 
 ---
 
@@ -34,24 +36,24 @@ python run_pipeline.py --n 200      # or: pip install synthedu
 
 ### Simulation Engine
 - **10 Theory Modules** -- Tinto, Bean & Metzner, Kember, SDT, Garrison CoI, Moore, Rovai, Baulke, Epstein & Axtell, Gonzalez (+ unavoidable withdrawal mechanism)
-- **TheoryModule Protocol** -- 4-phase dispatch (individual, network, post-peer, engagement) with auto-discovery and `_ENGAGEMENT_ORDER` composition. Phase-method theories are added with zero engine changes; engagement-composition theories currently require a one-line registration in the engine
-- **Continuous Persona Spectrum** -- Employment intensity, family responsibility, internet reliability as [0,1] floats with Beta distributions. No binary gates -- all theory effects scale continuously
+- **TheoryModule Protocol** -- 4-phase dispatch (individual, network, post-peer, engagement). Phase-method classes with no-argument constructors are auto-discovered; engagement-only classes require engine instantiation and inclusion in the engagement dispatch list
+- **Continuous Persona Spectrum** -- Employment intensity, family responsibility and internet reliability use [0,1] scales. Employment and family responsibility combine zero-valued groups with Beta-distributed positive levels; the model also retains categorical states and decision thresholds
 - **Multi-Semester Simulation** -- Carry-over mechanics for engagement, GPA, coping, dropout phases
-- **GPA Feedback Loop** -- Cumulative GPA anchors cost-benefit, non-fit perception, and competence beliefs
+- **Grade Feedback Loop** -- Raw perceived mastery informs cost-benefit, non-fit perception and competence beliefs; transcript GPA separately applies the configured grade floor
 
 ### Calibration & Validation
 - **Sobol Sensitivity** -- 68-parameter sensitivity analysis identifying dominant dropout/engagement drivers
 - **NSGA-II Calibration** -- Multi-objective optimization with Pareto front, parallel `--workers N` support, adaptive parameter bounds
-- **5-Level Validation Suite** -- 22 statistical tests (default; up to 24 with backstory validation) across distributions, correlations, temporal coherence, privacy, and backstory
+- **5-Level Validation Suite** -- Conditional checks across distributions, correlations, temporal coherence, synthetic-record uniqueness and optional backstories. The standalone validator supports all five levels; current pipeline inputs omit backstories and outcome labels ([limitations](docs/THEORY.md#-validation-suite)). Available data and reference statistics determine the executed count; grades summarize check pass rates, not external validity
 
 ### Configuration
 - **InstitutionalConfig** -- 5 institution-level quality parameters that modulate theory constants. `support_services_quality` scales 13 Baulke dropout phase thresholds
 - **GradingConfig** -- Beta/Normal/Uniform grade distributions, dual-hurdle pass requirements, exam-only and continuous assessment modes, relative grading with t-score cohort normalization
 - **EngineConfig** -- 70 frozen engine constants with validation, overridable via `dataclasses.replace()`
-- **PipelineConfig** -- Frozen dataclass grouping 16 pipeline params with JSON serialization for reproducibility
+- **PipelineConfig** -- Frozen dataclass grouping 16 pipeline params; the [JSON loading example](docs/GUIDE.md#pipelineconfig-recommended) restores event-week keys and custom carry-over objects for reproducibility
 
 ### Data & Integration
-- **OULAD-Compatible Export** -- 7-table CSV matching the Open University Learning Analytics Dataset schema
+- **OULAD Schema Export** -- 7 CSV tables with OULAD column names and ordering; mapped attributes and heuristic click counts do not establish statistical or semantic equivalence to OULAD
 - **Optional LLM Enrichment** -- Persona-grounded narrative backstories via OpenAI, Ollama, or any compatible provider
 - **Benchmark Reports** -- Customizable default profile with CLI report generation (`--benchmark`)
 
@@ -87,7 +89,7 @@ print(f"Dropout: {report['simulation_summary']['dropout_rate']:.1%}")
 
 1. **Dropout Prediction** -- Generate labeled training data with known ground-truth trajectories
 2. **Intervention Simulation** -- Model "what-if" scenarios by adjusting population parameters
-3. **Privacy-Safe Benchmarking** -- Share synthetic datasets publicly for reproducible research
+3. **Synthetic Benchmarking** -- Share clearly labeled simulated datasets and their configurations for reproducible research
 
 ---
 
@@ -97,6 +99,10 @@ print(f"Dropout: {report['simulation_summary']['dropout_rate']:.1%}")
 |----------|---------|
 | **[User Guide](docs/GUIDE.md)** | Installation, configuration, calibration pipeline, OULAD export, LLM enrichment, troubleshooting |
 | **[Theory & Architecture](docs/THEORY.md)** | 10 theoretical anchors, factor clusters, architecture diagram, project structure, validation suite, test inventory |
+| **[Dropout Targeting](docs/DROPOUT_TARGETING.md)** | Horizon-specific curves, measurement provenance, held-out seed checks and targeting limits |
+| **[Calibration Methodology](docs/CALIBRATION_METHODOLOGY.md)** | Sobol and NSGA-II settings, sampling uncertainty and identifiability limits |
+| **[Long-Horizon Diagnosis](docs/LONG_HORIZON_DIAGNOSIS.md)** | Engagement trajectories, mechanism ablations and the next calibration steps |
+| **[Contributing](CONTRIBUTING.md)** | Development checks, theory registration and review requirements |
 
 ---
 
@@ -116,7 +122,7 @@ print(f"Dropout: {report['simulation_summary']['dropout_rate']:.1%}")
 - [x] Relative grading (t-score cohort normalization)
 - [x] PipelineConfig (frozen pipeline configuration with JSON serialization)
 - [x] TheoryModule Protocol (phase-based dispatch with auto-discovery)
-- [x] Engine modularization (state.py, grading.py, statistics.py -- engine.py 834→590 lines)
+- [x] Engine modularization (state.py, grading.py, statistics.py)
 - [x] Engagement protocol unification (4th phase: `contribute_engagement_delta`)
 - [x] Spectrum refactoring (binary → continuous for employment/family/internet)
 - [ ] GraphRAG integration (curriculum modeling)
@@ -129,20 +135,25 @@ print(f"Dropout: {report['simulation_summary']['dropout_rate']:.1%}")
 
 ## Legal Disclaimer
 
-> **SynthEd generates entirely fictional synthetic data.** No real individuals are represented or identifiable. Outputs are intended for research, development, and educational purposes. SynthEd is under active development -- APIs and output formats may change between versions.
+> **SynthEd's default generator produces fictional personas.** Outputs are intended for research, development, and educational purposes. Custom input data and optional LLM outputs need their own privacy review; the built-in checks are not a formal privacy guarantee. SynthEd is under active development -- APIs and output formats may change between versions.
 
-See full [Legal Disclaimer](docs/GUIDE.md#%EF%B8%8F-legal-disclaimer) and [Responsible Use](docs/GUIDE.md#-responsible-use) guidelines.
+See full [Legal Disclaimer](docs/GUIDE.md#-legal-disclaimer) and [Responsible Use](docs/GUIDE.md#-responsible-use) guidelines.
 
 ---
 
 ## Contributing
 
-Contributions welcome! See the [User Guide](docs/GUIDE.md) for development setup.
+Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and review requirements.
 
 ```bash
-ruff check synthed/ tests/
-python -m pytest tests/ -v --tb=short
+ruff check synthed/ tests/ --select E,F,W --ignore E501
+python -m pytest tests/ -q --tb=short
+python -m synthed.doc_facts
 ```
+
+## Test Suite
+
+[THEORY.md](docs/THEORY.md#-test-suite) contains the generated test inventory. `python -m synthed.doc_facts` checks the source-derived inventory and documented parameter counts. Actual pytest collection and skips depend on installed optional dependencies and browser availability. The CI badge uses a JUnit total that includes skipped entries; consult the CI job summary for the passed/skipped breakdown.
 
 ---
 
