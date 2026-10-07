@@ -2,12 +2,239 @@
 
 import copy
 import json
+from enum import Enum
 from fractions import Fraction
 
 import pytest
 import numpy as np
 
 from synthed.validation import SyntheticDataValidator, ReferenceStatistics
+
+
+@pytest.mark.parametrize("enum_reference", [False, True])
+def test_gender_string_enum_labels_keep_their_literal_categories(enum_reference):
+    """Accepted string subclasses retain payload labels in observations and reference keys."""
+    class Gender(str, Enum):
+        """Standard string enum whose display name differs from its string payload."""
+
+        MALE = "male"
+        FEMALE = "female"
+
+    distribution = {Gender.MALE: 0.55, Gender.FEMALE: 0.45} if enum_reference else {"male": 0.55, "female": 0.45}
+    reference = ReferenceStatistics(gender_distribution=distribution)
+    labels = [Gender.MALE] * 11 + [Gender.FEMALE] * 9
+    students = [{"age": 30, "gender": label} for label in labels]
+    report = SyntheticDataValidator(reference).validate_all(students, [])
+    literal_students = [{"age": 30, "gender": label.value} for label in labels]
+    literal_report = SyntheticDataValidator().validate_all(literal_students, [])
+    json.dumps(report, allow_nan=False)
+    row = next(r for r in report["results"] if r["test"] == "gender_distribution")
+    literal = next(r for r in literal_report["results"] if r["test"] == "gender_distribution")
+    assert row == literal
+    assert (row["statistic"], row["p_value"], row["status"]) == (0.0, 1.0, "passed")
+    assert "Gender." not in row["details"]
+    assert reference.gender_distribution is distribution
+
+
+@pytest.mark.parametrize("reference,reason", [
+    ({"male": 0.5, "female": 0.5}, "unexpected_category"),
+    ({"male": 0.5, "female": 0.5, "other": 0.0}, "zero_probability_category"),
+    ({"male": 0.4, "female": 0.4, "other": 0.2}, None),
+])
+def test_gender_report_preserves_all_observations_and_checks_support(reference, reason):
+    """A third observed category is reported, never discarded or allowed to crash."""
+    students = [{"student_id": str(i), "age": 30, "gender": gender}
+                for i, gender in enumerate(["male"] * 4 + ["female"] * 4 + ["other"] * 2)]
+    report = SyntheticDataValidator(ReferenceStatistics(gender_distribution=reference)).validate_all(students, [])
+    json.dumps(report, allow_nan=False)
+    rows = [r for r in report["results"] if r["test"] == "gender_distribution"]
+    assert len(rows) == 1
+    row = rows[0]
+    assert "n=10" in row["details"]
+    for label, count in (("male", 4), ("female", 4), ("other", 2)):
+        assert f"'category': '{label}', 'observed': {count}" in row["details"]
+    if reason:
+        assert row["status"] == "failed" and row["passed"] is False
+        assert row["metric"] == "Category support check"
+        assert row["p_value"] == 0.0
+        assert row["statistic"] is row["synthetic"] is None
+        assert row["reference"] == 0.0
+        assert f"reason={reason}" in row["details"]
+    else:
+        assert (row["status"], row["passed"], row["statistic"], row["p_value"]) == ("passed", True, 0.0, 1.0)
+
+
+@pytest.mark.parametrize("bad_category", [None, "", 7, True, ["male"], {"gender": "male"}])
+def test_gender_invalid_observation_is_counted_and_reported(bad_category):
+    """Nonscalar labels remain visible support failures in the public report."""
+    students = [{"age": 30, "gender": "male"}, {"age": 30, "gender": bad_category}]
+    report = SyntheticDataValidator().validate_all(students, [])
+    json.dumps(report, allow_nan=False)
+    row = next(r for r in report["results"] if r["test"] == "gender_distribution")
+    assert row["status"] == "failed" and row["p_value"] == 0.0
+    assert "reason=invalid_category" in row["details"]
+    assert "n=2" in row["details"] and "invalid_count=1" in row["details"]
+
+
+def test_missing_gender_is_a_visible_support_failure():
+    """An absent label differs from an ordinary category named unknown."""
+    report = SyntheticDataValidator().validate_all([{"age": 30}], [])
+    row = next(r for r in report["results"] if r["test"] == "gender_distribution")
+    assert row["status"] == "failed"
+    assert "reason=invalid_category" in row["details"]
+    assert "missing" in row["details"] and "invalid_count=1" in row["details"]
+
+
+def test_gender_empty_and_single_supported_category_are_defined():
+    """No observations are N/A; complete agreement on singleton support is exact."""
+    reference = ReferenceStatistics(gender_distribution={"male": 1.0, "other": 0.0})
+    validator = SyntheticDataValidator(reference)
+    empty = next(r for r in validator._validate_demographics([]) if r.test_name == "gender_distribution")
+    assert empty.status == "not_assessed" and empty.passed is False
+    assert empty.synthetic_value is empty.statistic is empty.p_value is None
+    assert "n=0" in empty.details
+    row = next(r for r in validator._validate_demographics([{"age": 30, "gender": "male"}] * 3)
+               if r.test_name == "gender_distribution")
+    assert (row.statistic, row.p_value, row.passed) == (0.0, 1.0, True)
+    assert "'category': 'other', 'observed': 0, 'reference': 0.0" in row.details
+    assert reference.gender_distribution == {"male": 1.0, "other": 0.0}
+
+
+@pytest.mark.parametrize("n", [20, 1000])
+def test_gender_supported_chi_square_matches_oracle_and_is_order_independent(n):
+    """Supported samples retain the statistic and effective-alpha decision."""
+    from scipy import stats
+
+    reference = ReferenceStatistics(gender_distribution={"other": 0.0, "female": 0.45, "male": 0.55})
+    students = [{"age": 30, "gender": gender} for gender in ["male"] * (n // 2) + ["female"] * (n // 2)]
+    validator = SyntheticDataValidator(reference)
+    row = next(r for r in validator._validate_demographics(students) if r.test_name == "gender_distribution")
+    expected = stats.chisquare([n // 2, n // 2], [n * 0.55, n * 0.45])
+    assert row.statistic == pytest.approx(expected.statistic)
+    assert row.p_value == pytest.approx(expected.pvalue)
+    assert row.passed == bool(expected.pvalue > validator._effective_alpha(n))
+    reordered = SyntheticDataValidator(ReferenceStatistics(gender_distribution={"male": 0.55, "female": 0.45, "other": 0.0}))
+    other = next(r for r in reordered._validate_demographics(students[::-1]) if r.test_name == "gender_distribution")
+    assert other == row
+
+
+@pytest.mark.parametrize("students", [[], [{"age": 30, "gender": "male"}]])
+def test_gender_rechecks_mutated_reference_before_assessment(students):
+    """Mutable reference dictionaries cannot bypass validation, even at N=0."""
+    reference = ReferenceStatistics()
+    validator = SyntheticDataValidator(reference)
+    reference.gender_distribution["male"] = 0.99
+    with pytest.raises(ValueError, match="gender_distribution"):
+        validator._validate_demographics(students)
+
+
+def test_gender_unobserved_positive_category_contributes_to_chi_square():
+    """Absent but possible reference categories still contribute their expected counts."""
+    from scipy import stats
+
+    reference = ReferenceStatistics(gender_distribution={"male": 0.4, "female": 0.4, "other": 0.2})
+    students = [{"age": 30, "gender": g} for g in ["male"] * 4 + ["female"] * 6]
+    row = next(r for r in SyntheticDataValidator(reference)._validate_demographics(students)
+               if r.test_name == "gender_distribution")
+    expected = stats.chisquare([4, 6, 0], [4, 4, 2])
+    assert row.statistic == expected.statistic and row.p_value == expected.pvalue
+    assert "'category': 'other', 'observed': 0, 'reference': 0.2" in row.details
+
+
+def test_gender_accepted_real_probabilities_and_roundoff_reach_finite_reports():
+    """Fractions and a machine-scale sum discrepancy work without changing inputs."""
+    for distribution, labels in (
+        ({"male": Fraction(1, 3), "female": Fraction(2, 3)}, ["male", "female", "female"]),
+        ({"male": 0.5 + np.spacing(1.0), "female": 0.5}, ["male", "female"]),
+        ({np.str_("male"): np.float64(0.5), np.str_("female"): np.float64(0.5)}, ["male", "female"]),
+    ):
+        original = dict(distribution)
+        reference = ReferenceStatistics(gender_distribution=distribution)
+        students = [{"age": 30, "gender": np.str_(label)} for label in labels]
+        report = SyntheticDataValidator(reference).validate_all(students, [])
+        json.dumps(report, allow_nan=False)
+        row = next(r for r in report["results"] if r["test"] == "gender_distribution")
+        assert row["status"] == "passed" and row["p_value"] == 1.0
+        assert reference.gender_distribution == original
+        assert "np.str_" not in row["details"]
+
+
+def test_gender_mixed_support_failures_preserve_all_diagnostics():
+    """Primary reason is deterministic while every support problem stays visible."""
+    reference = ReferenceStatistics(gender_distribution={"male": 1.0, "female": 0.0})
+    students = [{"age": 30, "gender": "other"}, {"age": 30, "gender": "female"}, {"age": 30}]
+    report = SyntheticDataValidator(reference).validate_all(students, [])
+    row = next(r for r in report["results"] if r["test"] == "gender_distribution")
+    assert row["status"] == "failed" and "reason=invalid_category" in row["details"]
+    assert "unexpected=['other']" in row["details"] and "zero_probability=['female']" in row["details"]
+    assert "n=3" in row["details"] and "invalid_count=1" in row["details"]
+
+
+@pytest.mark.parametrize("observed", ["rare", "common"])
+def test_gender_unrepresentable_positive_reference_is_not_a_structural_zero(observed):
+    """Positive Real inputs retain support and an exact diagnostic when float underflows."""
+    rare = Fraction(1, 10**400)
+    reference = ReferenceStatistics(gender_distribution={"rare": rare, "common": 1 - rare})
+    students = [{"age": 30, "gender": observed}] * 10
+    report = SyntheticDataValidator(reference).validate_all(students, [])
+    json.dumps(report, allow_nan=False)
+    row = next(r for r in report["results"] if r["test"] == "gender_distribution")
+    assert row["status"] == "not_assessed" and row["passed"] is False
+    assert row["statistic"] is row["synthetic"] is row["p_value"] is None
+    assert "reason=unrepresentable_reference_probability" in row["details"]
+    assert f"{hex(rare.numerator)}/{hex(rare.denominator)}" in row["details"] and "n=10" in row["details"]
+    assert "zero_probability_category" not in row["details"]
+    assert reference.gender_distribution["rare"] == rare
+
+
+@pytest.mark.parametrize("category,status,reason", [
+    ("common", "not_assessed", "unrepresentable_reference_probability"),
+    ("rare", "not_assessed", "unrepresentable_reference_probability"),
+    ("unexpected", "failed", "unexpected_category"),
+    ("impossible", "failed", "zero_probability_category"),
+    (None, "failed", "invalid_category"),
+    ([], "not_assessed", "empty_sample"),
+])
+def test_gender_exact_diagnostic_survives_integer_decimal_conversion_limits(category, status, reason):
+    """Large accepted rational probabilities cannot crash any reporting branch."""
+    rare = Fraction(1, 10**5000)
+    reference = ReferenceStatistics(gender_distribution={"rare": rare, "common": 1 - rare, "impossible": 0})
+    students = [] if category == [] else [{"age": 30, "gender": category}]
+    report = SyntheticDataValidator(reference).validate_all(students, [])
+    json.dumps(report, allow_nan=False)
+    row = next(r for r in report["results"] if r["test"] == "gender_distribution")
+    assert row["status"] == status and f"reason={reason}" in row["details"]
+    assert row["statistic"] is row["synthetic"] is None
+    assert row["p_value"] == (0.0 if status == "failed" else None)
+    assert f"{hex(rare.numerator)}/{hex(rare.denominator)}" in row["details"]
+    assert reference.gender_distribution["rare"] == rare
+
+
+@pytest.mark.parametrize("kind", ["large_integer", "large_fraction", "nested_integer", "broken_repr"])
+def test_invalid_gender_diagnostic_cannot_abort_the_public_report(kind):
+    """Invalid labels with unavailable text remain failed checks, including privacy rendering."""
+    class BrokenGender:
+        """Represent a supplied non-string object whose representation raises."""
+
+        def __repr__(self):
+            """Exercise diagnostic failure without changing interpreter limits."""
+            raise RuntimeError("no representation")
+
+    category = {"large_integer": 10**5000, "large_fraction": Fraction(1, 10**5000),
+                "nested_integer": [10**5000], "broken_repr": BrokenGender()}[kind]
+    report = SyntheticDataValidator().validate_all([{"age": 30, "gender": category}], [])
+    json.dumps(report, allow_nan=False)
+    rows = {r["test"]: r for r in report["results"]}
+    row = rows["gender_distribution"]
+    assert row["status"] == "failed" and row["p_value"] == 0.0
+    assert "reason=invalid_category" in row["details"]
+    assert "n=1" in row["details"] and "invalid_count=1" in row["details"]
+    if kind in {"large_integer", "large_fraction"}:
+        assert f"{hex(category.numerator)}/{hex(category.denominator)}" in row["details"]
+    else:
+        assert "representation_unavailable" in row["details"]
+        assert rows["k_anonymity"]["status"] == "not_assessed"
+        assert "reason=unrepresentable_gender_label" in rows["k_anonymity"]["details"]
 
 
 @pytest.mark.parametrize("seed", [42, 7, 123])

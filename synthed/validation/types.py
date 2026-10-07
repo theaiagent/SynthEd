@@ -58,6 +58,7 @@ class ReferenceStatistics:
 
     def __post_init__(self):
         """Validate configured probability references without clipping inputs."""
+        self._validate_gender_reference()
         for name in ("employment_rate", "dropout_rate", "pass_rate", "distinction_rate"):
             value = getattr(self, name)
             if value is None and name in {"pass_rate", "distinction_rate"}:
@@ -70,6 +71,28 @@ class ReferenceStatistics:
                     f"dropout_range must satisfy 0 < lower < upper < 1, "
                     f"got {self.dropout_range}"
                 )
+
+    def _validate_gender_reference(self) -> None:
+        """Require literal category labels and a complete probability distribution.
+
+        The sum allowance is only accumulated floating-point roundoff, one
+        unit at 1.0 per category; no empirical probability tolerance is used.
+        Call again before assessment because this dataclass/dictionary is mutable.
+        """
+        distribution = self.gender_distribution
+        if not isinstance(distribution, dict) or not distribution:
+            raise ValueError("gender_distribution must be a nonempty dictionary")
+        for category, probability in distribution.items():
+            if not isinstance(category, str) or not category:
+                raise ValueError("gender_distribution keys must be nonempty strings")
+            try:
+                _validate_proportion(probability, f"gender_distribution[{category!r}]")
+            except Exception as exc:
+                raise ValueError(f"gender_distribution[{category!r}] must be a finite real proportion in [0, 1]") from exc
+        total = math.fsum(distribution.values())
+        if not math.isclose(total, 1.0, rel_tol=0.0,
+                            abs_tol=len(distribution) * math.ulp(1.0)):
+            raise ValueError(f"gender_distribution must sum to 1, got {total!r}")
 
     @classmethod
     def from_json(cls, filepath: str) -> ReferenceStatistics:

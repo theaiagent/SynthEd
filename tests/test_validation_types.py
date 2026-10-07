@@ -8,6 +8,56 @@ import pytest
 from synthed.validation.types import ReferenceStatistics, ValidationResult
 
 
+@pytest.mark.parametrize("distribution", [
+    {}, None, [], {"": 1.0}, {1: 1.0}, {"male": -0.1, "female": 1.1},
+    {"male": float("nan")}, {"male": float("inf")}, {"male": True},
+    {"male": "1.0"}, {"male": [1.0]}, {"male": 1j}, {"male": 0.99},
+    {"male": 0.51, "female": 0.50}, {"male": 1.0 - 4 * np.spacing(1.0)},
+])
+def test_gender_reference_rejects_invalid_categories_probabilities_and_totals(distribution):
+    """Invalid probability maps fail at construction with field context."""
+    with pytest.raises(ValueError, match="gender_distribution"):
+        ReferenceStatistics(gender_distribution=distribution)
+
+
+def test_gender_reference_roundoff_and_fraction_values_remain_unmodified():
+    """Only machine roundoff is allowed; valid real scalars need no coercive mutation."""
+    from fractions import Fraction
+
+    for distribution in ({"male": 1.0 - np.spacing(1.0)},
+                         {"male": Fraction(1, 3), "female": Fraction(2, 3)}):
+        reference = ReferenceStatistics(gender_distribution=distribution)
+        assert reference.gender_distribution is distribution
+        assert reference.gender_distribution == distribution
+
+
+def test_gender_invalid_reference_json_and_config_have_field_context(tmp_path):
+    """JSON and pipeline config reconstruction share the same reference guard."""
+    from synthed.pipeline_config import PipelineConfig
+
+    path = tmp_path / "gender.json"
+    path.write_text('{"gender_distribution": {"male": 0.99}}', encoding="utf-8")
+    with pytest.raises(ValueError, match="gender_distribution"):
+        ReferenceStatistics.from_json(str(path))
+    with pytest.raises(ValueError, match="gender_distribution"):
+        PipelineConfig.from_dict({"reference_stats": {"gender_distribution": {"male": 0.99}}})
+
+
+def test_gender_invalid_large_probability_keeps_field_context():
+    """A rejected value must not lose context through decimal diagnostic conversion."""
+    class UnrenderableProbability:
+        """Invalid scalar whose representation itself is unavailable."""
+
+        def __repr__(self):
+            """Prove reference rejection does not require rendering bad input."""
+            raise RuntimeError("no representation")
+
+    with pytest.raises(ValueError, match="gender_distribution"):
+        ReferenceStatistics(gender_distribution={"male": 10**5000})
+    with pytest.raises(ValueError, match="gender_distribution"):
+        ReferenceStatistics(gender_distribution={"male": UnrenderableProbability()})
+
+
 @pytest.mark.parametrize("field", ["employment_rate", "dropout_rate", "pass_rate", "distinction_rate"])
 @pytest.mark.parametrize("bad_value", [-0.01, 1.01, float("nan"), float("inf"), -float("inf"),
                                       "0.5", [], {}, 1j, True, 10**400])
