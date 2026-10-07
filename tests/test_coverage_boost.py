@@ -14,6 +14,7 @@ import json
 from unittest.mock import patch, MagicMock
 
 import numpy as np
+import pytest
 
 from synthed.agents.persona import StudentPersona
 from synthed.data_output.exporter import DataExporter
@@ -247,19 +248,21 @@ class TestValidatorSDTBranch:
 
 class TestProportionZTestEdges:
     def test_zero_n(self):
+        """No sample cannot produce a Z-statistic or p-value."""
         z, p = SyntheticDataValidator._proportion_z_test(0.5, 0.5, 0)
-        assert z == 0.0
-        assert p == 1.0
+        assert z is p is None
 
     def test_p_expected_zero(self):
+        """Any observed events contradict a zero-probability boundary."""
         z, p = SyntheticDataValidator._proportion_z_test(0.5, 0.0, 100)
-        assert z == 0.0
-        assert p == 1.0
+        assert z is None
+        assert p == 0.0
 
     def test_p_expected_one(self):
+        """Any missing events contradict a certainty boundary."""
         z, p = SyntheticDataValidator._proportion_z_test(0.5, 1.0, 100)
-        assert z == 0.0
-        assert p == 1.0
+        assert z is None
+        assert p == 0.0
 
 
 # ── Environment: semester name branches ────────────────────────────────
@@ -695,13 +698,8 @@ class TestValidatorCorrelations:
 
 
 class TestProportionZTestSE0:
-    def test_se_zero_returns_defaults(self):
-        """When se=0 (defensive guard), return (0.0, 1.0) (line 646).
-
-        This guard is unreachable under normal math (p*(1-p)/n > 0 when
-        0 < p < 1 and n > 0), but exists for floating-point safety.
-        We force it via monkeypatching np.sqrt to return 0.
-        """
+    def test_se_zero_fails_explicitly(self):
+        """A degenerate interior variance must not silently produce p=1."""
         import synthed.validation.validator as vmod
         original_sqrt = np.sqrt
 
@@ -710,8 +708,7 @@ class TestProportionZTestSE0:
 
         vmod.np.sqrt = zero_sqrt
         try:
-            z, p = SyntheticDataValidator._proportion_z_test(0.5, 0.5, 100)
-            assert z == 0.0
-            assert p == 1.0
+            with pytest.raises(ValueError, match="standard error"):
+                SyntheticDataValidator._proportion_z_test(0.5, 0.5, 100)
         finally:
             vmod.np.sqrt = original_sqrt

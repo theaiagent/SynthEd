@@ -221,7 +221,7 @@ SynthEd/
 │   ├── doc_facts.py             # Documentation consistency checker
 │   ├── pipeline_config.py       # PipelineConfig frozen dataclass (16 params)
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                       # 1072 pytest tests across 54 files
+├── tests/                       # 1176 pytest tests across 54 files
 ├── docs/
 │   ├── GUIDE.md                 # User guide
 │   └── THEORY.md                # This file
@@ -238,13 +238,15 @@ SynthEd/
 
 | Level | Tests | Method |
 |-------|-------|--------|
-| **L1: Distributions** | age, gender, employment, prior GPA, dropout | KS-test, chi-squared, z-test, range check |
+| **L1: Distributions** | age, gender, employment, prior GPA, dropout | KS-test, chi-squared, proportion Z-test, exact binomial boundary, range check |
 | **L2: Correlations and outcomes** | conscientiousness-dropout, self-efficacy-engagement, self-regulation-engagement, financial-stress-dropout, goal-commitment-engagement, autonomy-engagement, CoI-engagement, network-engagement, cost-benefit-engagement, final GPA-dropout, engagement-final GPA, SDT motivation, Baulke phases; optional pass/distinction rates | Point-biserial r, Pearson r, t-test, phase-proportion and outcome-rate checks |
 | **L3: Temporal** | engagement divergence, negative trend, early attrition | Mean difference, proportion, timing |
 | **L4: Privacy** | k-anonymity approximation | Grouping by age, gender and socioeconomic level; an informational check, not a general privacy guarantee |
 | **L5: Backstory** | non-empty rate, attribute relevance | Whole-cohort text coverage and keyword relevance among non-empty texts; N/A when no text is available |
 
 **Validation inputs:** `_prepare_validation_data()` forwards persona `backstory` and the engine's authoritative `outcome`. Outcome-rate checks require every supplied row to contain exactly `Pass`, `Distinction`, `Fail` or `Withdrawn`. An empty list or any missing/invalid label makes each configured rate `not_assessed`, with total/valid/invalid counts and null measurements. For complete labels, both rates use the entire outcome list as their denominator; Pass excludes Distinction, while Fail and Withdrawn remain in the denominator. Each check passes only when its absolute reference difference is strictly below 15 percentage points; a `None` reference omits that check.
+
+**Reference proportions:** `employment_rate`, `dropout_rate`, `pass_rate` and `distinction_rate` must be finite real numbers in [0, 1]; strings, booleans and nonscalar values are rejected. Only the optional pass/distinction references accept `None`. Accepted real scalars, including fractions, use floating-point arithmetic and report values without mutating the supplied references. Employment and dropout without a configured `dropout_range` retain the proportion Z-test for interior reference rates. At reference 0 or 1, the exact degenerate binomial null gives p=1 only for complete agreement, otherwise p=0; no Z-statistic is defined. These rows use the metric `Exact binomial boundary` and the existing effective-alpha pass rule. Empty employment/dropout samples are `not_assessed`, with `reason=empty_sample; n=0` and null measurements. A zero or non-finite interior standard error raises `ValueError`. The configured dropout range check and its strict constructor bounds (`0 < lower < upper < 1`) are unchanged.
 
 Backstory coverage uses all student rows, including missing, whitespace-only and non-text values. Keyword relevance uses only non-empty strings. Existing passing thresholds remain 50% coverage and 30% relevance; the displayed reference values are 80% and 50%, respectively. These checks describe text coverage and keyword matches, not narrative fidelity or enrichment success. Adding visible N/A rows changes total counts without increasing assessed counts; passing text checks can change the assessed grade.
 
@@ -256,7 +258,7 @@ Correlation checks pass on the expected sign, and the SDT comparison passes on t
 
 ## 🧪 Test Suite
 
-1072 pytest tests across 54 files:
+1176 pytest tests across 54 files:
 
 <!-- BEGIN:test_inventory -->
 | Test File | Tests | Coverage |
@@ -299,7 +301,7 @@ Correlation checks pass on the expected sign, and the SDT comparison passes on t
 | `test_pareto_utils.py` | 19 | Pareto dominance, front extraction, utilities |
 | `test_persona.py` | 27 | StudentPersona and BigFiveTraits |
 | `test_pipeline_config.py` | 40 | PipelineConfig frozen dataclass |
-| `test_pipeline_integration.py` | 46 | SynthEdPipeline |
+| `test_pipeline_integration.py` | 49 | SynthEdPipeline |
 | `test_report.py` | 11 | SynthEd report generation module |
 | `test_semester.py` | 26 | MultiSemesterRunner carry-over and multi-semester logic |
 | `test_sensitivity.py` | 2 | sensitivity analysis module |
@@ -313,8 +315,8 @@ Correlation checks pass on the expected sign, and the SDT comparison passes on t
 | `test_validation_assessment.py` | 11 | Regression checks for undefined validation measurements and coverage |
 | `test_validation_consumers.py` | 15 | Regression tests for assessment coverage in rendered reports and exports |
 | `test_validation_report_contract.py` | 7 | Coverage and legacy compatibility for the shared validation report contract |
-| `test_validation_types.py` | 28 | synthed.validation.types dataclasses |
-| `test_validator.py` | 35 | SyntheticDataValidator |
+| `test_validation_types.py` | 76 | synthed.validation.types dataclasses |
+| `test_validator.py` | 88 | SyntheticDataValidator |
 <!-- END:test_inventory -->
 
 CI runs tests across **Python 3.10, 3.11, and 3.12** via [GitHub Actions](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml).

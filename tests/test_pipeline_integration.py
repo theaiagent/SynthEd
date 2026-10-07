@@ -13,6 +13,23 @@ from synthed.validation import ReferenceStatistics
 
 
 @pytest.mark.parametrize("seed", [42, 7, 123])
+def test_pipeline_reports_exact_boundary_checks_for_actual_proportions(tmp_path, seed):
+    """Each actual seeded cohort is assessed against the zero-probability null."""
+    report = SynthEdPipeline(config=PipelineConfig(
+        seed=seed, output_dir=str(tmp_path), reference_stats=ReferenceStatistics(
+            employment_rate=0.0, dropout_rate=0.0, dropout_range=None),
+    )).run(n_students=30)
+    rows = {r["test"]: r for r in report["validation"]["results"]}
+    for name in ("employment_rate", "dropout_rate"):
+        row = rows[name]
+        assert row["metric"] == "Exact binomial boundary"
+        assert row["statistic"] is None
+        assert row["p_value"] == float(row["synthetic"] == 0.0)
+        assert row["status"] == ("passed" if row["synthetic"] == 0.0 else "failed")
+    assert rows["dropout_rate"]["synthetic"] == round(report["simulation_summary"]["dropout_rate"], 4)
+
+
+@pytest.mark.parametrize("seed", [42, 7, 123])
 def test_real_pipeline_preserves_outcomes_and_backstories(tmp_path, monkeypatch, seed):
     """Each seeded engine's true labels and immutable persona text reach validation."""
     pipeline = SynthEdPipeline(config=PipelineConfig(

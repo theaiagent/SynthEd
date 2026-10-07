@@ -5,7 +5,44 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from synthed.validation.types import ValidationResult
+from synthed.validation.types import ReferenceStatistics, ValidationResult
+
+
+@pytest.mark.parametrize("field", ["employment_rate", "dropout_rate", "pass_rate", "distinction_rate"])
+@pytest.mark.parametrize("bad_value", [-0.01, 1.01, float("nan"), float("inf"), -float("inf"),
+                                      "0.5", [], {}, 1j, True, 10**400])
+def test_reference_proportions_reject_invalid_scalar(field, bad_value):
+    """Configured proportions must be finite real probabilities with field context."""
+    with pytest.raises(ValueError, match=field):
+        ReferenceStatistics(**{field: bad_value})
+
+
+@pytest.mark.parametrize("field", ["employment_rate", "dropout_rate"])
+def test_required_reference_proportions_cannot_be_none(field):
+    """Only pass and distinction references support the unconfigured None state."""
+    with pytest.raises(ValueError, match=field):
+        ReferenceStatistics(**{field: None})
+
+
+def test_reference_proportion_endpoints_and_optional_none_remain_valid():
+    """Zero/one are valid nulls; optional references retain explicit omission."""
+    reference = ReferenceStatistics(employment_rate=0.0, dropout_rate=1.0,
+                                    pass_rate=None, distinction_rate=None, dropout_range=None)
+    assert reference.employment_rate == 0.0
+    assert reference.dropout_rate == 1.0
+    assert reference.pass_rate is reference.distinction_rate is None
+
+
+def test_invalid_reference_json_and_pipeline_config_fail_with_field_context(tmp_path):
+    """External JSON/config reconstruction uses the same proportion contract."""
+    from synthed.pipeline_config import PipelineConfig
+
+    path = tmp_path / "reference.json"
+    path.write_text('{"employment_rate": "0.5"}', encoding="utf-8")
+    with pytest.raises(ValueError, match="employment_rate"):
+        ReferenceStatistics.from_json(str(path))
+    with pytest.raises(ValueError, match="dropout_rate"):
+        PipelineConfig.from_dict({"reference_stats": {"dropout_rate": -0.1}})
 
 
 def _minimal_kwargs(**overrides):

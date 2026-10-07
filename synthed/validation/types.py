@@ -10,9 +10,19 @@ from __future__ import annotations
 import json
 import math
 from dataclasses import dataclass, field
+from numbers import Real
 from pathlib import Path
 
 import numpy as np
+
+
+def _validate_proportion(value: float, name: str) -> None:
+    """Reject nonscalar, boolean or non-finite probability inputs with context."""
+    if (
+        isinstance(value, (bool, np.bool_)) or not isinstance(value, Real)
+        or not 0.0 <= value <= 1.0 or not math.isfinite(value)
+    ):
+        raise ValueError(f"{name} must be a finite real proportion in [0, 1], got {value!r}")
 
 
 @dataclass
@@ -47,6 +57,12 @@ class ReferenceStatistics:
     avg_forum_posts_per_student: float | None = None
 
     def __post_init__(self):
+        """Validate configured probability references without clipping inputs."""
+        for name in ("employment_rate", "dropout_rate", "pass_rate", "distinction_rate"):
+            value = getattr(self, name)
+            if value is None and name in {"pass_rate", "distinction_rate"}:
+                continue
+            _validate_proportion(value, name)
         if self.dropout_range is not None:
             lo, hi = self.dropout_range
             if not (0.0 < lo < hi < 1.0):
