@@ -206,13 +206,21 @@ calibration steps.
 
 ## What an A/B validation grade means
 
-The grade is an unweighted summary of the fraction of executed validation checks
-passing. Conditional checks change its denominator. It is not external validation
-of a multi-year dropout trajectory.
+Current grades summarize the unweighted fraction of **assessed** checks passing;
+`not_assessed` rows are excluded. Compare assessment coverage as well as grades.
+The archived measurements below predate the current reporting contract. Their
+counts and grades are retained as recorded; they are not external validation of
+a multi-year dropout trajectory.
 
 The thresholds are A ≥90%, B ≥75%, C ≥60%, D ≥40%, and F below 40%. With
 22 executed checks, A needs at least 20 passes and B at least 17. This denominator
 is observed in these N=500 measurements, not a fixed promise for every run.
+
+Current default runs emit 24 rows when temporal assessment is requested,
+including two unassessed backstory rows when no text is supplied. Configured
+pass/distinction checks now use actual complete outcome labels. These reporting
+repairs do not change the stored targeting curves or regrade archived evidence;
+see [Validation Suite](THEORY.md#-validation-suite).
 
 With targeting enabled, the dropout reference is the user's requested range;
 passing that check demonstrates target compliance. Other checks retain fixed

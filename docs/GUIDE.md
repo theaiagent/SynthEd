@@ -608,7 +608,7 @@ export OPENAI_API_KEY="your-key"
 python run_pipeline.py --n 100 --llm
 ```
 
-- **Persona-grounded:** Prompts are built from the generated persona attributes via `to_prompt_description()`. The LLM is asked to reflect those attributes. The standalone validator offers keyword and non-empty checks when callers supply `backstory`; the current pipeline does not forward that field, so its report does not check generated backstories.
+- **Persona-grounded:** Prompts are built from the generated persona attributes via `to_prompt_description()`. The LLM is asked to reflect those attributes. Pipeline validation forwards persona text and reports whole-cohort text coverage plus keyword relevance among non-empty backstories. Without text, both checks are `not_assessed`; this does not establish whether enrichment was attempted. Keyword matches do not establish narrative fidelity.
 - **Providers:** OpenAI, Ollama (`--base-url`), any OpenAI-compatible API
 - **Cost control:** `--cost-threshold 2.0` prompts if the pre-run estimate exceeds $2. Without a confirmation callback, library mode skips enrichment above the estimate threshold. This is not a hard spending cap; built-in pricing and token estimates may differ from the provider's actual billing, especially for custom models
 - **Cache:** 7-day TTL, 10K-entry LRU eviction
@@ -628,7 +628,7 @@ python run_pipeline.py --n 100 --llm
 
 For multi-semester runs, validation uses concatenated observed engagement histories across terms. The standard `weekly_engagement.csv` and `engagement_trend` in `outcomes.csv` instead use each student's last simulated semester history; `week_1` is local to that history. The internal validation field `mean_engagement` is not an `outcomes.csv` column. Interactions and dropout weeks use the global simulation timeline. The returned report also contains `report_path` and, when applicable, `llm_costs`, which are added after the JSON file is written.
 
-**Validation input limits:** The current pipeline (including dashboard runs) omits `backstory` from student validation dictionaries and `outcome` from outcome dictionaries. Consequently, its backstory checks do not run. If `reference_stats.pass_rate` or `reference_stats.distinction_rate` is configured, the corresponding check incorrectly computes 0% from missing labels; do not interpret that result as the cohort's observed rate. Use the standalone `SyntheticDataValidator` with populated `backstory` and `outcome` fields for these optional checks. See [Validation Suite](THEORY.md#-validation-suite) for their scope and grading criteria.
+**Validation input coverage:** Pipeline and dashboard validation receive persona `backstory` and the engine's actual `outcome`. Configured pass/distinction checks require complete labels (`Pass`, `Distinction`, `Fail`, `Withdrawn`) across the supplied outcome list; an empty list or any missing/invalid label produces `not_assessed` with counts, not a measured 0%. Pass excludes Distinction, and both rates include Fail/Withdrawn in the denominator. Backstory checks are always visible: no text produces two N/A rows, while partial text coverage uses all student rows and relevance uses only non-empty texts. See [Validation Suite](THEORY.md#-validation-suite) for thresholds and grading criteria.
 
 ### Optional HTML/PDF Reports
 

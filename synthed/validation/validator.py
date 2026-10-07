@@ -128,7 +128,7 @@ class SyntheticDataValidator:
         # Level 4: Privacy
         results.extend(self._validate_privacy(students_data))
 
-        # Level 5: Backstory consistency (optional — only when backstories are present)
+        # Level 5: Backstory consistency, with explicit coverage when absent
         results.extend(self._validate_backstories(students_data))
 
         # Compile report
@@ -486,31 +486,34 @@ class SyntheticDataValidator:
 
         # ── Outcome distribution: pass_rate / distinction_rate ──
         if self.reference.pass_rate is not None or self.reference.distinction_rate is not None:
+            valid_labels = {"Pass", "Distinction", "Fail", "Withdrawn"}
+            labels = [o.get("outcome") for o in outcomes]
+            n_total = len(labels)
+            n_valid = sum(isinstance(label, str) and label in valid_labels for label in labels)
             outcome_counts: dict[str, int] = {}
-            for o in outcomes:
-                oc = o.get("outcome")
-                if oc:
-                    outcome_counts[oc] = outcome_counts.get(oc, 0) + 1
-            n_total = sum(outcome_counts.values()) if outcome_counts else 1
-            if self.reference.pass_rate is not None:
-                synth_pass = outcome_counts.get("Pass", 0) / n_total
+            if n_total and n_valid == n_total:
+                for label in labels:
+                    outcome_counts[label] = outcome_counts.get(label, 0) + 1
+            for label, name, metric, reference in (
+                ("Pass", "outcome_pass_rate", "Pass rate", self.reference.pass_rate),
+                ("Distinction", "outcome_distinction_rate", "Distinction rate", self.reference.distinction_rate),
+            ):
+                if reference is None:
+                    continue
+                if not n_total or n_valid != n_total:
+                    results.append(self._not_assessed(
+                        name, metric, reference,
+                        f"reason=incomplete_outcome_labels; total={n_total}; valid={n_valid}; invalid={n_total - n_valid}",
+                    ))
+                    continue
+                observed = outcome_counts.get(label, 0) / n_total
                 results.append(ValidationResult(
-                    test_name="outcome_pass_rate",
-                    metric="Pass rate",
-                    synthetic_value=synth_pass,
-                    reference_value=self.reference.pass_rate,
-                    passed=abs(synth_pass - self.reference.pass_rate) < 0.15,
-                    details=f"Pass rate: {synth_pass:.1%} (ref: {self.reference.pass_rate:.1%}, tolerance ±15pp)",
-                ))
-            if self.reference.distinction_rate is not None:
-                synth_dist = outcome_counts.get("Distinction", 0) / n_total
-                results.append(ValidationResult(
-                    test_name="outcome_distinction_rate",
-                    metric="Distinction rate",
-                    synthetic_value=synth_dist,
-                    reference_value=self.reference.distinction_rate,
-                    passed=abs(synth_dist - self.reference.distinction_rate) < 0.15,
-                    details=f"Distinction rate: {synth_dist:.1%} (ref: {self.reference.distinction_rate:.1%}, tolerance ±15pp)",
+                    test_name=name,
+                    metric=metric,
+                    synthetic_value=observed,
+                    reference_value=reference,
+                    passed=abs(observed - reference) < 0.15,
+                    details=f"{metric}: {observed:.1%} (ref: {reference:.1%}, tolerance ±15pp)",
                 ))
 
         # ── Engagement-GPA positive correlation ──
@@ -652,10 +655,10 @@ class SyntheticDataValidator:
         return results
 
     def _validate_backstories(self, students: list[dict]) -> list[ValidationResult]:
-        """Level 5 (optional): Validate backstory consistency with persona attributes.
+        """Level 5: Report text coverage and keyword consistency with attributes.
 
-        Only runs when backstory data is present in at least one student record.
-        Checks that backstories are not empty and mention relevant persona attributes.
+        Emit two unassessed checks when no non-empty string is supplied. Missing
+        text alone does not establish whether LLM enrichment was attempted.
         """
         results: list[ValidationResult] = []
 
@@ -664,22 +667,25 @@ class SyntheticDataValidator:
             if s.get("backstory") and isinstance(s["backstory"], str) and s["backstory"].strip()
         ]
         if not backstories:
-            # No backstories present — skip validation silently
-            return results
+            reason = f"reason=no_nonempty_backstories; total={len(students)}; nonempty=0"
+            return [self._not_assessed(name, metric, reference, reason)
+                    for name, metric, reference in (
+                        ("backstory_non_empty_rate", "Proportion non-empty", 0.8),
+                        ("backstory_attribute_relevance", "Relevance rate", 0.5),
+                    )]
 
-        # Check 1: No empty backstories when LLM enrichment was used
-        total_with_field = sum(1 for s in students if "backstory" in s)
+        # Check 1: Text coverage includes every student, even absent fields.
         non_empty = len(backstories)
-        empty_rate = 1 - (non_empty / total_with_field) if total_with_field > 0 else 0
+        nonempty_rate = non_empty / len(students)
 
         results.append(ValidationResult(
             test_name="backstory_non_empty_rate",
             metric="Proportion non-empty",
-            synthetic_value=1 - empty_rate,
+            synthetic_value=nonempty_rate,
             reference_value=0.8,
-            passed=empty_rate <= 0.5,
-            details=f"{non_empty}/{total_with_field} backstories are non-empty "
-                    f"({1 - empty_rate:.0%})",
+            passed=nonempty_rate >= 0.5,
+            details=f"{non_empty}/{len(students)} backstories are non-empty "
+                    f"({nonempty_rate:.0%})",
         ))
 
         # Check 2: Backstories should mention relevant persona attributes

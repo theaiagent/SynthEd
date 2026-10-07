@@ -151,7 +151,10 @@ def test_small_cohorts_report_unassessed_checks_without_listing_them_as_skipped(
         assert rows["sdt_intrinsic_vs_amotivation"]["status"] == "not_assessed"
         assert run["skipped_validation_checks"] == []
         assert run["undefined_validation_fields"] == []
-        assert run["validation"]["summary"]["total_tests"] == 22
+        for name in ("backstory_non_empty_rate", "backstory_attribute_relevance"):
+            assert rows[name]["status"] == "not_assessed"
+            assert "no_nonempty_backstories" in rows[name]["details"]
+        assert run["validation"]["summary"]["total_tests"] == 24
         assert run["validation"]["summary"]["not_assessed"] > 0
 
 

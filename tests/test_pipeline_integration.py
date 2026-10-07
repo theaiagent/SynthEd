@@ -2,11 +2,50 @@
 
 import logging
 import warnings
+from collections import Counter
+from dataclasses import replace
 
 import pytest
 
 from synthed.pipeline import SynthEdPipeline
 from synthed.pipeline_config import PipelineConfig
+from synthed.validation import ReferenceStatistics
+
+
+@pytest.mark.parametrize("seed", [42, 7, 123])
+def test_real_pipeline_preserves_outcomes_and_backstories(tmp_path, monkeypatch, seed):
+    """Each seeded engine's true labels and immutable persona text reach validation."""
+    pipeline = SynthEdPipeline(config=PipelineConfig(
+        seed=seed, output_dir=str(tmp_path),
+        reference_stats=ReferenceStatistics(pass_rate=0.4, distinction_rate=0.1)))
+    generate = pipeline.factory.generate_population
+
+    def population(*args, **kwargs):
+        """Supply fictional text without calling an external enrichment provider."""
+        return [replace(s, backstory="I work and care for family with passion for my career.")
+                for s in generate(*args, **kwargs)]
+
+    monkeypatch.setattr(pipeline.factory, "generate_population", population)
+    prepare = pipeline._prepare_validation_data
+    counts = Counter()
+
+    def observe(students, states, network, **kwargs):
+        """Compare the validation input with the actual factory and engine outputs."""
+        data = prepare(students, states, network, **kwargs)
+        assert [r["backstory"] for r in data[0]] == [s.backstory for s in students]
+        assert {r["student_id"]: r["outcome"] for r in data[1]} == {
+            s.id: states[s.id].outcome for s in students}
+        counts.update(states[s.id].outcome for s in students)
+        return data
+
+    monkeypatch.setattr(pipeline, "_prepare_validation_data", observe)
+    report = pipeline.run(n_students=30)
+    rows = {r["test"]: r for r in report["validation"]["results"]}
+    assert sum(counts.values()) == 30
+    assert rows["outcome_pass_rate"]["synthetic"] == round(counts["Pass"] / 30, 4)
+    assert rows["outcome_distinction_rate"]["synthetic"] == round(counts["Distinction"] / 30, 4)
+    assert rows["backstory_non_empty_rate"]["synthetic"] == 1.0
+    assert rows["backstory_attribute_relevance"]["status"] != "not_assessed"
 
 
 @pytest.mark.parametrize("seed", [42, 7, 123])

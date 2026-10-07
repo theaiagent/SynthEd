@@ -86,7 +86,8 @@ class TestValidatorBackstories:
         assert "backstory_non_empty_rate" in test_names
         assert "backstory_attribute_relevance" in test_names
 
-    def test_backstory_validation_skipped_when_no_backstories(self):
+    def test_backstory_validation_not_assessed_when_no_backstories(self):
+        """Missing backstories remain visible as two unassessed checks."""
         validator = SyntheticDataValidator()
         students = [
             {
@@ -109,8 +110,10 @@ class TestValidatorBackstories:
             for i in range(10)
         ]
         report = validator.validate_all(students, outcomes)
-        test_names = [r["test"] for r in report["results"]]
-        assert "backstory_non_empty_rate" not in test_names
+        rows = {r["test"]: r for r in report["results"]}
+        for name in ("backstory_non_empty_rate", "backstory_attribute_relevance"):
+            assert rows[name]["status"] == "not_assessed"
+            assert rows[name]["synthetic"] is None
 
     def test_backstory_motivation_extrinsic_keywords(self):
         validator = SyntheticDataValidator()

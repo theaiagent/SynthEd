@@ -8,6 +8,14 @@ The measurements behind the shipped lookup are in
 [Dropout Targeting](DROPOUT_TARGETING.md). The later workload and Kember
 comparisons are retained separately below.
 
+The validation counts and grades in these archived measurements are preserved
+as recorded. Current reports use assessed checks as the grade denominator and
+emit two visible unassessed backstory rows when text is absent, bringing the
+default total to 24 with temporal assessment. Pipeline validation also forwards
+actual outcome labels for configured pass/distinction checks. These reporting
+repairs do not alter the model measurements below; see
+[Validation Suite](THEORY.md#-validation-suite).
+
 ## Scope and reproduction
 
 This is a diagnosis of that model revision, not an empirical retention benchmark.
