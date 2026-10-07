@@ -221,7 +221,7 @@ SynthEd/
 │   ├── doc_facts.py             # Documentation consistency checker
 │   ├── pipeline_config.py       # PipelineConfig frozen dataclass (16 params)
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                       # 1176 pytest tests across 54 files
+├── tests/                       # 1190 pytest tests across 54 files
 ├── docs/
 │   ├── GUIDE.md                 # User guide
 │   └── THEORY.md                # This file
@@ -252,13 +252,15 @@ Backstory coverage uses all student rows, including missing, whitespace-only and
 
 Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<40%) of assessed checks (`passed + failed`). `not_assessed` is separate from failure and excluded from the pass-rate denominator. With no assessed checks, quality is **N/A (Not assessed)** and `pass_rate` is 0.0. Reports expose `total_tests`, `assessed_tests`, `passed`, `failed`, `not_assessed` and `assessment_complete`; the latter is false whenever an emitted check is unassessed. Tables and radar charts disclose coverage, and radar scores exclude unassessed checks. Historical rows without a status derive it from their boolean `passed`; summary-only historical reports retain their original grade and treat their total as assessed. New pipeline JSON forbids NaN/Infinity.
 
+GPA validation keeps the two-sample KS comparison against an equally sized normal reference clipped to [0, 4]. Each call recreates the reference from the constructor's fixed integer seed, mean, standard deviation and observed count. Repeated calls, intervening sample sizes and input reordering therefore preserve the decision for unchanged inputs; a fresh validator with the same seed produces the same first result. The default validator seed remains 42. The row discloses `reference=clipped_normal`, seed and reference count. This preserves the first-call numeric result, KS method and effective alpha. The benefit is independence from call history; the cost is repeating the same finite-reference sampling error. Different seeds or sample sizes can change results. Clipping creates endpoint masses and ties, so this repair does not establish continuous-distribution KS p-value calibration or empirical model validity.
+
 Correlation checks pass on the expected sign, and the SDT comparison passes on the expected ordering of group means; reported p-values and reference magnitudes are not their pass criteria. A high grade therefore summarizes these implemented checks, not comprehensive empirical or literature validation. Grades from older reports that counted undefined checks as failures are not directly comparable to the new assessed-only grades; compare coverage as well.
 
 ---
 
 ## 🧪 Test Suite
 
-1176 pytest tests across 54 files:
+1190 pytest tests across 54 files:
 
 <!-- BEGIN:test_inventory -->
 | Test File | Tests | Coverage |
@@ -301,7 +303,7 @@ Correlation checks pass on the expected sign, and the SDT comparison passes on t
 | `test_pareto_utils.py` | 19 | Pareto dominance, front extraction, utilities |
 | `test_persona.py` | 27 | StudentPersona and BigFiveTraits |
 | `test_pipeline_config.py` | 40 | PipelineConfig frozen dataclass |
-| `test_pipeline_integration.py` | 49 | SynthEdPipeline |
+| `test_pipeline_integration.py` | 52 | SynthEdPipeline |
 | `test_report.py` | 11 | SynthEd report generation module |
 | `test_semester.py` | 26 | MultiSemesterRunner carry-over and multi-semester logic |
 | `test_sensitivity.py` | 2 | sensitivity analysis module |
@@ -316,7 +318,7 @@ Correlation checks pass on the expected sign, and the SDT comparison passes on t
 | `test_validation_consumers.py` | 15 | Regression tests for assessment coverage in rendered reports and exports |
 | `test_validation_report_contract.py` | 7 | Coverage and legacy compatibility for the shared validation report contract |
 | `test_validation_types.py` | 76 | synthed.validation.types dataclasses |
-| `test_validator.py` | 88 | SyntheticDataValidator |
+| `test_validator.py` | 99 | SyntheticDataValidator |
 <!-- END:test_inventory -->
 
 CI runs tests across **Python 3.10, 3.11, and 3.12** via [GitHub Actions](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml).
