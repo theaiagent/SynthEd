@@ -221,7 +221,7 @@ SynthEd/
 │   ├── doc_facts.py             # Documentation consistency checker
 │   ├── pipeline_config.py       # PipelineConfig frozen dataclass (16 params)
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                       # 1190 pytest tests across 54 files
+├── tests/                       # 1243 pytest tests across 54 files
 ├── docs/
 │   ├── GUIDE.md                 # User guide
 │   └── THEORY.md                # This file
@@ -258,9 +258,21 @@ Correlation checks pass on the expected sign, and the SDT comparison passes on t
 
 ---
 
+**Gender category support:** reference distributions require nonempty string labels and finite, non-boolean real probabilities in [0, 1], summing to 1 with only a machine-rounding allowance (`len(distribution) * math.ulp(1.0)`, using `math.fsum`). Invalid references raise `ValueError` at construction and are rechecked before assessment because their dictionary is mutable. Observed and reference categories are both retained in deterministic diagnostic order, including zero/zero categories. Missing, null, empty or non-string observed labels are counted separately; they fail with `reason=invalid_category`. Positive observations outside the reference fail with `reason=unexpected_category`, or `reason=zero_probability_category` if the reference explicitly assigns zero. These rows use `Category support check`, p=0, null statistic/synthetic values, and total/category counts; p=0 is a support-failure marker, not a chi-square p-value for malformed observations. A mixed failure reports all problems with invalid labels taking primary-reason precedence, then unexpected categories, then explicit zero probabilities. No observation is dropped or category renamed. NumPy string scalars are displayed as their literal strings.
+
+For supported observations, zero/zero categories are excluded only from the numerical arrays; absent categories with positive reference probability still contribute expected counts. Expected counts are scaled to the full N to remove accepted machine rounding while retaining SciPy's sum consistency check. A single positive reference category with complete agreement yields statistic=0 and p=1. An empty cohort is `not_assessed`, with null measurements. Other supported cases retain Pearson chi-square and the effective-alpha rule; small expected counts still limit the asymptotic p-value approximation. This change supplies no empirical calibration, category-merging policy or evidence of population equivalence.
+
+Accepted positive real probabilities that underflow to zero in floating-point calculation retain their exact representation in diagnostics. A supported sample then becomes `not_assessed` with `reason=unrepresentable_reference_probability` and null measurements, rather than treating a possible category as a structural zero. The supplied reference is unchanged. Ordinary representable references retain floating-point chi-square; extremely small expected counts can still overflow its statistic and trigger the existing undefined-statistic N/A handling.
+
+Unrepresentable rational probabilities use an exact hexadecimal numerator/denominator diagnostic (`Rational(0x.../0x...)`). This avoids Python's decimal integer-to-string limit without changing interpreter settings; non-rational real values retain their representation.
+
+Invalid observed labels also use guarded diagnostic rendering. If ordinary text conversion fails, rational values retain an exact hexadecimal ratio; other values carry an explicit `representation_unavailable` marker while remaining in the invalid count. The privacy summary uses the same safe fallback only when its ordinary gender-label conversion fails; if no representation is available, it returns `not_assessed` with `reason=unrepresentable_gender_label`. Normal quasi-identifier grouping and privacy thresholds are unchanged. Rejected reference probabilities retain field-specific error context even when the invalid value itself cannot be rendered.
+
+Accepted string subclasses (including string enums) retain their underlying literal string payload for counting and diagnostics, even if their display method returns a different name. The original observation and reference objects are not modified.
+
 ## 🧪 Test Suite
 
-1190 pytest tests across 54 files:
+1243 pytest tests across 54 files:
 
 <!-- BEGIN:test_inventory -->
 | Test File | Tests | Coverage |
@@ -303,7 +315,7 @@ Correlation checks pass on the expected sign, and the SDT comparison passes on t
 | `test_pareto_utils.py` | 19 | Pareto dominance, front extraction, utilities |
 | `test_persona.py` | 27 | StudentPersona and BigFiveTraits |
 | `test_pipeline_config.py` | 40 | PipelineConfig frozen dataclass |
-| `test_pipeline_integration.py` | 52 | SynthEdPipeline |
+| `test_pipeline_integration.py` | 55 | SynthEdPipeline |
 | `test_report.py` | 11 | SynthEd report generation module |
 | `test_semester.py` | 26 | MultiSemesterRunner carry-over and multi-semester logic |
 | `test_sensitivity.py` | 2 | sensitivity analysis module |
@@ -317,8 +329,8 @@ Correlation checks pass on the expected sign, and the SDT comparison passes on t
 | `test_validation_assessment.py` | 11 | Regression checks for undefined validation measurements and coverage |
 | `test_validation_consumers.py` | 15 | Regression tests for assessment coverage in rendered reports and exports |
 | `test_validation_report_contract.py` | 7 | Coverage and legacy compatibility for the shared validation report contract |
-| `test_validation_types.py` | 76 | synthed.validation.types dataclasses |
-| `test_validator.py` | 99 | SyntheticDataValidator |
+| `test_validation_types.py` | 94 | synthed.validation.types dataclasses |
+| `test_validator.py` | 131 | SyntheticDataValidator |
 <!-- END:test_inventory -->
 
 CI runs tests across **Python 3.10, 3.11, and 3.12** via [GitHub Actions](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml).

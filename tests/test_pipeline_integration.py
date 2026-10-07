@@ -13,6 +13,35 @@ from synthed.validation import ReferenceStatistics
 
 
 @pytest.mark.parametrize("seed", [42, 7, 123])
+def test_pipeline_reports_unsupported_gender_without_losing_students(tmp_path, seed):
+    """A real custom cohort completes export and finite validation across seeds."""
+    import csv
+    import json
+    from synthed.agents.persona import PersonaConfig
+
+    pipeline = SynthEdPipeline(config=PipelineConfig(
+        output_dir=str(tmp_path), seed=seed,
+        persona_config=PersonaConfig(gender_distribution={"male": 0.4, "female": 0.4, "other": 0.2}),
+    ))
+    report = pipeline.run(n_students=30)
+    assert report["simulation_summary"]["total_students"] == 30
+    with (tmp_path / "students.csv").open(encoding="utf-8", newline="") as stream:
+        students = list(csv.DictReader(stream))
+    counts = Counter(s["gender"] for s in students)
+    assert len(students) == 30 and counts["other"] > 0
+    rows = [r for r in report["validation"]["results"] if r["test"] == "gender_distribution"]
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["status"] == "failed" and row["p_value"] == 0.0
+    assert "reason=unexpected_category" in row["details"] and "n=30" in row["details"]
+    for label, count in counts.items():
+        assert f"'category': '{label}', 'observed': {count}" in row["details"]
+    json.dumps(report, allow_nan=False)
+    saved = json.loads((tmp_path / "pipeline_report.json").read_text(encoding="utf-8"))
+    assert saved["validation"] == report["validation"]
+
+
+@pytest.mark.parametrize("seed", [42, 7, 123])
 def test_pipeline_validation_reuse_preserves_the_complete_report(tmp_path, monkeypatch, seed):
     """Each real cohort keeps the same report after unrelated GPA reference draws."""
     pipeline = SynthEdPipeline(config=PipelineConfig(seed=seed, output_dir=str(tmp_path)))

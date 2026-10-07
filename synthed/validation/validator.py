@@ -8,8 +8,9 @@ coherence checks and privacy guarantees.
 
 from __future__ import annotations
 
+from collections import Counter
 from typing import Any
-from numbers import Integral
+from numbers import Integral, Rational, Real
 
 import numpy as np
 from scipy import stats
@@ -87,6 +88,7 @@ class SyntheticDataValidator:
         seed: int = 42,
     ):
         self.reference = reference or ReferenceStatistics()
+        self.reference._validate_gender_reference()
         self.alpha = significance_level
         np.random.default_rng(seed)  # Preserve eager NumPy seed validation.
         self._seed = seed
@@ -172,12 +174,10 @@ class SyntheticDataValidator:
     def _validate_demographics(self, students: list[dict]) -> list[ValidationResult]:
         """Level 1: Validate demographic distributions."""
         results = []
+        gender_result = self._validate_gender_distribution(students)
         if not students:
-            results = [self._not_assessed(name, metric, ref, "insufficient_population; n=0")
-                    for name, metric, ref in (
-                        ("age_distribution", "KS-test", self.reference.age_mean),
-                        ("gender_distribution", "Chi-squared", 0.0),
-                    )]
+            results = [self._not_assessed("age_distribution", "KS-test", self.reference.age_mean,
+                                         "insufficient_population; n=0"), gender_result]
             metric = ("Exact binomial boundary" if self.reference.employment_rate in (0.0, 1.0)
                       else "Proportion Z-test")
             results.append(self._not_assessed("employment_rate", metric, self.reference.employment_rate,
@@ -204,30 +204,7 @@ class SyntheticDataValidator:
                 details=f"Age mean: synth={np.mean(ages):.1f}, ref={self.reference.age_mean:.1f}",
             ))
 
-        # Gender distribution (chi-squared)
-        gender_counts = {}
-        for s in students:
-            g = s.get("gender", "unknown")
-            gender_counts[g] = gender_counts.get(g, 0) + 1
-
-        observed = []
-        expected = []
-        for g, ref_prop in self.reference.gender_distribution.items():
-            observed.append(gender_counts.get(g, 0))
-            expected.append(ref_prop * len(students))
-
-        if sum(expected) > 0:
-            chi2, chi2_p = stats.chisquare(observed, expected)
-            results.append(self._measured_result(
-                test_name="gender_distribution",
-                metric="Chi-squared",
-                synthetic_value=float(chi2),
-                reference_value=0.0,
-                statistic=float(chi2),
-                p_value=float(chi2_p),
-                passed=chi2_p > self._effective_alpha(len(students)),
-                details=f"Gender proportions match reference: p={chi2_p:.4f}",
-            ))
+        results.append(gender_result)
 
         # Employment rate (proportion with employment_intensity > 0.05)
         emp_rate = sum(1 for s in students if s.get("employment_intensity", 0) > 0.05) / len(students)
@@ -246,6 +223,98 @@ class SyntheticDataValidator:
         ))
 
         return results
+
+    def _validate_gender_distribution(self, students: list[dict]) -> ValidationResult:
+        """Check category support before chi-square, retaining every observation.
+
+        Invalid labels are counted separately before hashing. Zero/zero
+        categories stay in the diagnostic but have no numerical contribution.
+        Support failures are deterministic checks, not chi-square statistics.
+        """
+        self.reference._validate_gender_reference()
+        reference = self.reference.gender_distribution
+        counts: Counter[str] = Counter()
+        invalid: Counter[str] = Counter()
+        for student in students:
+            if "gender" not in student:
+                invalid["missing"] += 1
+                continue
+            category = student["gender"]
+            if not isinstance(category, str) or not category:
+                label = self._invalid_gender_detail(category)
+                invalid[f"{type(category).__name__}: {label if label is not None else 'representation_unavailable'}"] += 1
+            else:
+                counts[str.__str__(category)] += 1
+        categories = sorted({str.__str__(category) for category in set(counts) | set(reference)}, key=repr)
+        float_reference = {category: float(reference.get(category, 0.0)) for category in categories}
+        unrepresentable = [category for category in categories
+                           if reference.get(category, 0.0) > 0.0 and float_reference[category] == 0.0]
+        diagnostic = [dict(category=category, observed=counts[category],
+                           reference=self._unrepresentable_probability_detail(reference[category]) if category in unrepresentable
+                           else float_reference[category])
+                      for category in categories]
+        n = len(students)
+        details = (f"n={n}; categories={diagnostic!r}; invalid_count={sum(invalid.values())}; "
+                   f"invalid={dict(sorted(invalid.items()))!r}")
+        if n == 0:
+            return self._not_assessed("gender_distribution", "Chi-squared", 0.0,
+                                      "reason=empty_sample; " + details)
+        unexpected = [category for category in categories if counts[category] and category not in reference]
+        zero_probability = [category for category in categories
+                            if counts[category] and category in reference and reference[category] == 0.0]
+        reason = ("invalid_category" if invalid else "unexpected_category" if unexpected
+                  else "zero_probability_category" if zero_probability else None)
+        if reason:
+            return ValidationResult(
+                "gender_distribution", "Category support check", None, 0.0,
+                p_value=0.0, passed=False,
+                details=f"reason={reason}; unexpected={unexpected!r}; "
+                        f"zero_probability={zero_probability!r}; " + details,
+            )
+        if unrepresentable:
+            return self._not_assessed(
+                "gender_distribution", "Chi-squared", 0.0,
+                f"reason=unrepresentable_reference_probability; unrepresentable={unrepresentable!r}; " + details,
+            )
+        supported = [category for category in categories if reference[category] > 0.0]
+        if len(supported) == 1:
+            chi2, chi2_p = 0.0, 1.0
+        else:
+            observed = [counts[category] for category in supported]
+            probabilities = np.array([float_reference[category] for category in supported], dtype=float)
+            # Remove only the machine rounding accepted by the reference guard;
+            # preserve the observed total and SciPy's own sum consistency check.
+            expected = n * probabilities / probabilities.sum()
+            chi2, chi2_p = stats.chisquare(observed, expected)
+        return self._measured_result(
+            test_name="gender_distribution", metric="Chi-squared",
+            synthetic_value=float(chi2), reference_value=0.0,
+            statistic=float(chi2), p_value=float(chi2_p),
+            passed=chi2_p > self._effective_alpha(n),
+            details=f"Gender distribution check: p={chi2_p:.4f}; " + details,
+        )
+
+    @staticmethod
+    def _unrepresentable_probability_detail(probability: Real) -> str:
+        """Preserve rational values exactly without decimal integer string limits."""
+        if isinstance(probability, Rational):
+            return f"Rational({hex(probability.numerator)}/{hex(probability.denominator)})"
+        return repr(probability)
+
+    @staticmethod
+    def _invalid_gender_detail(category: Any) -> str | None:
+        """Render rejected labels safely; None explicitly marks unavailable text."""
+        try:
+            return repr(category)
+        except Exception:
+            # Formatting a rejected label must not abort an otherwise valid
+            # report. Its unavailable representation is disclosed, not hidden.
+            if isinstance(category, Rational):
+                try:
+                    return SyntheticDataValidator._unrepresentable_probability_detail(category)
+                except Exception:
+                    return None
+            return None
 
     def _validate_academic(
         self, students: list[dict], outcomes: list[dict]
@@ -648,7 +717,15 @@ class SyntheticDataValidator:
         # Using age + gender + socioeconomic_level as quasi-identifiers
         qi_groups: dict[str, int] = {}
         for s in students:
-            key = f"{s.get('age')}_{s.get('gender')}_{s.get('socioeconomic_level')}"
+            gender = s.get("gender")
+            try:
+                gender_label = str(gender)
+            except Exception:
+                gender_label = self._invalid_gender_detail(gender)
+                if gender_label is None:
+                    return [self._not_assessed("k_anonymity", "Minimum k", None,
+                                              f"reason=unrepresentable_gender_label; n={len(students)}")]
+            key = f"{s.get('age')}_{gender_label}_{s.get('socioeconomic_level')}"
             qi_groups[key] = qi_groups.get(key, 0) + 1
 
         min_k = min(qi_groups.values()) if qi_groups else 0
