@@ -11,6 +11,49 @@ import numpy as np
 from synthed.validation import SyntheticDataValidator, ReferenceStatistics
 
 
+@pytest.mark.parametrize("cohort,n,minimum,reference,average,passed", [
+    ("grouped", 2, 2.0, 1.0, 2.0, True),
+    ("grouped", 500, 500.0, 2.0, 500.0, True),
+    ("unique", 499, 1.0, 1.0, 1.0, True),
+    ("unique", 500, 1.0, 2.0, 1.0, False),
+    ("mixed", 500, 1.0, 2.0, 250.0, True),
+])
+def test_privacy_copy_preserves_grouping_policy(cohort, n, minimum, reference, average, passed):
+    """Limit the claim while retaining both sides of N=500 and the average-group fallback."""
+    students = [{"age": 30, "gender": "female", "socioeconomic_level": "middle"} for _ in range(n)]
+    if cohort == "unique":
+        # Dictionary grouping contrast only; these are not valid-persona population claims.
+        for i, student in enumerate(students):
+            student["age"] = i
+    elif cohort == "mixed":
+        students[0]["age"] = 31
+    original = copy.deepcopy(students)
+    row, = SyntheticDataValidator()._validate_privacy(students)
+    assert (row.test_name, row.metric) == ("k_anonymity", "Minimum k")
+    assert (row.synthetic_value, row.reference_value, row.passed) == (minimum, reference, passed)
+    assert row.status == ("passed" if passed else "failed")
+    assert row.statistic is None and row.p_value is None
+    assert row.details == (
+        f"Min k={int(minimum)}, Avg k={average:.1f} (N={n}). "
+        "Quasi-identifiers: age, gender, socioeconomic_level. "
+        "Informational grouping check only; it does not verify input provenance, "
+        "formal anonymity, or absence of re-identification risk. "
+        "Custom inputs and LLM-generated text require a separate privacy assessment."
+    )
+    assert "privacy risk is inherently zero" not in row.details
+    assert "has no real individuals" not in row.details
+    assert students == original
+    json.dumps(vars(row), allow_nan=False)
+
+
+def test_privacy_copy_keeps_empty_population_unassessed():
+    """The copy repair does not invent a privacy result for an empty cohort."""
+    row, = SyntheticDataValidator()._validate_privacy([])
+    assert (row.status, row.passed, row.synthetic_value, row.reference_value) == (
+        "not_assessed", False, None, None)
+    assert row.details == "insufficient_population; n=0"
+
+
 def _dropout_trend(histories, outcomes):
     """Select the single trend row from a requested temporal assessment."""
     matches = [r for r in SyntheticDataValidator()._validate_temporal(histories, outcomes)

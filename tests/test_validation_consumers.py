@@ -11,6 +11,27 @@ from synthed.pipeline import SynthEdPipeline
 from synthed.pipeline_config import PipelineConfig
 
 
+def test_privacy_limitations_reach_report_json_and_scorecard():
+    """Custom records and text retain the measured grouping with an accessible, limited claim."""
+    pytest.importorskip("shiny")
+    from synthed.dashboard.components.calibrate_panel import _scorecard_row
+    from synthed.validation import SyntheticDataValidator
+
+    students = [{"student_id": str(i), "age": 30, "gender": "female",
+                 "socioeconomic_level": "middle", "backstory": '<script>alert("input")</script>'}
+                for i in range(2)]
+    report = SyntheticDataValidator().validate_all(students, [])
+    row = next(r for r in report["results"] if r["test"] == "k_anonymity")
+    assert (row["synthetic"], row["reference"], row["passed"], row["status"]) == (2.0, 1.0, True, "passed")
+    html = str(_scorecard_row(row))
+    assert "title=" in html and "aria-label=" in html
+    for text in ("Quasi-identifiers: age, gender, socioeconomic_level.",
+                 "does not verify input provenance", "formal anonymity", "separate privacy assessment."):
+        assert text in row["details"] and text in html
+    assert "privacy risk is inherently zero" not in html
+    assert "<script>" not in html
+
+
 def _mixed_validation():
     """Provide legacy rows plus one explicitly unassessed modern row."""
     return {"summary": {"passed": 99, "total_tests": 99}, "results": [
