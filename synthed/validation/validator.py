@@ -88,7 +88,8 @@ class SyntheticDataValidator:
     ):
         self.reference = reference or ReferenceStatistics()
         self.alpha = significance_level
-        self._rng = np.random.default_rng(seed)
+        np.random.default_rng(seed)  # Preserve eager NumPy seed validation.
+        self._seed = seed
 
     def validate_all(
         self,
@@ -258,8 +259,7 @@ class SyntheticDataValidator:
             results.append(self._not_assessed("gpa_distribution", "KS-test", self.reference.gpa_mean,
                                              f"non_finite_input; n={len(gpas)}"))
         elif gpas:
-            ref_samples = self._rng.normal(self.reference.gpa_mean, self.reference.gpa_std, len(gpas))
-            ref_samples = np.clip(ref_samples, 0, 4)
+            ref_samples = self._gpa_reference_sample(len(gpas))
             ks_stat, ks_p = stats.ks_2samp(gpas, ref_samples)
             results.append(self._measured_result(
                 test_name="gpa_distribution",
@@ -269,7 +269,8 @@ class SyntheticDataValidator:
                 statistic=float(ks_stat),
                 p_value=float(ks_p),
                 passed=ks_p > self._effective_alpha(len(gpas)),
-                details=f"GPA mean: synth={np.mean(gpas):.2f}, ref={self.reference.gpa_mean:.2f}",
+                details=f"GPA mean: synth={np.mean(gpas):.2f}, ref={self.reference.gpa_mean:.2f}; "
+                        f"reference=clipped_normal; seed={self._seed}; reference_n={len(gpas)}",
             ))
 
         else:
@@ -315,6 +316,12 @@ class SyntheticDataValidator:
             results.append(self._not_assessed("dropout_rate", metric, reference, "reason=empty_sample; n=0"))
 
         return results
+
+    def _gpa_reference_sample(self, n: int) -> np.ndarray:
+        """Draw a common clipped-normal reference for fixed integer seed and count."""
+        rng = np.random.default_rng(self._seed)
+        values = rng.normal(self.reference.gpa_mean, self.reference.gpa_std, n)
+        return np.clip(values, 0, 4)
 
     def _correlation_test(
         self,

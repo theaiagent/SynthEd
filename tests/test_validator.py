@@ -10,6 +10,73 @@ import numpy as np
 from synthed.validation import SyntheticDataValidator, ReferenceStatistics
 
 
+@pytest.mark.parametrize("seed", [42, 7, 123])
+def test_gpa_decision_is_independent_of_call_history(seed):
+    """Repeated/reordered inputs match a fresh validator despite other sample sizes."""
+    reference = ReferenceStatistics()
+    sample = np.clip(np.random.default_rng(seed).normal(3.03, 0.75, 100), 0, 4)
+    students = [{"prior_gpa": float(g)} for g in sample]
+    validator = SyntheticDataValidator(reference, seed=seed)
+    for _ in range(20):
+        row = next(r for r in validator._validate_academic(students, [])
+                   if r.test_name == "gpa_distribution")
+        assert (row.statistic, row.p_value, row.status) == (0.0, 1.0, "passed")
+        reversed_row = next(r for r in validator._validate_academic(students[::-1], [])
+                            if r.test_name == "gpa_distribution")
+        assert (reversed_row.statistic, reversed_row.p_value, reversed_row.status) == (0.0, 1.0, "passed")
+        assert reversed_row.synthetic_value == pytest.approx(row.synthetic_value)
+        validator._validate_academic([{"prior_gpa": 2.0}] * 7, [])
+    fresh_row = next(r for r in SyntheticDataValidator(reference, seed=seed)._validate_academic(students, [])
+                     if r.test_name == "gpa_distribution")
+    assert (fresh_row.statistic, fresh_row.p_value, fresh_row.status) == (0.0, 1.0, "passed")
+
+
+def test_gpa_reference_provenance_is_reported():
+    """The measured row identifies the clipped reference and its actual seed/count."""
+    row = SyntheticDataValidator(seed=7)._validate_academic([{"prior_gpa": 2.0}] * 11, [])[0]
+    assert "reference=clipped_normal; seed=7; reference_n=11" in row.details
+    assert "GPA mean: synth=2.00" in row.details
+
+
+@pytest.mark.parametrize("seed", [42, 7, 123])
+def test_gpa_reference_clips_endpoints_and_preserves_global_rng(seed):
+    """The common sample keeps clipping and never reseeds NumPy's global RNG."""
+    before = np.random.get_state()
+    validator = SyntheticDataValidator(ReferenceStatistics(gpa_mean=2.0, gpa_std=100.0), seed=seed)
+    sample = validator._gpa_reference_sample(100)
+    after = np.random.get_state()
+    assert before[0] == after[0]
+    np.testing.assert_array_equal(before[1], after[1])
+    assert before[2:] == after[2:]
+    expected = np.clip(np.random.default_rng(seed).normal(2.0, 100.0, 100), 0, 4)
+    np.testing.assert_array_equal(sample, expected)
+    np.testing.assert_array_equal(validator._gpa_reference_sample(100), sample)
+    assert sample.min() == 0.0
+    assert sample.max() == 4.0
+
+
+def test_unassessed_gpa_does_not_draw_a_reference(monkeypatch):
+    """Empty and non-finite observations retain N/A without attempting a draw."""
+    validator = SyntheticDataValidator()
+
+    def unexpected_draw(n):
+        """Fail if reference generation is attempted for an undefined comparison."""
+        raise AssertionError("Unassessed GPA must not draw a reference")
+
+    monkeypatch.setattr(validator, "_gpa_reference_sample", unexpected_draw)
+    for students in ([], [{"prior_gpa": float("nan")}]):
+        row = validator._validate_academic(students, [])[0]
+        assert row.status == "not_assessed"
+        assert row.statistic is row.p_value is None
+
+
+@pytest.mark.parametrize("seed", [-1, 0.5, "42"])
+def test_invalid_gpa_seed_is_rejected_at_construction(seed):
+    """Retain NumPy's eager seed validation rather than delaying failure to GPA."""
+    with pytest.raises((ValueError, TypeError)):
+        SyntheticDataValidator(seed=seed)
+
+
 @pytest.mark.parametrize("expected,observed,p_value", [
     (0.0, 0.0, 1.0), (0.0, 0.5, 0.0), (1.0, 1.0, 1.0), (1.0, 0.5, 0.0),
 ])

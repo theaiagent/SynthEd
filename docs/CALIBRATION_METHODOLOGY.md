@@ -487,12 +487,22 @@ scope. Marginal fit does not establish correlation fidelity, privacy, predictive
 utility, institutional transportability, or multi-semester retention validity.
 The production defaults are not automatically replaced by either saved knee.
 
-The normal validator's A/B/C/D/F grade is an unweighted fraction of executed
-checks. Several correlation checks require only the expected sign, with p-values
+The normal validator's A/B/C/D/F grade is an unweighted fraction of assessed
+checks (`passed + failed`); `not_assessed` rows are excluded. Several correlation checks require only the expected sign, with p-values
 reported but not used as pass gates; their reference magnitudes are not matching
 tolerances. Passing them does not show that correlations are preserved across
 code revisions. Read the individual checks and population/horizon definitions in
 [Dropout Targeting](DROPOUT_TARGETING.md#what-an-ab-validation-grade-means).
+
+The GPA distribution check uses two-sample KS against an equally sized normal
+reference clipped to [0, 4]. For a fixed integer validator seed (default 42),
+reference parameters and count, each call recreates the same reference sample.
+Decisions are independent of previous calls and retain a fresh validator's first
+numeric result. Reports disclose the reference form, seed and count. Common
+sampling repeats the same finite-reference error; different seeds/counts can
+change results. Clipping creates endpoint masses and ties, so this reproducibility
+repair does not validate continuous-distribution KS p-values or calibrate the
+simulation. The KS method, effective alpha and model parameters are unchanged.
 
 ### 7.5 Possible future work (not implemented)
 

@@ -13,6 +13,25 @@ from synthed.validation import ReferenceStatistics
 
 
 @pytest.mark.parametrize("seed", [42, 7, 123])
+def test_pipeline_validation_reuse_preserves_the_complete_report(tmp_path, monkeypatch, seed):
+    """Each real cohort keeps the same report after unrelated GPA reference draws."""
+    pipeline = SynthEdPipeline(config=PipelineConfig(seed=seed, output_dir=str(tmp_path)))
+    validate = pipeline.validator.validate_all
+    captured = {}
+
+    def observe(*args, **kwargs):
+        """Retain the actual pipeline inputs and explicit horizon for revalidation."""
+        captured.update(args=args, kwargs=kwargs)
+        return validate(*args, **kwargs)
+
+    monkeypatch.setattr(pipeline.validator, "validate_all", observe)
+    first = pipeline.run(n_students=30)["validation"]
+    for _ in range(5):
+        pipeline.validator._validate_academic([{"prior_gpa": 2.0}] * 7, [])
+        assert validate(*captured["args"], **captured["kwargs"]) == first
+
+
+@pytest.mark.parametrize("seed", [42, 7, 123])
 def test_pipeline_reports_exact_boundary_checks_for_actual_proportions(tmp_path, seed):
     """Each actual seeded cohort is assessed against the zero-probability null."""
     report = SynthEdPipeline(config=PipelineConfig(
