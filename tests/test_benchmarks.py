@@ -3,11 +3,76 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
+from statistics import fmean
+from unittest.mock import patch
 
 import pytest
 
 from synthed.benchmarks.profiles import PROFILES, BenchmarkProfile
 from synthed.benchmarks.generator import BenchmarkGenerator
+from synthed.pipeline import SynthEdPipeline
+from synthed.pipeline_config import PipelineConfig
+
+
+@pytest.mark.parametrize("custom_output", [False, True])
+def test_benchmark_forwards_all_profile_configs_without_targeting(tmp_path, monkeypatch, custom_output):
+    """A benchmark forwards profile objects and scalars without converting its range into a target."""
+    original = PROFILES["default"]
+    profile = replace(original, name="wiring", n_students=23, seed=7, expected_dropout_range=(.85, .95))
+    monkeypatch.setitem(PROFILES, "wiring", profile)
+    output = str(tmp_path / "custom") if custom_output else None
+    with patch("synthed.benchmarks.generator.SynthEdPipeline") as make:
+        make.return_value.run.return_value = {"simulation_summary": {"dropout_rate": .35}}
+        report = BenchmarkGenerator().generate("wiring", output)
+    config = make.call_args.kwargs.get("config")
+    assert isinstance(config, PipelineConfig)
+    assert set(make.call_args.kwargs) == {"config"}
+    for field in ("persona_config", "environment", "reference_stats", "institutional_config", "grading_config"):
+        assert getattr(config, field) is getattr(profile, field)
+    assert config.seed == 7
+    assert config.output_dir == (output or "./benchmarks/wiring")
+    assert config.target_dropout_range is None
+    make.return_value.run.assert_called_once_with(n_students=23)
+    assert report["benchmark_validation"] == {
+        "profile": "wiring", "expected_dropout_range": (.85, .95),
+        "actual_dropout_rate": .35, "in_expected_range": False,
+    }
+    assert PROFILES["default"] is original and PROFILES["wiring"] is profile
+
+
+def test_benchmark_matches_explicit_profile_pipeline_across_seeds(tmp_path, monkeypatch):
+    """Three real cohorts preserve all validation rows and mean outcomes under equivalent configs."""
+    original = PROFILES["default"]
+    pairs = []
+    for seed in (42, 7, 123):
+        profile = replace(original, name="equivalent", n_students=100, seed=seed)
+        monkeypatch.setitem(PROFILES, "equivalent", profile)
+        config = PipelineConfig(
+            persona_config=profile.persona_config, environment=profile.environment,
+            reference_stats=profile.reference_stats, institutional_config=profile.institutional_config,
+            grading_config=profile.grading_config, seed=seed, target_dropout_range=None,
+            output_dir=str(tmp_path / f"explicit-{seed}"),
+        )
+        before = config.to_dict()
+        benchmark = BenchmarkGenerator().generate("equivalent", str(tmp_path / f"benchmark-{seed}"))
+        explicit = SynthEdPipeline(config=config).run(n_students=100)
+        assert config.to_dict() == before
+        assert PROFILES["default"] is original and PROFILES["equivalent"] is profile
+        for path in (tmp_path / f"benchmark-{seed}", tmp_path / f"explicit-{seed}"):
+            saved = json.loads((path / "pipeline_report.json").read_text(encoding="utf-8"))
+            assert saved["validation"]["summary"]["total_tests"] == 24
+        pairs.append((benchmark, explicit))
+    for metric in ("dropout_rate", "mean_final_gpa", "mean_final_engagement"):
+        observed = fmean(a["simulation_summary"][metric] for a, _ in pairs)
+        expected = fmean(b["simulation_summary"][metric] for _, b in pairs)
+        assert observed == pytest.approx(expected, rel=0, abs=0)
+    for benchmark, explicit in pairs:
+        assert benchmark["simulation_summary"] == explicit["simulation_summary"]
+        assert benchmark["validation"] == explicit["validation"]
+        assert "dropout_targeting" not in benchmark and "dropout_targeting" not in explicit
+        assert benchmark["benchmark_validation"]["expected_dropout_range"] == original.expected_dropout_range
+        assert benchmark["benchmark_validation"]["actual_dropout_rate"] == benchmark["simulation_summary"]["dropout_rate"]
 
 
 class TestBenchmarkProfiles:

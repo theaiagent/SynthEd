@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from ..pipeline import SynthEdPipeline
+from ..pipeline_config import PipelineConfig
 from ..validation.report_contract import validation_summary
 from .profiles import PROFILES
 
@@ -23,7 +24,7 @@ class BenchmarkGenerator:
         profile_name: str,
         output_dir: str | None = None,
     ) -> dict[str, Any]:
-        """Generate a single benchmark dataset."""
+        """Generate with all profile settings; the expected range only assesses the result."""
         if profile_name not in PROFILES:
             available = ", ".join(PROFILES.keys())
             raise ValueError(
@@ -35,13 +36,17 @@ class BenchmarkGenerator:
 
         logger.info("Generating benchmark: %s (%s)", profile.name, profile.description)
 
-        pipeline = SynthEdPipeline(
+        config = PipelineConfig(
             persona_config=profile.persona_config,
             environment=profile.environment,
+            institutional_config=profile.institutional_config,
+            grading_config=profile.grading_config,
             reference_stats=profile.reference_stats,
             output_dir=out,
             seed=profile.seed,
+            target_dropout_range=None,
         )
+        pipeline = SynthEdPipeline(config=config)
 
         report = pipeline.run(n_students=profile.n_students)
 

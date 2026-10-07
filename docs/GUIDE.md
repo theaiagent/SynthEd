@@ -421,7 +421,7 @@ md = gen.generate_report(output_dir="./benchmarks")  # writes benchmark_report.m
 |---------|----------|-----------------|
 | `default` | Large-scale, diverse student population | 20-45% |
 
-The two entry points differ: `SynthEdPipeline.from_profile()` uses the profile's institutional/grading configurations and enables targeting to its expected range. `BenchmarkGenerator` (including CLI `--benchmark`) runs without targeting and currently omits those two profile configurations, using pipeline defaults instead. Use the full configuration API when those settings must be honored.
+Both entry points apply the profile's persona, environment, reference, institutional and grading settings. `SynthEdPipeline.from_profile()` enables dropout targeting to the profile's expected range. `BenchmarkGenerator` (including CLI `--benchmark`) uses the profile's seed and population size without targeting; the expected range is only a check on the observed result. Benchmark runs predating this correction omitted institutional/grading settings and used pipeline defaults, so their results must not be presented as measurements of the corrected profile. Profile coefficients and expected ranges are unchanged; applying the full configuration can change dropout, GPA, engagement and validation results.
 
 ---
 
