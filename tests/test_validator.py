@@ -2,10 +2,160 @@
 
 import copy
 import json
+from fractions import Fraction
 
 import pytest
+import numpy as np
 
 from synthed.validation import SyntheticDataValidator, ReferenceStatistics
+
+
+@pytest.mark.parametrize("expected,observed,p_value", [
+    (0.0, 0.0, 1.0), (0.0, 0.5, 0.0), (1.0, 1.0, 1.0), (1.0, 0.5, 0.0),
+])
+def test_boundary_proportion_uses_exact_null_distribution(expected, observed, p_value):
+    """A degenerate binomial null cannot assign positive probability to a mismatch."""
+    assert SyntheticDataValidator._proportion_z_test(observed, expected, 20) == (None, p_value)
+
+
+def test_empty_proportion_is_unassessed_and_interior_formula_is_preserved():
+    """No sample has no statistic; ordinary interior proportions retain the Z-test."""
+    method = SyntheticDataValidator._proportion_z_test
+    assert method(0.0, 0.5, 0) == (None, None)
+    z, p_value = method(0.55, 0.5, 100)
+    assert z == pytest.approx(1.0)
+    assert p_value == pytest.approx(0.31731050786291415)
+
+
+@pytest.mark.parametrize("field", ["p_observed", "p_expected"])
+@pytest.mark.parametrize("bad_value", [-0.01, 1.01, float("nan"), float("inf"),
+                                      -float("inf"), "0.5", [], {}, 1j, True, 10**400])
+def test_proportion_helper_rejects_invalid_values_before_empty_sample(field, bad_value):
+    """Invalid scalars must fail even when no sample could otherwise be assessed."""
+    kwargs = {"p_observed": 0.5, "p_expected": 0.5, "n": 0, field: bad_value}
+    with pytest.raises(ValueError, match=field):
+        SyntheticDataValidator._proportion_z_test(**kwargs)
+
+
+@pytest.mark.parametrize("n", [-1, 1.5, 20.0, True, np.bool_(False), None, "20"])
+def test_proportion_helper_requires_nonnegative_integral_sample_size(n):
+    """Bool, fractional and nonnumeric counts must not produce an assessment."""
+    with pytest.raises(ValueError, match="n"):
+        SyntheticDataValidator._proportion_z_test(0.5, 0.5, n)
+
+
+def test_numpy_scalar_proportion_and_integral_count_remain_supported():
+    """Scientific callers can supply real NumPy scalars and integer sample counts."""
+    z, p_value = SyntheticDataValidator._proportion_z_test(
+        np.float64(0.55), np.float32(0.5), np.int64(100))
+    assert z == pytest.approx(1.0)
+    assert p_value == pytest.approx(0.31731050786291415)
+
+
+def test_fraction_proportions_use_numeric_interior_calculation():
+    """Accepted real scalars must reach the normal calculation without object dtype."""
+    z, p_value = SyntheticDataValidator._proportion_z_test(Fraction(11, 20), Fraction(1, 2), 100)
+    assert z == pytest.approx(1.0)
+    assert p_value == pytest.approx(0.31731050786291415)
+
+
+@pytest.mark.parametrize("proportion", [Fraction(0), Fraction(1, 2), Fraction(1)])
+def test_fraction_references_reach_callers_and_strict_json_without_mutation(proportion):
+    """Calculation, formatting and report JSON support accepted Real references."""
+    reference = ReferenceStatistics(employment_rate=proportion, dropout_rate=proportion,
+                                    pass_rate=proportion, distinction_rate=proportion,
+                                    dropout_range=None)
+    students = [{"student_id": str(i), "age": 20 + i,
+                 "gender": "male" if i < 11 else "female",
+                 "employment_intensity": float(i < 10)} for i in range(20)]
+    outcomes = [{"student_id": str(i), "has_dropped_out": i < 10,
+                 "final_dropout_phase": 5 if i < 10 else 0,
+                 "outcome": "Withdrawn" if i < 10 else "Pass"} for i in range(20)]
+    validator = SyntheticDataValidator(reference)
+    direct_rows = {r.test_name: r for r in validator._validate_demographics(students)
+                   + validator._validate_academic([], outcomes)}
+    for name in ("employment_rate", "dropout_rate"):
+        row = direct_rows[name]
+        assert row.synthetic_value == 0.5
+        assert row.statistic == (0.0 if proportion == Fraction(1, 2) else None)
+        assert row.p_value == float(proportion == Fraction(1, 2))
+    report = validator.validate_all(students, outcomes)
+    json.dumps(report, allow_nan=False)
+    for name in ("employment_rate", "dropout_rate", "pass_rate", "distinction_rate"):
+        assert getattr(reference, name) is proportion
+    for row in report["results"]:
+        if row["reference"] is not None:
+            assert isinstance(row["reference"], float)
+
+
+@pytest.mark.parametrize("expected", [0.0, 1.0])
+def test_proportion_callers_reject_impossible_boundary(expected):
+    """Both observed 50% proportions must fail against a 0% or 100% null."""
+    validator = SyntheticDataValidator(ReferenceStatistics(
+        employment_rate=expected, dropout_rate=expected, dropout_range=None))
+    students = [{"age": 20 + i, "gender": "male" if i < 11 else "female",
+                 "employment_intensity": 1.0 if i < 10 else 0.0} for i in range(20)]
+    outcomes = [{"has_dropped_out": i < 10} for i in range(20)]
+    rows = {r.test_name: r for r in validator._validate_demographics(students)
+            + validator._validate_academic([], outcomes)}
+    for name in ("employment_rate", "dropout_rate"):
+        row = rows[name]
+        assert row.synthetic_value == 0.5
+        assert row.statistic is None
+        assert row.p_value == 0.0
+        assert row.status == "failed"
+        assert row.metric == "Exact binomial boundary"
+
+
+@pytest.mark.parametrize("expected", [0.0, 1.0])
+def test_proportion_callers_accept_complete_boundary_agreement(expected):
+    """Matching boundary data is assessed and passes without a fabricated Z-score."""
+    validator = SyntheticDataValidator(ReferenceStatistics(
+        employment_rate=expected, dropout_rate=expected, dropout_range=None))
+    students = [{"age": 20 + i, "gender": "male" if i < 11 else "female",
+                 "employment_intensity": expected} for i in range(20)]
+    outcomes = [{"has_dropped_out": bool(expected)} for _ in range(20)]
+    rows = {r.test_name: r for r in validator._validate_demographics(students)
+            + validator._validate_academic([], outcomes)}
+    for name in ("employment_rate", "dropout_rate"):
+        assert rows[name].synthetic_value == expected
+        assert rows[name].statistic is None
+        assert rows[name].p_value == 1.0
+        assert rows[name].status == "passed"
+        assert rows[name].metric == "Exact binomial boundary"
+
+
+@pytest.mark.parametrize("expected", [0.0, 0.5, 1.0])
+@pytest.mark.parametrize("dropout_range", [None, (0.2, 0.5)])
+def test_empty_proportion_callers_report_no_assessment(expected, dropout_range):
+    """Empty employment/dropout inputs disclose zero coverage on each metric path."""
+    validator = SyntheticDataValidator(ReferenceStatistics(
+        employment_rate=expected, dropout_rate=expected, dropout_range=dropout_range))
+    rows = {r.test_name: r for r in validator._validate_demographics([])
+            + validator._validate_academic([], [])}
+    for name in ("employment_rate", "dropout_rate"):
+        row = rows[name]
+        assert row.status == "not_assessed"
+        assert row.synthetic_value is row.statistic is row.p_value is None
+        assert row.details == "reason=empty_sample; n=0"
+    boundary_metric = "Exact binomial boundary" if expected in (0.0, 1.0) else "Proportion Z-test"
+    assert rows["employment_rate"].metric == boundary_metric
+    assert rows["dropout_rate"].metric == ("Range check" if dropout_range else boundary_metric)
+    json.dumps([vars(r) for r in rows.values()], allow_nan=False)
+
+
+@pytest.mark.parametrize("field", ["employment_rate", "dropout_rate"])
+@pytest.mark.parametrize("bad_value", [-0.1, float("nan")])
+def test_proportion_helper_rechecks_mutated_reference(field, bad_value):
+    """A mutable reference must not bypass the helper's probability validation."""
+    reference = ReferenceStatistics(dropout_range=None)
+    setattr(reference, field, bad_value)
+    validator = SyntheticDataValidator(reference)
+    with pytest.raises(ValueError, match="p_expected"):
+        if field == "employment_rate":
+            validator._validate_demographics([{"age": 30, "gender": "male"}])
+        else:
+            validator._validate_academic([], [{"has_dropped_out": True}])
 
 
 def test_outcome_rates_use_all_four_authoritative_labels():

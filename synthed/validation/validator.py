@@ -9,11 +9,12 @@ coherence checks and privacy guarantees.
 from __future__ import annotations
 
 from typing import Any
+from numbers import Integral
 
 import numpy as np
 from scipy import stats
 
-from .types import ReferenceStatistics, ValidationResult
+from .types import ReferenceStatistics, ValidationResult, _validate_proportion
 from .report_contract import quality_grade, summarize_results
 
 # ── Standard correlation tests (declarative table) ──
@@ -137,7 +138,7 @@ class SyntheticDataValidator:
                     "test": r.test_name,
                     "metric": r.metric,
                     "synthetic": round(r.synthetic_value, 4) if r.synthetic_value is not None else None,
-                    "reference": round(r.reference_value, 4) if r.reference_value is not None else None,
+                    "reference": round(float(r.reference_value), 4) if r.reference_value is not None else None,
                     "statistic": round(r.statistic, 4) if r.statistic is not None else None,
                     "p_value": round(r.p_value, 4) if r.p_value is not None else None,
                     "passed": r.passed,
@@ -171,12 +172,16 @@ class SyntheticDataValidator:
         """Level 1: Validate demographic distributions."""
         results = []
         if not students:
-            return [self._not_assessed(name, metric, ref, "insufficient_population; n=0")
+            results = [self._not_assessed(name, metric, ref, "insufficient_population; n=0")
                     for name, metric, ref in (
                         ("age_distribution", "KS-test", self.reference.age_mean),
                         ("gender_distribution", "Chi-squared", 0.0),
-                        ("employment_rate", "Proportion Z-test", self.reference.employment_rate),
                     )]
+            metric = ("Exact binomial boundary" if self.reference.employment_rate in (0.0, 1.0)
+                      else "Proportion Z-test")
+            results.append(self._not_assessed("employment_rate", metric, self.reference.employment_rate,
+                                             "reason=empty_sample; n=0"))
+            return results
 
         # Age distribution (one-sample KS-test against theoretical normal CDF)
         ages = [s["age"] for s in students]
@@ -230,13 +235,13 @@ class SyntheticDataValidator:
         )
         results.append(ValidationResult(
             test_name="employment_rate",
-            metric="Proportion Z-test",
+            metric="Exact binomial boundary" if self.reference.employment_rate in (0.0, 1.0) else "Proportion Z-test",
             synthetic_value=emp_rate,
             reference_value=self.reference.employment_rate,
             statistic=z_stat,
             p_value=z_p,
             passed=z_p > self._effective_alpha(len(students)),
-            details=f"Employment: synth={emp_rate:.2%}, ref={self.reference.employment_rate:.2%}",
+            details=f"Employment: synth={emp_rate:.2%}, ref={float(self.reference.employment_rate):.2%}",
         ))
 
         return results
@@ -292,17 +297,22 @@ class SyntheticDataValidator:
                 )
                 results.append(ValidationResult(
                     test_name="dropout_rate",
-                    metric="Proportion Z-test",
+                    metric="Exact binomial boundary" if self.reference.dropout_rate in (0.0, 1.0) else "Proportion Z-test",
                     synthetic_value=dropout_rate,
                     reference_value=self.reference.dropout_rate,
                     statistic=z_stat,
                     p_value=z_p,
                     passed=z_p > self._effective_alpha(len(outcomes)),
-                    details=f"Dropout: synth={dropout_rate:.2%}, ref={self.reference.dropout_rate:.2%}",
+                    details=f"Dropout: synth={dropout_rate:.2%}, ref={float(self.reference.dropout_rate):.2%}",
                 ))
         else:
-            results.append(self._not_assessed("dropout_rate", "Range check" if self.reference.dropout_range else "Proportion Z-test",
-                                             self.reference.dropout_rate, "insufficient_outcomes; n=0"))
+            if self.reference.dropout_range is not None:
+                metric = "Range check"
+                reference = sum(self.reference.dropout_range) / 2
+            else:
+                metric = "Exact binomial boundary" if self.reference.dropout_rate in (0.0, 1.0) else "Proportion Z-test"
+                reference = self.reference.dropout_rate
+            results.append(self._not_assessed("dropout_rate", metric, reference, "reason=empty_sample; n=0"))
 
         return results
 
@@ -478,7 +488,7 @@ class SyntheticDataValidator:
                 reference_value=self.reference.dropout_rate,
                 passed=decided_rate <= 0.50,
                 details=f"Phase 5 (decided): {decided_rate:.0%}, "
-                        f"dropout target: {self.reference.dropout_rate:.0%}",
+                        f"dropout target: {float(self.reference.dropout_rate):.0%}",
             ))
         else:
             results.append(self._not_assessed("baulke_phase_distribution", "Decided phase proportion",
@@ -513,7 +523,7 @@ class SyntheticDataValidator:
                     synthetic_value=observed,
                     reference_value=reference,
                     passed=abs(observed - reference) < 0.15,
-                    details=f"{metric}: {observed:.1%} (ref: {reference:.1%}, tolerance ±15pp)",
+                    details=f"{metric}: {observed:.1%} (ref: {float(reference):.1%}, tolerance ±15pp)",
                 ))
 
         # ── Engagement-GPA positive correlation ──
@@ -725,13 +735,27 @@ class SyntheticDataValidator:
     @staticmethod
     def _proportion_z_test(
         p_observed: float, p_expected: float, n: int
-    ) -> tuple[float, float]:
-        """Two-tailed z-test for proportions."""
-        if p_expected <= 0 or p_expected >= 1 or n == 0:
-            return 0.0, 1.0
+    ) -> tuple[float | None, float | None]:
+        """Assess finite proportions, using exact nulls at probability boundaries.
+
+        With no sample, both measurements are None. At expected zero/one the
+        binomial null has mass only at complete agreement, so p is one for a
+        match and zero otherwise; no Z-statistic exists. Interior proportions
+        retain the normal approximation and reject degenerate standard errors.
+        """
+        _validate_proportion(p_expected, "p_expected")
+        _validate_proportion(p_observed, "p_observed")
+        if isinstance(n, (bool, np.bool_)) or not isinstance(n, Integral) or n < 0:
+            raise ValueError(f"n must be a nonnegative integer sample size, got {n!r}")
+        if n == 0:
+            return None, None
+        if p_expected in (0.0, 1.0):
+            return None, float(p_observed == p_expected)
+        # Real includes Fraction; normalize only for interior numeric arithmetic.
+        p_observed, p_expected = float(p_observed), float(p_expected)
         se = np.sqrt(p_expected * (1 - p_expected) / n)
-        if se == 0:
-            return 0.0, 1.0
+        if not np.isfinite(se) or se <= 0:
+            raise ValueError("Proportion Z-test requires a positive finite standard error")
         z = (p_observed - p_expected) / se
         p_value = 2 * (1 - stats.norm.cdf(abs(z)))
         return float(z), float(p_value)

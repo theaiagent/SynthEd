@@ -848,6 +848,8 @@ config = PersonaConfig(
 
 > **Why:** With N < 100, stochastic variance dominates. The validator uses scale-adjusted alpha for N > 500 to prevent overpowered tests.
 
+`ReferenceStatistics` requires finite numeric rates in [0, 1] for employment, dropout, pass and distinction. Only pass/distinction may be `None`. A 0% or 100% employment reference (or dropout reference with `dropout_range=None`) passes only when the observed proportion agrees exactly; the report labels this `Exact binomial boundary`. Empty employment/dropout samples are unassessed. Interior references retain the existing Z-test, and configured dropout ranges retain the range check. See [validation methods](THEORY.md#-validation-suite).
+
 #### Dropout rate outside expectations
 
 **Symptom:** Dropout rate diverges from target.
