@@ -221,7 +221,7 @@ SynthEd/
 │   ├── doc_facts.py             # Documentation consistency checker
 │   ├── pipeline_config.py       # PipelineConfig frozen dataclass (16 params)
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                       # 1044 pytest tests across 54 files
+├── tests/                       # 1072 pytest tests across 54 files
 ├── docs/
 │   ├── GUIDE.md                 # User guide
 │   └── THEORY.md                # This file
@@ -234,7 +234,7 @@ SynthEd/
 
 ## ✅ Validation Suite
 
-The standalone `SyntheticDataValidator` emits 22 checks with default reference settings when temporal assessment is requested, plus 2 when non-empty backstories are supplied and up to 2 when pass/distinction reference rates are configured (26 in total). Outcome-rate checks need actual `outcome` labels. Missing, insufficient, constant or non-finite correlation inputs produce visible `not_assessed` rows with a reason and null measurements. Omitting temporal input (`weekly_engagement=None`) omits its 3 checks; requesting it with an empty mapping emits them as unassessed. Not every check is a statistical hypothesis test. Checks span 5 levels:
+`SyntheticDataValidator` emits 24 checks with default reference settings when temporal assessment is requested, including 2 backstory checks. Without non-empty text, both backstory checks are `not_assessed`; text absence does not establish whether enrichment was attempted. Configuring pass/distinction reference rates adds up to 2 checks (26 in total). Missing, insufficient, constant or non-finite correlation inputs produce visible `not_assessed` rows with a reason and null measurements. Omitting temporal input (`weekly_engagement=None`) omits its 3 checks; requesting it with an empty mapping emits them as unassessed. Not every check is a statistical hypothesis test. Checks span 5 levels:
 
 | Level | Tests | Method |
 |-------|-------|--------|
@@ -242,9 +242,11 @@ The standalone `SyntheticDataValidator` emits 22 checks with default reference s
 | **L2: Correlations and outcomes** | conscientiousness-dropout, self-efficacy-engagement, self-regulation-engagement, financial-stress-dropout, goal-commitment-engagement, autonomy-engagement, CoI-engagement, network-engagement, cost-benefit-engagement, final GPA-dropout, engagement-final GPA, SDT motivation, Baulke phases; optional pass/distinction rates | Point-biserial r, Pearson r, t-test, phase-proportion and outcome-rate checks |
 | **L3: Temporal** | engagement divergence, negative trend, early attrition | Mean difference, proportion, timing |
 | **L4: Privacy** | k-anonymity approximation | Grouping by age, gender and socioeconomic level; an informational check, not a general privacy guarantee |
-| **L5: Backstory** | non-empty rate, attribute relevance | Proportion and keyword checks when at least one non-empty backstory is present |
+| **L5: Backstory** | non-empty rate, attribute relevance | Whole-cohort text coverage and keyword relevance among non-empty texts; N/A when no text is available |
 
-**Pipeline limitation:** `_prepare_validation_data()` currently omits both `backstory` and `outcome`. Normal pipeline/dashboard runs therefore skip L5 even when LLM backstories were generated. Configuring pass/distinction references activates the outcome checks, but missing labels make their reported rates incorrectly equal 0%. Supply populated fields to the standalone validator before interpreting these optional checks; reference settings alone do not repair the pipeline input.
+**Validation inputs:** `_prepare_validation_data()` forwards persona `backstory` and the engine's authoritative `outcome`. Outcome-rate checks require every supplied row to contain exactly `Pass`, `Distinction`, `Fail` or `Withdrawn`. An empty list or any missing/invalid label makes each configured rate `not_assessed`, with total/valid/invalid counts and null measurements. For complete labels, both rates use the entire outcome list as their denominator; Pass excludes Distinction, while Fail and Withdrawn remain in the denominator. Each check passes only when its absolute reference difference is strictly below 15 percentage points; a `None` reference omits that check.
+
+Backstory coverage uses all student rows, including missing, whitespace-only and non-text values. Keyword relevance uses only non-empty strings. Existing passing thresholds remain 50% coverage and 30% relevance; the displayed reference values are 80% and 50%, respectively. These checks describe text coverage and keyword matches, not narrative fidelity or enrichment success. Adding visible N/A rows changes total counts without increasing assessed counts; passing text checks can change the assessed grade.
 
 Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<40%) of assessed checks (`passed + failed`). `not_assessed` is separate from failure and excluded from the pass-rate denominator. With no assessed checks, quality is **N/A (Not assessed)** and `pass_rate` is 0.0. Reports expose `total_tests`, `assessed_tests`, `passed`, `failed`, `not_assessed` and `assessment_complete`; the latter is false whenever an emitted check is unassessed. Tables and radar charts disclose coverage, and radar scores exclude unassessed checks. Historical rows without a status derive it from their boolean `passed`; summary-only historical reports retain their original grade and treat their total as assessed. New pipeline JSON forbids NaN/Infinity.
 
@@ -254,7 +256,7 @@ Correlation checks pass on the expected sign, and the SDT comparison passes on t
 
 ## 🧪 Test Suite
 
-1044 pytest tests across 54 files:
+1072 pytest tests across 54 files:
 
 <!-- BEGIN:test_inventory -->
 | Test File | Tests | Coverage |
@@ -297,7 +299,7 @@ Correlation checks pass on the expected sign, and the SDT comparison passes on t
 | `test_pareto_utils.py` | 19 | Pareto dominance, front extraction, utilities |
 | `test_persona.py` | 27 | StudentPersona and BigFiveTraits |
 | `test_pipeline_config.py` | 40 | PipelineConfig frozen dataclass |
-| `test_pipeline_integration.py` | 43 | SynthEdPipeline |
+| `test_pipeline_integration.py` | 46 | SynthEdPipeline |
 | `test_report.py` | 11 | SynthEd report generation module |
 | `test_semester.py` | 26 | MultiSemesterRunner carry-over and multi-semester logic |
 | `test_sensitivity.py` | 2 | sensitivity analysis module |
@@ -312,7 +314,7 @@ Correlation checks pass on the expected sign, and the SDT comparison passes on t
 | `test_validation_consumers.py` | 15 | Regression tests for assessment coverage in rendered reports and exports |
 | `test_validation_report_contract.py` | 7 | Coverage and legacy compatibility for the shared validation report contract |
 | `test_validation_types.py` | 28 | synthed.validation.types dataclasses |
-| `test_validator.py` | 10 | SyntheticDataValidator |
+| `test_validator.py` | 35 | SyntheticDataValidator |
 <!-- END:test_inventory -->
 
 CI runs tests across **Python 3.10, 3.11, and 3.12** via [GitHub Actions](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml).

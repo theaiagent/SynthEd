@@ -53,8 +53,9 @@ def _skipped_validation_checks(students, outcomes, histories, report) -> list[di
 
     Eligibility gates mirror validator.py: correlations need >10 pairs, SDT
     needs >=5 in each group, and temporal comparisons need both outcome groups.
-    This CLI uses default reference settings and no LLM, so optional outcome-rate
-    references and backstory checks are outside this manifest.
+    This CLI uses default references, so optional outcome-rate checks are outside
+    this manifest. Without text, backstory checks are emitted as not_assessed
+    and require no separate eligibility inference here.
     """
     emitted = {r["test"] for r in report["results"]}
     outcome_map = {o["student_id"]: o for o in outcomes}

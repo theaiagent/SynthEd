@@ -558,6 +558,7 @@ class SynthEdPipeline:
                 "internet_reliability": s.internet_reliability,
                 "prior_gpa": s.prior_gpa,
                 "socioeconomic_level": s.socioeconomic_level,
+                "backstory": s.backstory,
                 # Cluster 1: Student Characteristics
                 "conscientiousness": s.personality.conscientiousness,
                 "goal_commitment": s.goal_commitment,
@@ -591,6 +592,7 @@ class SynthEdPipeline:
                     "student_id": s.id,
                     "display_id": s.display_id,
                     "has_dropped_out": state.has_dropped_out,
+                    "outcome": state.outcome,
                     "dropout_week": state.dropout_week,
                     "withdrawal_reason": state.withdrawal_reason or "",
                     "final_dropout_phase": state.dropout_phase,

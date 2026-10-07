@@ -44,7 +44,7 @@ SynthEd models each student's evolving motivations, decisions, and life context.
 ### Calibration & Validation
 - **Sobol Sensitivity** -- 68-parameter sensitivity analysis identifying dominant dropout/engagement drivers
 - **NSGA-II Calibration** -- Multi-objective optimization with Pareto front, parallel `--workers N` support, adaptive parameter bounds
-- **5-Level Validation Suite** -- Conditional checks across distributions, correlations, temporal coherence, synthetic-record uniqueness and optional backstories. The standalone validator supports all five levels; current pipeline inputs omit backstories and outcome labels ([limitations](docs/THEORY.md#-validation-suite)). Available data and reference statistics determine the executed count; grades summarize check pass rates, not external validity
+- **5-Level Validation Suite** -- Checks across distributions, correlations, temporal coherence, synthetic-record uniqueness and backstories. Pipeline validation receives actual outcome labels and persona text; missing evidence is reported as `not_assessed` ([scope](docs/THEORY.md#-validation-suite)). Available data and reference statistics determine assessment coverage; grades summarize assessed check pass rates, not external validity
 
 ### Configuration
 - **InstitutionalConfig** -- 5 institution-level quality parameters that modulate theory constants. `support_services_quality` scales 13 Baulke dropout phase thresholds

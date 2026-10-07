@@ -1,6 +1,111 @@
 """Tests for SyntheticDataValidator."""
 
+import copy
+import json
+
+import pytest
+
 from synthed.validation import SyntheticDataValidator, ReferenceStatistics
+
+
+def test_outcome_rates_use_all_four_authoritative_labels():
+    """Pass excludes Distinction; Fail and Withdrawn remain in the denominator."""
+    outcomes = [{"student_id": str(i), "outcome": label}
+                for i, label in enumerate(("Pass", "Distinction", "Fail", "Withdrawn"))]
+    original = copy.deepcopy(outcomes)
+    validator = SyntheticDataValidator(ReferenceStatistics(pass_rate=0.25, distinction_rate=0.25))
+    rows = {r.test_name: r for r in validator._validate_correlations([], outcomes)}
+    for name in ("outcome_pass_rate", "outcome_distinction_rate"):
+        assert rows[name].synthetic_value == 0.25
+        assert rows[name].status == "passed"
+    assert outcomes == original
+
+
+@pytest.mark.parametrize("bad_label", [None, "", " ", "PASS", "unknown", 42, True, [], {}])
+def test_outcome_rates_require_every_label(bad_label):
+    """One unknown label invalidates both configured rates instead of shrinking N."""
+    outcomes = [{"student_id": str(i), "outcome": label}
+                for i, label in enumerate(("Pass", "Distinction", "Fail", bad_label))]
+    validator = SyntheticDataValidator(ReferenceStatistics(pass_rate=0.25, distinction_rate=0.25))
+    rows = {r.test_name: r for r in validator._validate_correlations([], outcomes)}
+    for name in ("outcome_pass_rate", "outcome_distinction_rate"):
+        row = rows[name]
+        assert row.status == "not_assessed"
+        assert row.passed is False
+        assert row.synthetic_value is row.statistic is row.p_value is None
+        assert row.details == "reason=incomplete_outcome_labels; total=4; valid=3; invalid=1"
+        json.dumps(vars(row), allow_nan=False)
+
+
+@pytest.mark.parametrize("outcomes,total,valid,invalid", [
+    ([], 0, 0, 0),
+    ([{"student_id": "a", "outcome": "Pass"}, {"student_id": "b"}], 2, 1, 1),
+])
+def test_empty_or_missing_outcome_labels_are_not_zero_rates(outcomes, total, valid, invalid):
+    """Empty data and omitted labels must expose missing evidence, not a measured zero."""
+    validator = SyntheticDataValidator(ReferenceStatistics(pass_rate=0.4, distinction_rate=0.1))
+    rows = {r.test_name: r for r in validator._validate_correlations([], outcomes)}
+    for name in ("outcome_pass_rate", "outcome_distinction_rate"):
+        assert rows[name].status == "not_assessed"
+        assert rows[name].details == (
+            f"reason=incomplete_outcome_labels; total={total}; valid={valid}; invalid={invalid}")
+
+
+@pytest.mark.parametrize("pass_ref,distinction_ref,expected", [
+    (None, None, set()),
+    (0.0, None, {"outcome_pass_rate"}),
+    (None, 0.0, {"outcome_distinction_rate"}),
+])
+def test_outcome_rates_only_emit_configured_checks(pass_ref, distinction_ref, expected):
+    """A missing reference omits that optional check even with incomplete labels."""
+    validator = SyntheticDataValidator(ReferenceStatistics(
+        pass_rate=pass_ref, distinction_rate=distinction_ref))
+    rows = {r.test_name: r for r in validator._validate_correlations([], [])}
+    assert {name for name in rows if name.startswith("outcome_")} == expected
+    for name in expected:
+        assert rows[name].status == "not_assessed"
+
+
+def test_observed_zero_outcome_rate_retains_strict_tolerance_boundary():
+    """A valid zero is assessed; a difference of exactly 15pp still fails."""
+    validator = SyntheticDataValidator(ReferenceStatistics(pass_rate=0.15, distinction_rate=0.0))
+    rows = {r.test_name: r for r in validator._validate_correlations(
+        [], [{"student_id": "a", "outcome": "Fail"}])}
+    assert rows["outcome_pass_rate"].synthetic_value == 0.0
+    assert rows["outcome_pass_rate"].status == "failed"
+    assert rows["outcome_distinction_rate"].status == "passed"
+
+
+@pytest.mark.parametrize("students", [[], [{}], [{"backstory": None}], [{"backstory": ""}],
+                                      [{"backstory": " \t\n"}], [{"backstory": 42}],
+                                      [{"backstory": []}], [{"backstory": {}}]])
+def test_absent_backstories_emit_two_unassessed_checks(students):
+    """Absence discloses coverage and makes no claim about whether an LLM ran."""
+    students = [{"student_id": str(i), "age": 30, "gender": "female", "prior_gpa": 2.5,
+                 "socioeconomic_level": "middle", **s} for i, s in enumerate(students)]
+    report = SyntheticDataValidator().validate_all(students, [])
+    rows = {r["test"]: r for r in report["results"]}
+    for name in ("backstory_non_empty_rate", "backstory_attribute_relevance"):
+        row = rows[name]
+        assert row["status"] == "not_assessed"
+        assert row["passed"] is False
+        assert row["synthetic"] is row["statistic"] is row["p_value"] is None
+        assert row["details"] == f"reason=no_nonempty_backstories; total={len(students)}; nonempty=0"
+    assert report["summary"]["assessment_complete"] is False
+    json.dumps(report, allow_nan=False)
+
+
+def test_partial_backstory_coverage_uses_the_whole_cohort():
+    """Missing/non-text rows count in coverage; relevance uses only actual text."""
+    students = [{"backstory": "I work for my career.", "employment_intensity": 1.0},
+                {}, {"backstory": "  "}, {"backstory": 42}]
+    rows = {r.test_name: r for r in SyntheticDataValidator()._validate_backstories(students)}
+    assert rows["backstory_non_empty_rate"].synthetic_value == 0.25
+    assert rows["backstory_non_empty_rate"].status == "failed"
+    assert "1/4" in rows["backstory_non_empty_rate"].details
+    assert rows["backstory_attribute_relevance"].synthetic_value == 1.0
+    assert rows["backstory_attribute_relevance"].status == "passed"
+    assert "1/1" in rows["backstory_attribute_relevance"].details
 
 
 class TestSyntheticDataValidator:
