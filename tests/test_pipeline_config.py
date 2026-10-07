@@ -6,6 +6,63 @@ import json
 import pytest
 
 
+def test_json_roundtrip_restores_event_weeks_and_custom_carry_over():
+    """Loading a saved config must preserve calendars and typed carry-over."""
+    from synthed.pipeline_config import PipelineConfig
+    from synthed.simulation.semester import SemesterCarryOverConfig
+
+    original = PipelineConfig(n_semesters=2, carry_over_config=SemesterCarryOverConfig(engagement_recovery=0.12))
+    wire = json.loads(json.dumps(original.to_dict()))
+    restored = PipelineConfig.from_dict(wire)
+    assert restored == original
+    assert restored.environment.scheduled_events.get(7) == original.environment.scheduled_events.get(7)
+    assert isinstance(restored.carry_over_config, SemesterCarryOverConfig)
+    assert restored.carry_over_config.engagement_recovery == 0.12
+
+
+@pytest.mark.parametrize("field", ["scheduled_events", "positive_events"])
+@pytest.mark.parametrize("bad_key", [True, False, 0, -1, "0", "-1", "7.0", "07"])
+def test_invalid_event_week_is_rejected_with_field_context(field, bad_key):
+    """Invalid calendar keys must fail before silently disappearing at runtime."""
+    from synthed.pipeline_config import PipelineConfig
+
+    with pytest.raises(ValueError, match=field):
+        PipelineConfig.from_dict({"environment": {field: {bad_key: "exam_week"}}})
+
+
+@pytest.mark.parametrize("field", ["scheduled_events", "positive_events"])
+def test_event_week_normalization_rejects_collisions(field):
+    """Distinct serialized keys must not silently overwrite the same week."""
+    from synthed.pipeline_config import PipelineConfig
+
+    with pytest.raises(ValueError, match=field):
+        PipelineConfig.from_dict({"environment": {field: {7: "a", "7": "b"}}})
+
+
+def test_loading_config_preserves_input_and_weeks_beyond_the_horizon():
+    """Canonical keys normalize without mutating the caller's nested mapping."""
+    import copy
+    from synthed.pipeline_config import PipelineConfig
+
+    wire = {"environment": {"scheduled_events": {"100": "exam_week"},
+                            "positive_events": {"3": "support_boost"}}, "carry_over_config": None}
+    unchanged = copy.deepcopy(wire)
+    first = PipelineConfig.from_dict(wire)
+    assert wire == unchanged
+    assert PipelineConfig.from_dict(wire) == first
+    assert first.environment.scheduled_events == {100: "exam_week"}
+    assert first.environment.positive_events == {3: "support_boost"}
+    assert first.carry_over_config is None
+
+
+def test_unknown_carry_over_fields_are_not_silently_dropped():
+    """A misspelled recovery setting must fail typed reconstruction."""
+    from synthed.pipeline_config import PipelineConfig
+
+    with pytest.raises(TypeError, match="unknown_recovery"):
+        PipelineConfig.from_dict({"carry_over_config": {"unknown_recovery": 0.1}})
+
+
 class TestPipelineConfigCreation:
     """Default construction and field count."""
 

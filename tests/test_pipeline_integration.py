@@ -9,6 +9,23 @@ from synthed.pipeline import SynthEdPipeline
 from synthed.pipeline_config import PipelineConfig
 
 
+@pytest.mark.parametrize("seed", [42, 7, 123])
+def test_two_semester_json_reload_matches_direct_config(tmp_path, seed):
+    """Saved calendars and custom recovery must reproduce simulation and validation."""
+    import json
+    from dataclasses import replace
+    from synthed.simulation.semester import SemesterCarryOverConfig
+
+    original = PipelineConfig(n_semesters=2, seed=seed, output_dir=str(tmp_path / "direct"),
+                              carry_over_config=SemesterCarryOverConfig(engagement_recovery=0.12))
+    restored = PipelineConfig.from_dict(json.loads(json.dumps(original.to_dict())))
+    restored = replace(restored, output_dir=str(tmp_path / "restored"))
+    direct_report = SynthEdPipeline(config=original).run(n_students=100)
+    restored_report = SynthEdPipeline(config=restored).run(n_students=100)
+    for field in ("simulation_summary", "semester_summary", "validation"):
+        assert restored_report[field] == direct_report[field]
+
+
 class TestPipelineIntegration:
     def test_full_pipeline_run(self, tmp_path):
         pipeline = SynthEdPipeline(output_dir=str(tmp_path), seed=42)

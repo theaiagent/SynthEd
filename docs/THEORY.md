@@ -221,7 +221,7 @@ SynthEd/
 │   ├── doc_facts.py             # Documentation consistency checker
 │   ├── pipeline_config.py       # PipelineConfig frozen dataclass (16 params)
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                       # 969 pytest tests across 51 files
+├── tests/                       # 993 pytest tests across 51 files
 ├── docs/
 │   ├── GUIDE.md                 # User guide
 │   └── THEORY.md                # This file
@@ -252,7 +252,7 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 
 ## 🧪 Test Suite
 
-969 pytest tests across 51 files:
+993 pytest tests across 51 files:
 
 <!-- BEGIN:test_inventory -->
 | Test File | Tests | Coverage |
@@ -294,8 +294,8 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 | `test_oulad_export.py` | 35 | OULAD-compatible export |
 | `test_pareto_utils.py` | 19 | Pareto dominance, front extraction, utilities |
 | `test_persona.py` | 27 | StudentPersona and BigFiveTraits |
-| `test_pipeline_config.py` | 19 | PipelineConfig frozen dataclass |
-| `test_pipeline_integration.py` | 40 | SynthEdPipeline |
+| `test_pipeline_config.py` | 40 | PipelineConfig frozen dataclass |
+| `test_pipeline_integration.py` | 43 | SynthEdPipeline |
 | `test_report.py` | 11 | SynthEd report generation module |
 | `test_semester.py` | 26 | MultiSemesterRunner carry-over and multi-semester logic |
 | `test_sensitivity.py` | 2 | sensitivity analysis module |

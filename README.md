@@ -50,7 +50,7 @@ SynthEd models each student's evolving motivations, decisions, and life context.
 - **InstitutionalConfig** -- 5 institution-level quality parameters that modulate theory constants. `support_services_quality` scales 13 Baulke dropout phase thresholds
 - **GradingConfig** -- Beta/Normal/Uniform grade distributions, dual-hurdle pass requirements, exam-only and continuous assessment modes, relative grading with t-score cohort normalization
 - **EngineConfig** -- 70 frozen engine constants with validation, overridable via `dataclasses.replace()`
-- **PipelineConfig** -- Frozen dataclass grouping 16 pipeline params; the [JSON loading example](docs/GUIDE.md#pipelineconfig-recommended) restores event-week keys and custom carry-over objects for reproducibility
+- **PipelineConfig** -- Frozen dataclass grouping 16 pipeline params; JSON reload automatically restores event-week keys and custom carry-over objects for reproducibility ([example](docs/GUIDE.md#pipelineconfig-recommended))
 
 ### Data & Integration
 - **OULAD Schema Export** -- 7 CSV tables with OULAD column names and ordering; mapped attributes and heuristic click counts do not establish statistical or semantic equivalence to OULAD

@@ -170,25 +170,18 @@ with open("config.json", "w") as f:
 
 Legacy keyword arguments still work but emit a `DeprecationWarning`. Migrate by wrapping kwargs in `PipelineConfig(...)`.
 
-Reload JSON with the following normalization. JSON converts integer week keys to strings, and `PipelineConfig.from_dict()` currently leaves the environment event keys as strings unless you restore them. Custom carry-over objects also need explicit reconstruction:
+Reload a saved configuration through the same API. `PipelineConfig.from_dict()` restores integer event-week keys and reconstructs custom carry-over settings automatically:
 
 ```python
 import json
 from synthed.pipeline_config import PipelineConfig
-from synthed.simulation.semester import SemesterCarryOverConfig
 
 with open("config.json", encoding="utf-8") as f:
     data = json.load(f)
-environment = data.get("environment", {})
-for name in ("scheduled_events", "positive_events"):
-    if name in environment:
-        environment[name] = {int(week): event for week, event in environment[name].items()}
-if isinstance(data.get("carry_over_config"), dict):
-    data["carry_over_config"] = SemesterCarryOverConfig(**data["carry_over_config"])
 config = PipelineConfig.from_dict(data)
 ```
 
-Without week-key normalization, scheduled events can silently disappear from lookups during a run. This serialization format differs from the CLI's `--config` profile format described under [Customization](#custom-institution-profile-json).
+Event calendars accept positive integer keys and canonical decimal strings such as `"7"`; booleans, zero, negative weeks, `"07"`, `"7.0"` and normalization collisions are rejected. Positive weeks beyond the current horizon remain valid, and input dictionaries are not modified. This serialization format differs from the CLI's `--config` profile format described under [Customization](#custom-institution-profile-json).
 
 ### Theory Protocol (Developer)
 
