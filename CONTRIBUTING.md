@@ -14,6 +14,12 @@ git config core.hooksPath .githooks      # enable repo pre-commit hooks
 python -m pytest tests/ -q --tb=short   # all tests must pass
 ```
 
+CI installs `.[dev,llm,dashboard]` to exercise those optional integrations. The
+HTML/PDF report tests additionally need `jinja2`, `plotly`, `playwright` and a
+Playwright Chromium installation for full coverage; see the
+[report setup](docs/GUIDE.md#optional-htmlpdf-reports). Missing optional packages
+or browsers can skip tests, so report the passed and skipped counts separately.
+
 The `core.hooksPath` step activates `.githooks/pre-commit`, which runs
 `python -m synthed.doc_facts --fix` before every commit and restages the
 doc_facts-managed files (`docs/THEORY.md`, `synthed/analysis/sobol_sensitivity.py`,
@@ -28,13 +34,13 @@ sync to CI.
 
 ### Project Structure
 
-See [docs/THEORY.md](docs/THEORY.md#-project-structure) for the full file layout.
+See [docs/THEORY.md](docs/THEORY.md#-project-structure) for the project layout.
 
 Key directories:
 - `synthed/simulation/theories/` -- one module per theoretical framework
 - `synthed/analysis/` -- Sobol, Optuna, validation tools
 - `synthed/validation/` -- statistical validation suite
-- `tests/` -- pytest test files (one per source module)
+- `tests/` -- unit, integration and regression tests
 
 ## How to Contribute
 
@@ -64,6 +70,7 @@ Key directories:
    ```bash
    ruff check synthed/ tests/ --select E,F,W --ignore E501
    python -m pytest tests/ -q --tb=short
+   python -m synthed.doc_facts
    ```
 6. Commit with a descriptive message:
    ```bash
@@ -79,8 +86,8 @@ SynthEd's simulation is built on pluggable theory modules. To add a new one:
 2. Follow the existing pattern (see `academic_exhaustion.py` as a template):
    - Stateless class with `_UPPERCASE` named constants
    - Clear docstring citing the theoretical source
-3. Wire it into `SimulationEngine.__init__()` and the weekly loop
-4. Add tests in `tests/test_theories.py`
+3. Implement the relevant protocol methods from `theories/protocol.py`. Phase-method classes with no-argument constructors are auto-discovered; `_PHASE_ORDER` controls their order. Engagement-only classes must be instantiated and included in the engagement dispatch list in `SimulationEngine.__init__()`, with `_ENGAGEMENT_ORDER`. See the [protocol guide](docs/GUIDE.md#theory-protocol-developer).
+4. Add focused tests, including phase dispatch or engagement composition as applicable
 5. Document in `docs/THEORY.md`
 
 ### Adding Benchmark Profiles
@@ -94,10 +101,11 @@ SynthEd's simulation is built on pluggable theory modules. To add a new one:
 - **Immutability**: Never mutate `StudentPersona`. Use `dataclasses.replace()`.
 - **Named constants**: Use `_UPPERCASE` for all magic numbers.
 - **Logging**: `logging.getLogger(__name__)`, never `print()`.
-- **File size**: Max 800 lines per file.
+- **File size**: Soft limit around 1000 lines. Split when responsibilities diverge, rather than by line count alone.
 - **Type hints**: Use `from __future__ import annotations` for modern syntax.
 - **Lint**: `ruff check` with `--select E,F,W --ignore E501` must pass.
-- **Tests**: Every new feature needs tests. Follow existing patterns.
+- **Tests**: Cover behavior changes with regression tests. Use multiple seeds for stochastic integration comparisons and report the aggregation used.
+- **Versions**: Package versions are derived from Git tags with `setuptools-scm`; do not hardcode runtime versions.
 
 ## Commit Message Convention
 
@@ -116,9 +124,13 @@ Examples:
 
 1. PR title follows commit convention (`feat:`, `fix:`, etc.)
 2. Description explains **what** and **why**
-3. All CI checks must pass (tests, lint, CodeQL, pipeline-smoke)
-4. At least one maintainer review required
-5. No merge conflicts with `main`
+3. Update `CHANGELOG.md` under `[Unreleased]` and keep documentation consistent with the change
+4. All CI checks must pass (tests, lint, doc-health, CodeQL, pipeline-smoke)
+5. Complete independent Python and security reviews; changes to calibration or validation parameters also require statistical consistency review
+6. Wait for CodeRabbit feedback and explicit maintainer approval before merging. A skipped bot review is not a completed review
+7. Resolve merge conflicts with `main` and verify the resulting changes
+
+Before creating a release tag, update the `.zenodo.json` description from the changelog and align `CITATION.cff` with the actual release version/date. Keep release history distinct from unreleased changes.
 
 ## Questions?
 

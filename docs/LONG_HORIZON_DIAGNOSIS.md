@@ -1,10 +1,12 @@
 # Long-horizon dropout: diagnosis and calibration plan
 
-The eight-scenario diagnosis below records the model at commit `511a4d7`, before
-the enrolled-assignment workload fix. Its artifact is retained as historical
-evidence. Current default and targeting measurements are in
-[Dropout Targeting](DROPOUT_TARGETING.md); the workload correction is described
-at the end of this report.
+The eight-scenario diagnosis below is historical evidence introduced in commit
+`511a4d7`, before the enrolled-assignment workload and Kember event corrections.
+The artifact records base checkout `205c58e`, plus generating-source hashes for
+the work present during measurement; its recorded Git revision is not `511a4d7`.
+The measurements behind the shipped lookup are in
+[Dropout Targeting](DROPOUT_TARGETING.md). The later workload and Kember
+comparisons are retained separately below.
 
 ## Scope and reproduction
 
@@ -24,6 +26,15 @@ identify the uncommitted diagnostic script used to generate the artifact.
 python -m scripts.diagnose_dropout_horizons --scenarios baseline without:BeanMetznerPressure without:TintoIntegration without:SDTMotivationDynamics without:GarrisonCoI without:GonzalezExhaustion no_missed_streak_penalty reset_phase_between_terms --output output/dropout-horizon-diagnostics.json
 ```
 
+This command specifies the experimental design. Running it on today's checkout
+uses today's mechanisms and is not a reproduction of the historical numbers
+below. Historical reproduction requires the generating source, configuration
+and dependency versions identified by the artifact. Preserve the versioned
+evidence and use a separate output file for a new measurement.
+The diagnostic manifest's **77 source hashes** match the files in `511a4d7`
+when the recorded LF/CRLF checkout form is allowed. This recovers the source
+snapshot; it does not replace a rerun or dependency-version verification.
+
 Only completed runs are checkpointed, using atomic file replacement to preserve
 the previous checkpoint if serialization or publication fails. `complete` remains
 false until all `expected_runs` finish; exceptions propagate. Undefined validation statistics
@@ -35,6 +46,36 @@ Small-cohort checks that the validator omits are listed in
 `skipped_validation_checks`, with eligible counts and the validator's minimum
 requirements. The manifest covers default checks; optional backstory checks and
 outcome-rate reference checks are outside this CLI's default configuration.
+
+### Evidence inventory and audit boundaries
+
+All files below are versioned under `docs/measurements/`, with N=500. During the
+documentation audit, run keys were checked for completeness and duplicates;
+semester risk sets and dropout fractions were recomputed where stored. The
+tables below were recalculated from those saved runs, without new simulations.
+
+| Artifact | Recorded base revision | Design and verified run count | Completion field |
+|----------|------------------------|-------------------------------|------------------|
+| `dropout-horizon-diagnostics.json` | `205c58e` | 8 scenarios × seeds 42–46 = 40, each four terms | `complete=true`, expected 40 |
+| `assignment-scope-before.json` | `511a4d7` | horizons 1/2/4 × seeds 42–46 = 15 | `complete=true`, expected 15 |
+| `assignment-scope-after.json` | `511a4d7` | horizons 1/2/4 × seeds 42–46 = 15 | `complete=true`, expected 15 |
+| `kember-event-scope.json` | `7ebc22c` | horizons 1/2/4 × seeds 42–46 = 15 | `complete=true`, expected 15 |
+| `dropout-horizons.json` | `7ebc22c` | 15 base rates × seeds 42–46 = 75, each four terms | absent; count/design checked |
+| `dropout-targeting-holdout.json` | `7ebc22c` | horizons 1/2/4 × seeds 47–51 = 15 | absent; count/design checked |
+
+The first four files preserve individual validation checks. The curve and
+holdout files retain only validation summaries; unlike the diagnostic and
+comparison writers, their writer uses direct checkpoint writes. A partial
+checkpoint cannot be accepted merely because it parses or lacks an error field.
+
+Byte hashes need care on a checkout that converts line endings: for example,
+`measure_assignment_scope.py` in the workload artifacts differs from the current
+script only by LF/CRLF. A separate unresolved mismatch remains in the recorded
+Kember file for the corrected comparison, curve and holdout artifacts; it is
+not explained by LF/CRLF. See the exact hashes in
+[Dropout Targeting](DROPOUT_TARGETING.md#reproducible-measurements). The saved
+results and all 60 shipped lookup means agree numerically, but these manifests
+do not establish a byte-identical reproduction from current source.
 
 ## What happens between semesters
 
@@ -115,8 +156,9 @@ specified code paths, not whole theories or real-world treatments.
 | No inline missed-streak penalty | 27.52% | 89.72% | 3.36 | −6.32 |
 | Reset phase at each break | 39.60% | 90.56% | 0.65 | −5.48 |
 
-All means and SDs use the five seed-level runs. Paired differences compare the
-same seed, but later random-stream positions can diverge as behavior changes;
+All means and sample SDs (denominator k−1, k=5) use the five seed-level runs.
+Paired differences compare the same seed, but later random-stream positions
+can diverge as behavior changes;
 this does not hold all future shocks identical. SD is descriptive dispersion,
 not a confidence interval. The effects cannot be added, and small differences
 do not establish a reliable ordering of theories.
@@ -137,8 +179,11 @@ these counts are diagnostic information, not external validity scores.
    program departure. A target cumulative percentage alone is insufficient to
    identify conditional hazards or recovery dynamics. Do not invent a declining
    hazard, recovery rate, or acceptance margin without a source.
-2. **Audit mechanism contracts before retuning.** Document the unit of each
-   repeated pressure and recovery term. Specifically test whether the intended
+2. **Audit the remaining mechanism contracts before retuning.** The enrolled
+   workload and Kember event discrepancies have been corrected as documented
+   below; their historical diagnostic results must not be presented as current
+   ablations. Document the unit of each repeated pressure and recovery term.
+   Specifically test whether the intended
    missed-assignment construct is a sequence of assignment opportunities or a
    weekly condition, how long its penalty persists between due dates, and whether
    exhaustion workload reflects the student's enrolled courses. Record which
@@ -186,7 +231,8 @@ seeds 42–46 and separate 1/2/4-semester runs without targeting. Both
 [after](measurements/assignment-scope-after.json) artifacts include full validation,
 generating-source hashes and aggregate statistics. The script can be copied into
 the pre-fix checkout at `511a4d7` to reproduce the former; the hashes identify
-the exact code used, including the script that was then uncommitted.
+the generating bytes, including the script that was then uncommitted. A hash
+identifies content but cannot recover an unavailable source file by itself.
 
 ```bash
 python -m scripts.measure_assignment_scope --output output/assignment-scope.json
@@ -201,6 +247,10 @@ python -m scripts.measure_assignment_scope --output output/assignment-scope.json
 Each cell averages five seed-level results. GPA includes students with graded
 items, as defined by `summary_statistics`. Correlations are descriptive means of
 the validator's per-seed reported coefficients, not pooled estimates or tests.
+The engagement–GPA input pairs use each student's mean observed-week engagement
+and transcript GPA rounded to two decimals; the full-precision GPA mean in the
+adjacent column is a separate aggregate. Validation coefficients themselves are
+serialized to four decimals before the means shown here are calculated.
 The same seeds match initial conditions; feedback can change subsequent random
 draws and cohort composition. These results do not imply that every individual
 or seed must improve. All 30 runs retain the 22 default validation checks.
@@ -251,8 +301,12 @@ python -m scripts.measure_assignment_scope --output output/kember-event-scope.js
 Both artifacts fingerprint the lookup table present before their respective
 untargeted sweeps; neither consumes that table. The measurement script's byte
 hash differs because of LF/CRLF checkout line endings; its code is unchanged.
-The production model difference is the Kember event gate. The newly generated
-targeting holdout fingerprints the updated lookup table and its curve evidence.
+The implemented correction is the Kember event gate. The saved targeting
+holdout fingerprints the updated lookup table and its curve evidence. Its Kember
+hash and the corrected comparison's Kember hash agree with each other but differ
+from current source, as noted above; the base revision alone does not recover
+that generating file. The commands here describe the measurement procedure,
+not a verified exact replay of that archived source snapshot.
 
 | Semesters | Mean dropout before → after | Mean GPA before → after | Mean engagement–GPA r before → after |
 |-----------|-----------------------------|-------------------------|--------------------------------------|
@@ -274,13 +328,14 @@ four-term engagement–GPA correlation decreases and the negative CoI correlatio
 persists. Undefined coefficients remain explicit `null` values. These findings
 do not imply that all correlations improve or that every validation check passes.
 
-All 60 targeting lookup points were regenerated from 75 complete four-term runs.
+All 60 targeting lookup points were derived from the 75 completed four-term runs
+in the archived sweep; their values were checked against the counts in this audit.
 With the updated curves, all 15 independent-seed runs (47–51, horizons 1/2/4)
 met the 30–45% target; the holdout did not retune the curves. Full means, seed
 variation and limits are in [dropout targeting](DROPOUT_TARGETING.md).
 
 **Trade-off:** the correction removes repeated charges for an old event and
 materially reduces simulated dropout, while changing seeded trajectories and
-some GPA/correlation results. Four-term default dropout remains 88.60%; this
-does not establish a realistic retention trajectory. The remaining mechanism
+some GPA/correlation results. The corrected artifact's four-term mean is 88.60%;
+this does not establish a realistic retention trajectory. The remaining mechanism
 contracts and empirical calibration still require investigation.

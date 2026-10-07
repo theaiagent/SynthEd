@@ -33,19 +33,20 @@ flowchart TD
 
     SF -->|"N students\nwith UUIDv7 id + display_id"| engine
 
-    subgraph engine ["Simulation Engine -- 14 weeks x N semesters"]
+    subgraph engine ["Simulation Engine -- weekly loop (14 weeks by default)"]
         direction TB
-        P1["Phase 1: Individual Behavior\nLMS logins (Rovai), Forum posts (Tinto)\nAssignments & exams, Live sessions\nCoI presences (Garrison), Engagement update"]
-        UW["Unavoidable Withdrawal\nLife events: illness, relocation, death..."]
-        GPA["GPA Computation\nCumulative 4.0-scale from assignments & exams"]
-        P2["Phase 2: Social Network\nPeer influence & contagion\nBaulke 6-phase dropout decision"]
-        P1 --> UW --> GPA --> P2
+        UW["Phase 1: Unavoidable Withdrawal Check\nBefore this week's individual activity"]
+        P1["Individual Behavior\nLMS logins, forum activity, assignments\nLive sessions and exams\nUpdate transcript GPA and raw mastery on graded items"]
+        TH["Individual Theory Updates\nTinto -> Garrison -> SDT\nExhaustion -> engagement composition"]
+        P2["Phase 2: Social Network\nLink decay and formation\nPeer influence -> Baulke phase update\nRecord engagement and mark phase-5 dropout"]
+        UW -->|"If retained"| P1 --> TH --> P2
     end
 
     SN["Social Network\nEpstein & Axtell\nLink formation, decay, contagion"]
     P2 <--> SN
 
-    engine --> EX
+    engine --> GR["End-of-run semester grade and outcome assignment"]
+    GR --> EX
 
     subgraph EX ["Data Export"]
         direction LR
@@ -55,9 +56,9 @@ flowchart TD
         E4["weekly_engagement.csv"]
     end
 
-    EX --> VAL
+    GR --> VAL
 
-    subgraph VAL ["Validation Suite -- 22-24 statistical tests"]
+    subgraph VAL ["Validation Suite -- conditional statistical and consistency checks"]
         direction LR
         V1["L1: Distributions"]
         V2["L2: Correlations"]
@@ -67,24 +68,30 @@ flowchart TD
     end
 ```
 
+`SimulationEngine.run()` returns `(records, states, network)`: a list of `InteractionRecord`, a dictionary of `SimulationState` keyed by student ID, and a `SocialNetwork`. `MultiSemesterRunner` repeats the engine with carry-over between semesters. Unavoidable withdrawal skips that student's remaining weekly activity; GPA and mastery are updated during assignment/exam processing, before the individual theory updates. Weekly engagement is recorded after peer influence and the Baulke update.
+
+In a normal run, the pipeline exports the four standard CSV files, validates dictionaries prepared from the in-memory personas and states, and returns a report dictionary (also saved as `pipeline_report.json` when an output directory is configured). Validation does not read the exported CSVs. `students.csv` contains initial persona values; evolved values are in `outcomes.csv`.
+
+`CalibrationMap` estimates `dropout_base_rate` from the requested cumulative dropout range and simulation horizon. Its built-in curves describe the default model; changing the institution, grading, population configuration, or environment can invalidate that transfer. The pipeline reports whether observed dropout falls within the requested range. Targeting is an estimate, and checking that same target range is not independent empirical validation of the model.
+
 ---
 
 ## 📚 Theoretical Anchors
 
-SynthEd's persona attributes and simulation mechanics are grounded in ten established theoretical frameworks from ODE dropout research:
+SynthEd's persona attributes and simulation mechanics draw on ten theoretical anchors from student-persistence, psychology, online/distance learning, and agent-based simulation research. The equations and coefficients are SynthEd's operationalizations of these anchors, rather than a direct reproduction of each publication's model:
 
 | # | Anchor | Origin | Role in SynthEd |
 |---|--------|--------|-----------------|
 | 1 | **Tinto's Student Integration Model** (1975) | Sociology (Durkheim) | Academic & social integration drive engagement. Social integration weighted lower in ODE context. |
-| 2 | **Bean & Metzner** (1985) | Non-traditional students | Environmental factors (work, family, finances) are the **dominant** dropout predictors in ODE. Includes stochastic unavoidable withdrawal events (illness, death, relocation) via Lazarus & Folkman's (1984) stress-coping framework. |
+| 2 | **Bean & Metzner** (1985) | Non-traditional students | Work, family and financial pressures reduce engagement; coping and temporary environmental shocks model stress responses. A separate unavoidable-withdrawal process can end participation immediately, independently of Baulke phase progression. |
 | 3 | **Kember's Process Model** (1989) | Distance education | Dynamic `perceived_cost_benefit` recalculated on graded items, exam weeks or persistent missed streaks. The missed-event penalty additionally requires a new miss that week; existing cost-benefit effects persist. |
 | 4 | **Moore's Transactional Distance** (1993) | Distance education | Course structure and dialogue interact with learner autonomy. |
 | 5 | **Self-Determination Theory** (Deci & Ryan, 1985) | Psychology | Intrinsic/extrinsic motivation and amotivation predict persistence. |
 | 6 | **Community of Inquiry** (Garrison et al., 2000) | Online learning | Three presences (social, cognitive, teaching) co-evolve with Tinto's integration. |
 | 7 | **Rovai's Persistence Model** (2003) | Online/distance learning | Digital literacy, self-regulation, time management as ODE-specific factors. |
-| 8 | **Baulke et al. Phase Model** (2022) | Psychology | 6-phase dropout process: non-fit perception -> thoughts -> deliberation -> info search -> decision. Phase thresholds modulated by `support_services_quality` via `scale_by()`. |
+| 8 | **Baulke et al. Phase Model** (2022) | Psychology | SynthEd implements states 0-5: baseline -> non-fit perception -> thoughts -> deliberation -> info search -> decision, with recovery transitions before the final decision. Phase thresholds modulated by `support_services_quality` via `scale_by()`. |
 | 9 | **Epstein & Axtell ABSS** (1996) | Computational social science | Bottom-up emergent behavior: peer networks, engagement contagion, dropout cascades. |
-| 10 | **Academic Exhaustion** (Gonzalez et al., 2025) | Psychology | Exhaustion as mediator between stressors and dropout risk. |
+| 10 | **Academic Exhaustion** (Gonzalez et al., 2025) | Psychology | Inspired by the study's mediation model of dropout intention. SynthEd accumulates exhaustion from assignments due in the student's active courses and other stressors, models recovery, and links exhaustion to engagement and Baulke transitions. |
 
 ---
 
@@ -105,37 +112,37 @@ Organized using Rovai's (2003) composite persistence model:
 
 ## ⚖️ Design Decision: ODE is not Campus
 
-Following Bean & Metzner's central insight, SynthEd **weights external/environmental factors higher than social integration** in the dropout risk formula:
+Following Bean & Metzner's emphasis on non-traditional students, SynthEd **weights external/environmental factors higher than social integration** in the initial `base_dropout_risk` formula:
 
-- Social integration is capped at 0.80 and contributes only 4% to engagement
-- External factors (work, family, finances) contribute 30% to dropout risk
-- This reflects empirical ODL research: distance learners rarely build campus-based social bonds
+- Social integration is capped at 0.80 in population generation and weekly integration updates. Its coefficient is 0.04 in initial `base_engagement_probability`; the default weekly Tinto engagement coefficient is 0.02.
+- The external-risk block has nominal coefficients totaling 0.30 for work, family, finances **and internet reliability**. Input transformations, scaling and clipping mean this is not a fixed 30% share of an individual's risk or of observed dropouts.
+- These are modeling choices for the ODL context. Actual withdrawal emerges from weekly dynamics, the Baulke decision process and the separate unavoidable-withdrawal process.
 
 ---
 
 ## 🌐 Emergent Properties
 
-Unlike static persona-based theories, Epstein & Axtell's ABSS framework produces **emergent collective phenomena**:
+SynthEd implements peer mechanisms inspired by Epstein & Axtell's ABSS framework that can produce **emergent collective phenomena**:
 
-- **Dropout clustering:** Connected students influence each other's engagement; one withdrawing increases neighbors' dropout risk.
-- **Social stratification:** Employed students with families form fewer connections (Bean & Metzner prediction), creating a reinforcing disadvantage loop.
-- **Teaching presence amplification:** High instructor dialogue courses see peer networks amplify the effect as students discuss feedback.
+- **Dropout clustering:** Connected students influence each other's engagement; neighbors in dropout phases 4 or 5 add an engagement penalty. Unavoidable withdrawal alone does not advance the dropout phase.
+- **Unequal connectivity:** Links form through shared forum posting and live-session attendance. Work and family pressures can reduce engagement and thus opportunities to connect; fewer connections are a possible outcome, not a fixed rule.
+- **Social presence reinforcement:** Network degree boosts social integration and CoI social presence. Teaching presence is updated from course dialogue, instructor responsiveness and support access; the network does not directly amplify teaching presence.
 
 ---
 
 ## 🏛️ Institutional Quality
 
-Non-academic institutional factors are a major driver of student outcomes. Gonzalez et al. (2025) found that 86.4% of dropout variance is explained by non-academic mechanisms -- including institutional support, technology infrastructure, and course design quality. SynthEd captures this through five institution-level parameters in `InstitutionalConfig`:
+Institutional conditions are represented as configurable influences on student dynamics. [Gonzalez et al. (2025)](https://doi.org/10.1371/journal.pone.0327643) studied 1,402 Portuguese university students in a cross-sectional survey: their model explained **51% of variance in dropout intention**, with academic exhaustion as the strongest predictor. These findings concern dropout intention in that sample; they do not quantify a share of actual dropouts caused by institutional factors. SynthEd's five `InstitutionalConfig` parameters are modeling choices, not coefficients estimated in that study:
 
-| Parameter | Theoretical Grounding |
+| Parameter | Implemented Mechanism |
 |-----------|----------------------|
-| `instructional_design_quality` | Garrison CoI teaching presence, Moore structure |
-| `teaching_presence_baseline` | Garrison CoI, Rovai persistence |
-| `support_services_quality` | Bean & Metzner environmental factors |
-| `technology_quality` | Moore transactional distance, Rovai digital access |
-| `curriculum_flexibility` | Moore dialogue, Kember cost-benefit |
+| `instructional_design_quality` | Scales assignment/exam quality weights and Kember's response to graded quality |
+| `teaching_presence_baseline` | Directly initializes CoI teaching presence |
+| `support_services_quality` | Scales exhaustion recovery and Baulke transition/recovery thresholds |
+| `technology_quality` | Scales literacy-floor terms in LMS-login and forum-reading rates |
+| `curriculum_flexibility` | Inversely scales exhaustion from assignments due in active courses |
 
-Each parameter ranges 0-1 with 0.5 as neutral. The `scale_by()` method applies multiplicative modulation to theory constants: values above 0.5 improve the constant (e.g., stronger teaching presence, lower transactional distance), while values below 0.5 degrade it. At 0.5 the modulation is identity -- theory constants remain unchanged, preserving backward compatibility with existing calibrations.
+Each parameter ranges 0-1 with 0.5 as neutral. The `scale_by()` function multiplies a constant by `low + (high - low) * inst_param` (default bounds 0.7 and 1.3). Call sites can invert the parameter or use different bounds; the direction of the effect depends on the mechanism. Teaching presence initialization uses the baseline directly. Neutral settings preserve the unmodulated constants, but do not guarantee that historical calibration results survive other model changes.
 
 ---
 
@@ -143,8 +150,12 @@ Each parameter ranges 0-1 with 0.5 as neutral. The `scale_by()` method applies m
 
 SynthEd supports two grading methods via `GradingConfig`:
 
-- **Absolute grading** (default): Students are classified against fixed thresholds (`pass_threshold`, `distinction_threshold`).
-- **Relative grading** (`grading_method="relative"`): Applies t-score standardization across the cohort. Students are classified by their standing relative to peers rather than fixed thresholds. Automatically falls back to absolute grading for cohorts smaller than 2 or with zero or near-zero variance (std < 1e-9).
+- **Absolute grading** (default): Eligible students are classified against fixed thresholds (`pass_threshold`, `distinction_threshold`) after applying `grade_floor + (1 - grade_floor) * raw_semester_grade`.
+- **Relative grading** (`grading_method="relative"`): Applies t-score standardization to raw semester grades of eligible students, divides the resulting scores by 100, and classifies them using the same thresholds. Automatically falls back to absolute grading with fewer than 2 eligible students or zero or near-zero raw-score variance (std < 1e-9). Optional dual-hurdle checks still use floor-adjusted component scores.
+
+The engine keeps two performance tracks: `cumulative_gpa` is the mean floor-adjusted assignment/exam quality on a 4.0 scale, while `perceived_mastery` is the raw mean quality on [0, 1] (0.5 before any graded items). Kember, SDT competence and Baulke's mastery conditions use the raw track. `SimulationState.semester_grade` is a separate raw [0, 1] value or `None`, calculated from the configured assessment mode and components. Outcomes are `Withdrawn`, `Fail`, `Pass` or `Distinction`; withdrawal takes precedence, and missing required grading inputs or unmet eligibility requirements produce `Fail`.
+
+The standard `outcomes.csv` exports transcript GPA as `final_gpa` (blank when no items were graded). It does not currently export `semester_grade`, `perceived_mastery` or the categorical `outcome`; the pipeline report includes aggregate outcome counts, and the optional OULAD export includes `final_result`.
 
 ---
 
@@ -168,13 +179,13 @@ SynthEd/
 │   │   ├── social_network.py    # Peer network with link decay
 │   │   ├── semester.py          # Multi-semester with carry-over
 │   │   ├── institutional.py     # InstitutionalConfig (5 quality parameters)
-│   │   └── theories/            # 10 theory modules + protocol.py (TheoryModule + auto-discovery)
+│   │   └── theories/            # 10 theory modules + positive_events, unavoidable_withdrawal, protocol
 │   ├── data_output/
 │   │   ├── exporter.py          # CSV export (4 standard files)
 │   │   ├── oulad_exporter.py    # OULAD-compatible 7-table export
 │   │   └── oulad_mappings.py    # OULAD schema mappings
 │   ├── validation/
-│   │   ├── validator.py         # 22 statistical validation tests (default; up to 24 with backstory validation)
+│   │   ├── validator.py         # Conditional distribution, correlation, temporal, privacy and backstory checks
 │   │   └── types.py             # ReferenceStatistics, ValidationResult
 │   ├── analysis/
 │   │   ├── sensitivity.py       # OAT parameter sweeps
@@ -223,17 +234,19 @@ SynthEd/
 
 ## ✅ Validation Suite
 
-22 statistical tests (default; up to 24 with backstory validation) across 5 levels:
+The standalone `SyntheticDataValidator` supports up to 22 checks with default reference settings and sufficient input data, plus 2 when non-empty backstories are supplied and up to 2 when pass/distinction reference rates are configured (26 in total). Outcome-rate checks need actual `outcome` labels. The actual count depends on available fields, subgroup sizes and trajectories; not every check is a statistical hypothesis test. Checks span 5 levels:
 
 | Level | Tests | Method |
 |-------|-------|--------|
-| **L1: Distributions** | age, gender, employment, GPA, dropout | KS-test, chi-squared, z-test, range check |
-| **L2: Correlations** | conscientiousness-dropout, self-efficacy-engagement, self-regulation-engagement, financial-stress-dropout, goal-commitment-engagement, autonomy-engagement, CoI-engagement, network-engagement, cost-benefit-engagement, GPA-dropout, engagement-GPA, SDT motivation, Baulke phases | Point-biserial r, Pearson r, t-test |
+| **L1: Distributions** | age, gender, employment, prior GPA, dropout | KS-test, chi-squared, z-test, range check |
+| **L2: Correlations and outcomes** | conscientiousness-dropout, self-efficacy-engagement, self-regulation-engagement, financial-stress-dropout, goal-commitment-engagement, autonomy-engagement, CoI-engagement, network-engagement, cost-benefit-engagement, final GPA-dropout, engagement-final GPA, SDT motivation, Baulke phases; optional pass/distinction rates | Point-biserial r, Pearson r, t-test, phase-proportion and outcome-rate checks |
 | **L3: Temporal** | engagement divergence, negative trend, early attrition | Mean difference, proportion, timing |
-| **L4: Privacy** | k-anonymity | Quasi-identifier grouping |
-| **L5: Backstory** | non-empty rate, attribute relevance | Content checks (when LLM enabled) |
+| **L4: Privacy** | k-anonymity approximation | Grouping by age, gender and socioeconomic level; an informational check, not a general privacy guarantee |
+| **L5: Backstory** | non-empty rate, attribute relevance | Proportion and keyword checks when at least one non-empty backstory is present |
 
-Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<40%).
+**Pipeline limitation:** `_prepare_validation_data()` currently omits both `backstory` and `outcome`. Normal pipeline/dashboard runs therefore skip L5 even when LLM backstories were generated. Configuring pass/distinction references activates the outcome checks, but missing labels make their reported rates incorrectly equal 0%. Supply populated fields to the standalone validator before interpreting these optional checks; reference settings alone do not repair the pipeline input.
+
+Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<40%) of the checks actually run. Correlation checks pass on the expected sign, and the SDT comparison passes on the expected ordering of group means; reported p-values and reference magnitudes are not their pass criteria. A high grade therefore summarizes these implemented checks, not comprehensive empirical or literature validation.
 
 ---
 
