@@ -19,6 +19,9 @@ worker count capped at 4 and the `worksteal` scheduler. The cap is a conservativ
 CPU/memory budget, not a claim that 4 workers is optimal on every machine.
 CI uses the same configuration and combines worker coverage into its existing
 coverage and JUnit reports. All tests, including those marked `slow`, still run.
+The CI test job also limits OpenBLAS/OpenMP/MKL to one native thread per process
+to avoid multiplying numerical threads across pytest workers. This is a test-job
+resource policy; it does not change the simulation package or local thread settings.
 
 Use `python -m pytest tests/ -n 0 -q --tb=short` for serial execution, debugger
 sessions or live output with `-s`. Use `-n 2` to reduce resource use, or explicitly

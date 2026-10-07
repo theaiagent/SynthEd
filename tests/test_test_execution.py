@@ -33,10 +33,12 @@ def _run_execution_probe(tmp_path, available_workers, *options):
                 "PYTEST_XDIST_TESTRUNUID"):
         env.pop(key, None)
     env["PYTEST_XDIST_AUTO_NUM_WORKERS"] = str(available_workers)
+    # These probes need xdist only; optional application plugins add startup work.
+    env["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] = "1"
     config = Path(__file__).resolve().parents[1] / "pyproject.toml"
     result = subprocess.run(
         [sys.executable, "-m", "pytest", "-c", str(config), "--confcutdir", str(tmp_path),
-         str(probe), "-q", "--tb=short", "-p", "no:cov", *options],
+         str(probe), "-q", "--tb=short", "-p", "xdist.plugin", *options],
         cwd=tmp_path, env=env, capture_output=True, text=True, timeout=60,
     )
     assert result.returncode == 0, result.stdout + result.stderr
