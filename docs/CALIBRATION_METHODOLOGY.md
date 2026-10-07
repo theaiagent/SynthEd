@@ -287,6 +287,18 @@ The analysis runner suppresses exports with `_calibration_mode=True` but still
 runs the normal validation suite. The wrapper returns aggregate simulation
 metrics; the CLI does not persist the full validation reports.
 
+Validation reports distinguish `passed`, `failed` and `not_assessed`. Undefined
+or ineligible measurements remain visible with a reason and null numeric values;
+they do not count as failures. The quality pass rate is `passed / assessed_tests`,
+where `assessed_tests = passed + failed`; no assessed checks yields 0.0 and
+`N/A (Not assessed)`. Always report `total_tests`, `assessed_tests` and
+`not_assessed` alongside quality. `assessment_complete` is false when any emitted
+check is unassessed. A grade with partial coverage describes only the assessed
+subset. Historical summary-only reports keep their original grades; their total
+is treated as assessed. Compare coverage before comparing old and new grades.
+This reporting change does not alter simulation parameters, optimization
+objectives, correlation directions or hypothesis-test thresholds.
+
 **References:**
 - Law, A.M. (2015). *Simulation Modeling and Analysis* (5th ed.). McGraw-Hill Education.
 - Howe, W.G. (1969). "Two-sided tolerance limits for normal populations." *JASA*, 64(326), 610-620.

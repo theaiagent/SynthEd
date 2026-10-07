@@ -91,7 +91,7 @@ def measure(n_students: int, seeds: list[int], base_rates: list[float],
                 "validation_summary": validation["summary"],
             })
             # Checkpoint only completed runs; errors propagate rather than adding placeholders.
-            output.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+            output.write_text(json.dumps(data, indent=2, allow_nan=False) + "\n", encoding="utf-8")
         means = [sum(r["semesters"][s]["cumulative_dropout_rate"] for r in data["runs"]
                      if r["base_rate"] == rate) / len(seeds) for s in range(4)]
         logger.info("base=%.3f cumulative=%s", rate, [round(v, 4) for v in means])
@@ -123,7 +123,7 @@ def validate_targets(n_students: int, seeds: list[int], target_range: tuple[floa
                 "dropout_targeting": report["dropout_targeting"],
                 "validation_summary": report["validation"]["summary"],
             })
-            output.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+            output.write_text(json.dumps(data, indent=2, allow_nan=False) + "\n", encoding="utf-8")
         rates = [r["dropout_targeting"]["actual_dropout_rate"] for r in data["runs"]
                  if r["n_semesters"] == n_semesters]
         logger.info("semesters=%d dropout=%s mean=%.4f", n_semesters, rates, sum(rates) / len(rates))

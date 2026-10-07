@@ -14,6 +14,7 @@ from shiny import App, reactive, render, ui
 
 from ..pipeline import SynthEdPipeline
 from ..pipeline_config import PipelineConfig
+from ..validation.report_contract import result_status, summarize_results, validation_summary
 
 from .theme import CUSTOM_CSS
 from .config_bridge import (
@@ -279,6 +280,16 @@ def _get_validation_results(report: dict) -> tuple[list[dict], int]:
 
     filtered = [r for r in raw_list if isinstance(r, dict)]
     return filtered, len(raw_list) - len(filtered)
+
+
+def _get_validation_summary(report: dict, results: list[dict]) -> dict:
+    """Summarize normalized rows while retaining historical summary-only grades."""
+    validation = report.get("validation", {})
+    if isinstance(validation, dict):
+        if isinstance(validation.get("results"), list):
+            validation = dict(validation, results=results)
+        return validation_summary(validation)
+    return summarize_results(results)
 
 
 # ── Server Logic ──
@@ -547,20 +558,7 @@ def server(input, output, session):
         if not report:
             return "—"
         results, _ = _get_validation_results(report)
-        if not results:
-            return "—"
-        passed = sum(1 for r in results if r.get("passed"))
-        total = len(results)
-        if total == 0:
-            return "—"
-        ratio = passed / total
-        if ratio >= 0.85:
-            return "A"
-        if ratio >= 0.70:
-            return "B"
-        if ratio >= 0.55:
-            return "C"
-        return "D"
+        return _get_validation_summary(report, results)["overall_quality"].split(" ", 1)[0]
 
     @render.text
     def validation_grade_sub():
@@ -568,10 +566,9 @@ def server(input, output, session):
         if not report:
             return ""
         results, _ = _get_validation_results(report)
-        if not results:
-            return ""
-        passed = sum(1 for r in results if r.get("passed"))
-        return f"{passed}/{len(results)} passed"
+        summary = _get_validation_summary(report, results)
+        return (f"{summary['passed']}/{summary['assessed_tests']} passed; "
+                f"{summary['not_assessed']} not assessed; {summary['total_tests']} total")
 
     # ── Chart settings helper ──
     def _get_chart_settings() -> charts.ChartSettings:
@@ -677,6 +674,8 @@ def server(input, output, session):
         categories = {"Demographics": [], "Correlations": [], "Temporal": [],
                       "Privacy": [], "Other": []}
         for r in results:
+            if result_status(r) == "not_assessed":
+                continue
             test = r.get("test", "")
             if any(k in test for k in ("age", "gender", "employment", "dropout_rate", "gpa")):
                 categories["Demographics"].append(r)
@@ -691,11 +690,15 @@ def server(input, output, session):
         scores = {}
         for cat, items in categories.items():
             if items:
-                scores[cat] = sum(1 for i in items if i.get("passed")) / len(items)
+                scores[cat] = sum(result_status(i) == "passed" for i in items) / len(items)
+        summary = summarize_results(results)
+        coverage = (f"{summary['not_assessed']} not assessed; {summary['total_tests']} total. "
+                    "Unassessed checks are excluded from radar scores.")
         if not scores:
-            return ui.div("No validation categories", class_="text-secondary")
+            return ui.div("No assessed validation categories. ", coverage, class_="text-secondary")
         fig = charts.validation_radar(scores)
-        return ui.HTML(fig.to_html(full_html=False, include_plotlyjs=False))
+        return ui.div(ui.HTML(fig.to_html(full_html=False, include_plotlyjs=False)),
+                      ui.tags.small(coverage, class_="text-secondary"))
 
     # ── Config export ──
     @render.download(filename="synthed_config.json")

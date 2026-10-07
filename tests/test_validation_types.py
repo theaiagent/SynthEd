@@ -61,6 +61,36 @@ class TestValidationResultPassedContract:
         assert r.passed is False
         assert type(r.passed) is bool
 
+
+class TestValidationAssessmentStatus:
+    """Undefined measurements must carry a reason and never become a score."""
+
+    def test_not_assessed_has_null_values_and_false_pass_flag(self):
+        row = ValidationResult("constant", "Pearson r", None, 0.3,
+                               passed=False, details="constant_input; n=20",
+                               status="not_assessed")
+        assert row.status == "not_assessed"
+        assert row.passed is False
+
+    @pytest.mark.parametrize("field", ["synthetic_value", "reference_value", "statistic", "p_value"])
+    @pytest.mark.parametrize("value", [float("nan"), float("inf"), -float("inf")])
+    def test_rejects_non_finite_measurements(self, field, value):
+        with pytest.raises(ValueError, match="finite"):
+            ValidationResult(**_minimal_kwargs(**{field: value}))
+
+    @pytest.mark.parametrize("status,passed", [("passed", False), ("failed", True),
+                                               ("not_assessed", True), ("unknown", False)])
+    def test_rejects_inconsistent_status(self, status, passed):
+        with pytest.raises(ValueError):
+            ValidationResult(**_minimal_kwargs(status=status, passed=passed))
+
+    def test_not_assessed_requires_reason_and_no_measurement(self):
+        with pytest.raises(ValueError):
+            ValidationResult("missing", "r", None, None, passed=False, status="not_assessed")
+        with pytest.raises(ValueError):
+            ValidationResult("missing", "r", 0.0, None, passed=False,
+                             details="insufficient_pairs", status="not_assessed")
+
     def test_coerces_numpy_comparison_output(self):
         """Mirrors the production validator pattern: ``ks_p > alpha`` emits np.bool_."""
         ks_p, alpha = np.float64(0.12), 0.05
