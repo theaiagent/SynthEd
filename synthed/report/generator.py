@@ -11,6 +11,8 @@ from typing import Any
 import numpy as np
 from scipy import stats
 
+from ..validation.report_contract import result_status, validation_summary
+
 from .charts import (
     age_distribution_chart,
     employment_chart,
@@ -117,8 +119,8 @@ class ReportGenerator:
         total_sec = sum(timing.values()) if timing else 0
 
         # Validation
-        val_summary = val.get("summary", {})
-        val_results = val.get("results", [])
+        val_summary = validation_summary(val)
+        val_results = [dict(row, status=result_status(row)) for row in val.get("results", [])]
         val_passed = val_summary.get("passed", 0)
         val_total = val_summary.get("total_tests", 0)
         val_grade = val_summary.get("overall_quality", _EM_DASH)
@@ -151,6 +153,8 @@ class ReportGenerator:
             # Validation
             "validation_passed": val_passed,
             "validation_total": val_total,
+            "validation_assessed": val_summary["assessed_tests"],
+            "validation_not_assessed": val_summary["not_assessed"],
             "validation_results": val_results,
             # Charts (base64)
             **chart_data,
@@ -242,7 +246,7 @@ class ReportGenerator:
                 t["radar_other"]: [],
             }
             for r in val_results:
-                if not isinstance(r, dict):
+                if not isinstance(r, dict) or result_status(r) == "not_assessed":
                     continue
                 test = r.get("test", "")
                 if any(k in test for k in ("age", "gender", "employment", "dropout_rate", "gpa")):
@@ -259,7 +263,7 @@ class ReportGenerator:
             scores: dict[str, float] = {}
             for cat, items in categories.items():
                 if items:
-                    scores[cat] = sum(1 for i in items if i.get("passed")) / len(items)
+                    scores[cat] = sum(result_status(i) == "passed" for i in items) / len(items)
 
             if scores:
                 fig_radar = validation_radar(scores)

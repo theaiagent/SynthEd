@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from shiny import ui
 
+from ...validation.report_contract import result_status, summarize_results
+
 
 def empty_state(*, title: str, body: str, icon: str):
     """Full-panel message used for S1 (no simulation yet) and S4 (no validation data).
@@ -66,10 +68,13 @@ def _scorecard_row(r: dict):
     (screen-reader announcement on focus) when non-empty. Keyboard and touch
     users get the same context as mouse users.
     """
-    passed = r.get("passed", False)
+    status = result_status(r)
     mark = (
+        ui.tags.span("N/A — Not assessed", class_="text-secondary fw-bold")
+        if status == "not_assessed"
+        else
         ui.tags.span("✓", class_="text-success fw-bold")
-        if passed
+        if status == "passed"
         else ui.tags.span("✗", class_="text-danger fw-bold")
     )
 
@@ -83,7 +88,8 @@ def _scorecard_row(r: dict):
         ui.tags.td(_fmt_num(r.get("reference"))),
         ui.tags.td(_fmt_num(r.get("statistic"))),
         ui.tags.td(_fmt_num(r.get("p_value"))),
-        ui.tags.td(mark),
+        ui.tags.td(mark, ui.tags.small(details, class_="d-block text-secondary")
+                   if status == "not_assessed" else None),
         **extra,
     )
 
@@ -168,8 +174,7 @@ def scorecard_table(results: list[dict], dropped: int = 0):
         )
 
     rows = [_scorecard_row(r) for r in results]
-    passed = sum(1 for r in results if r.get("passed"))
-    total = len(results)
+    summary = summarize_results(results)
 
     panel_children = []
     if dropped > 0:
@@ -208,7 +213,8 @@ def scorecard_table(results: list[dict], dropped: int = 0):
 
     return ui.accordion(
         ui.accordion_panel(
-            f"{passed}/{total} tests passed",
+            f"{summary['passed']}/{summary['assessed_tests']} tests passed; "
+            f"{summary['not_assessed']} not assessed; {summary['total_tests']} total",
             *panel_children,
             value="scorecard_panel",
         ),

@@ -138,18 +138,21 @@ def test_diagnostic_runs_keep_validation_and_risk_sets(scenario):
 
 
 @pytest.mark.parametrize("n_students", [1, 10])
-def test_small_cohorts_report_skipped_checks_and_eligibility(n_students):
-    """Small runs disclose absent checks instead of implying full coverage."""
+def test_small_cohorts_report_unassessed_checks_without_listing_them_as_skipped(n_students):
+    """Unassessable checks remain emitted rows, distinct from omitted checks."""
     from scripts.diagnose_dropout_horizons import run_diagnostic
 
-    run = run_diagnostic(n_students, 42, "baseline")
-    skipped = {r["test"]: r for r in run["skipped_validation_checks"]}
-    assert 0 <= skipped["engagement_gpa_correlation"]["eligible_counts"]["pairs"] <= n_students
-    assert 0 <= skipped["gpa_dropout_correlation"]["eligible_counts"]["pairs"] <= n_students
-    assert skipped["gpa_dropout_correlation"]["minimum_counts"]["pairs"] == 11
-    assert skipped["engagement_gpa_correlation"]["reason"] == "insufficient eligible observations"
-    assert "sdt_intrinsic_vs_amotivation" in skipped
-    assert len(skipped) + run["validation"]["summary"]["total_tests"] == 22
+    for seed in (42, 7, 123):
+        run = run_diagnostic(n_students, seed, "baseline")
+        rows = {r["test"]: r for r in run["validation"]["results"]}
+        for name in ("engagement_gpa_correlation", "gpa_dropout_correlation"):
+            assert rows[name]["status"] == "not_assessed"
+            assert "insufficient_pairs" in rows[name]["details"]
+        assert rows["sdt_intrinsic_vs_amotivation"]["status"] == "not_assessed"
+        assert run["skipped_validation_checks"] == []
+        assert run["undefined_validation_fields"] == []
+        assert run["validation"]["summary"]["total_tests"] == 22
+        assert run["validation"]["summary"]["not_assessed"] > 0
 
 
 @pytest.mark.parametrize("failure", ["serialization", "replace"])

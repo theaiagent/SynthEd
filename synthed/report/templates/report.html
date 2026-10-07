@@ -175,6 +175,9 @@
             color: #059669;
             font-weight: 600;
         }
+        .result-not-assessed {
+            color: #6B7280;
+        }
         .result-fail {
             color: #DC2626;
             font-weight: 600;
@@ -298,7 +301,9 @@
         <div class="validation-header">
             <div class="validation-grade-badge">{{ validation_grade_value }}</div>
             <div class="validation-summary">
-                {{ t.passed_of_total.format(passed=validation_passed, total=validation_total) }}
+                {{ t.passed_of_total.format(passed=validation_passed, total=validation_assessed) }}
+                <p>{{ t.assessment_coverage.format(not_assessed=validation_not_assessed, total=validation_total) }}</p>
+                <p>{{ t.radar_assessed_only }}</p>
             </div>
         </div>
 
@@ -325,11 +330,15 @@
                 <tr>
                     <td>{{ row.test }}</td>
                     <td>{{ row.metric }}</td>
-                    <td>{{ row.synthetic }}</td>
+                    <td>{{ row.synthetic if row.synthetic is not none else "—" }}</td>
                     <td>{{ row.reference if row.reference is not none else "—" }}</td>
                     <td>{{ row.p_value if row.p_value is not none else "—" }}</td>
-                    <td class="{{ 'result-pass' if row.passed else 'result-fail' }}">
+                    <td class="{{ 'result-not-assessed' if row.status == 'not_assessed' else ('result-pass' if row.passed else 'result-fail') }}">
+                        {% if row.status == 'not_assessed' %}
+                        {{ t.not_assessed }}<br><small>{{ row.details }}</small>
+                        {% else %}
                         {{ t.pass if row.passed else t.fail }}
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}

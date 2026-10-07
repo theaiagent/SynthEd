@@ -221,7 +221,7 @@ SynthEd/
 │   ├── doc_facts.py             # Documentation consistency checker
 │   ├── pipeline_config.py       # PipelineConfig frozen dataclass (16 params)
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                       # 993 pytest tests across 51 files
+├── tests/                       # 1044 pytest tests across 54 files
 ├── docs/
 │   ├── GUIDE.md                 # User guide
 │   └── THEORY.md                # This file
@@ -234,7 +234,7 @@ SynthEd/
 
 ## ✅ Validation Suite
 
-The standalone `SyntheticDataValidator` supports up to 22 checks with default reference settings and sufficient input data, plus 2 when non-empty backstories are supplied and up to 2 when pass/distinction reference rates are configured (26 in total). Outcome-rate checks need actual `outcome` labels. The actual count depends on available fields, subgroup sizes and trajectories; not every check is a statistical hypothesis test. Checks span 5 levels:
+The standalone `SyntheticDataValidator` emits 22 checks with default reference settings when temporal assessment is requested, plus 2 when non-empty backstories are supplied and up to 2 when pass/distinction reference rates are configured (26 in total). Outcome-rate checks need actual `outcome` labels. Missing, insufficient, constant or non-finite correlation inputs produce visible `not_assessed` rows with a reason and null measurements. Omitting temporal input (`weekly_engagement=None`) omits its 3 checks; requesting it with an empty mapping emits them as unassessed. Not every check is a statistical hypothesis test. Checks span 5 levels:
 
 | Level | Tests | Method |
 |-------|-------|--------|
@@ -246,13 +246,15 @@ The standalone `SyntheticDataValidator` supports up to 22 checks with default re
 
 **Pipeline limitation:** `_prepare_validation_data()` currently omits both `backstory` and `outcome`. Normal pipeline/dashboard runs therefore skip L5 even when LLM backstories were generated. Configuring pass/distinction references activates the outcome checks, but missing labels make their reported rates incorrectly equal 0%. Supply populated fields to the standalone validator before interpreting these optional checks; reference settings alone do not repair the pipeline input.
 
-Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<40%) of the checks actually run. Correlation checks pass on the expected sign, and the SDT comparison passes on the expected ordering of group means; reported p-values and reference magnitudes are not their pass criteria. A high grade therefore summarizes these implemented checks, not comprehensive empirical or literature validation.
+Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<40%) of assessed checks (`passed + failed`). `not_assessed` is separate from failure and excluded from the pass-rate denominator. With no assessed checks, quality is **N/A (Not assessed)** and `pass_rate` is 0.0. Reports expose `total_tests`, `assessed_tests`, `passed`, `failed`, `not_assessed` and `assessment_complete`; the latter is false whenever an emitted check is unassessed. Tables and radar charts disclose coverage, and radar scores exclude unassessed checks. Historical rows without a status derive it from their boolean `passed`; summary-only historical reports retain their original grade and treat their total as assessed. New pipeline JSON forbids NaN/Infinity.
+
+Correlation checks pass on the expected sign, and the SDT comparison passes on the expected ordering of group means; reported p-values and reference magnitudes are not their pass criteria. A high grade therefore summarizes these implemented checks, not comprehensive empirical or literature validation. Grades from older reports that counted undefined checks as failures are not directly comparable to the new assessed-only grades; compare coverage as well.
 
 ---
 
 ## 🧪 Test Suite
 
-993 pytest tests across 51 files:
+1044 pytest tests across 54 files:
 
 <!-- BEGIN:test_inventory -->
 | Test File | Tests | Coverage |
@@ -306,7 +308,10 @@ Quality grades: **A** (90%+), **B** (75%+), **C** (60%+), **D** (40%+), **F** (<
 | `test_trait_calibration.py` | 39 | OULAD target extraction and trait-based calibration |
 | `test_unavoidable_withdrawal.py` | 9 | the UnavoidableWithdrawal theory module |
 | `test_utils.py` | 14 | shared utility modules: validation and log_config |
-| `test_validation_types.py` | 10 | synthed.validation.types dataclasses |
+| `test_validation_assessment.py` | 11 | Regression checks for undefined validation measurements and coverage |
+| `test_validation_consumers.py` | 15 | Regression tests for assessment coverage in rendered reports and exports |
+| `test_validation_report_contract.py` | 7 | Coverage and legacy compatibility for the shared validation report contract |
+| `test_validation_types.py` | 28 | synthed.validation.types dataclasses |
 | `test_validator.py` | 10 | SyntheticDataValidator |
 <!-- END:test_inventory -->
 

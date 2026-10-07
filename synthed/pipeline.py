@@ -31,6 +31,7 @@ from .simulation.institutional import InstitutionalConfig
 from .data_output.exporter import DataExporter
 from .data_output.oulad_exporter import OuladExporter
 from .validation import SyntheticDataValidator, ReferenceStatistics
+from .validation.report_contract import validation_summary
 from .utils.llm import LLMClient
 
 logger = logging.getLogger(__name__)
@@ -510,15 +511,15 @@ class SynthEdPipeline:
         )
         report["timing"]["validation_sec"] = round(time.time() - t0, 2)
         report["validation"] = validation_report
-        logger.info("      Done. Quality: %s (%d/%d tests passed)",
-                    validation_report['summary']['overall_quality'],
-                    validation_report['summary']['passed'],
-                    validation_report['summary']['total_tests'])
+        coverage = validation_summary(validation_report)
+        logger.info("      Done. Quality: %s (%d/%d assessed tests passed; %d not assessed; %d total)",
+                    coverage['overall_quality'], coverage['passed'], coverage['assessed_tests'],
+                    coverage['not_assessed'], coverage['total_tests'])
 
         # Save full report (skipped in calibration mode when no output dir)
         if self.output_dir is not None:
             report_path = self.output_dir / "pipeline_report.json"
-            report_path.write_text(json.dumps(report, indent=2, default=str))
+            report_path.write_text(json.dumps(report, indent=2, default=str, allow_nan=False))
             report["report_path"] = str(report_path)
             logger.info("Pipeline complete. Report saved to %s", report_path)
         else:

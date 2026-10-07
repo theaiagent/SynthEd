@@ -837,14 +837,14 @@ config = PersonaConfig(
 
 #### Low validation grade
 
-**Symptom:** `Quality: D (12/22 tests passed)`
+**Symptom:** `Quality: D (8/20 assessed tests passed; 2 not assessed; 22 total)`
 
 **Context:** Population too small for reliable statistics, or PersonaConfig far from reference defaults.
 
 **Action:**
 1. Use N >= 200 (N=500 recommended)
 2. If using custom config, provide matching `ReferenceStatistics`
-3. Check `pipeline_report.json` for per-test details
+3. Check `pipeline_report.json` for per-test details and assessment coverage. `not_assessed` checks carry a reason and null measurements; they are excluded from the grade. With no assessed checks the grade is N/A.
 
 > **Why:** With N < 100, stochastic variance dominates. The validator uses scale-adjusted alpha for N > 500 to prevent overpowered tests.
 
@@ -961,7 +961,7 @@ Harmless. Suppress with: `git config core.autocrlf true`
 ConstantInputWarning: An input array is constant
 ```
 
-Appears when a correlation input is constant, which can occur in small populations or when a configured process saturates at a bound. Inspect the affected arrays and repeat across seeds; increasing N alone does not guarantee variance. An undefined correlation is not evidence that the relationship passed validation.
+The validator now checks for constant inputs before computing correlations and emits `status="not_assessed"`, null measurements and a `constant_input` reason. Constant inputs can occur in small populations or when a configured process saturates at a bound. Inspect the affected arrays and repeat across seeds; increasing N alone does not guarantee variance. If this warning appears in an older report or another analysis path, treat the undefined correlation as missing evidence.
 
 #### Student IDs differ between runs
 
