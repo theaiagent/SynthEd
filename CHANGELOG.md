@@ -5,6 +5,7 @@ All notable changes to SynthEd are documented here.
 ## [Unreleased]
 
 ### Changed
+- Run pytest in parallel by default using `pytest-xdist`, with automatic worker selection capped at 4 and work-stealing scheduling. Share local/CI defaults, bound native numerical threads in the CI test job, retain full test selection and combined coverage/JUnit reports, and document the `-n 0` serial override.
 - Allow `uuid-utils` 1.x alongside the supported 0.x releases. Student identifiers continue to use the compatible, no-argument `uuid7()` API.
 - Update the test badge action to `v1.9.0` for its GitHub Gist API compatibility and awaited update requests.
 - Update `actions/setup-python` to v7 in CI and package publishing workflows; the configured Python versions remain unchanged.

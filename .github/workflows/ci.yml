@@ -9,6 +9,11 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      # Pytest workers provide parallelism; keep numerical libraries from nesting it.
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
@@ -28,8 +33,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev,llm,dashboard]"
 
-      - name: Run tests with coverage
+      - name: Run tests in parallel with coverage
         run: |
+          # Worker and scheduler defaults are shared with local pytest in pyproject.toml.
           python -m pytest tests/ -v --tb=short --cov=synthed --cov-branch --cov-report=xml --cov-report=term-missing --junitxml=test-results.xml
 
       - name: Upload coverage to Codecov
