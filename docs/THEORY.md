@@ -221,7 +221,7 @@ SynthEd/
 │   ├── doc_facts.py             # Documentation consistency checker
 │   ├── pipeline_config.py       # PipelineConfig frozen dataclass (16 params)
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                       # 1277 pytest tests across 54 files
+├── tests/                       # 1280 pytest tests across 55 files
 ├── docs/
 │   ├── GUIDE.md                 # User guide
 │   └── THEORY.md                # This file
@@ -274,7 +274,7 @@ Accepted string subclasses (including string enums) retain their underlying lite
 
 ## 🧪 Test Suite
 
-1277 pytest tests across 54 files:
+1280 pytest tests across 55 files:
 
 <!-- BEGIN:test_inventory -->
 | Test File | Tests | Coverage |
@@ -323,6 +323,7 @@ Accepted string subclasses (including string enums) retain their underlying lite
 | `test_sensitivity.py` | 2 | sensitivity analysis module |
 | `test_sobol.py` | 48 | Sobol sensitivity analysis |
 | `test_social_network.py` | 11 | SocialNetwork |
+| `test_test_execution.py` | 3 | Integration checks for bounded parallel defaults and the serial override |
 | `test_theories.py` | 35 | individual theory modules |
 | `test_theory_protocol.py` | 32 | TheoryModule Protocol, TheoryContext, and auto-discovery |
 | `test_trait_calibration.py` | 39 | OULAD target extraction and trait-based calibration |

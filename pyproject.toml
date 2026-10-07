@@ -36,7 +36,7 @@ dependencies = [
 [project.optional-dependencies]
 llm = ["openai>=1.0.0"]
 dashboard = ["shiny>=1.0", "plotly>=5.0", "htmltools"]
-dev = ["pytest>=7.0.0", "pytest-cov>=4.0.0", "ruff"]
+dev = ["pytest>=7.0.0", "pytest-cov>=4.0.0", "pytest-xdist>=3.8.0", "ruff"]
 
 [project.urls]
 Homepage = "https://github.com/theaiagent/SynthEd"
@@ -60,3 +60,5 @@ ignore = ["E501"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Bound test-process resource use; override with -n 0 for serial debugging.
+addopts = "-n auto --maxprocesses=4 --dist worksteal"

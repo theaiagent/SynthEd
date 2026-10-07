@@ -153,6 +153,10 @@ python -m synthed.doc_facts
 
 ## Test Suite
 
+With the development dependencies installed, pytest runs in parallel with up to
+4 workers. Use `python -m pytest tests/ -n 0 -q --tb=short` for serial debugging;
+see [CONTRIBUTING.md](CONTRIBUTING.md#development-setup) for worker controls.
+
 [THEORY.md](docs/THEORY.md#-test-suite) contains the generated test inventory. `python -m synthed.doc_facts` checks the source-derived inventory and documented parameter counts. Actual pytest collection and skips depend on installed optional dependencies and browser availability. The CI badge uses a JUnit total that includes skipped entries; consult the CI job summary for the passed/skipped breakdown.
 
 ---

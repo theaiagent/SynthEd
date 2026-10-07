@@ -28,8 +28,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev,llm,dashboard]"
 
-      - name: Run tests with coverage
+      - name: Run tests in parallel with coverage
         run: |
+          # Worker and scheduler defaults are shared with local pytest in pyproject.toml.
           python -m pytest tests/ -v --tb=short --cov=synthed --cov-branch --cov-report=xml --cov-report=term-missing --junitxml=test-results.xml
 
       - name: Upload coverage to Codecov

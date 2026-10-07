@@ -14,6 +14,17 @@ git config core.hooksPath .githooks      # enable repo pre-commit hooks
 python -m pytest tests/ -q --tb=short   # all tests must pass
 ```
 
+Pytest runs tests in separate processes using `pytest-xdist`, with an automatic
+worker count capped at 4 and the `worksteal` scheduler. The cap is a conservative
+CPU/memory budget, not a claim that 4 workers is optimal on every machine.
+CI uses the same configuration and combines worker coverage into its existing
+coverage and JUnit reports. All tests, including those marked `slow`, still run.
+
+Use `python -m pytest tests/ -n 0 -q --tb=short` for serial execution, debugger
+sessions or live output with `-s`. Use `-n 2` to reduce resource use, or explicitly
+select another worker count for your machine. Refresh an existing development
+environment with `pip install -e ".[dev]"` to install the added plugin.
+
 CI installs `.[dev,llm,dashboard]` to exercise those optional integrations. The
 HTML/PDF report tests additionally need `jinja2`, `plotly`, `playwright` and a
 Playwright Chromium installation for full coverage; see the
