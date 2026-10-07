@@ -18,6 +18,11 @@ from scipy import stats
 from .types import ReferenceStatistics, ValidationResult, _validate_proportion
 from .report_contract import quality_grade, summarize_results
 
+# Preserved model policies: four observations and a 50% inclusive decision gate.
+# These are consistency criteria, not empirical population estimates.
+_DROPOUT_TREND_MIN_OBSERVATIONS = 4
+_DROPOUT_NEGATIVE_TREND_THRESHOLD = 0.50
+
 # ── Standard correlation tests (declarative table) ──
 # Columns: attr_key, outcome_key, test_name, expected_direction,
 #          reference_value, description, continuous
@@ -655,29 +660,45 @@ class SyntheticDataValidator:
                 details=f"Retained final eng: {retained_final:.3f}, Dropout final: {dropout_final:.3f}",
             ))
 
-            # Dropouts should show negative trend
-            negative_trends = 0
-            for t in dropout_trajectories:
-                if len(t) >= 4:
-                    first_half = np.mean(t[:len(t)//2])
-                    second_half = np.mean(t[len(t)//2:])
-                    if second_half < first_half:
-                        negative_trends += 1
+        else:
+            reason = "insufficient_trajectory_groups" if finite_trajectories else "non_finite_input"
+            results.append(self._not_assessed("engagement_trajectory_divergence", "Mean difference", 0.1, reason))
 
-            neg_trend_rate = negative_trends / len(dropout_trajectories) if dropout_trajectories else 0
+        # Trend is conditional on assessable dropout histories, independent of retained students.
+        # Include every dropout outcome row so missing histories remain visible in coverage.
+        trend_histories = [weekly_engagement.get(o["student_id"], [])
+                           for o in outcomes if o.get("has_dropped_out")]
+        total_dropout = len(trend_histories)
+        with_history = sum(bool(t) for t in trend_histories)
+        short_or_missing = sum(len(t) < _DROPOUT_TREND_MIN_OBSERVATIONS for t in trend_histories)
+        long_histories = [t for t in trend_histories if len(t) >= _DROPOUT_TREND_MIN_OBSERVATIONS]
+        assessable_histories = [t for t in long_histories if np.all(np.isfinite(t))]
+        assessable = len(assessable_histories)
+        invalid_history = len(long_histories) - assessable
+        negative = sum(bool(np.mean(t[len(t)//2:]) < np.mean(t[:len(t)//2]))
+                       for t in assessable_histories)
+        coverage = assessable / total_dropout if total_dropout else 0.0
+        trend_details = (
+            f"total_dropout={total_dropout}; with_history={with_history}; assessable={assessable}; "
+            f"short_or_missing={short_or_missing}; invalid_history={invalid_history}; negative={negative}; "
+            f"coverage={coverage:.4f}; threshold={_DROPOUT_NEGATIVE_TREND_THRESHOLD:.2f} (model policy)"
+        )
+        if invalid_history or not assessable:
+            reason = "non_finite_history" if invalid_history else "no_assessable_history"
+            results.append(self._not_assessed(
+                "dropout_negative_trend_rate", "Proportion", _DROPOUT_NEGATIVE_TREND_THRESHOLD,
+                f"{trend_details}; reason={reason}",
+            ))
+        else:
+            neg_trend_rate = negative / assessable
             results.append(ValidationResult(
                 test_name="dropout_negative_trend_rate",
                 metric="Proportion",
                 synthetic_value=neg_trend_rate,
-                reference_value=0.6,  # At least 60% should show decline
-                passed=neg_trend_rate >= 0.5,
-                details=f"{neg_trend_rate:.0%} of dropout students show declining engagement",
+                reference_value=_DROPOUT_NEGATIVE_TREND_THRESHOLD,
+                passed=neg_trend_rate >= _DROPOUT_NEGATIVE_TREND_THRESHOLD,
+                details=trend_details,
             ))
-        else:
-            reason = "insufficient_trajectory_groups" if finite_trajectories else "non_finite_input"
-            for name, metric, ref in (("engagement_trajectory_divergence", "Mean difference", 0.1),
-                                      ("dropout_negative_trend_rate", "Proportion", 0.6)):
-                results.append(self._not_assessed(name, metric, ref, reason))
 
         # Dropout timing: early attrition pattern (majority drop in first half)
         dropout_weeks = [

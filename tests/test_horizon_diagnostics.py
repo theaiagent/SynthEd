@@ -11,6 +11,36 @@ from synthed.pipeline_config import PipelineConfig
 from synthed.simulation.semester import MultiSemesterRunner
 
 
+@pytest.mark.parametrize("history,assessable", [([], 0), ([.8, .6, .4], 0),
+                                                ([.8, .6, .4, .2], 1),
+                                                ([.8, float("nan"), .4, .2], 0)])
+def test_historical_skipped_trend_requires_assessable_dropout_not_retained(history, assessable):
+    """Historical missing rows use the same dropout-only four-finite-observation gate."""
+    from scripts.diagnose_dropout_horizons import _skipped_validation_checks
+
+    outcomes = [{"student_id": "d", "has_dropped_out": True}]
+    rows = _skipped_validation_checks([], outcomes, {"d": history}, {"results": []})
+    row = next(r for r in rows if r["test"] == "dropout_negative_trend_rate")
+    assert row["eligible_counts"] == {"assessable": assessable}
+    assert row["minimum_counts"] == {"assessable": 1}
+    assert row["reason"] == ("not emitted despite available inputs" if assessable
+                             else "insufficient eligible observations")
+
+
+def test_emitted_unassessed_trend_is_not_also_reported_as_skipped():
+    """An explicit N/A row already explains the shortage and is not duplicated."""
+    from scripts.diagnose_dropout_horizons import _skipped_validation_checks
+    from synthed.validation import SyntheticDataValidator
+
+    outcomes = [{"student_id": "missing", "has_dropped_out": True}]
+    report = SyntheticDataValidator().validate_all([], outcomes, {})
+    row = next(r for r in report["results"] if r["test"] == "dropout_negative_trend_rate")
+    assert row["status"] == "not_assessed"
+    assert "coverage=0.0000" in row["details"]
+    assert not any(r["test"] == row["test"] for r in _skipped_validation_checks([], outcomes, {}, report))
+    json.dumps(report, allow_nan=False)
+
+
 @pytest.mark.parametrize("seed", [42, 7, 123])
 def test_observer_preserves_full_run_and_random_stream(seed):
     """Tracing preserves every record, state, edge and RNG draw across terms."""

@@ -11,6 +11,107 @@ import numpy as np
 from synthed.validation import SyntheticDataValidator, ReferenceStatistics
 
 
+def _dropout_trend(histories, outcomes):
+    """Select the single trend row from a requested temporal assessment."""
+    matches = [r for r in SyntheticDataValidator()._validate_temporal(histories, outcomes)
+               if r.test_name == "dropout_negative_trend_rate"]
+    assert len(matches) == 1
+    return matches[0]
+
+
+@pytest.mark.parametrize("include_retained", [False, True])
+def test_dropout_trend_uses_assessable_denominator(include_retained):
+    """Three short histories cannot dilute the one assessable decline."""
+    histories = {"d0": [.8, .6, .4, .2], "d1": [.8], "d2": [.7], "d3": [.6]}
+    outcomes = [{"student_id": key, "has_dropped_out": True} for key in histories]
+    if include_retained:
+        histories["r"] = [.8] * 4
+        outcomes.append({"student_id": "r", "has_dropped_out": False})
+    row = _dropout_trend(histories, outcomes)
+    assert (row.synthetic_value, row.reference_value, row.passed, row.status) == (1.0, .50, True, "passed")
+    for text in ("total_dropout=4", "with_history=4", "assessable=1", "short_or_missing=3",
+                 "invalid_history=0", "negative=1", "coverage=0.2500", "threshold=0.50 (model policy)"):
+        assert text in row.details
+
+
+@pytest.mark.parametrize("history,expected", [([], None), ([.8], None), ([.8, .6, .4], None),
+                                               ([.8, .6, .4, .2], 1.0), ([.5] * 4, 0.0),
+                                               ([.9, .8, .7, .6, .5], 1.0)])
+def test_dropout_trend_minimum_history_and_ties(history, expected):
+    """Four finite observations are required; ties and odd-length splits keep their meaning."""
+    row = _dropout_trend({"d": history}, [{"student_id": "d", "has_dropped_out": True}])
+    assert row.synthetic_value == expected
+    assert row.reference_value == .5
+    assert row.passed is (expected is not None and expected >= .5)
+    if expected is None:
+        assert row.status == "not_assessed"
+        assert row.statistic is None and row.p_value is None
+        assert "reason=no_assessable_history" in row.details
+    else:
+        assert row.status == ("passed" if expected >= .5 else "failed")
+
+
+def test_dropout_trend_exact_half_passes():
+    """The displayed reference equals the preserved inclusive decision threshold."""
+    histories = {"decline": [.8, .6, .4, .2], "tie": [.5] * 4}
+    outcomes = [{"student_id": key, "has_dropped_out": True} for key in histories]
+    row = _dropout_trend(histories, outcomes)
+    assert (row.synthetic_value, row.reference_value, row.passed) == (.5, .5, True)
+    assert "negative=1" in row.details and "coverage=1.0000" in row.details
+
+
+def test_dropout_trend_counts_missing_and_excludes_unmatched_and_retained():
+    """Coverage includes missing outcomes; unrelated or retained histories cannot supply trend data."""
+    histories = {"d": [.8, .6, .4, .2], "empty": [], "short": [.8],
+                 "unmatched": [.9, .7, .3, .1], "r": [float("nan")] * 4}
+    outcomes = [{"student_id": key, "has_dropped_out": True} for key in ("d", "empty", "short", "missing")]
+    outcomes.append({"student_id": "r", "has_dropped_out": False})
+    row = _dropout_trend(histories, outcomes)
+    assert row.passed is True and row.synthetic_value == 1.0
+    for text in ("total_dropout=4", "with_history=2", "assessable=1", "short_or_missing=3",
+                 "invalid_history=0", "coverage=0.2500"):
+        assert text in row.details
+
+
+@pytest.mark.parametrize("bad", [float("nan"), float("inf"), float("-inf")])
+@pytest.mark.parametrize("long_history", [False, True])
+def test_dropout_trend_nonfinite_long_history_blocks_whole_assessment(bad, long_history):
+    """A bad assessable-length history is reported, never silently dropped from the rate."""
+    histories = {"good": [.8, .6, .4, .2], "bad": [.8, bad, .4, .2] if long_history else [bad]}
+    outcomes = [{"student_id": key, "has_dropped_out": True} for key in histories]
+    row = _dropout_trend(histories, outcomes)
+    assert "total_dropout=2" in row.details and "coverage=0.5000" in row.details
+    assert "assessable=1" in row.details and "negative=1" in row.details
+    assert f"invalid_history={int(long_history)}" in row.details
+    if long_history:
+        assert (row.status, row.passed, row.synthetic_value, row.statistic, row.p_value) == (
+            "not_assessed", False, None, None, None)
+        assert "short_or_missing=0" in row.details and "reason=non_finite_history" in row.details
+    else:
+        assert row.status == "passed" and row.synthetic_value == 1.0
+        assert "short_or_missing=1" in row.details
+
+
+@pytest.mark.parametrize("outcomes", [[], [{"student_id": "r", "has_dropped_out": False}]])
+def test_dropout_trend_empty_cohort_reports_zero_coverage(outcomes):
+    """No dropout population yields an explicit unassessed row and zero coverage."""
+    row = _dropout_trend({"r": [.8] * 4}, outcomes)
+    assert row.status == "not_assessed" and row.synthetic_value is None
+    for text in ("total_dropout=0", "with_history=0", "assessable=0", "short_or_missing=0",
+                 "invalid_history=0", "negative=0", "coverage=0.0000", "threshold=0.50 (model policy)"):
+        assert text in row.details
+
+
+def test_dropout_trend_cohort_is_counted_by_outcome_rows():
+    """The explicit outcome-row denominator is retained even for duplicate IDs."""
+    outcomes = [{"student_id": "d", "has_dropped_out": True}] * 2
+    outcomes.append({"student_id": "missing", "has_dropped_out": True})
+    row = _dropout_trend({"d": [.8, .6, .4, .2]}, outcomes)
+    assert row.synthetic_value == 1.0
+    for text in ("total_dropout=3", "assessable=2", "negative=2", "coverage=0.6667"):
+        assert text in row.details
+
+
 @pytest.mark.parametrize("enum_reference", [False, True])
 def test_gender_string_enum_labels_keep_their_literal_categories(enum_reference):
     """Accepted string subclasses retain payload labels in observations and reference keys."""

@@ -221,7 +221,7 @@ SynthEd/
 │   ├── doc_facts.py             # Documentation consistency checker
 │   ├── pipeline_config.py       # PipelineConfig frozen dataclass (16 params)
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                       # 1243 pytest tests across 54 files
+├── tests/                       # 1267 pytest tests across 54 files
 ├── docs/
 │   ├── GUIDE.md                 # User guide
 │   └── THEORY.md                # This file
@@ -256,6 +256,8 @@ GPA validation keeps the two-sample KS comparison against an equally sized norma
 
 Correlation checks pass on the expected sign, and the SDT comparison passes on the expected ordering of group means; reported p-values and reference magnitudes are not their pass criteria. A high grade therefore summarizes these implemented checks, not comprehensive empirical or literature validation. Grades from older reports that counted undefined checks as failures are not directly comparable to the new assessed-only grades; compare coverage as well.
 
+**Dropout engagement trend:** `dropout_negative_trend_rate` counts declines only among dropout outcome rows with at least four finite engagement observations; a retained group is not required. A decline means the second half's mean is strictly below the first half's mean, splitting odd-length histories at `len(history) // 2`; ties are not declines. The reported reference and inclusive passing threshold are both 0.50, preserving the existing decision policy and correcting the former displayed 0.60. Four observations and 0.50 are model consistency policies, not empirical population estimates. Details expose `total_dropout`, `with_history`, `assessable`, `short_or_missing`, `invalid_history`, `negative`, `coverage=assessable/total_dropout` and the threshold. Missing histories remain in the total cohort; unmatched history IDs are excluded. Short histories, including short non-finite ones, are unassessable. Any history of at least four observations containing a non-finite value makes the whole trend row `not_assessed` (`reason=non_finite_history`); valid-history counts remain visible but no rate is reported. With no assessable history, the row is `not_assessed` with `reason=no_assessable_history`; zero dropout rows have zero coverage. This conditional rate can pass with low coverage and must not be read as a rate for all dropout students. Compared with older reports, the corrected denominator can change trend decisions and validation grades without changing simulation outcomes; compare coverage and the trend row alongside the grade. Divergence and dropout-timing policies are unchanged.
+
 ---
 
 **Gender category support:** reference distributions require nonempty string labels and finite, non-boolean real probabilities in [0, 1], summing to 1 with only a machine-rounding allowance (`len(distribution) * math.ulp(1.0)`, using `math.fsum`). Invalid references raise `ValueError` at construction and are rechecked before assessment because their dictionary is mutable. Observed and reference categories are both retained in deterministic diagnostic order, including zero/zero categories. Missing, null, empty or non-string observed labels are counted separately; they fail with `reason=invalid_category`. Positive observations outside the reference fail with `reason=unexpected_category`, or `reason=zero_probability_category` if the reference explicitly assigns zero. These rows use `Category support check`, p=0, null statistic/synthetic values, and total/category counts; p=0 is a support-failure marker, not a chi-square p-value for malformed observations. A mixed failure reports all problems with invalid labels taking primary-reason precedence, then unexpected categories, then explicit zero probabilities. No observation is dropped or category renamed. NumPy string scalars are displayed as their literal strings.
@@ -272,7 +274,7 @@ Accepted string subclasses (including string enums) retain their underlying lite
 
 ## 🧪 Test Suite
 
-1243 pytest tests across 54 files:
+1267 pytest tests across 54 files:
 
 <!-- BEGIN:test_inventory -->
 | Test File | Tests | Coverage |
@@ -298,7 +300,7 @@ Accepted string subclasses (including string enums) retain their underlying lite
 | `test_factory.py` | 26 | StudentFactory population generation |
 | `test_gpa.py` | 9 | GPA/academic success computation |
 | `test_grading.py` | 49 | GradingConfig and grading utilities |
-| `test_horizon_diagnostics.py` | 15 | Guard the diagnostic observer against changing the stochastic model |
+| `test_horizon_diagnostics.py` | 20 | Guard the diagnostic observer against changing the stochastic model |
 | `test_institutional_config.py` | 15 | InstitutionalConfig validation, scale_by, defaults |
 | `test_institutional_integration.py` | 5 | InstitutionalConfig wired into SimulationEngine |
 | `test_kember_events.py` | 18 | Kember current-week missed events, persistent feedback and engine integration |
@@ -330,7 +332,7 @@ Accepted string subclasses (including string enums) retain their underlying lite
 | `test_validation_consumers.py` | 15 | Regression tests for assessment coverage in rendered reports and exports |
 | `test_validation_report_contract.py` | 7 | Coverage and legacy compatibility for the shared validation report contract |
 | `test_validation_types.py` | 94 | synthed.validation.types dataclasses |
-| `test_validator.py` | 131 | SyntheticDataValidator |
+| `test_validator.py` | 150 | SyntheticDataValidator |
 <!-- END:test_inventory -->
 
 CI runs tests across **Python 3.10, 3.11, and 3.12** via [GitHub Actions](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml).

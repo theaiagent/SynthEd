@@ -26,7 +26,7 @@ from scripts.measure_dropout_horizons import _provenance
 from synthed.pipeline import SynthEdPipeline
 from synthed.pipeline_config import PipelineConfig
 from synthed.simulation.semester import MultiSemesterRunner, SemesterCarryOverConfig
-from synthed.validation.validator import _STANDARD_TESTS
+from synthed.validation.validator import _DROPOUT_TREND_MIN_OBSERVATIONS, _STANDARD_TESTS
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,9 @@ def _skipped_validation_checks(students, outcomes, histories, report) -> list[di
     """Explain absent default checks without changing validator results or grades.
 
     Eligibility gates mirror validator.py: correlations need >10 pairs, SDT
-    needs >=5 in each group, and temporal comparisons need both outcome groups.
+    needs >=5 in each group, and trajectory divergence needs both outcome groups.
+    Dropout trend needs one finite dropout history with at least four observations,
+    without a retained group; emitted N/A rows are never also listed as skipped.
     This CLI uses default references, so optional outcome-rate checks are outside
     this manifest. Without text, backstory checks are emitted as not_assessed
     and require no separate eligibility inference here.
@@ -80,8 +82,13 @@ def _skipped_validation_checks(students, outcomes, histories, report) -> list[di
             dropped = o.get("has_dropped_out", False)
             cohorts["dropped" if dropped else "retained"] += 1
             timed_dropouts += bool(dropped and o.get("dropout_week") is not None)
-    for name in ("engagement_trajectory_divergence", "dropout_negative_trend_rate"):
-        eligibility[name] = (cohorts, {"dropped": 1, "retained": 1})
+    eligibility["engagement_trajectory_divergence"] = (cohorts, {"dropped": 1, "retained": 1})
+    assessable = sum(
+        len(history) >= _DROPOUT_TREND_MIN_OBSERVATIONS and all(math.isfinite(v) for v in history)
+        for o in outcomes if o.get("has_dropped_out")
+        for history in [histories.get(o["student_id"], [])]
+    )
+    eligibility["dropout_negative_trend_rate"] = ({"assessable": assessable}, {"assessable": 1})
     eligibility["dropout_early_attrition"] = ({"timed_dropouts": timed_dropouts}, {"timed_dropouts": 1})
     for name in ("age_distribution", "gender_distribution", "employment_rate", "k_anonymity"):
         eligibility[name] = ({"students": len(students)}, {"students": 1})
