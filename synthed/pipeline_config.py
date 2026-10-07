@@ -42,8 +42,8 @@ _NESTED_FIELDS: dict[str, type] = {
 def _coerce_field_types(cls: type, raw: dict) -> dict:
     """Coerce serialized values back to their declared field types.
 
-    Handles tuple fields (serialized as lists), enum fields (serialized
-    as their value), and nested Course lists for ODLEnvironment.
+    Handles tuples, enums and the two ODLEnvironment event calendars.
+    Course reconstruction is handled by :func:`_reconstruct_nested`.
     """
     import enum as _enum
     import typing
@@ -51,6 +51,12 @@ def _coerce_field_types(cls: type, raw: dict) -> dict:
     hints = typing.get_type_hints(cls)
     coerced = dict(raw)
     for name, val in raw.items():
+        if cls is ODLEnvironment and name in {"scheduled_events", "positive_events"} and isinstance(val, dict):
+            try:
+                coerced[name] = _restore_event_weeks(val)
+            except ValueError as exc:
+                raise ValueError(f"{name}: {exc}") from exc
+            continue
         if name not in hints or val is None:
             continue
         hint = hints[name]
@@ -72,6 +78,27 @@ def _coerce_field_types(cls: type, raw: dict) -> dict:
         elif isinstance(hint, type) and issubclass(hint, _enum.Enum):
             coerced[name] = hint(val)
     return coerced
+
+
+def _restore_event_weeks(raw: dict[int | str, str]) -> dict[int, str]:
+    """Restore positive integer calendar keys without collisions or coercion loss.
+
+    Canonical decimal strings (``"7"``) and positive integers are accepted.
+    Booleans, zero, negative and noncanonical keys are rejected; event text
+    and weeks beyond a particular simulation horizon are preserved.
+    """
+    restored = {}
+    for key, event in raw.items():
+        if type(key) is int and key > 0:
+            week = key
+        elif isinstance(key, str) and key.isascii() and key.isdecimal() and not key.startswith("0"):
+            week = int(key)
+        else:
+            raise ValueError(f"Invalid event week key {key!r}; expected a positive integer or canonical decimal string")
+        if week in restored:
+            raise ValueError(f"Duplicate event week {week} after normalizing key {key!r}")
+        restored[week] = event
+    return restored
 
 
 def _reconstruct_nested(cls: type, raw: dict) -> Any:
@@ -190,7 +217,8 @@ class PipelineConfig:
         """Reconstruct from a dict produced by :meth:`to_dict`.
 
         Nested dataclass fields are reconstructed using the
-        ``_NESTED_FIELDS`` registry.
+        ``_NESTED_FIELDS`` registry. Environment calendar keys and custom
+        semester carry-over settings are restored without modifying ``data``.
         """
         kwargs: dict[str, Any] = {}
         for key, val in data.items():
@@ -198,6 +226,10 @@ class PipelineConfig:
                 kwargs[key] = _reconstruct_nested(_NESTED_FIELDS[key], val)
             elif key == "target_dropout_range" and isinstance(val, list):
                 kwargs[key] = tuple(val)
+            elif key == "carry_over_config" and isinstance(val, dict):
+                from .simulation.semester import SemesterCarryOverConfig
+
+                kwargs[key] = SemesterCarryOverConfig(**val)
             else:
                 kwargs[key] = val
         return cls(**kwargs)
