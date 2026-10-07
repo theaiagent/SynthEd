@@ -221,7 +221,7 @@ SynthEd/
 │   ├── doc_facts.py             # Documentation consistency checker
 │   ├── pipeline_config.py       # PipelineConfig frozen dataclass (16 params)
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                       # 1274 pytest tests across 54 files
+├── tests/                       # 1277 pytest tests across 54 files
 ├── docs/
 │   ├── GUIDE.md                 # User guide
 │   └── THEORY.md                # This file
@@ -274,7 +274,7 @@ Accepted string subclasses (including string enums) retain their underlying lite
 
 ## 🧪 Test Suite
 
-1274 pytest tests across 54 files:
+1277 pytest tests across 54 files:
 
 <!-- BEGIN:test_inventory -->
 | Test File | Tests | Coverage |
@@ -282,7 +282,7 @@ Accepted string subclasses (including string enums) retain their underlying lite
 | `test_auto_bounds.py` | 20 | auto_bounds parameter generation |
 | `test_backstory_templates.py` | 17 | backstory template selection and prompt building |
 | `test_baulke_institutional.py` | 11 | Baulke institutional modulation via InstitutionalConfig. |
-| `test_benchmarks.py` | 15 | benchmark profiles and generator |
+| `test_benchmarks.py` | 18 | benchmark profiles and generator |
 | `test_calibration.py` | 23 | CalibrationMap interpolation and estimation |
 | `test_coverage_boost.py` | 37 | boost coverage from 93% to 95%+. |
 | `test_coverage_gaps.py` | 8 | close remaining coverage gaps |
