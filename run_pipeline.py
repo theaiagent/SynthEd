@@ -19,6 +19,7 @@ from synthed.utils.log_config import configure_logging
 
 from synthed.agents.persona import PersonaConfig
 from synthed.validation import ReferenceStatistics
+from synthed.validation.report_contract import validation_summary
 from synthed.pipeline import SynthEdPipeline
 
 
@@ -163,7 +164,7 @@ def main():
     print("  SUMMARY")
     print("=" * 60)
     sim = report.get("simulation_summary", {})
-    val = report.get("validation", {}).get("summary", {})
+    val = validation_summary(report.get("validation", {}))
     print(f"  Population: {n_students} students")
     print(f"  Interactions: {len(report.get('exported_files', {}))} files exported")
     print(f"  Dropout rate: {sim.get('dropout_rate', 0):.1%}")
@@ -174,7 +175,8 @@ def main():
         in_range = lo <= actual <= hi
         print(f"  Target range: {lo:.0%}-{hi:.0%} ({'HIT' if in_range else 'MISS'})")
     print(f"  Validation: {val.get('overall_quality', 'N/A')}")
-    print(f"  Tests: {val.get('passed', 0)}/{val.get('total_tests', 0)} passed")
+    print(f"  Tests: {val.get('passed', 0)}/{val['assessed_tests']} passed; "
+          f"{val['not_assessed']} not assessed; {val.get('total_tests', 0)} total")
     timing = report.get("timing", {})
     total_time = sum(timing.values())
     print(f"  Total time: {total_time:.1f}s")

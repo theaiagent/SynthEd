@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from ..pipeline import SynthEdPipeline
+from ..validation.report_contract import validation_summary
 from .profiles import PROFILES
 
 logger = logging.getLogger(__name__)
@@ -126,7 +127,7 @@ class BenchmarkGenerator:
         for report in results:
             bv = report.get("benchmark_validation", {})
             sim = report.get("simulation_summary", {})
-            val = report.get("validation", {}).get("summary", {})
+            val = validation_summary(report.get("validation", {}))
             timing = report.get("timing", {})
             total_time = sum(timing.values())
 
@@ -146,7 +147,8 @@ class BenchmarkGenerator:
                 f"| {dropout:.1%} | {lo:.0%}-{hi:.0%} "
                 f"| {'YES' if in_range else 'NO'} "
                 f"| {gpa_str} | {eng_str} "
-                f"| {quality} | {total_time:.1f} |"
+                f"| {quality} ({val.get('passed', 0)}/{val['assessed_tests']} passed; "
+                f"{val['not_assessed']} not assessed; {val.get('total_tests', 0)} total) | {total_time:.1f} |"
             )
 
         lines.append("")
@@ -158,7 +160,7 @@ class BenchmarkGenerator:
         for report in results:
             bv = report.get("benchmark_validation", {})
             sim = report.get("simulation_summary", {})
-            val = report.get("validation", {}).get("summary", {})
+            val = validation_summary(report.get("validation", {}))
             profile_name = bv.get("profile", "?")
             profile = PROFILES.get(profile_name)
 
@@ -181,7 +183,9 @@ class BenchmarkGenerator:
             lines.append(f"- **Retained:** {sim.get('retained_students', '?')}")
             mean_dw = sim.get("mean_dropout_week")
             lines.append(f"- **Mean dropout week:** {mean_dw:.1f}" if mean_dw is not None else "- **Mean dropout week:** N/A")
-            lines.append(f"- **Validation:** {val.get('overall_quality', 'N/A')} ({val.get('passed', 0)}/{val.get('total_tests', 0)} tests)")
+            lines.append(f"- **Validation:** {val.get('overall_quality', 'N/A')} "
+                         f"({val.get('passed', 0)}/{val['assessed_tests']} passed; "
+                         f"{val['not_assessed']} not assessed; {val.get('total_tests', 0)} total)")
             lines.append("")
 
         # Footer

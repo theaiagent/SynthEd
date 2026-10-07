@@ -47,6 +47,9 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "pass": "Pass",
         "fail": "Fail",
         "passed_of_total": "{passed} / {total} passed",
+        "not_assessed": "Not assessed",
+        "assessment_coverage": "{not_assessed} not assessed; {total} total checks",
+        "radar_assessed_only": "The radar includes assessed checks only; unassessed checks are excluded from its scores.",
         # Config group labels
         "demographics": "Demographics",
         "academic": "Academic",
@@ -129,6 +132,9 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "pass": "Geçti",
         "fail": "Kaldı",
         "passed_of_total": "{passed} / {total} geçti",
+        "not_assessed": "Değerlendirilemedi",
+        "assessment_coverage": "{not_assessed} değerlendirilemedi; toplam {total} kontrol",
+        "radar_assessed_only": "Radar yalnız değerlendirilen kontrolleri içerir; değerlendirilemeyenler puanlara dahil edilmez.",
         # Config group labels
         "demographics": "Demografik",
         "academic": "Akademik",

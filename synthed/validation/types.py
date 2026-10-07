@@ -8,6 +8,7 @@ imported by external callers without pulling in the full validator module.
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -64,18 +65,19 @@ class ReferenceStatistics:
 class ValidationResult:
     """Result of a single validation test.
 
-    ``passed`` is strictly ``bool`` — enforced in ``__post_init__``. Downstream
-    consumers (scorecard summary counts, validation grades) rely on this so
-    they can do plain truthy reads without an ``is True`` guard at every site.
+    ``passed`` is strictly ``bool``. ``status`` distinguishes failed checks
+    from checks that could not be assessed. Unassessed measurements are
+    ``None`` and carry a reason; all other numeric values must be finite.
     """
     test_name: str
     metric: str
-    synthetic_value: float
+    synthetic_value: float | None
     reference_value: float | None
     statistic: float | None = None
     p_value: float | None = None
     passed: bool = True
     details: str = ""
+    status: str | None = None
 
     def __post_init__(self):
         # numpy comparisons (e.g. ``ks_p > alpha``) emit ``np.bool_`` which is
@@ -87,3 +89,18 @@ class ValidationResult:
             raise TypeError(
                 f"passed must be bool, got {type(self.passed).__name__}: {self.passed!r}"
             )
+        if self.status is None:
+            self.status = "passed" if self.passed else "failed"
+        if self.status not in {"passed", "failed", "not_assessed"}:
+            raise ValueError(f"Unknown validation status: {self.status!r}")
+        if self.passed != (self.status == "passed"):
+            raise ValueError("Validation status and passed flag disagree")
+        for name in ("synthetic_value", "reference_value", "statistic", "p_value"):
+            value = getattr(self, name)
+            if value is not None and not math.isfinite(value):
+                raise ValueError(f"{name} must be finite or None, got {value!r}")
+        if self.status == "not_assessed":
+            if not isinstance(self.details, str) or not self.details.strip():
+                raise ValueError("not_assessed requires a nonempty reason in details")
+            if any(value is not None for value in (self.synthetic_value, self.statistic, self.p_value)):
+                raise ValueError("not_assessed measurements must be None")

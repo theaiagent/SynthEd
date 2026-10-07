@@ -14,6 +14,7 @@ import numpy as np
 from scipy import stats
 
 from .types import ReferenceStatistics, ValidationResult
+from .report_contract import quality_grade, summarize_results
 
 # ── Standard correlation tests (declarative table) ──
 # Columns: attr_key, outcome_key, test_name, expected_direction,
@@ -119,7 +120,7 @@ class SyntheticDataValidator:
         results.extend(self._validate_correlations(students_data, outcomes_data))
 
         # Level 3: Temporal coherence
-        if weekly_engagement:
+        if weekly_engagement is not None:
             results.extend(self._validate_temporal(
                 weekly_engagement, outcomes_data, total_weeks=total_weeks,
             ))
@@ -131,31 +132,28 @@ class SyntheticDataValidator:
         results.extend(self._validate_backstories(students_data))
 
         # Compile report
-        passed = sum(1 for r in results if r.passed)
-        total = len(results)
-
-        return {
-            "summary": {
-                "total_tests": total,
-                "passed": passed,
-                "failed": total - passed,
-                "pass_rate": passed / total if total > 0 else 0,
-                "overall_quality": self._quality_grade(passed / total if total > 0 else 0),
-            },
-            "results": [
+        rows = [
                 {
                     "test": r.test_name,
                     "metric": r.metric,
-                    "synthetic": round(r.synthetic_value, 4),
+                    "synthetic": round(r.synthetic_value, 4) if r.synthetic_value is not None else None,
                     "reference": round(r.reference_value, 4) if r.reference_value is not None else None,
                     "statistic": round(r.statistic, 4) if r.statistic is not None else None,
                     "p_value": round(r.p_value, 4) if r.p_value is not None else None,
                     "passed": r.passed,
+                    "status": r.status,
                     "details": r.details,
                 }
                 for r in results
-            ],
-        }
+            ]
+        return {"summary": summarize_results(rows), "results": rows}
+
+    @staticmethod
+    def _not_assessed(test_name: str, metric: str, reference: float | None,
+                      reason: str) -> ValidationResult:
+        """Represent an unavailable measurement with its explicit reason."""
+        return ValidationResult(test_name, metric, None, reference,
+                                passed=False, details=reason, status="not_assessed")
 
     def _effective_alpha(self, n: int) -> float:
         """Scale-adjusted significance level for large populations.
@@ -172,22 +170,33 @@ class SyntheticDataValidator:
     def _validate_demographics(self, students: list[dict]) -> list[ValidationResult]:
         """Level 1: Validate demographic distributions."""
         results = []
+        if not students:
+            return [self._not_assessed(name, metric, ref, "insufficient_population; n=0")
+                    for name, metric, ref in (
+                        ("age_distribution", "KS-test", self.reference.age_mean),
+                        ("gender_distribution", "Chi-squared", 0.0),
+                        ("employment_rate", "Proportion Z-test", self.reference.employment_rate),
+                    )]
 
         # Age distribution (one-sample KS-test against theoretical normal CDF)
         ages = [s["age"] for s in students]
-        ks_stat, ks_p = stats.kstest(
-            ages, "norm", args=(self.reference.age_mean, self.reference.age_std),
-        )
-        results.append(ValidationResult(
-            test_name="age_distribution",
-            metric="KS-test",
-            synthetic_value=float(np.mean(ages)),
-            reference_value=self.reference.age_mean,
-            statistic=float(ks_stat),
-            p_value=float(ks_p),
-            passed=ks_p > self._effective_alpha(len(ages)),
-            details=f"Age mean: synth={np.mean(ages):.1f}, ref={self.reference.age_mean:.1f}",
-        ))
+        if not np.all(np.isfinite(ages)):
+            results.append(self._not_assessed("age_distribution", "KS-test", self.reference.age_mean,
+                                             f"non_finite_input; n={len(ages)}"))
+        else:
+            ks_stat, ks_p = stats.kstest(
+                ages, "norm", args=(self.reference.age_mean, self.reference.age_std),
+            )
+            results.append(self._measured_result(
+                test_name="age_distribution",
+                metric="KS-test",
+                synthetic_value=float(np.mean(ages)),
+                reference_value=self.reference.age_mean,
+                statistic=float(ks_stat),
+                p_value=float(ks_p),
+                passed=ks_p > self._effective_alpha(len(ages)),
+                details=f"Age mean: synth={np.mean(ages):.1f}, ref={self.reference.age_mean:.1f}",
+            ))
 
         # Gender distribution (chi-squared)
         gender_counts = {}
@@ -203,7 +212,7 @@ class SyntheticDataValidator:
 
         if sum(expected) > 0:
             chi2, chi2_p = stats.chisquare(observed, expected)
-            results.append(ValidationResult(
+            results.append(self._measured_result(
                 test_name="gender_distribution",
                 metric="Chi-squared",
                 synthetic_value=float(chi2),
@@ -240,11 +249,14 @@ class SyntheticDataValidator:
 
         # GPA distribution
         gpas = [s["prior_gpa"] for s in students if "prior_gpa" in s]
-        if gpas:
+        if gpas and not np.all(np.isfinite(gpas)):
+            results.append(self._not_assessed("gpa_distribution", "KS-test", self.reference.gpa_mean,
+                                             f"non_finite_input; n={len(gpas)}"))
+        elif gpas:
             ref_samples = self._rng.normal(self.reference.gpa_mean, self.reference.gpa_std, len(gpas))
             ref_samples = np.clip(ref_samples, 0, 4)
             ks_stat, ks_p = stats.ks_2samp(gpas, ref_samples)
-            results.append(ValidationResult(
+            results.append(self._measured_result(
                 test_name="gpa_distribution",
                 metric="KS-test",
                 synthetic_value=float(np.mean(gpas)),
@@ -254,6 +266,10 @@ class SyntheticDataValidator:
                 passed=ks_p > self._effective_alpha(len(gpas)),
                 details=f"GPA mean: synth={np.mean(gpas):.2f}, ref={self.reference.gpa_mean:.2f}",
             ))
+
+        else:
+            results.append(self._not_assessed("gpa_distribution", "KS-test", self.reference.gpa_mean,
+                                             "insufficient_gpa_observations; n=0"))
 
         # Dropout rate
         if outcomes:
@@ -269,6 +285,7 @@ class SyntheticDataValidator:
                     passed=passed,
                     details=f"Dropout: synth={dropout_rate:.2%}, target=[{lo:.2%}, {hi:.2%}]",
                 ))
+
             else:
                 z_stat, z_p = self._proportion_z_test(
                     dropout_rate, self.reference.dropout_rate, len(outcomes)
@@ -283,6 +300,9 @@ class SyntheticDataValidator:
                     passed=z_p > self._effective_alpha(len(outcomes)),
                     details=f"Dropout: synth={dropout_rate:.2%}, ref={self.reference.dropout_rate:.2%}",
                 ))
+        else:
+            results.append(self._not_assessed("dropout_rate", "Range check" if self.reference.dropout_range else "Proportion Z-test",
+                                             self.reference.dropout_rate, "insufficient_outcomes; n=0"))
 
         return results
 
@@ -297,8 +317,8 @@ class SyntheticDataValidator:
         reference_value: float,
         description: str,
         continuous: bool = True,
-    ) -> ValidationResult | None:
-        """Run a single correlation test and return a ValidationResult or None."""
+    ) -> ValidationResult:
+        """Measure paired observations or report why no estimate is available."""
         xs, ys = [], []
         for s in students:
             sid = s.get("student_id")
@@ -306,16 +326,29 @@ class SyntheticDataValidator:
                 val = outcome_map[sid].get(outcome_key)
                 if val is not None and val != "":
                     xs.append(s[attr_key])
-                    ys.append(float(val) if continuous else int(val))
-        if len(xs) <= 10:
-            return None
+                    ys.append(float(val))
+        return self._paired_correlation(xs, ys, test_name, expected_direction,
+                                        reference_value, description, continuous)
 
+    def _paired_correlation(self, xs: list, ys: list, test_name: str,
+                            expected_direction: str, reference_value: float,
+                            description: str, continuous: bool = True) -> ValidationResult:
+        """Guard undefined pairs before applying the existing correlation rule."""
+        metric = "Pearson r" if continuous else "Point-biserial r"
+        n = len(xs)
+        reason = None
+        if n <= 10:
+            reason = "insufficient_pairs"
+        elif not np.all(np.isfinite(xs)) or not np.all(np.isfinite(ys)):
+            reason = "non_finite_input"
+        elif np.ptp(xs) == 0 or np.ptp(ys) == 0:
+            reason = "constant_input"
+        if reason:
+            return self._not_assessed(test_name, metric, reference_value, f"{reason}; n={n}")
         if continuous:
             corr, p_val = stats.pearsonr(xs, ys)
-            metric = "Pearson r"
         else:
             corr, p_val = stats.pointbiserialr(ys, xs)
-            metric = "Point-biserial r"
 
         if expected_direction == "positive":
             passed = corr > 0
@@ -324,7 +357,7 @@ class SyntheticDataValidator:
         else:
             passed = True
 
-        return ValidationResult(
+        return self._measured_result(
             test_name=test_name,
             metric=metric,
             synthetic_value=float(corr),
@@ -332,8 +365,18 @@ class SyntheticDataValidator:
             statistic=float(corr),
             p_value=float(p_val),
             passed=passed,
-            details=f"{description}: r={corr:.3f}",
+            details=f"{description}: r={corr:.3f}; n={n}",
         )
+
+    def _measured_result(self, **values) -> ValidationResult:
+        """Turn undefined statistic outputs into explicit unassessed results."""
+        for key in ("synthetic_value", "statistic", "p_value"):
+            value = values.get(key)
+            if value is not None and not np.isfinite(value):
+                return self._not_assessed(values["test_name"], values["metric"],
+                                          values["reference_value"],
+                                          "undefined_statistic; " + values.get("details", ""))
+        return ValidationResult(**values)
 
     def _validate_correlations(
         self, students: list[dict], outcomes: list[dict]
@@ -357,8 +400,7 @@ class SyntheticDataValidator:
                 attr_key, outcome_key,
                 test_name, direction, ref_val, desc, continuous,
             )
-            if result is not None:
-                results.append(result)
+            results.append(result)
 
         # ── SDT (Deci & Ryan, 1985): Intrinsic motivation → higher engagement ──
         intrinsic_eng = [
@@ -373,11 +415,21 @@ class SyntheticDataValidator:
             and s["student_id"] in outcome_map
             and outcome_map[s["student_id"]].get("final_engagement") is not None
         ]
-        if len(intrinsic_eng) >= 5 and len(amotivation_eng) >= 5:
+        group_reason = None
+        if len(intrinsic_eng) < 5 or len(amotivation_eng) < 5:
+            group_reason = "insufficient_groups"
+        elif not np.all(np.isfinite(intrinsic_eng)) or not np.all(np.isfinite(amotivation_eng)):
+            group_reason = "non_finite_input"
+        elif np.ptp(intrinsic_eng) == 0 and np.ptp(amotivation_eng) == 0:
+            group_reason = "constant_groups"
+        if group_reason:
+            results.append(self._not_assessed("sdt_intrinsic_vs_amotivation", "Independent t-test", None,
+                                             f"{group_reason}; intrinsic_n={len(intrinsic_eng)}; amotivation_n={len(amotivation_eng)}"))
+        else:
             intrinsic_mean = float(np.mean(intrinsic_eng))
             amotivation_mean = float(np.mean(amotivation_eng))
             t_stat, t_p = stats.ttest_ind(intrinsic_eng, amotivation_eng)
-            results.append(ValidationResult(
+            results.append(self._measured_result(
                 test_name="sdt_intrinsic_vs_amotivation",
                 metric="Independent t-test",
                 synthetic_value=intrinsic_mean,
@@ -386,7 +438,8 @@ class SyntheticDataValidator:
                 p_value=float(t_p),
                 passed=intrinsic_mean > amotivation_mean,
                 details=f"Intrinsic eng={intrinsic_mean:.3f} vs amotivation={amotivation_mean:.3f} "
-                        f"(Deci & Ryan 1985: intrinsic > amotivation)",
+                        f"(Deci & Ryan 1985: intrinsic > amotivation); "
+                        f"intrinsic_n={len(intrinsic_eng)}; amotivation_n={len(amotivation_eng)}",
             ))
 
         # ── GPA → dropout (negative): Higher GPA students drop out less ──
@@ -398,17 +451,9 @@ class SyntheticDataValidator:
                 dropped = outcome_map[sid].get("has_dropped_out")
                 if final_gpa is not None and dropped is not None:
                     gpa_xs.append(float(final_gpa))
-                    gpa_ys.append(int(dropped))
-        if len(gpa_xs) > 10:
-            corr, p_val = stats.pointbiserialr(gpa_ys, gpa_xs)
-            results.append(ValidationResult(
-                test_name="gpa_dropout_correlation",
-                metric="Point-biserial r",
-                synthetic_value=float(corr), reference_value=-0.2,
-                statistic=float(corr), p_value=float(p_val),
-                passed=corr < 0,
-                details=f"GPA-dropout: r={corr:.3f} (expected negative: higher GPA → less dropout)",
-            ))
+                    gpa_ys.append(float(dropped))
+        results.append(self._paired_correlation(gpa_xs, gpa_ys, "gpa_dropout_correlation",
+                                               "negative", -0.2, "GPA-dropout", False))
 
         # ── Bäulke et al.: Dropout phase distribution ──
         phase_counts: dict[int, int] = {}
@@ -416,7 +461,10 @@ class SyntheticDataValidator:
             phase = o.get("final_dropout_phase")
             if phase is not None:
                 phase_counts[phase] = phase_counts.get(phase, 0) + 1
-        if phase_counts:
+        if phase_counts and not all(np.isfinite(phase) for phase in phase_counts):
+            results.append(self._not_assessed("baulke_phase_distribution", "Decided phase proportion", self.reference.dropout_rate,
+                                             f"non_finite_input; n={sum(phase_counts.values())}"))
+        elif phase_counts:
             total = sum(phase_counts.values())
 
             # In ODL context, many students experience non-fit (Bäulke model
@@ -432,6 +480,9 @@ class SyntheticDataValidator:
                 details=f"Phase 5 (decided): {decided_rate:.0%}, "
                         f"dropout target: {self.reference.dropout_rate:.0%}",
             ))
+        else:
+            results.append(self._not_assessed("baulke_phase_distribution", "Decided phase proportion",
+                                             self.reference.dropout_rate, "missing_phase_observations; n=0"))
 
         # ── Outcome distribution: pass_rate / distinction_rate ──
         if self.reference.pass_rate is not None or self.reference.distinction_rate is not None:
@@ -471,16 +522,8 @@ class SyntheticDataValidator:
             if eng is not None and gpa is not None:
                 eng_xs.append(float(eng))
                 gpa_ys_eng.append(float(gpa))
-        if len(eng_xs) > 10:
-            corr, p_val = stats.pearsonr(eng_xs, gpa_ys_eng)
-            results.append(ValidationResult(
-                test_name="engagement_gpa_correlation",
-                metric="Pearson r",
-                synthetic_value=float(corr), reference_value=0.2,
-                statistic=float(corr), p_value=float(p_val),
-                passed=corr > 0,
-                details=f"Engagement-GPA: r={corr:.3f} (expected positive: higher engagement → higher GPA)",
-            ))
+        results.append(self._paired_correlation(eng_xs, gpa_ys_eng, "engagement_gpa_correlation",
+                                               "positive", 0.2, "Engagement-GPA"))
 
         return results
 
@@ -506,12 +549,15 @@ class SyntheticDataValidator:
                 else:
                     retained_trajectories.append(trajectory)
 
-        if dropout_trajectories and retained_trajectories:
+        dropout_observed = [t for t in dropout_trajectories if t]
+        retained_observed = [t for t in retained_trajectories if t]
+        finite_trajectories = all(np.all(np.isfinite(t)) for t in dropout_observed + retained_observed)
+        if dropout_observed and retained_observed and finite_trajectories:
             # Mean final engagement should be lower for dropouts
-            dropout_final = np.mean([t[-1] for t in dropout_trajectories if t])
-            retained_final = np.mean([t[-1] for t in retained_trajectories if t])
+            dropout_final = np.mean([t[-1] for t in dropout_observed])
+            retained_final = np.mean([t[-1] for t in retained_observed])
 
-            results.append(ValidationResult(
+            results.append(self._measured_result(
                 test_name="engagement_trajectory_divergence",
                 metric="Mean difference",
                 synthetic_value=float(retained_final - dropout_final),
@@ -538,6 +584,11 @@ class SyntheticDataValidator:
                 passed=neg_trend_rate >= 0.5,
                 details=f"{neg_trend_rate:.0%} of dropout students show declining engagement",
             ))
+        else:
+            reason = "insufficient_trajectory_groups" if finite_trajectories else "non_finite_input"
+            for name, metric, ref in (("engagement_trajectory_divergence", "Mean difference", 0.1),
+                                      ("dropout_negative_trend_rate", "Proportion", 0.6)):
+                results.append(self._not_assessed(name, metric, ref, reason))
 
         # Dropout timing: early attrition pattern (majority drop in first half)
         dropout_weeks = [
@@ -548,7 +599,7 @@ class SyntheticDataValidator:
         ]
         if total_weeks is None:
             total_weeks = max((len(t) for t in weekly_engagement.values()), default=0)
-        if dropout_weeks and total_weeks > 0:
+        if dropout_weeks and total_weeks > 0 and np.all(np.isfinite(dropout_weeks)):
             midpoint = total_weeks / 2
             early_dropouts = sum(1 for w in dropout_weeks if w <= midpoint)
             early_rate = early_dropouts / len(dropout_weeks)
@@ -561,12 +612,17 @@ class SyntheticDataValidator:
                 details=f"{early_rate:.0%} of dropouts occur in first half of "
                         f"the {total_weeks}-week simulation",
             ))
+        else:
+            results.append(self._not_assessed("dropout_early_attrition", "Early dropout proportion", 0.5,
+                                             "missing_or_non_finite_dropout_timing_or_horizon"))
 
         return results
 
     def _validate_privacy(self, students: list[dict]) -> list[ValidationResult]:
         """Level 4: Basic privacy assessment."""
         results = []
+        if not students:
+            return [self._not_assessed("k_anonymity", "Minimum k", None, "insufficient_population; n=0")]
 
         # Quasi-identifier k-anonymity check
         # Using age + gender + socioeconomic_level as quasi-identifiers
@@ -676,13 +732,5 @@ class SyntheticDataValidator:
 
     @staticmethod
     def _quality_grade(pass_rate: float) -> str:
-        if pass_rate >= 0.9:
-            return "A (Excellent)"
-        elif pass_rate >= 0.75:
-            return "B (Good)"
-        elif pass_rate >= 0.6:
-            return "C (Acceptable)"
-        elif pass_rate >= 0.4:
-            return "D (Poor)"
-        else:
-            return "F (Unacceptable)"
+        """Preserve the legacy grade helper for callers with assessed checks."""
+        return quality_grade(pass_rate, 1)
