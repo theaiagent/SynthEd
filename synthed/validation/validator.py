@@ -3,7 +3,7 @@ SyntheticDataValidator: Multi-level validation of synthetic educational data.
 
 Implements TinyTroupe-inspired statistical validation comparing synthetic
 data distributions against real-world reference statistics, plus temporal
-coherence checks and privacy guarantees.
+coherence checks and informational quasi-identifier grouping.
 """
 
 from __future__ import annotations
@@ -729,7 +729,7 @@ class SyntheticDataValidator:
         return results
 
     def _validate_privacy(self, students: list[dict]) -> list[ValidationResult]:
-        """Level 4: Basic privacy assessment."""
+        """Level 4: Informational quasi-identifier grouping, without a privacy guarantee."""
         results = []
         if not students:
             return [self._not_assessed("k_anonymity", "Minimum k", None, "insufficient_population; n=0")]
@@ -752,9 +752,9 @@ class SyntheticDataValidator:
         min_k = min(qi_groups.values()) if qi_groups else 0
         avg_k = np.mean(list(qi_groups.values())) if qi_groups else 0
 
-        # For synthetic data, k-anonymity is informational — these are not real people.
-        # We pass if avg_k >= 2 (sufficient diversity) or if population < 300
-        # (small populations naturally produce unique combos).
+        # Groups records by the listed quasi-identifiers; source provenance and
+        # text disclosure are not assessed. The pass flag reflects the existing
+        # grouping policy, not a privacy guarantee.
         n = len(students)
         k_threshold = 2 if n >= 500 else 1
         results.append(ValidationResult(
@@ -764,7 +764,10 @@ class SyntheticDataValidator:
             reference_value=float(k_threshold),
             passed=min_k >= k_threshold or avg_k >= 2.0,
             details=f"Min k={min_k}, Avg k={avg_k:.1f} (N={n}). "
-                    f"Synthetic data has no real individuals — privacy risk is inherently zero.",
+                    "Quasi-identifiers: age, gender, socioeconomic_level. "
+                    "Informational grouping check only; it does not verify input provenance, "
+                    "formal anonymity, or absence of re-identification risk. "
+                    "Custom inputs and LLM-generated text require a separate privacy assessment.",
         ))
 
         return results

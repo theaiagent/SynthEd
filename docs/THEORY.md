@@ -221,7 +221,7 @@ SynthEd/
 │   ├── doc_facts.py             # Documentation consistency checker
 │   ├── pipeline_config.py       # PipelineConfig frozen dataclass (16 params)
 │   └── pipeline.py              # End-to-end orchestrator
-├── tests/                       # 1267 pytest tests across 54 files
+├── tests/                       # 1274 pytest tests across 54 files
 ├── docs/
 │   ├── GUIDE.md                 # User guide
 │   └── THEORY.md                # This file
@@ -274,7 +274,7 @@ Accepted string subclasses (including string enums) retain their underlying lite
 
 ## 🧪 Test Suite
 
-1267 pytest tests across 54 files:
+1274 pytest tests across 54 files:
 
 <!-- BEGIN:test_inventory -->
 | Test File | Tests | Coverage |
@@ -329,10 +329,10 @@ Accepted string subclasses (including string enums) retain their underlying lite
 | `test_unavoidable_withdrawal.py` | 9 | the UnavoidableWithdrawal theory module |
 | `test_utils.py` | 14 | shared utility modules: validation and log_config |
 | `test_validation_assessment.py` | 11 | Regression checks for undefined validation measurements and coverage |
-| `test_validation_consumers.py` | 15 | Regression tests for assessment coverage in rendered reports and exports |
+| `test_validation_consumers.py` | 16 | Regression tests for assessment coverage in rendered reports and exports |
 | `test_validation_report_contract.py` | 7 | Coverage and legacy compatibility for the shared validation report contract |
 | `test_validation_types.py` | 94 | synthed.validation.types dataclasses |
-| `test_validator.py` | 150 | SyntheticDataValidator |
+| `test_validator.py` | 156 | SyntheticDataValidator |
 <!-- END:test_inventory -->
 
 CI runs tests across **Python 3.10, 3.11, and 3.12** via [GitHub Actions](https://github.com/theaiagent/SynthEd/actions/workflows/ci.yml).
